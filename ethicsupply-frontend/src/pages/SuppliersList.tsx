@@ -192,16 +192,19 @@ const SuppliersList = () => {
           <h1 className="text-3xl font-bold tracking-tight">
             Supplier <span style={{ color: colors.primary }}>Registry</span>
           </h1>
-          <Link
-            to="/suppliers/add"
-            className="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-            style={{ backgroundColor: colors.accent, color: colors.background }}
-            hover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Register New Supplier
-          </Link>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Link
+              to="/suppliers/add"
+              className="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              style={{
+                backgroundColor: colors.accent,
+                color: colors.background,
+              }}
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Register New Supplier
+            </Link>
+          </motion.div>
         </div>
 
         {/* Filters and Search */}

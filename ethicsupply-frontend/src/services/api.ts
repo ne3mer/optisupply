@@ -1600,7 +1600,13 @@ export const addSupplier = async (
 ): Promise<Supplier> => {
   try {
     console.log("Adding new supplier to API:", supplierData);
-    const response = await fetch(`${API_BASE_URL}/suppliers/`, {
+
+    // Ensure we have the required fields
+    if (!supplierData.name || !supplierData.country || !supplierData.industry) {
+      throw new Error("Missing required fields: name, country, or industry");
+    }
+
+    const response = await fetch(`${API_URL}/suppliers/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

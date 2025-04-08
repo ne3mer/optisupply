@@ -19,6 +19,7 @@ import SupplierAssessment from "./pages/enhanced/SupplierAssessment";
 import GeoRiskMapping from "./pages/GeoRiskMapping";
 import SupplyChainGraph from "./pages/SupplyChainGraph";
 import About from "./pages/About";
+import SupplierEditForm from "./pages/SupplierEditForm";
 import { useEffect } from "react";
 
 // Redirect component for suppliers/:id to supplier-details/:id
@@ -76,6 +77,7 @@ function App() {
             <Route path="/supply-chain-graph" element={<SupplyChainGraph />} />
             <Route path="/about" element={<About />} />
             <Route path="/3d-visualization" element={<Redirect3D />} />
+            <Route path="/suppliers/edit/:id" element={<SupplierEditForm />} />
           </Routes>
         </main>
       </div>
