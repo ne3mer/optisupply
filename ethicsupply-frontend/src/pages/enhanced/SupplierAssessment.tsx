@@ -168,220 +168,221 @@ const SupplierAssessment = () => {
         setError(null);
 
         console.log(`Loading supplier ${supplierId} for assessment...`);
-        const suppliers = await getSuppliers();
+        const suppliers = await getSuppliers(); // Fetch all suppliers
         console.log(
           `Suppliers data for assessment: ${suppliers.length} suppliers`,
           suppliers
         );
 
+        // Correctly find the supplier using string ID comparison (_id or id)
         const supplier = suppliers.find(
-          (s) => s.id === parseInt(supplierId, 10)
+          (s) => s._id === supplierId || s.id === supplierId
         );
 
-        if (supplier) {
-          console.log("Found supplier for assessment:", supplier);
-
-          // Create a new form data object that keeps default values for fields
-          // not present in the supplier data
-          const updatedFormData = { ...formData };
-
-          // Basic Information
-          updatedFormData.name = supplier.name || "";
-          updatedFormData.country = supplier.country || "";
-          updatedFormData.industry = supplier.industry || "Manufacturing";
-
-          // Environmental Metrics - map existing supplier properties directly when available
-          if (supplier.co2_emissions !== undefined)
-            updatedFormData.co2_emissions = supplier.co2_emissions;
-          if (supplier.water_usage !== undefined)
-            updatedFormData.water_usage = supplier.water_usage;
-          if (supplier.energy_efficiency !== undefined)
-            updatedFormData.energy_efficiency = supplier.energy_efficiency;
-          if (supplier.waste_management_score !== undefined)
-            updatedFormData.waste_management_score =
-              supplier.waste_management_score;
-          if (supplier.renewable_energy_percent !== undefined)
-            updatedFormData.renewable_energy_percent =
-              supplier.renewable_energy_percent;
-          if (supplier.pollution_control !== undefined)
-            updatedFormData.pollution_control = supplier.pollution_control;
-
-          // Social Metrics
-          if (supplier.wage_fairness !== undefined)
-            updatedFormData.wage_fairness = supplier.wage_fairness;
-          if (supplier.human_rights_index !== undefined)
-            updatedFormData.human_rights_index = supplier.human_rights_index;
-          if (supplier.diversity_inclusion_score !== undefined)
-            updatedFormData.diversity_inclusion_score =
-              supplier.diversity_inclusion_score;
-          if (supplier.community_engagement !== undefined)
-            updatedFormData.community_engagement =
-              supplier.community_engagement;
-          if (supplier.worker_safety !== undefined)
-            updatedFormData.worker_safety = supplier.worker_safety;
-
-          // Governance Metrics
-          if (supplier.transparency_score !== undefined)
-            updatedFormData.transparency_score = supplier.transparency_score;
-          if (supplier.corruption_risk !== undefined)
-            updatedFormData.corruption_risk = supplier.corruption_risk;
-          if (supplier.board_diversity !== undefined)
-            updatedFormData.board_diversity = supplier.board_diversity;
-          if (supplier.ethics_program !== undefined)
-            updatedFormData.ethics_program = supplier.ethics_program;
-          if (supplier.compliance_systems !== undefined)
-            updatedFormData.compliance_systems = supplier.compliance_systems;
-
-          // Supply Chain Metrics
-          if (supplier.delivery_efficiency !== undefined)
-            updatedFormData.delivery_efficiency = supplier.delivery_efficiency;
-          if (supplier.quality_control_score !== undefined)
-            updatedFormData.quality_control_score =
-              supplier.quality_control_score;
-          if (supplier.supplier_diversity !== undefined)
-            updatedFormData.supplier_diversity = supplier.supplier_diversity;
-          if (supplier.traceability !== undefined)
-            updatedFormData.traceability = supplier.traceability;
-
-          // Risk Factors
-          if (supplier.geopolitical_risk !== undefined)
-            updatedFormData.geopolitical_risk = supplier.geopolitical_risk;
-          if (supplier.climate_risk !== undefined)
-            updatedFormData.climate_risk = supplier.climate_risk;
-          if (supplier.labor_dispute_risk !== undefined)
-            updatedFormData.labor_dispute_risk = supplier.labor_dispute_risk;
-
-          // If we have ESG scores, use them to estimate missing metrics
-          if (supplier.environmental_score !== undefined) {
-            // Use environmental score to estimate any missing environmental metrics
-            const envScore = supplier.environmental_score / 100; // convert to 0-1 scale
-            if (
-              updatedFormData.energy_efficiency === 0.5 &&
-              !supplier.energy_efficiency
-            )
-              updatedFormData.energy_efficiency = Math.min(
-                0.9,
-                Math.max(0.1, envScore)
-              );
-
-            if (
-              updatedFormData.renewable_energy_percent === 20 &&
-              !supplier.renewable_energy_percent
-            )
-              updatedFormData.renewable_energy_percent = Math.min(
-                90,
-                Math.max(10, envScore * 100)
-              );
-
-            if (
-              updatedFormData.pollution_control === 0.5 &&
-              !supplier.pollution_control
-            )
-              updatedFormData.pollution_control = Math.min(
-                0.9,
-                Math.max(0.1, envScore)
-              );
-          }
-
-          if (supplier.social_score !== undefined) {
-            // Use social score to estimate any missing social metrics
-            const socScore = supplier.social_score / 100; // convert to 0-1 scale
-            if (
-              updatedFormData.diversity_inclusion_score === 0.5 &&
-              !supplier.diversity_inclusion_score
-            )
-              updatedFormData.diversity_inclusion_score = Math.min(
-                0.9,
-                Math.max(0.1, socScore)
-              );
-
-            if (
-              updatedFormData.community_engagement === 0.5 &&
-              !supplier.community_engagement
-            )
-              updatedFormData.community_engagement = Math.min(
-                0.9,
-                Math.max(0.1, socScore)
-              );
-
-            if (
-              updatedFormData.worker_safety === 0.5 &&
-              !supplier.worker_safety
-            )
-              updatedFormData.worker_safety = Math.min(
-                0.9,
-                Math.max(0.1, socScore)
-              );
-          }
-
-          if (supplier.governance_score !== undefined) {
-            // Use governance score to estimate any missing governance metrics
-            const govScore = supplier.governance_score / 100; // convert to 0-1 scale
-            if (
-              updatedFormData.transparency_score === 0.5 &&
-              !supplier.transparency_score
-            )
-              updatedFormData.transparency_score = Math.min(
-                0.9,
-                Math.max(0.1, govScore)
-              );
-
-            if (
-              updatedFormData.corruption_risk === 0.5 &&
-              !supplier.corruption_risk
-            )
-              updatedFormData.corruption_risk = Math.min(
-                0.9,
-                Math.max(0.1, 1 - govScore)
-              ); // inverted
-
-            if (
-              updatedFormData.board_diversity === 0.5 &&
-              !supplier.board_diversity
-            )
-              updatedFormData.board_diversity = Math.min(
-                0.9,
-                Math.max(0.1, govScore)
-              );
-
-            if (
-              updatedFormData.ethics_program === 0.5 &&
-              !supplier.ethics_program
-            )
-              updatedFormData.ethics_program = Math.min(
-                0.9,
-                Math.max(0.1, govScore)
-              );
-
-            if (
-              updatedFormData.compliance_systems === 0.5 &&
-              !supplier.compliance_systems
-            )
-              updatedFormData.compliance_systems = Math.min(
-                0.9,
-                Math.max(0.1, govScore)
-              );
-          }
-
-          // Set the form data
-          setFormData(updatedFormData);
-
-          // Check explicitly for the mock data flag
-          const isMock = supplier.isMockData === true;
-          console.log("Using mock data for assessment:", isMock);
-          setUsingMockData(isMock);
-        } else {
+        if (!supplier) {
           console.error(
-            `Supplier with ID ${supplierId} not found in the ${suppliers.length} suppliers returned`
+            `Supplier with ID ${supplierId} not found in the ${suppliers.length} suppliers returned` // Log error
           );
+          // Set an error state to display to the user
           setError(
             `Supplier with ID ${supplierId} not found. The API returned ${suppliers.length} suppliers, but none matched this ID.`
           );
+          setLoadingSupplier(false);
+          return; // Stop execution if supplier not found
         }
+
+        console.log("Found supplier for assessment:", supplier);
+
+        // Create a new form data object that keeps default values for fields
+        // not present in the supplier data
+        const updatedFormData = { ...formData };
+
+        // Basic Information
+        updatedFormData.name = supplier.name || "";
+        updatedFormData.country = supplier.country || "";
+        updatedFormData.industry = supplier.industry || "Manufacturing"; // Default if missing
+
+        // Environmental Metrics - map existing supplier properties directly when available
+        if (supplier.co2_emissions !== undefined)
+          updatedFormData.co2_emissions = supplier.co2_emissions;
+        if (supplier.water_usage !== undefined)
+          updatedFormData.water_usage = supplier.water_usage;
+        if (supplier.energy_efficiency !== undefined)
+          updatedFormData.energy_efficiency = supplier.energy_efficiency;
+        if (supplier.waste_management_score !== undefined)
+          updatedFormData.waste_management_score =
+            supplier.waste_management_score;
+        if (supplier.renewable_energy_percent !== undefined)
+          updatedFormData.renewable_energy_percent =
+            supplier.renewable_energy_percent;
+        if (supplier.pollution_control !== undefined)
+          updatedFormData.pollution_control = supplier.pollution_control;
+
+        // Social Metrics
+        if (supplier.wage_fairness !== undefined)
+          updatedFormData.wage_fairness = supplier.wage_fairness;
+        if (supplier.human_rights_index !== undefined)
+          updatedFormData.human_rights_index = supplier.human_rights_index;
+        if (supplier.diversity_inclusion_score !== undefined)
+          updatedFormData.diversity_inclusion_score =
+            supplier.diversity_inclusion_score;
+        if (supplier.community_engagement !== undefined)
+          updatedFormData.community_engagement = supplier.community_engagement;
+        if (supplier.worker_safety !== undefined)
+          updatedFormData.worker_safety = supplier.worker_safety;
+
+        // Governance Metrics
+        if (supplier.transparency_score !== undefined)
+          updatedFormData.transparency_score = supplier.transparency_score;
+        if (supplier.corruption_risk !== undefined)
+          updatedFormData.corruption_risk = supplier.corruption_risk;
+        if (supplier.board_diversity !== undefined)
+          updatedFormData.board_diversity = supplier.board_diversity;
+        if (supplier.ethics_program !== undefined)
+          updatedFormData.ethics_program = supplier.ethics_program;
+        if (supplier.compliance_systems !== undefined)
+          updatedFormData.compliance_systems = supplier.compliance_systems;
+
+        // Supply Chain Metrics
+        if (supplier.delivery_efficiency !== undefined)
+          updatedFormData.delivery_efficiency = supplier.delivery_efficiency;
+        if (supplier.quality_control_score !== undefined)
+          updatedFormData.quality_control_score =
+            supplier.quality_control_score;
+        if (supplier.supplier_diversity !== undefined)
+          updatedFormData.supplier_diversity = supplier.supplier_diversity;
+        if (supplier.traceability !== undefined)
+          updatedFormData.traceability = supplier.traceability;
+
+        // Risk Factors
+        if (supplier.geopolitical_risk !== undefined)
+          updatedFormData.geopolitical_risk = supplier.geopolitical_risk;
+        if (supplier.climate_risk !== undefined)
+          updatedFormData.climate_risk = supplier.climate_risk;
+        if (supplier.labor_dispute_risk !== undefined)
+          updatedFormData.labor_dispute_risk = supplier.labor_dispute_risk;
+
+        // If we have ESG scores, use them to estimate missing metrics
+        if (supplier.environmental_score !== undefined) {
+          // Use environmental score to estimate any missing environmental metrics
+          const envScore = supplier.environmental_score / 100; // convert to 0-1 scale
+          if (
+            updatedFormData.energy_efficiency === 0.5 &&
+            !supplier.energy_efficiency
+          )
+            updatedFormData.energy_efficiency = Math.min(
+              0.9,
+              Math.max(0.1, envScore)
+            );
+
+          if (
+            updatedFormData.renewable_energy_percent === 20 &&
+            !supplier.renewable_energy_percent
+          )
+            updatedFormData.renewable_energy_percent = Math.min(
+              90,
+              Math.max(10, envScore * 100)
+            );
+
+          if (
+            updatedFormData.pollution_control === 0.5 &&
+            !supplier.pollution_control
+          )
+            updatedFormData.pollution_control = Math.min(
+              0.9,
+              Math.max(0.1, envScore)
+            );
+        }
+
+        if (supplier.social_score !== undefined) {
+          // Use social score to estimate any missing social metrics
+          const socScore = supplier.social_score / 100; // convert to 0-1 scale
+          if (
+            updatedFormData.diversity_inclusion_score === 0.5 &&
+            !supplier.diversity_inclusion_score
+          )
+            updatedFormData.diversity_inclusion_score = Math.min(
+              0.9,
+              Math.max(0.1, socScore)
+            );
+
+          if (
+            updatedFormData.community_engagement === 0.5 &&
+            !supplier.community_engagement
+          )
+            updatedFormData.community_engagement = Math.min(
+              0.9,
+              Math.max(0.1, socScore)
+            );
+
+          if (updatedFormData.worker_safety === 0.5 && !supplier.worker_safety)
+            updatedFormData.worker_safety = Math.min(
+              0.9,
+              Math.max(0.1, socScore)
+            );
+        }
+
+        if (supplier.governance_score !== undefined) {
+          // Use governance score to estimate any missing governance metrics
+          const govScore = supplier.governance_score / 100; // convert to 0-1 scale
+          if (
+            updatedFormData.transparency_score === 0.5 &&
+            !supplier.transparency_score
+          )
+            updatedFormData.transparency_score = Math.min(
+              0.9,
+              Math.max(0.1, govScore)
+            );
+
+          if (
+            updatedFormData.corruption_risk === 0.5 &&
+            !supplier.corruption_risk
+          )
+            updatedFormData.corruption_risk = Math.min(
+              0.9,
+              Math.max(0.1, 1 - govScore)
+            ); // inverted
+
+          if (
+            updatedFormData.board_diversity === 0.5 &&
+            !supplier.board_diversity
+          )
+            updatedFormData.board_diversity = Math.min(
+              0.9,
+              Math.max(0.1, govScore)
+            );
+
+          if (
+            updatedFormData.ethics_program === 0.5 &&
+            !supplier.ethics_program
+          )
+            updatedFormData.ethics_program = Math.min(
+              0.9,
+              Math.max(0.1, govScore)
+            );
+
+          if (
+            updatedFormData.compliance_systems === 0.5 &&
+            !supplier.compliance_systems
+          )
+            updatedFormData.compliance_systems = Math.min(
+              0.9,
+              Math.max(0.1, govScore)
+            );
+        }
+
+        // Set the form data
+        setFormData(updatedFormData);
+
+        // Check explicitly for the mock data flag if present
+        const isMock = supplier.isMockData === true;
+        setUsingMockData(isMock);
       } catch (err) {
         console.error("Error loading supplier for assessment:", err);
         setError(
-          `Failed to load supplier data: ${err.message || "Unknown error"}`
+          `Failed to load supplier data: ${
+            err instanceof Error ? err.message : "Unknown error"
+          }`
         );
       } finally {
         setLoadingSupplier(false);
@@ -389,7 +390,7 @@ const SupplierAssessment = () => {
     };
 
     loadSupplierData();
-  }, [supplierId]);
+  }, [supplierId]); // Dependency array includes supplierId
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;

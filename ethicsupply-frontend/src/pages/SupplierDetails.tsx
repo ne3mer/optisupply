@@ -1,383 +1,580 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { getSuppliers } from "../services/api";
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { getSuppliers, Supplier } from "../services/api";
+import { motion } from "framer-motion";
 import {
-  UserGroupIcon,
-  BuildingOfficeIcon,
-  GlobeAltIcon,
   ArrowLeftIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  InformationCircleIcon,
-  ChartBarIcon,
+  BuildingOfficeIcon,
+  MapPinIcon,
+  ScaleIcon,
+  ShieldExclamationIcon,
+  ExclamationTriangleIcon,
+  BeakerIcon, // Environment
+  UserGroupIcon, // Social
+  ShieldCheckIcon, // Governance
+  TruckIcon, // Supply Chain
+  DocumentTextIcon, // Compliance
+  FireIcon, // Risk
+  PencilIcon, // Edit
+  PlayIcon, // Run Assessment
+  ChartBarIcon, // View Analytics
 } from "@heroicons/react/24/outline";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
+
+// --- Reusing Dashboard Colors & Helpers ---
+const colors = {
+  background: "#0D0F1A",
+  panel: "rgba(25, 28, 43, 0.8)",
+  primary: "#00F0FF", // Teal
+  secondary: "#FF00FF", // Magenta
+  accent: "#4D5BFF", // Blue
+  text: "#E0E0FF",
+  textMuted: "#8A94C8",
+  success: "#00FF8F", // Green
+  warning: "#FFD700", // Yellow
+  error: "#FF4D4D", // Red
+};
+
+const LoadingIndicator = () => (
+  <div
+    className="flex flex-col items-center justify-center min-h-[80vh]"
+    style={{ backgroundColor: colors.background }}
+  >
+    <motion.div
+      animate={{ rotate: 360 }}
+      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      className="w-16 h-16 border-t-4 border-b-4 rounded-full mb-4"
+      style={{ borderColor: colors.primary }}
+    ></motion.div>
+    <p style={{ color: colors.textMuted }}>Accessing Supplier Dossier...</p>
+  </div>
+);
+
+const ErrorDisplay = ({ message }) => (
+  <div
+    className="flex flex-col items-center justify-center min-h-[80vh]"
+    style={{ backgroundColor: colors.background }}
+  >
+    <div className="bg-red-900/50 border border-red-500 p-8 rounded-lg text-center max-w-lg">
+      <ExclamationTriangleIcon
+        className="h-16 w-16 mx-auto mb-5"
+        style={{ color: colors.error }}
+      />
+      <h3
+        className="text-2xl font-semibold mb-3"
+        style={{ color: colors.error }}
+      >
+        Data Corruption Detected
+      </h3>
+      <p className="text-lg" style={{ color: colors.textMuted }}>
+        {message}
+      </p>
+      <Link
+        to="/suppliers"
+        className="mt-6 inline-block px-4 py-2 rounded border border-accent hover:bg-accent/20 transition-colors"
+        style={{ color: colors.accent }}
+      >
+        Return to Registry
+      </Link>
+    </div>
+  </div>
+);
+
+// Helper to get risk color
+const getRiskColor = (riskLevel: string | undefined) => {
+  switch (riskLevel?.toLowerCase()) {
+    case "low":
+      return colors.success;
+    case "medium":
+      return colors.warning;
+    case "high":
+      return colors.error;
+    case "critical":
+      return colors.secondary;
+    default:
+      return colors.textMuted;
+  }
+};
+const getScoreColor = (score: number | null | undefined) => {
+  const s = score ?? 0;
+  return s >= 80 ? colors.success : s >= 60 ? colors.warning : colors.error;
+};
+
+// --- Detail Item Component ---
+type DetailItemProps = {
+  label: string;
+  value: string | number | null | undefined;
+  unit?: string;
+  icon?: React.ElementType;
+  color?: string;
+  isScore?: boolean; // Indicates if it should be formatted as score/100
+};
+
+const DetailItem: React.FC<DetailItemProps> = ({
+  label,
+  value,
+  unit = "",
+  icon: Icon,
+  color,
+  isScore = false,
+}) => {
+  const displayValue = value ?? "N/A";
+  const textColor = color || colors.text;
+  const scoreSuffix = isScore ? (
+    <span style={{ color: colors.textMuted }}> / 100</span>
+  ) : null;
+  const finalValue =
+    typeof value === "number" ? value.toFixed(isScore ? 1 : 2) : displayValue;
+
+  return (
+    <div
+      className="flex items-center justify-between py-2 border-b border-dashed"
+      style={{ borderColor: colors.accent + "20" }}
+    >
+      <span
+        className="text-sm flex items-center"
+        style={{ color: colors.textMuted }}
+      >
+        {Icon && <Icon className="h-4 w-4 mr-2" />}
+        {label}
+      </span>
+      <span
+        className="text-sm font-mono font-semibold tracking-wide"
+        style={{ color: textColor }}
+      >
+        {finalValue}
+        {unit}
+        {scoreSuffix}
+      </span>
+    </div>
+  );
+};
+
+// --- SupplierDetails Component ---
 
 const SupplierDetails = () => {
-  const { id } = useParams();
-  const [supplier, setSupplier] = useState(null);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [usingMockData, setUsingMockData] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSupplier = async () => {
+    const fetchAndSetSupplier = async () => {
+      if (!id) {
+        setError("No supplier ID provided.");
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
+        console.log(`Fetching suppliers list to find ID: ${id}`);
+        const suppliersList = await getSuppliers(); // Fetch the entire list
+        console.log("Full supplier list received:", suppliersList);
 
-        console.log(`Fetching supplier with ID ${id}...`);
-        const suppliers = await getSuppliers();
-        console.log("Suppliers data for details:", suppliers);
-
-        const foundSupplier = suppliers.find((s) => s.id === parseInt(id, 10));
+        // Find the specific supplier from the list
+        const foundSupplier = suppliersList.find(
+          (s) => s._id === id || s.id === id // Check both _id (MongoDB) and id (potential fallback)
+        );
 
         if (foundSupplier) {
+          console.log("Supplier found in list:", foundSupplier);
           setSupplier(foundSupplier);
-          console.log("Found supplier:", foundSupplier);
-
-          // Check if using mock data based on flag
-          const isMock = foundSupplier.isMockData === true;
-          console.log("Using mock data for supplier details:", isMock);
-          setUsingMockData(isMock);
         } else {
           console.error(
-            `Supplier with ID ${id} not found in the ${suppliers.length} suppliers returned`
+            `Supplier with ID ${id} not found in the fetched list.`
           );
-          setError(
-            `Supplier with ID ${id} not found. The API returned ${suppliers.length} suppliers, but none matched this ID.`
-          );
+          throw new Error(`Supplier with ID ${id} not found.`);
         }
       } catch (err) {
-        console.error("Error fetching supplier details:", err);
+        console.error("Error fetching or finding supplier details:", err);
         setError(
-          `Failed to fetch supplier details: ${err.message || "Unknown error"}`
+          `Failed to retrieve dossier for Supplier ID ${id}. ${
+            err instanceof Error
+              ? err.message
+              : "Data stream interrupted or supplier not found."
+          }`
         );
-        setUsingMockData(true);
+        setSupplier(null);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchSupplier();
+    fetchAndSetSupplier();
   }, [id]);
 
-  const getScoreColor = (score) => {
-    if (score === null || score === undefined) return "bg-gray-200";
-    if (score >= 80) return "bg-green-500";
-    if (score >= 60) return "bg-yellow-500";
-    return "bg-red-500";
-  };
+  // --- Memoized Values ---
+  const overallScore = useMemo(() => supplier?.ethical_score ?? 0, [supplier]);
+  const scoreColor = useMemo(() => getScoreColor(overallScore), [overallScore]);
+  const riskColor = useMemo(
+    () => getRiskColor(supplier?.risk_level),
+    [supplier?.risk_level]
+  );
 
-  const getMetricBarColor = (value, isInverted = false) => {
-    if (value === null || value === undefined) return "bg-gray-200";
-
-    if (!isInverted) {
-      if (value >= 0.8) return "bg-green-500";
-      if (value >= 0.6) return "bg-green-400";
-      if (value >= 0.4) return "bg-yellow-500";
-      if (value >= 0.2) return "bg-orange-500";
-      return "bg-red-500";
-    } else {
-      if (value <= 20) return "bg-green-500";
-      if (value <= 40) return "bg-green-400";
-      if (value <= 60) return "bg-yellow-500";
-      if (value <= 80) return "bg-orange-500";
-      return "bg-red-500";
-    }
-  };
-
+  // --- Render Logic ---
   if (loading) {
+    return <LoadingIndicator />;
+  }
+
+  if (error || !supplier) {
     return (
-      <div className="space-y-8 bg-neutral-50">
-        <div className="px-4 py-6 bg-gradient-to-r from-emerald-700 to-teal-700 rounded-lg shadow-md text-white">
-          <h1 className="text-3xl font-bold">Supplier Details</h1>
-          <p className="mt-2 text-emerald-100">Loading supplier data...</p>
-        </div>
-        <div className="bg-white shadow-md rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ErrorDisplay
+        message={error || "Supplier dossier not found or corrupted."}
+      />
     );
   }
 
-  if (error) {
-    return (
-      <div className="space-y-8 bg-neutral-50">
-        <div className="px-4 py-6 bg-gradient-to-r from-emerald-700 to-teal-700 rounded-lg shadow-md text-white">
-          <h1 className="text-3xl font-bold">Supplier Details</h1>
-          <p className="mt-2 text-emerald-100">Error loading supplier</p>
-        </div>
-        <div className="rounded-md bg-yellow-50 p-4 border-l-4 border-yellow-400">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <XCircleIcon className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">{error}</p>
-            </div>
-          </div>
-        </div>
-        <div className="mt-6">
-          <Link
-            to="/suppliers"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors duration-200"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            Back to Suppliers
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (!supplier) {
-    return (
-      <div className="space-y-8 bg-neutral-50">
-        <div className="px-4 py-6 bg-gradient-to-r from-emerald-700 to-teal-700 rounded-lg shadow-md text-white">
-          <h1 className="text-3xl font-bold">Supplier Details</h1>
-          <p className="mt-2 text-emerald-100">Supplier not found</p>
-        </div>
-        <div className="rounded-md bg-yellow-50 p-4 border-l-4 border-yellow-400">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <InformationCircleIcon className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">Not Found</h3>
-              <div className="mt-2 text-sm text-yellow-700">
-                The supplier with ID {id} could not be found.
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="mt-6">
-          <Link
-            to="/suppliers"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors duration-200"
-          >
-            <ArrowLeftIcon className="h-5 w-5 mr-2" />
-            Back to Suppliers
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // Ensure supplier ID for navigation
+  const supplierId = supplier._id || supplier.id;
 
   return (
-    <div className="space-y-8 bg-neutral-50">
-      <div className="px-4 py-6 bg-gradient-to-r from-emerald-700 to-teal-700 rounded-lg shadow-md text-white flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{supplier.name}</h1>
-          <p className="mt-2 text-emerald-100">
-            Detailed information and performance metrics
-          </p>
-        </div>
-        <Link
-          to="/suppliers"
-          className="inline-flex items-center px-3 py-2 border border-emerald-300 shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-500 transition-colors duration-200"
+    <div
+      className="min-h-screen p-4 md:p-8"
+      style={{ backgroundColor: colors.background, color: colors.text }}
+    >
+      {/* Back Button & Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8 flex items-center justify-between"
+      >
+        <button
+          onClick={() => navigate(-1)} // Go back to previous page
+          className="flex items-center px-3 py-1.5 rounded border border-transparent hover:border-accent transition-colors text-sm"
+          style={{ color: colors.accent }}
         >
           <ArrowLeftIcon className="h-4 w-4 mr-2" />
-          Back to Suppliers
-        </Link>
-      </div>
+          Return to Registry
+        </button>
+        {/* Maybe add quick actions here later */}
+      </motion.div>
 
-      {usingMockData && (
-        <div className="rounded-md bg-blue-50 p-4 border-l-4 border-blue-400">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <InformationCircleIcon className="h-5 w-5 text-blue-400" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-blue-800">Demo Mode</h3>
-              <div className="mt-2 text-sm text-blue-700">
-                You are viewing demo data. The API endpoint is not available at
-                this time.
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white shadow-md rounded-lg overflow-hidden transition-shadow duration-300 hover:shadow-lg">
-        <div className="px-4 py-5 sm:px-6 flex items-center">
-          <div className="flex-shrink-0 h-16 w-16 rounded-full bg-primary-100 flex items-center justify-center">
-            <UserGroupIcon className="h-10 w-10 text-primary-600" />
-          </div>
-          <div className="ml-4">
-            <h3 className="text-xl font-medium text-gray-900">
+      {/* Main Dossier Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Panel: Core Info & Actions */}
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="lg:col-span-1 space-y-6"
+        >
+          {/* Supplier Header Card */}
+          <div
+            className="p-6 rounded-lg border backdrop-blur-sm"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "40",
+            }}
+          >
+            <h1
+              className="text-2xl font-bold tracking-tight mb-2"
+              style={{ color: colors.primary }}
+            >
               {supplier.name}
-            </h3>
-            <div className="flex items-center text-sm text-gray-500">
-              <GlobeAltIcon className="h-4 w-4 mr-1" />
-              {supplier.country}
+            </h1>
+            <div
+              className="flex items-center text-sm mb-4"
+              style={{ color: colors.textMuted }}
+            >
+              <MapPinIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />{" "}
+              {supplier.country || "N/A"}
+              <span className="mx-2">•</span>
+              <BuildingOfficeIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />{" "}
+              {supplier.industry || "N/A"}
+            </div>
+            <div
+              className="flex items-center justify-between border-t pt-4"
+              style={{ borderColor: colors.accent + "20" }}
+            >
+              <span
+                className="text-sm flex items-center"
+                style={{ color: colors.textMuted }}
+              >
+                <ScaleIcon className="h-4 w-4 mr-2" /> Overall Score
+              </span>
+              <span
+                className="text-xl font-bold font-mono"
+                style={{ color: scoreColor }}
+              >
+                {overallScore.toFixed(1)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span
+                className="text-sm flex items-center"
+                style={{ color: colors.textMuted }}
+              >
+                <ShieldExclamationIcon className="h-4 w-4 mr-2" /> Risk Level
+              </span>
+              <span
+                className="px-2 py-0.5 rounded text-xs font-medium capitalize"
+                style={{ backgroundColor: riskColor + "20", color: riskColor }}
+              >
+                {supplier.risk_level || "Unknown"}
+              </span>
             </div>
           </div>
-        </div>
-        <div className="border-t border-gray-200">
-          <dl>
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">ID</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                {supplier.id}
-              </dd>
-            </div>
-            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">
-                Ethical Score
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <div className="flex items-center">
-                  {supplier.ethical_score !== null ? (
-                    <>
-                      <span
-                        className={`flex-shrink-0 h-4 w-4 rounded-full ${getScoreColor(
-                          supplier.ethical_score
-                        )}`}
-                      ></span>
-                      <span className="ml-2 font-medium">
-                        {supplier.ethical_score.toFixed(1)}%
-                      </span>
-                    </>
-                  ) : (
-                    "Not evaluated"
-                  )}
-                </div>
-              </dd>
-            </div>
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">
-                CO₂ Emissions
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <div>
-                  <span>{supplier.co2_emissions.toFixed(1)} tons</span>
-                  <div className="w-full mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={getMetricBarColor(
-                        supplier.co2_emissions,
-                        true
-                      )}
-                      style={{
-                        width: `${Math.min(supplier.co2_emissions, 100)}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </dd>
-            </div>
-            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">
-                Delivery Efficiency
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <div>
-                  <span>{supplier.delivery_efficiency.toFixed(2)}</span>
-                  <div className="w-full mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={getMetricBarColor(
-                        supplier.delivery_efficiency
-                      )}
-                      style={{
-                        width: `${supplier.delivery_efficiency * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </dd>
-            </div>
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">
-                Wage Fairness
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <div>
-                  <span>{supplier.wage_fairness.toFixed(2)}</span>
-                  <div className="w-full mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={getMetricBarColor(supplier.wage_fairness)}
-                      style={{
-                        width: `${supplier.wage_fairness * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </dd>
-            </div>
-            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">
-                Human Rights Index
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <div>
-                  <span>{supplier.human_rights_index.toFixed(2)}</span>
-                  <div className="w-full mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={getMetricBarColor(supplier.human_rights_index)}
-                      style={{
-                        width: `${supplier.human_rights_index * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </dd>
-            </div>
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">
-                Waste Management Score
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <div>
-                  <span>{supplier.waste_management_score.toFixed(2)}</span>
-                  <div className="w-full mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={getMetricBarColor(
-                        supplier.waste_management_score
-                      )}
-                      style={{
-                        width: `${supplier.waste_management_score * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </dd>
-            </div>
-            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">Created At</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                {new Date(supplier.created_at).toLocaleString()}
-              </dd>
-            </div>
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-              <dt className="text-sm font-medium text-gray-500">
-                Last Updated
-              </dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                {new Date(supplier.updated_at).toLocaleString()}
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </div>
 
-      <div className="mt-6 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
-        <Link
-          to={`/evaluate?id=${supplier.id}`}
-          className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+          {/* Actions Card */}
+          <div
+            className="p-4 rounded-lg border backdrop-blur-sm"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "40",
+            }}
+          >
+            <h3
+              className="text-lg font-semibold mb-4 border-b pb-2"
+              style={{ color: colors.text, borderColor: colors.accent + "30" }}
+            >
+              Actions
+            </h3>
+            <div className="space-y-3">
+              <button
+                onClick={() =>
+                  navigate(`/supplier-assessment?id=${supplierId}`)
+                }
+                className="w-full flex items-center justify-center text-sm py-2 px-4 rounded hover:opacity-90 transition-opacity duration-200"
+                style={{
+                  backgroundColor: colors.primary,
+                  color: colors.background,
+                }}
+              >
+                <PlayIcon className="h-5 w-5 mr-2" /> Run/View Assessment
+              </button>
+              <button
+                onClick={() => navigate(`/supplier-analytics/${supplierId}`)} // Assuming analytics route
+                className="w-full flex items-center justify-center text-sm py-2 px-4 rounded hover:opacity-90 transition-opacity duration-200"
+                style={{
+                  backgroundColor: colors.secondary,
+                  color: colors.background,
+                }}
+              >
+                <ChartBarIcon className="h-5 w-5 mr-2" /> View AI Analytics
+              </button>
+              <button
+                onClick={() => navigate(`/suppliers/edit/${supplierId}`)} // Assuming edit route
+                className="w-full flex items-center justify-center text-sm py-2 px-4 rounded border hover:bg-accent/10 transition-colors duration-200"
+                style={{ borderColor: colors.accent, color: colors.accent }}
+              >
+                <PencilIcon className="h-5 w-5 mr-2" /> Edit Supplier Data
+              </button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Right Panel: Detailed Metrics & Info */}
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="lg:col-span-2 space-y-6"
         >
-          <CheckCircleIcon className="h-5 w-5 mr-2" />
-          Evaluate This Supplier
-        </Link>
-        <Link
-          to={`/suppliers/${supplier.id}/scorecard`}
-          className="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700"
-        >
-          <ChartBarIcon className="h-5 w-5 mr-2" />
-          View Ethical Scorecard
-        </Link>
+          {/* Scores Breakdown Card */}
+          <div
+            className="p-4 rounded-lg border backdrop-blur-sm"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "40",
+            }}
+          >
+            <h3
+              className="text-lg font-semibold mb-3"
+              style={{ color: colors.text }}
+            >
+              Score Breakdown
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+              <DetailItem
+                label="Environmental"
+                value={supplier.environmental_score}
+                icon={BeakerIcon}
+                color={getScoreColor(supplier.environmental_score)}
+                isScore
+              />
+              <DetailItem
+                label="Social"
+                value={supplier.social_score}
+                icon={UserGroupIcon}
+                color={getScoreColor(supplier.social_score)}
+                isScore
+              />
+              <DetailItem
+                label="Governance"
+                value={supplier.governance_score}
+                icon={ShieldCheckIcon}
+                color={getScoreColor(supplier.governance_score)}
+                isScore
+              />
+              {/* Add Supply Chain Score if available */}
+              {supplier.supply_chain_score !== undefined && (
+                <DetailItem
+                  label="Supply Chain"
+                  value={supplier.supply_chain_score}
+                  icon={TruckIcon}
+                  color={getScoreColor(supplier.supply_chain_score)}
+                  isScore
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Detailed Metrics Card */}
+          <div
+            className="p-4 rounded-lg border backdrop-blur-sm"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "40",
+            }}
+          >
+            <h3
+              className="text-lg font-semibold mb-3"
+              style={{ color: colors.text }}
+            >
+              Detailed Metrics
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+              {/* Environmental */}
+              <DetailItem
+                label="CO₂ Emissions"
+                value={supplier.co2_emissions}
+                unit=" t"
+                icon={BeakerIcon}
+              />
+              <DetailItem
+                label="Water Usage"
+                value={supplier.water_usage}
+                unit=" m³"
+                icon={BeakerIcon}
+              />
+              <DetailItem
+                label="Energy Efficiency"
+                value={supplier.energy_efficiency}
+                icon={BeakerIcon}
+              />
+              <DetailItem
+                label="Waste Mgmt Score"
+                value={supplier.waste_management_score}
+                icon={BeakerIcon}
+              />
+              <DetailItem
+                label="Renewable Energy"
+                value={supplier.renewable_energy_percent}
+                unit="%"
+                icon={BeakerIcon}
+              />
+              <DetailItem
+                label="Pollution Control"
+                value={supplier.pollution_control}
+                icon={BeakerIcon}
+              />
+              {/* Social */}
+              <DetailItem
+                label="Wage Fairness"
+                value={supplier.wage_fairness}
+                icon={UserGroupIcon}
+              />
+              <DetailItem
+                label="Human Rights Index"
+                value={supplier.human_rights_index}
+                icon={UserGroupIcon}
+              />
+              <DetailItem
+                label="Diversity & Inclusion"
+                value={supplier.diversity_inclusion_score}
+                icon={UserGroupIcon}
+              />
+              <DetailItem
+                label="Community Engagement"
+                value={supplier.community_engagement}
+                icon={UserGroupIcon}
+              />
+              <DetailItem
+                label="Worker Safety"
+                value={supplier.worker_safety}
+                icon={UserGroupIcon}
+              />
+              {/* Governance */}
+              <DetailItem
+                label="Transparency Score"
+                value={supplier.transparency_score}
+                icon={ShieldCheckIcon}
+              />
+              <DetailItem
+                label="Corruption Risk"
+                value={supplier.corruption_risk}
+                icon={ShieldCheckIcon}
+              />
+              <DetailItem
+                label="Board Diversity"
+                value={supplier.board_diversity}
+                icon={ShieldCheckIcon}
+              />
+              <DetailItem
+                label="Ethics Program"
+                value={supplier.ethics_program}
+                icon={ShieldCheckIcon}
+              />
+              <DetailItem
+                label="Compliance Systems"
+                value={supplier.compliance_systems}
+                icon={ShieldCheckIcon}
+              />
+              {/* Supply Chain */}
+              {supplier.delivery_efficiency !== undefined && (
+                <DetailItem
+                  label="Delivery Efficiency"
+                  value={supplier.delivery_efficiency}
+                  icon={TruckIcon}
+                />
+              )}
+              {supplier.quality_control_score !== undefined && (
+                <DetailItem
+                  label="Quality Control"
+                  value={supplier.quality_control_score}
+                  icon={TruckIcon}
+                />
+              )}
+              {supplier.supplier_diversity !== undefined && (
+                <DetailItem
+                  label="Supplier Diversity"
+                  value={supplier.supplier_diversity}
+                  icon={TruckIcon}
+                />
+              )}
+              {supplier.traceability !== undefined && (
+                <DetailItem
+                  label="Traceability"
+                  value={supplier.traceability}
+                  icon={TruckIcon}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Add Compliance, Risk Factors, ESG Reports, Media Sentiment, Controversies Sections Here Later */}
+          <div
+            className="p-4 rounded-lg border backdrop-blur-sm"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "40",
+            }}
+          >
+            <h3
+              className="text-lg font-semibold mb-3"
+              style={{ color: colors.text }}
+            >
+              Compliance & Risk Factors
+            </h3>
+            <p className="text-sm italic" style={{ color: colors.textMuted }}>
+              (Detailed Compliance & Risk data sections to be implemented)
+            </p>
+            {/* Placeholder Content */}
+          </div>
+        </motion.div>
       </div>
     </div>
   );
