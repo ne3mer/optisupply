@@ -213,87 +213,6 @@ export interface DetailedAnalysis {
   isMockData?: boolean;
 }
 
-export interface SupplierAnalytics {
-  supplier: {
-    id: number;
-    name: string;
-    country: string;
-    industry: string;
-    ethical_score: number;
-    environmental_score: number;
-    social_score: number;
-    governance_score: number;
-    overall_score: number;
-    risk_level: string;
-    co2_emissions: number;
-    water_usage: number;
-    energy_efficiency: number;
-    waste_management_score: number;
-    wage_fairness: number;
-    human_rights_index: number;
-    diversity_inclusion_score: number;
-    community_engagement: number;
-    transparency_score: number;
-    corruption_risk: number;
-    delivery_efficiency: number;
-    quality_control_score: number;
-    esg_reports?: {
-      year: number;
-      environmental: number;
-      social: number;
-      governance: number;
-    }[];
-    media_sentiment?: {
-      source: string;
-      date: string;
-      score: number;
-      headline: string;
-    }[];
-    controversies?: {
-      issue: string;
-      date: string;
-      severity: string;
-      status: string;
-    }[];
-  };
-  industry_average: {
-    [key: string]: number;
-  };
-  similar_suppliers: Supplier[];
-  recommendations: {
-    area: string;
-    suggestion: string;
-    impact: string;
-    difficulty: string;
-  }[];
-  improvement_potential: {
-    [key: string]: number;
-  };
-  risk_factors: {
-    factor: string;
-    severity: string;
-    probability: string;
-    description: string;
-  }[];
-  cluster_info: {
-    cluster_id: number;
-    size: number;
-    avg_ethical_score: number;
-    avg_environmental_score: number;
-    avg_social_score: number;
-    avg_governance_score: number;
-    description: string;
-  };
-  prediction: {
-    next_quarter_score: number;
-    confidence: number;
-    factors: {
-      factor: string;
-      impact: number;
-    }[];
-  };
-}
-
 // Mock data for suppliers
 const mockSuppliers: Supplier[] = [
   {
@@ -560,6 +479,49 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
     }));
   } catch (error) {
     console.error("Error fetching suppliers:", error);
+    throw error;
+  }
+};
+
+export const getSupplier = async (id: number | string): Promise<Supplier> => {
+  try {
+    console.log(`Fetching supplier with ID ${id} from API...`);
+    const response = await fetch(`${API_BASE_URL}/suppliers/${id}/`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn(`Supplier with ID ${id} not found. Trying mock data.`);
+        // Try to find the supplier in mock data
+        const mockSupplier = mockSuppliers.find(
+          (s) => s.id === Number(id) || s._id === id
+        );
+        if (mockSupplier) {
+          return { ...mockSupplier, isMockData: true };
+        }
+        throw new Error(`Supplier with ID ${id} not found`);
+      }
+      throw new Error(`API returned status ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("API response data for single supplier:", data);
+
+    return {
+      ...data,
+      isMockData: false,
+    };
+  } catch (error) {
+    console.error(`Error fetching supplier with ID ${id}:`, error);
+
+    // Try to find the supplier in mock data as a fallback
+    const mockSupplier = mockSuppliers.find(
+      (s) => s.id === Number(id) || s._id === id
+    );
+    if (mockSupplier) {
+      console.log(`Using mock data for supplier ${id}`);
+      return { ...mockSupplier, isMockData: true };
+    }
+
     throw error;
   }
 };
@@ -2516,3 +2478,223 @@ function subtractDays(date: Date, days: number): Date {
   result.setDate(result.getDate() - days);
   return result;
 }
+
+// Function to update an existing supplier
+export const updateSupplier = async (
+  id: string,
+  supplierData: Partial<Supplier> // Use Partial as we might only send updated fields
+): Promise<Supplier> => {
+  // Determine the correct ID field to use (_id or id)
+  // Backend likely expects the MongoDB _id if that's what it uses primarily
+  const endpointId = id; // Assuming the id passed is the correct one for the endpoint
+  const url = `${API_URL}/suppliers/${endpointId}`; // Use API_URL which handles http/https
+
+  console.log(
+    `Updating supplier ${endpointId} at ${url} with data:`,
+    supplierData
+  );
+
+  try {
+    const response = await fetch(url, {
+      method: "PUT", // Or "PATCH" if the backend supports partial updates
+      headers: {
+        "Content-Type": "application/json",
+        // Add any authentication headers if required, e.g.:
+        // 'Authorization': `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify(supplierData),
+    });
+
+    if (!response.ok) {
+      let errorBody = "Invalid response from server";
+      try {
+        errorBody = await response.text(); // Get more details if possible
+      } catch (_) {}
+      console.error(
+        `API Error ${response.status}: ${response.statusText}. Body: ${errorBody}`
+      );
+      throw new Error(
+        `Failed to update supplier. Server responded with ${response.status}: ${errorBody}`
+      );
+    }
+
+    const updatedSupplier: Supplier = await response.json();
+    console.log("Supplier updated successfully:", updatedSupplier);
+    return updatedSupplier;
+  } catch (error) {
+    console.error("Error in updateSupplier API call:", error);
+    // Re-throw the error so the component can catch it
+    throw error instanceof Error
+      ? error
+      : new Error("An unknown error occurred during supplier update.");
+  }
+};
+
+// --- Define Interface for Analytics Data ---
+// NOTE: This is an assumed structure based on typical analytics.
+// Adjust based on the actual API response.
+export interface SupplierAnalyticsData {
+  supplier: Partial<Supplier> & { overall_score?: number }; // Core supplier info + overall score
+  industry_average?: { [key: string]: number }; // Avg scores for industry
+  peer_comparison?: Array<Partial<Supplier>>; // List of similar suppliers for comparison
+  risk_factors?: Array<{
+    factor: string;
+    severity: string;
+    probability: string;
+    description: string;
+  }>;
+  ai_recommendations?: Array<{
+    area: string;
+    suggestion: string;
+    impact: string;
+    difficulty: string;
+  }>;
+  sentiment_trend?: Array<{ date: string; score: number }>; // e.g., -1 to 1
+  // Add other potential fields: controversies, esg_report_summary, etc.
+  isMockData?: boolean;
+}
+
+// Function to get AI Analytics data for a supplier
+export const getSupplierAnalyticsData = async (
+  id: string
+): Promise<SupplierAnalyticsData> => {
+  const url = `${API_URL}/suppliers/${id}/analytics`; // Use API_URL and specific endpoint
+  console.log(`Fetching analytics for supplier ${id} from ${url}`);
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        // Add authentication headers if needed
+      },
+    });
+
+    if (!response.ok) {
+      let errorBody = "Invalid response from server";
+      try {
+        errorBody = await response.text();
+      } catch (_) {}
+      console.error(
+        `API Error ${response.status}: ${response.statusText}. Body: ${errorBody}`
+      );
+      throw new Error(
+        `Failed to fetch analytics. Server responded with ${response.status}: ${errorBody}`
+      );
+    }
+
+    const analyticsData: SupplierAnalyticsData = await response.json();
+    console.log("Supplier analytics data received:", analyticsData);
+
+    // --- MOCK DATA FALLBACK (Remove if API is reliable) ---
+    // If the API returns an empty object or indicates mock, generate mock data.
+    // This helps in development if the backend endpoint isn't fully implemented.
+    if (!analyticsData || Object.keys(analyticsData).length <= 1) {
+      // Check if essentially empty (besides maybe isMockData)
+      console.warn(
+        "API returned minimal/no analytics data. Generating mock analytics."
+      );
+      return generateMockAnalyticsData(id); // Call a mock generator
+    }
+    // --- END MOCK DATA FALLBACK ---
+
+    return analyticsData;
+  } catch (error) {
+    console.error("Error in getSupplierAnalytics API call:", error);
+    // --- MOCK DATA FALLBACK ON ERROR (Remove if API is reliable) ---
+    console.warn("API call failed. Generating mock analytics as fallback.");
+    return generateMockAnalyticsData(id); // Generate mock on error
+    // --- END MOCK DATA FALLBACK ON ERROR ---
+    // // Original error throwing (uncomment if not using mock fallback):
+    // throw error instanceof Error ? error : new Error("An unknown error occurred while fetching supplier analytics.");
+  }
+};
+
+// --- Mock Data Generator (for development/fallback) ---
+const generateMockAnalyticsData = (id: string): SupplierAnalyticsData => {
+  const mockSupplierBase = {
+    id: parseInt(id, 10) || Date.now(), // Use passed ID or generate one
+    name: `Mock Supplier ${id}`,
+    country: ["USA", "China", "Germany", "India"][
+      Math.floor(Math.random() * 4)
+    ],
+    industry: ["Tech", "Manufacturing", "Retail", "Healthcare"][
+      Math.floor(Math.random() * 4)
+    ],
+    ethical_score: Math.random() * 50 + 40, // 40-90
+    environmental_score: Math.random() * 50 + 30,
+    social_score: Math.random() * 50 + 45,
+    governance_score: Math.random() * 50 + 50,
+    risk_level: ["Low", "Medium", "High"][Math.floor(Math.random() * 3)],
+  };
+
+  return {
+    supplier: {
+      ...mockSupplierBase,
+      overall_score:
+        (mockSupplierBase.ethical_score +
+          mockSupplierBase.environmental_score +
+          mockSupplierBase.social_score +
+          mockSupplierBase.governance_score) /
+        4,
+    },
+    industry_average: {
+      ethical_score: 75,
+      environmental_score: 70,
+      social_score: 78,
+      governance_score: 80,
+    },
+    risk_factors: [
+      {
+        factor: "Geopolitical Instability",
+        severity: "Medium",
+        probability: "Low",
+        description:
+          "Operations in region X pose moderate risk due to political shifts.",
+      },
+      {
+        factor: "Climate Change Impact",
+        severity: "High",
+        probability: "Medium",
+        description:
+          "Increased risk of supply disruption due to extreme weather events in key sourcing areas.",
+      },
+      {
+        factor: "Labor Practices",
+        severity: "Low",
+        probability: "Low",
+        description:
+          "Minor concerns regarding overtime hours noted in last audit.",
+      },
+    ],
+    ai_recommendations: [
+      {
+        area: "Environmental",
+        suggestion:
+          "Investigate solar panel installation at primary manufacturing facility.",
+        impact: "High",
+        difficulty: "Medium",
+      },
+      {
+        area: "Social",
+        suggestion: "Enhance worker training programs for safety protocols.",
+        impact: "Medium",
+        difficulty: "Low",
+      },
+      {
+        area: "Governance",
+        suggestion:
+          "Increase transparency in political contribution reporting.",
+        impact: "Medium",
+        difficulty: "Medium",
+      },
+    ],
+    sentiment_trend: [
+      { date: "2024-01", score: 0.2 },
+      { date: "2024-02", score: 0.3 },
+      { date: "2024-03", score: 0.1 },
+      { date: "2024-04", score: 0.4 },
+    ],
+    isMockData: true,
+  };
+};
