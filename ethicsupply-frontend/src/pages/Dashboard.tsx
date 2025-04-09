@@ -440,11 +440,11 @@ const Dashboard: React.FC = () => {
       {/* Background Effects (Subtle) */}
       <div
         className="absolute inset-0 z-0 opacity-10"
-        style={{
+                style={{
           backgroundImage: "url(/grid_pattern.svg)",
           backgroundSize: "50px 50px",
-        }}
-      ></div>
+                }}
+              ></div>
       <div
         className="absolute top-0 left-0 w-96 h-96 rounded-full opacity-10 blur-3xl"
         style={{
@@ -467,7 +467,7 @@ const Dashboard: React.FC = () => {
           transition={{ duration: 0.7 }}
           className="flex flex-col md:flex-row justify-between items-center mb-8"
         >
-          <div>
+            <div>
             <h1
               className="text-3xl md:text-4xl font-bold tracking-tight"
               style={{ color: colors.text }}
@@ -489,7 +489,7 @@ const Dashboard: React.FC = () => {
                 {selectedCountry}
               </p>
             )}
-          </div>
+            </div>
           {dashboardData.isMockData && (
             <div
               className="mt-4 md:mt-0 flex items-center p-2 rounded border"
@@ -555,8 +555,8 @@ const Dashboard: React.FC = () => {
                 style={{ color: scoreColor }}
               >
                 {overallScore.toFixed(1)}
-              </div>
-            </div>
+          </div>
+        </div>
             <p
               className="text-xs mt-2 px-4"
               style={{ color: colors.textMuted }}
@@ -689,19 +689,19 @@ const Dashboard: React.FC = () => {
           </ChartPanel>
 
           <ChartPanel title="Compliance Rate Trend">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
                 data={complianceTrendData}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient
+              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient
                     id="complianceGradient"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
                     <stop
                       offset="5%"
                       stopColor={colors.secondary}
@@ -712,8 +712,8 @@ const Dashboard: React.FC = () => {
                       stopColor={colors.secondary}
                       stopOpacity={0}
                     />
-                  </linearGradient>
-                </defs>
+                </linearGradient>
+              </defs>
                 <CartesianGrid
                   stroke={colors.accent + "20"}
                   strokeDasharray="3 3"
@@ -730,7 +730,7 @@ const Dashboard: React.FC = () => {
                   tickLine={false}
                   unit="%"
                 />
-                <Tooltip
+              <Tooltip
                   cursor={{
                     stroke: colors.secondary,
                     strokeWidth: 1,
@@ -744,19 +744,19 @@ const Dashboard: React.FC = () => {
                   }}
                   itemStyle={{ color: colors.secondary }}
                   labelStyle={{ color: colors.textMuted }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="rate"
+              />
+              <Area
+                type="monotone"
+                dataKey="rate"
                   stroke={colors.secondary}
                   strokeWidth={2}
-                  fillOpacity={1}
+                fillOpacity={1}
                   fill="url(#complianceGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+              />
+            </AreaChart>
+          </ResponsiveContainer>
           </ChartPanel>
-        </div>
+      </div>
 
         {/* Row 3: Map & Recent Suppliers */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -828,7 +828,7 @@ const Dashboard: React.FC = () => {
                         {supplier.country} -{" "}
                         {supplier.ethical_score?.toFixed(1) ?? "N/A"}
                       </p>
-                    </div>
+                      </div>
                     <button
                       onClick={() =>
                         navigate(`/suppliers/${supplier._id || supplier.id}`)
@@ -841,7 +841,7 @@ const Dashboard: React.FC = () => {
                         style={{ color: colors.accent }}
                       />
                     </button>
-                  </div>
+                      </div>
                 ))
               ) : (
                 <p
@@ -851,9 +851,9 @@ const Dashboard: React.FC = () => {
                   No recent suppliers found.
                 </p>
               )}
-            </div>
-          </motion.div>
         </div>
+          </motion.div>
+      </div>
 
         {/* Add Improvement Opportunities Section Later */}
       </div>

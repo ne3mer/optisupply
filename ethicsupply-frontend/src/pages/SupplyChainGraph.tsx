@@ -265,10 +265,10 @@ const SupplyChainGraph = () => {
           })
           .map((link) => ({
             // Ensure source/target are IDs for globe processing
-            ...link,
-            source:
+          ...link,
+          source:
               typeof link.source === "string" ? link.source : link.source.id,
-            target:
+          target:
               typeof link.target === "string" ? link.target : link.target.id,
           })) as LinkObject[];
 
@@ -306,8 +306,8 @@ const SupplyChainGraph = () => {
       const filteredNodeIds = new Set(
         nodes
           .filter(
-            (node) =>
-              node.name.toLowerCase().includes(lowerSearchTerm) ||
+        (node) =>
+          node.name.toLowerCase().includes(lowerSearchTerm) ||
               (node.country &&
                 node.country.toLowerCase().includes(lowerSearchTerm))
           )
@@ -438,7 +438,7 @@ const SupplyChainGraph = () => {
       if (hoverNode) {
         setSelectedNode(hoverNode);
       } else {
-        setSelectedNode(null);
+    setSelectedNode(null);
       }
     });
 
@@ -541,9 +541,9 @@ const SupplyChainGraph = () => {
       });
       setIsFullscreen(true);
     } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
+        document.exitFullscreen();
+        setIsFullscreen(false);
+      }
   };
 
   // Toggle Dark Mode
@@ -617,8 +617,8 @@ const SupplyChainGraph = () => {
               )}
             </button>
           </div>
-        </div>
-      </div>
+                    </div>
+                  </div>
 
       {/* Main Canvas */}
       <div className="w-full h-[60vh]">
@@ -648,7 +648,7 @@ const SupplyChainGraph = () => {
             rotateSpeed={0.4}
           />
         </Canvas>
-      </div>
+                  </div>
 
       {/* Flowchart Section */}
       <div className="w-full bg-gray-800/90 backdrop-blur-sm">
@@ -686,11 +686,11 @@ const SupplyChainGraph = () => {
                         >
                           {node.ethical_score}%
                         </span>
-                      </div>
+                    </div>
                       <span className="text-sm text-gray-400">
                         {node.country}
                       </span>
-                    </div>
+                </div>
 
                     {expandedNodes.has(node.id) && (
                       <motion.div
@@ -729,15 +729,15 @@ const SupplyChainGraph = () => {
                                   {isSource ? "Supplies to" : "Supplied by"}{" "}
                                   {connectedNode.name}
                                 </span>
-                              </div>
+                  </div>
                             );
                           })}
-                      </motion.div>
-                    )}
-                  </div>
+            </motion.div>
+          )}
+            </div>
                 ))}
               </div>
-            </div>
+              </div>
 
             {/* Connection Details */}
             <div className="w-1/2 p-4 overflow-y-auto">
@@ -762,11 +762,11 @@ const SupplyChainGraph = () => {
                             ) : (
                               <AlertTriangle className="w-5 h-5 text-red-400" />
                             )}
-                          </div>
+              </div>
                           <span className="text-sm text-gray-400">
                             {details.relationship}
-                          </span>
-                        </div>
+                </span>
+              </div>
 
                         <div className="space-y-4">
                           <div>
@@ -783,8 +783,8 @@ const SupplyChainGraph = () => {
                               }`}
                             >
                               {details.complianceStatus}
-                            </div>
-                          </div>
+              </div>
+              </div>
 
                           {details.riskFactors.length > 0 && (
                             <div>
@@ -801,14 +801,14 @@ const SupplyChainGraph = () => {
                                     <span className="text-sm text-gray-300">
                                       {factor}
                                     </span>
-                                  </div>
+            </div>
                                 ))}
-                              </div>
+            </div>
                             </div>
                           )}
 
                           <div className="grid grid-cols-2 gap-4">
-                            <div>
+                      <div>
                               <h4 className="text-sm font-medium text-gray-400 mb-2">
                                 Source Supplier
                               </h4>
@@ -822,8 +822,8 @@ const SupplyChainGraph = () => {
                                 <p className="text-sm text-gray-400">
                                   Score: {details.source.ethical_score}%
                                 </p>
-                              </div>
-                            </div>
+                      </div>
+                    </div>
                             <div>
                               <h4 className="text-sm font-medium text-gray-400 mb-2">
                                 Target Supplier
@@ -838,11 +838,11 @@ const SupplyChainGraph = () => {
                                 <p className="text-sm text-gray-400">
                                   Score: {details.target.ethical_score}%
                                 </p>
-                              </div>
+                                    </div>
+                                    </div>
                             </div>
                           </div>
-                        </div>
-                      </>
+                </>
                     );
                   })()}
                 </div>
@@ -851,9 +851,9 @@ const SupplyChainGraph = () => {
                   <div className="text-center text-gray-400">
                     <Info className="w-12 h-12 mx-auto mb-2" />
                     <p>Select a connection to view details</p>
-                  </div>
                 </div>
-              )}
+            </div>
+          )}
             </div>
           </div>
         </div>

@@ -226,7 +226,7 @@ const SupplierAssessment = () => {
         HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
       >
     ) => {
-      const { name, value, type } = e.target;
+    const { name, value, type } = e.target;
       let processedValue: string | number = value;
 
       if (
@@ -249,10 +249,10 @@ const SupplierAssessment = () => {
         }
       }
 
-      setFormData((prev) => ({
-        ...prev,
-        [name]: processedValue,
-      }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: processedValue,
+    }));
     },
     []
   );
@@ -364,7 +364,7 @@ const SupplierAssessment = () => {
         className="absolute right-3 top-9 h-5 w-5 pointer-events-none"
         style={{ color: colors.textMuted }}
       />
-    </div>
+            </div>
   );
 
   const SliderField = ({
@@ -394,8 +394,8 @@ const SupplierAssessment = () => {
             ? value.toFixed(unit === "%" ? 0 : 2)
             : "N/A"}
           {unit}
-        </span>
-      </div>
+              </span>
+            </div>
       <input
         type="range"
         id={name}
@@ -414,7 +414,7 @@ const SupplierAssessment = () => {
         }
       />
       {/* Add CSS for .range-slider thumb and track later */}
-    </div>
+            </div>
   );
 
   // --- Render Logic ---
@@ -425,8 +425,8 @@ const SupplierAssessment = () => {
         style={{ backgroundColor: colors.background }}
       >
         <LoadingIndicator message="Loading Supplier Dossier for Assessment..." />
-      </div>
-    );
+    </div>
+  );
   }
 
   return (
@@ -449,7 +449,7 @@ const SupplierAssessment = () => {
             ? `Evaluating Supplier ID: ${supplierId}`
             : "Conducting New Supplier Assessment"}
         </p>
-        {usingMockData && (
+      {usingMockData && (
           <div
             className="mt-2 flex items-center p-2 rounded border text-xs"
             style={{
@@ -460,8 +460,8 @@ const SupplierAssessment = () => {
           >
             <InformationCircleIcon className="h-4 w-4 mr-2 flex-shrink-0" />
             Demo Mode: Using sample data. Submission will use mock results.
-          </div>
-        )}
+        </div>
+      )}
       </motion.div>
 
       {/* Main Form Area */}
@@ -473,7 +473,7 @@ const SupplierAssessment = () => {
             aria-label="Tabs"
           >
             {Object.entries(sections).map(([key, { name, icon: Icon }]) => (
-              <button
+            <button
                 key={key}
                 type="button"
                 onClick={() => setActiveTab(key)}
@@ -495,10 +495,10 @@ const SupplierAssessment = () => {
                   }`}
                 />
                 {name}
-              </button>
+                </button>
             ))}
           </nav>
-        </div>
+              </div>
 
         {/* Form Content Panels */}
         <AnimatePresence mode="wait">
@@ -530,19 +530,19 @@ const SupplierAssessment = () => {
                   name="country"
                   label="Country"
                   value={formData.country}
-                  onChange={handleChange}
+                                onChange={handleChange}
                   options={countries}
                 />
                 <SelectField
                   name="industry"
                   label="Industry"
                   value={formData.industry}
-                  onChange={handleChange}
+                                onChange={handleChange}
                   options={industries}
                 />
                 {/* Add other basic fields if needed */}
-              </div>
-            )}
+                  </div>
+                )}
             {activeTab === "environmental" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                 <SliderField
@@ -567,7 +567,7 @@ const SupplierAssessment = () => {
                   name="energy_efficiency"
                   label="Energy Efficiency Score"
                   value={formData.energy_efficiency}
-                  onChange={handleChange}
+                            onChange={handleChange}
                 />
                 <SliderField
                   name="waste_management_score"
@@ -591,8 +591,8 @@ const SupplierAssessment = () => {
                   value={formData.pollution_control}
                   onChange={handleChange}
                 />
-              </div>
-            )}
+                  </div>
+                )}
             {activeTab === "social" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                 <SliderField
@@ -611,7 +611,7 @@ const SupplierAssessment = () => {
                   name="diversity_inclusion_score"
                   label="Diversity & Inclusion Score"
                   value={formData.diversity_inclusion_score}
-                  onChange={handleChange}
+                            onChange={handleChange}
                 />
                 <SliderField
                   name="community_engagement"
@@ -625,8 +625,8 @@ const SupplierAssessment = () => {
                   value={formData.worker_safety}
                   onChange={handleChange}
                 />
-              </div>
-            )}
+                  </div>
+                )}
             {activeTab === "governance" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                 <SliderField
@@ -645,7 +645,7 @@ const SupplierAssessment = () => {
                   name="board_diversity"
                   label="Board Diversity Score"
                   value={formData.board_diversity}
-                  onChange={handleChange}
+                            onChange={handleChange}
                 />
                 <SliderField
                   name="ethics_program"
@@ -659,8 +659,8 @@ const SupplierAssessment = () => {
                   value={formData.compliance_systems}
                   onChange={handleChange}
                 />
-              </div>
-            )}
+                  </div>
+                )}
             {activeTab === "supply_chain" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                 <SliderField
@@ -679,7 +679,7 @@ const SupplierAssessment = () => {
                   name="supplier_diversity"
                   label="Supplier Diversity Score"
                   value={formData.supplier_diversity}
-                  onChange={handleChange}
+                            onChange={handleChange}
                 />
                 <SliderField
                   name="traceability"
@@ -687,8 +687,8 @@ const SupplierAssessment = () => {
                   value={formData.traceability}
                   onChange={handleChange}
                 />
-              </div>
-            )}
+                  </div>
+                )}
             {activeTab === "risk" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
                 <SliderField
@@ -707,10 +707,10 @@ const SupplierAssessment = () => {
                   name="labor_dispute_risk"
                   label="Labor Dispute Risk"
                   value={formData.labor_dispute_risk}
-                  onChange={handleChange}
+                            onChange={handleChange}
                 />
-              </div>
-            )}
+                  </div>
+                )}
             {/* Results Display */}
             {activeTab === "results" && (
               <div>
@@ -760,8 +760,8 @@ const SupplierAssessment = () => {
                           style={{ color: getScoreColor(result.ethical_score) }}
                         >
                           {result.ethical_score.toFixed(1)}
-                        </p>
-                      </div>
+                  </p>
+                </div>
                       <div
                         className="p-3 rounded border text-center"
                         style={{
@@ -773,7 +773,7 @@ const SupplierAssessment = () => {
                           className="text-xs uppercase"
                           style={{ color: colors.textMuted }}
                         >
-                          Environmental
+                        Environmental
                         </p>
                         <p
                           className="text-2xl font-bold font-mono"
@@ -825,8 +825,8 @@ const SupplierAssessment = () => {
                         >
                           {result.governance_score.toFixed(1)}
                         </p>
-                      </div>
-                    </div>
+                </div>
+              </div>
 
                     {/* Display SWOT/Recommendations */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -836,8 +836,8 @@ const SupplierAssessment = () => {
                             className="font-semibold"
                             style={{ color: colors.secondary }}
                           >
-                            SWOT Analysis
-                          </h4>
+                    SWOT Analysis
+                      </h4>
                           <ul
                             className="list-disc list-inside text-sm space-y-1 pl-2"
                             style={{ color: colors.textMuted }}
@@ -848,7 +848,7 @@ const SupplierAssessment = () => {
                                   Strength:
                                 </span>{" "}
                                 {s}
-                              </li>
+                            </li>
                             ))}
                             {result.assessment.weaknesses?.map((w, i) => (
                               <li key={i}>
@@ -856,7 +856,7 @@ const SupplierAssessment = () => {
                                   Weakness:
                                 </span>{" "}
                                 {w}
-                              </li>
+                          </li>
                             ))}
                             {result.assessment.opportunities?.map((o, i) => (
                               <li key={i}>
@@ -864,7 +864,7 @@ const SupplierAssessment = () => {
                                   Opportunity:
                                 </span>{" "}
                                 {o}
-                              </li>
+                            </li>
                             ))}
                             {result.assessment.threats?.map((t, i) => (
                               <li key={i}>
@@ -872,10 +872,10 @@ const SupplierAssessment = () => {
                                   Threat:
                                 </span>{" "}
                                 {t}
-                              </li>
+                          </li>
                             ))}
-                          </ul>
-                        </div>
+                      </ul>
+                    </div>
                       )}
                       <div className="space-y-3">
                         <h4
@@ -883,7 +883,7 @@ const SupplierAssessment = () => {
                           style={{ color: colors.secondary }}
                         >
                           Recommendation & Suggestions
-                        </h4>
+                      </h4>
                         <p
                           className="text-sm italic p-3 rounded border"
                           style={{
@@ -891,7 +891,7 @@ const SupplierAssessment = () => {
                             backgroundColor: colors.background,
                           }}
                         >
-                          {result.recommendation ||
+                    {result.recommendation ||
                             "No specific recommendation provided."}
                         </p>
                         {result.suggestions &&
@@ -905,10 +905,10 @@ const SupplierAssessment = () => {
                               ))}
                             </ul>
                           )}
-                      </div>
-                    </div>
-                    {/* Add other result details: risk factors, compliance, industry comparison */}
                   </div>
+                </div>
+                    {/* Add other result details: risk factors, compliance, industry comparison */}
+              </div>
                 )}
                 {!isSubmitting && !result && (
                   <p
@@ -916,9 +916,9 @@ const SupplierAssessment = () => {
                     style={{ color: colors.textMuted }}
                   >
                     Submit the form to view assessment results.
-                  </p>
-                )}
-              </div>
+                    </p>
+                  )}
+                </div>
             )}
           </motion.div>
         </AnimatePresence>
@@ -929,8 +929,8 @@ const SupplierAssessment = () => {
             className="flex justify-between items-center pt-6 border-t"
             style={{ borderColor: colors.accent + "30" }}
           >
-            <button
-              type="button"
+                <button
+                  type="button"
               onClick={prevSection}
               disabled={currentSectionIndex === 0}
               className="px-4 py-2 rounded border text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
@@ -941,7 +941,7 @@ const SupplierAssessment = () => {
               hover={{ backgroundColor: colors.accent + "10" }}
             >
               <ArrowLeftIcon className="h-4 w-4 mr-2" /> Previous
-            </button>
+                </button>
 
             {currentSectionIndex === sectionKeys.length - 1 ? (
               <button
@@ -964,8 +964,8 @@ const SupplierAssessment = () => {
                 )}
               </button>
             ) : (
-              <button
-                type="button"
+                <button
+                  type="button"
                 onClick={nextSection}
                 className="px-4 py-2 rounded border text-sm flex items-center transition-colors"
                 style={{
@@ -975,9 +975,9 @@ const SupplierAssessment = () => {
                 hover={{ backgroundColor: colors.accent + "10" }}
               >
                 Next <ArrowRightIcon className="h-4 w-4 ml-2" />
-              </button>
+                </button>
             )}
-          </div>
+              </div>
         )}
         {activeTab === "results" && (
           <div
@@ -996,8 +996,8 @@ const SupplierAssessment = () => {
             >
               <ArrowLeftIcon className="h-4 w-4 mr-2" /> Start New Assessment
             </button>
-          </div>
-        )}
+            </div>
+          )}
       </form>
     </div>
   );

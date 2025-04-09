@@ -361,13 +361,13 @@ const EvaluateSupplier = () => {
     setError(null);
 
     try {
-      // Convert string values to numbers for submission
-      const dataToSubmit = {
-        ...formData,
+    // Convert string values to numbers for submission
+    const dataToSubmit = {
+      ...formData,
         // Basic info remains as strings
 
         // Convert environmental metrics
-        co2_emissions: parseFloat(formData.co2_emissions) || 0,
+      co2_emissions: parseFloat(formData.co2_emissions) || 0,
         water_usage: parseFloat(formData.water_usage) || 0,
         energy_efficiency: parseFloat(formData.energy_efficiency) || 0,
         waste_management_score:
@@ -377,8 +377,8 @@ const EvaluateSupplier = () => {
         pollution_control: parseFloat(formData.pollution_control) || 0,
 
         // Convert social metrics
-        wage_fairness: parseFloat(formData.wage_fairness) || 0,
-        human_rights_index: parseFloat(formData.human_rights_index) || 0,
+      wage_fairness: parseFloat(formData.wage_fairness) || 0,
+      human_rights_index: parseFloat(formData.human_rights_index) || 0,
         diversity_inclusion_score:
           parseFloat(formData.diversity_inclusion_score) || 0,
         community_engagement: parseFloat(formData.community_engagement) || 0,
@@ -851,7 +851,7 @@ const EvaluateSupplier = () => {
         style={{ borderColor: colors.primary }}
       ></motion.div>
       <p style={{ color: colors.textMuted }}>{message}</p>
-    </div>
+      </div>
   );
 
   const ErrorDisplay = ({ message }) => (
@@ -883,7 +883,7 @@ const EvaluateSupplier = () => {
             className="h-6 w-6"
             style={{ color: colors.error }}
           />
-        </div>
+            </div>
         <div>
           <h4
             className="text-lg font-medium mb-1"
@@ -892,9 +892,9 @@ const EvaluateSupplier = () => {
             Error
           </h4>
           <p style={{ color: colors.text }}>{message}</p>
-        </div>
-      </div>
-    </div>
+              </div>
+            </div>
+          </div>
   );
 
   const MockDataIndicator = () => (
@@ -928,7 +928,7 @@ const EvaluateSupplier = () => {
             className="h-5 w-5"
             style={{ color: colors.accent }}
           />
-        </div>
+            </div>
         <div>
           <h4
             className="text-base font-medium mb-1"
@@ -940,8 +940,8 @@ const EvaluateSupplier = () => {
             Using simulated data for demonstration purposes. API endpoint is not
             available.
           </p>
-        </div>
-      </div>
+            </div>
+          </div>
     </motion.div>
   );
 
@@ -952,7 +952,7 @@ const EvaluateSupplier = () => {
         <p className="mt-2 text-emerald-100">
           Assess suppliers based on ethical and environmental criteria
         </p>
-      </div>
+        </div>
 
       {usingMockData && <MockDataIndicator />}
 
@@ -1050,7 +1050,7 @@ const EvaluateSupplier = () => {
                           {section.label}
                         </button>
                       ))}
-                    </div>
+                </div>
                   </motion.div>
 
                   <div className="flex-1" ref={formRef}>
@@ -1090,32 +1090,32 @@ const EvaluateSupplier = () => {
                         </h2>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {textFields.map((field) => (
+                  {textFields.map((field) => (
                             <div key={field.id} className="col-span-1">
-                              <label
-                                htmlFor={field.name}
+                      <label
+                        htmlFor={field.name}
                                 className="block text-sm font-medium mb-2"
                                 style={{ color: colors.textMuted }}
-                              >
-                                <div className="flex items-center">
-                                  <field.icon
+                      >
+                        <div className="flex items-center">
+                          <field.icon
                                     className="h-4 w-4 mr-2"
                                     style={{ color: colors.primary }}
-                                  />
+                          />
                                   {field.label}{" "}
                                   {field.required && (
                                     <span className="text-red-500 ml-1">*</span>
                                   )}
-                                </div>
-                              </label>
+                        </div>
+                      </label>
 
-                              {field.type === "text" && (
-                                <input
-                                  type="text"
-                                  name={field.name}
-                                  id={field.name}
-                                  value={formData[field.name]}
-                                  onChange={handleChange}
+                      {field.type === "text" && (
+                        <input
+                          type="text"
+                          name={field.name}
+                          id={field.name}
+                          value={formData[field.name]}
+                          onChange={handleChange}
                                   required={field.required}
                                   className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
                                   style={{
@@ -1123,15 +1123,15 @@ const EvaluateSupplier = () => {
                                     borderColor: colors.accent + "50",
                                     color: colors.text,
                                   }}
-                                />
-                              )}
+                        />
+                      )}
 
-                              {field.type === "select" && field.options && (
-                                <select
-                                  name={field.name}
-                                  id={field.name}
-                                  value={formData[field.name]}
-                                  onChange={handleChange}
+                      {field.type === "select" && field.options && (
+                        <select
+                          name={field.name}
+                          id={field.name}
+                          value={formData[field.name]}
+                          onChange={handleChange}
                                   required={field.required}
                                   className="w-full appearance-none px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
                                   style={{
@@ -1139,15 +1139,15 @@ const EvaluateSupplier = () => {
                                     borderColor: colors.accent + "50",
                                     color: colors.text,
                                   }}
-                                >
-                                  <option value="">Select {field.label}</option>
-                                  {field.options.map((option) => (
-                                    <option key={option} value={option}>
-                                      {option}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
+                        >
+                          <option value="">Select {field.label}</option>
+                          {field.options.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      )}
 
                               {field.type === "textarea" && (
                                 <textarea
@@ -1165,9 +1165,9 @@ const EvaluateSupplier = () => {
                                   }}
                                 />
                               )}
-                            </div>
-                          ))}
-                        </div>
+                    </div>
+                  ))}
+                </div>
                       </motion.div>
 
                       {sections.slice(1).map((section) => {
@@ -1216,18 +1216,18 @@ const EvaluateSupplier = () => {
                             <div className="grid grid-cols-1 gap-6">
                               {sectionFields.map((field) => (
                                 <div key={field.id} className="space-y-2">
-                                  <div className="flex justify-between items-center">
-                                    <label
-                                      htmlFor={field.name}
+                    <div className="flex justify-between items-center">
+                      <label
+                        htmlFor={field.name}
                                       className="text-sm font-medium flex items-center"
                                       style={{ color: colors.textMuted }}
-                                    >
-                                      <field.icon
+                      >
+                        <field.icon
                                         className="h-4 w-4 mr-2"
                                         style={{ color: section.color }}
-                                      />
-                                      {field.label}
-                                    </label>
+                        />
+                        {field.label}
+                      </label>
                                     <motion.span
                                       key={formData[field.name]}
                                       initial={{ scale: 0.9, opacity: 0.7 }}
@@ -1258,7 +1258,7 @@ const EvaluateSupplier = () => {
                                       {formData[field.name]}
                                       {field.unit || ""}
                                     </motion.span>
-                                  </div>
+                    </div>
 
                                   <div className="relative h-2 mt-2">
                                     <div
@@ -1295,19 +1295,19 @@ const EvaluateSupplier = () => {
                                       }}
                                     />
 
-                                    <input
-                                      type="range"
-                                      name={field.name}
+                      <input
+                        type="range"
+                        name={field.name}
                                       id={field.id}
-                                      min={field.min}
-                                      max={field.max}
-                                      step={field.step}
+                        min={field.min}
+                        max={field.max}
+                        step={field.step}
                                       value={formData[field.name]}
-                                      onChange={handleChange}
+                        onChange={handleChange}
                                       className="absolute inset-0 w-full appearance-none bg-transparent cursor-pointer z-10"
                                       style={{ opacity: 0 }}
                                     />
-                                  </div>
+                    </div>
 
                                   <p
                                     className="text-xs mt-1"
@@ -1315,9 +1315,9 @@ const EvaluateSupplier = () => {
                                   >
                                     {field.description}
                                   </p>
-                                </div>
-                              ))}
-                            </div>
+                  </div>
+                ))}
+              </div>
                           </motion.div>
                         );
                       })}
@@ -1327,7 +1327,7 @@ const EvaluateSupplier = () => {
                         className="flex items-center justify-end space-x-4 mt-8 pt-6 border-t"
                         style={{ borderColor: colors.accent + "30" }}
                       >
-                        <button
+                <button
                           type="button"
                           onClick={() => window.location.reload()}
                           className="px-5 py-2.5 rounded-lg border text-sm font-medium flex items-center justify-center transition-all hover:scale-105"
@@ -1340,11 +1340,11 @@ const EvaluateSupplier = () => {
                         >
                           <ArrowPathIcon className="h-4 w-4 mr-2" />
                           Reset Form
-                        </button>
+                </button>
 
                         <motion.button
-                          type="submit"
-                          disabled={isSubmitting}
+                  type="submit"
+                  disabled={isSubmitting}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.98 }}
                           className="px-7 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center disabled:opacity-60 relative overflow-hidden group"
@@ -1364,7 +1364,7 @@ const EvaluateSupplier = () => {
                             }}
                           />
 
-                          {isSubmitting ? (
+                  {isSubmitting ? (
                             <>
                               <ArrowPathIcon className="animate-spin h-5 w-5 mr-2" />
                               <span className="relative">Processing...</span>
@@ -1378,8 +1378,8 @@ const EvaluateSupplier = () => {
                             </>
                           )}
                         </motion.button>
-                      </div>
-                    </form>
+              </div>
+            </form>
                   </div>
                 </div>
               )}
@@ -1446,7 +1446,7 @@ const EvaluateSupplier = () => {
                         >
                           / 100
                         </span>
-                      </div>
+                    </div>
 
                       <div
                         className="mt-2 text-sm"
@@ -1454,11 +1454,11 @@ const EvaluateSupplier = () => {
                       >
                         {result.ethical_score >= 80
                           ? "Excellent sustainability performance"
-                          : result.ethical_score >= 60
+                              : result.ethical_score >= 60
                           ? "Good sustainability performance"
                           : "Needs improvement"}
                       </div>
-                    </div>
+                      </div>
 
                     {/* Category Scores */}
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1560,7 +1560,7 @@ const EvaluateSupplier = () => {
                           </li>
                         )}
                       </ul>
-                    </div>
+              </div>
 
                     {/* Weaknesses */}
                     <div
@@ -1694,8 +1694,8 @@ const EvaluateSupplier = () => {
                     className="text-xl font-medium mb-4"
                     style={{ color: colors.primary }}
                   >
-                    Recommendation
-                  </h4>
+                  Recommendation
+                </h4>
                   <div
                     className="p-5 rounded-lg border backdrop-blur-sm"
                     style={{
@@ -1705,8 +1705,8 @@ const EvaluateSupplier = () => {
                   >
                     <p style={{ color: colors.text }}>
                       {result.recommendation}
-                    </p>
-                  </div>
+                  </p>
+                </div>
                 </motion.div>
               )}
 
@@ -1723,7 +1723,7 @@ const EvaluateSupplier = () => {
                     style={{ color: colors.primary }}
                   >
                     Improvement Suggestions
-                  </h4>
+                </h4>
                   <div className="space-y-3">
                     {result.suggestions.map((suggestion, index) => (
                       <motion.div

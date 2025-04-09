@@ -443,11 +443,11 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
     while (nextUrl) {
       const response = await fetch(nextUrl);
 
-      if (!response.ok) {
+    if (!response.ok) {
         throw new Error(`API returned status ${response.status}`);
-      }
+    }
 
-      const data = await response.json();
+    const data = await response.json();
       console.log("API response data:", data);
 
       // Handle paginated response (Django REST Framework format)
@@ -2348,7 +2348,7 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
 
         // Try to get coordinates based on country
         if (node.country && countryCoords[node.country]) {
-          return {
+      return {
             ...node,
             lat: countryCoords[node.country].lat + (Math.random() - 0.5) * 5, // Add jitter
             lng: countryCoords[node.country].lng + (Math.random() - 0.5) * 5, // Add jitter
