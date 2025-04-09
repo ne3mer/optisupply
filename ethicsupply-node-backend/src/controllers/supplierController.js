@@ -1,11 +1,18 @@
-const Supplier = require("../models/Supplier");
-const MediaSentiment = require("../models/MediaSentiment");
-const SupplierESGReport = require("../models/SupplierESGReport");
-const Controversy = require("../models/Controversy");
-const EthicalScoringModel = require("../ml/EthicalScoringModel");
+const {
+  Supplier,
+  MediaSentiment,
+  SupplierESGReport,
+  Controversy,
+} = require("../models"); // Require the central index file
 
-// Initialize the ML model
-const scoringModel = new EthicalScoringModel();
+// const Supplier = require("../models/Supplier"); // Remove individual requires
+// const MediaSentiment = require("../models/MediaSentiment");
+// const SupplierESGReport = require("../models/SupplierESGReport");
+// const Controversy = require("../models/Controversy");
+
+// ML Model logic remains commented out for now
+// const EthicalScoringModel = require("../ml/EthicalScoringModel");
+// const scoringModel = new EthicalScoringModel();
 
 /**
  * Get all suppliers
@@ -14,6 +21,7 @@ const scoringModel = new EthicalScoringModel();
  */
 exports.getSuppliers = async (req, res) => {
   try {
+    // Now uses Supplier from the destructured import
     const suppliers = await Supplier.find();
     res.status(200).json(suppliers);
   } catch (error) {
@@ -50,7 +58,7 @@ exports.createSupplier = async (req, res) => {
     const supplier = new Supplier(req.body);
 
     // Calculate scores using the ML model
-    await calculateAndSetScores(supplier);
+    // await calculateAndSetScores(supplier); // Temporarily comment out score calculation
 
     const savedSupplier = await supplier.save();
     res.status(201).json(savedSupplier);
@@ -78,7 +86,7 @@ exports.updateSupplier = async (req, res) => {
     });
 
     // Recalculate scores
-    await calculateAndSetScores(supplier);
+    // await calculateAndSetScores(supplier); // Temporarily comment out score calculation
 
     const updatedSupplier = await supplier.save();
     res.status(200).json(updatedSupplier);
@@ -102,7 +110,7 @@ exports.deleteSupplier = async (req, res) => {
 
     await supplier.deleteOne();
 
-    // Also delete related data
+    // Also delete related data using destructured models
     await MediaSentiment.deleteMany({ supplier: req.params.id });
     await SupplierESGReport.deleteMany({ supplier: req.params.id });
     await Controversy.deleteMany({ supplier: req.params.id });
@@ -359,7 +367,7 @@ exports.evaluateSupplier = async (req, res) => {
     }
 
     // Recalculate scores
-    await calculateAndSetScores(supplier);
+    // await calculateAndSetScores(supplier); // Temporarily comment out score calculation
     await supplier.save();
 
     // Get related data for the evaluation report
@@ -408,36 +416,49 @@ exports.healthCheck = async (req, res) => {
  * @param {Object} supplier - Supplier document
  * @private
  */
+// Comment out the helper function that uses the ML model
+/*
 async function calculateAndSetScores(supplier) {
+  if (!scoringModel || !scoringModel.isInitialized()) {
+    console.warn(
+      "ML scoring model not initialized. Skipping score calculation."
+    );
+    // Set default scores or leave existing ones if updating
+    supplier.environmental_score = supplier.environmental_score || 0.5;
+    supplier.social_score = supplier.social_score || 0.5;
+    supplier.governance_score = supplier.governance_score || 0.5;
+    supplier.ethical_score = supplier.ethical_score || 0.5;
+    supplier.risk_level = supplier.risk_level || "medium";
+    return;
+  }
+
   try {
-    // Get external data for the supplier
-    const externalData = await getExternalData(supplier._id);
+    const inputData = {
+      // Map supplier fields to ML model input
+      co2_emissions: supplier.co2_emissions,
+      waste_management: supplier.waste_management_score,
+      energy_efficiency: supplier.energy_efficiency,
+      // ... add other relevant fields
+    };
 
-    // Calculate scores using the ML model
-    const scores = await scoringModel.calculateScore(supplier, externalData);
+    const scores = await scoringModel.predict(inputData);
 
-    // Set the calculated scores
-    supplier.ethical_score = scores.ethical_score;
-    supplier.environmental_score = scores.environmental_score;
-    supplier.social_score = scores.social_score;
-    supplier.governance_score = scores.governance_score;
-    supplier.external_impact = scores.external_impact;
+    supplier.environmental_score = scores.environmental;
+    supplier.social_score = scores.social;
+    supplier.governance_score = scores.governance;
+    supplier.ethical_score = scores.overall;
     supplier.risk_level = scores.risk_level;
-
-    return supplier;
   } catch (error) {
-    console.error("Error calculating scores:", error);
-    // Use default scores if calculation fails
-    supplier.ethical_score = 0.5;
-    supplier.environmental_score = 0.5;
-    supplier.social_score = 0.5;
-    supplier.governance_score = 0.5;
-    supplier.external_impact = 0;
-    supplier.risk_level = "medium";
-
-    return supplier;
+    console.error("Error calculating scores with ML model:", error);
+    // Set default scores on error
+    supplier.environmental_score = supplier.environmental_score || 0.5; // Keep existing if update fails
+    supplier.social_score = supplier.social_score || 0.5;
+    supplier.governance_score = supplier.governance_score || 0.5;
+    supplier.ethical_score = supplier.ethical_score || 0.5;
+    supplier.risk_level = supplier.risk_level || "medium";
   }
 }
+*/
 
 /**
  * Get external data for a supplier

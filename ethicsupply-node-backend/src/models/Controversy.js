@@ -98,11 +98,17 @@ ControversySchema.statics.calculateImpact = async function (supplierId) {
     const timeFactor = Math.max(0.5, 1 - monthsAgo / 12); // 50% impact after 1 year
 
     // If resolved, reduce impact by 50%
-    const resolutionFactor = controversy.status === 'resolved' ? 0.5 : 1.0;
+    const resolutionFactor = controversy.status === "resolved" ? 0.5 : 1.0;
 
     // Final impact calculation
     const impact =
-      (controversy.severity === 'critical' ? 10 : controversy.severity === 'high' ? 7 : controversy.severity === 'medium' ? 4 : 1) *
+      (controversy.severity === "critical"
+        ? 10
+        : controversy.severity === "high"
+        ? 7
+        : controversy.severity === "medium"
+        ? 4
+        : 1) *
       controversy.impact_score *
       timeFactor *
       resolutionFactor;
@@ -127,5 +133,7 @@ ControversySchema.pre("save", function (next) {
   next();
 });
 
-// Check if the model already exists and only create it if it doesn't
-module.exports = mongoose.models.Controversy || mongoose.model("Controversy", ControversySchema);
+// Revert to the check pattern to prevent immediate crash during testing
+module.exports =
+  mongoose.models.Controversy ||
+  mongoose.model("Controversy", ControversySchema);

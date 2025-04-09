@@ -1,4 +1,4 @@
-const GeoRiskAlert = require("../models/GeoRiskAlert");
+const { GeoRiskAlert } = require("../models");
 const Supplier = require("../models/Supplier");
 
 /**

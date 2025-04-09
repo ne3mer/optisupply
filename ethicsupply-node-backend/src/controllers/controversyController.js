@@ -1,4 +1,4 @@
-const Controversy = require("../models/controversy");
+const { Controversy } = require("../models");
 
 /**
  * Get all controversies
@@ -7,7 +7,10 @@ const Controversy = require("../models/controversy");
  */
 exports.getAllControversies = async (req, res) => {
   try {
-    const controversies = await Controversy.find().populate("supplier", "name");
+    const controversies = await Controversy.find().populate(
+      "supplier",
+      "name country"
+    );
     res.status(200).json(controversies);
   } catch (error) {
     console.error("Error fetching controversies:", error);
@@ -24,7 +27,7 @@ exports.getControversyById = async (req, res) => {
   try {
     const controversy = await Controversy.findById(req.params.id).populate(
       "supplier",
-      "name"
+      "name country"
     );
     if (!controversy) {
       return res.status(404).json({ error: "Controversy not found" });

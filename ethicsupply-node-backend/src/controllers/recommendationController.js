@@ -1,5 +1,4 @@
-const Recommendation = require("../models/Recommendation");
-const Supplier = require("../models/Supplier");
+const { Recommendation, Supplier } = require("../models");
 
 /**
  * Get all recommendations
@@ -8,240 +7,151 @@ const Supplier = require("../models/Supplier");
  */
 exports.getRecommendations = async (req, res) => {
   try {
-    console.log("Generating real-time AI recommendations...");
+    console.log("Fetching recommendations...");
 
-    // Fetch top suppliers
-    const suppliers = await Supplier.find().sort({ created_at: -1 }).limit(15);
-
-    if (suppliers.length === 0) {
-      console.log("No suppliers found. Returning mock recommendations.");
-      return res.status(200).json(generateMockRecommendations());
-    }
-
-    // Generate sophisticated AI recommendations from actual supplier data
-    const aiRecommendations = [];
-    const today = new Date();
-
-    // Define industry benchmarks
-    const industryBenchmarks = {
-      Electronics: { environmental: 75, social: 72, governance: 70 },
-      "Food & Beverage": { environmental: 68, social: 70, governance: 72 },
-      Textiles: { environmental: 60, social: 65, governance: 68 },
-      Manufacturing: { environmental: 65, social: 68, governance: 70 },
-      Retail: { environmental: 70, social: 72, governance: 75 },
-      Automotive: { environmental: 72, social: 75, governance: 78 },
-      Pharmaceuticals: { environmental: 78, social: 73, governance: 80 },
-      Technology: { environmental: 80, social: 75, governance: 78 },
-    };
-
-    // Define recommendation templates and insights
-    const recommendationTemplates = {
-      environmental: [
-        {
-          title: "Carbon Neutrality Initiative",
-          description:
-            "Implement a comprehensive carbon neutrality program with science-based targets and offset mechanisms",
-          implementation: "Medium - requires cross-functional collaboration",
-          impact: "Could reduce carbon footprint by 45-60% within 3 years",
-          roi: "18-24 months break-even with potential tax incentives",
-        },
-        {
-          title: "Renewable Energy Transition",
-          description:
-            "Convert manufacturing facilities to 100% renewable energy sources through on-site generation and PPAs",
-          implementation: "Medium-High - requires capital investment",
-          impact: "Potential to eliminate Scope 2 emissions completely",
-          roi: "3-5 year payback period with declining renewable costs",
-        },
-        {
-          title: "Circular Product Design Framework",
-          description:
-            "Implement circular economy principles in product design, packaging, and end-of-life management",
-          implementation: "High - requires product redesign",
-          impact: "Could reduce waste by 40-60% and create new revenue streams",
-          roi: "Long-term strategic investment with brand value benefits",
-        },
-      ],
-      social: [
-        {
-          title: "Supply Chain Human Rights Program",
-          description:
-            "Develop robust human rights due diligence system with enhanced supplier monitoring and remediation protocols",
-          implementation: "High - requires supplier engagement",
-          impact:
-            "Significant risk reduction and potential brand value enhancement",
-          roi: "Risk mitigation benefit with 20-30% reduced disruption potential",
-        },
-        {
-          title: "Living Wage Implementation",
-          description:
-            "Implement verified living wage program across entire supply chain with third-party verification",
-          implementation: "Medium - requires financial analysis",
-          impact: "Improved worker wellbeing and community relations",
-          roi: "12-18 month potential for productivity gains offsetting costs",
-        },
-        {
-          title: "Diversity & Inclusion Transformation",
-          description:
-            "Comprehensive D&I strategy with clear metrics, training programs, and leadership accountability",
-          implementation: "Medium - requires organizational change",
-          impact: "Enhanced innovation capability and talent attraction",
-          roi: "Research shows diverse companies outperform peers by 35%",
-        },
-      ],
-      governance: [
-        {
-          title: "ESG Data Management System",
-          description:
-            "Implement centralized ESG data collection and reporting platform with assurance capabilities",
-          implementation: "Medium - requires systems integration",
-          impact: "Enhanced reporting accuracy and reduced compliance costs",
-          roi: "Efficiency gains pay for implementation within 2 years",
-        },
-        {
-          title: "Corporate Governance Enhancement",
-          description:
-            "Board-level ESG committee with expertise requirements and executive compensation linkage",
-          implementation: "Medium - requires leadership buy-in",
-          impact: "Improved oversight and strategic ESG integration",
-          roi: "Studies show strong governance correlates with 15% higher valuations",
-        },
-        {
-          title: "Ethical AI Framework",
-          description:
-            "Develop comprehensive ethical AI governance including bias detection, transparency protocols and oversight",
-          implementation: "Medium-High - requires technical expertise",
-          impact:
-            "Future-proof operations against regulatory and reputational risks",
-          roi: "Preventative investment against emerging regulatory requirements",
-        },
-      ],
-    };
-
-    // Generate unique recommendations for each supplier
-    for (const supplier of suppliers) {
-      // Skip if supplier is missing critical data
-      if (!supplier) continue;
-
-      // Get relevant benchmark
-      const industry = supplier.industry || "Manufacturing";
-      const benchmark =
-        industryBenchmarks[industry] || industryBenchmarks.Manufacturing;
-
-      // Calculate scores and identify gaps
-      const envScore = Math.round((supplier.environmental_score || 0.5) * 100);
-      const socScore = Math.round((supplier.social_score || 0.5) * 100);
-      const govScore = Math.round((supplier.governance_score || 0.5) * 100);
-
-      const scores = [
-        {
-          category: "environmental",
-          score: envScore,
-          benchmark: benchmark.environmental,
-        },
-        { category: "social", score: socScore, benchmark: benchmark.social },
-        {
-          category: "governance",
-          score: govScore,
-          benchmark: benchmark.governance,
-        },
-      ];
-
-      // Sort by gap size (largest to smallest)
-      scores.sort((a, b) => b.benchmark - b.score - (a.benchmark - a.score));
-
-      // Get primary area for improvement
-      const primaryGap = scores[0];
-
-      // Skip if no significant gap
-      if (primaryGap.benchmark - primaryGap.score <= 5) continue;
-
-      // Select template based on primary gap
-      const templates = recommendationTemplates[primaryGap.category];
-      const template = templates[Math.floor(Math.random() * templates.length)];
-
-      // Calculate priority based on gap size
-      let priority = "medium";
-      const gap = primaryGap.benchmark - primaryGap.score;
-      if (gap > 25) priority = "high";
-      else if (gap < 10) priority = "low";
-
-      // Generate a detailed recommendation
-      const recommendation = {
-        _id: `ai-rec-${supplier._id || Date.now()}-${
-          primaryGap.category
-        }-${Date.now()}`,
-        title: template.title,
-        description: template.description,
-        category: primaryGap.category,
-        priority,
-        status: "pending",
-        created_at: today.toISOString(),
-        updated_at: today.toISOString(),
-        supplier: {
-          name: supplier.name || "Unknown Supplier",
-          country: supplier.country || "Unknown Country",
-          industry: supplier.industry || "Unknown Industry",
-          ethical_score: Math.round((supplier.ethical_score || 0.65) * 100),
-        },
-        ai_explanation: {
-          reasoning: `${
-            primaryGap.category.charAt(0).toUpperCase() +
-            primaryGap.category.slice(1)
-          } performance is ${gap} points below industry benchmark of ${
-            primaryGap.benchmark
-          }.`,
-          impact_assessment: template.impact,
-          implementation_difficulty: template.implementation,
-          timeframe: gap > 20 ? "6-12 months" : "3-6 months",
-          comparative_insights: [
-            `Industry leaders in ${industry} typically score 15-20% above benchmark in this area`,
-            `Companies implementing similar initiatives report ${
-              priority === "high" ? "40-60%" : "20-30%"
-            } improvement within 12 months`,
-          ],
-        },
-        estimated_impact: {
-          score_improvement: Math.round(gap * 0.6),
-          cost_savings: Math.round(gap * 10000 + Math.random() * 50000),
-          implementation_time: gap > 20 ? 270 : 180,
-        },
-        isAiGenerated: true,
-        generation_method: "advanced_ai_analysis",
-        confidence_score: 0.85 + Math.random() * 0.15,
-        data_sources: [
-          "supplier_metrics",
-          "industry_benchmarks",
-          "performance_trends",
-          "sustainability_research",
-        ],
-      };
-
-      aiRecommendations.push(recommendation);
-
-      // Limit to avoid excessive recommendations
-      if (aiRecommendations.length >= 10) break;
-    }
-
-    // If not enough recommendations generated, add general ones
-    if (aiRecommendations.length < 5) {
-      const generalRecommendations = generateGeneralRecommendations(
-        5 - aiRecommendations.length
-      );
-      aiRecommendations.push(...generalRecommendations);
-    }
-
-    console.log(
-      `Generated ${aiRecommendations.length} real-time AI recommendations.`
+    // Get suppliers with their scores
+    const suppliers = await Supplier.find().select(
+      "name country industry co2_emissions waste_management_score energy_efficiency water_usage renewable_energy_percent pollution_control wage_fairness human_rights_index community_engagement diversity_inclusion_score worker_safety transparency_score corruption_risk board_diversity ethics_program compliance_systems quality_control_score supplier_diversity traceability ethical_score environmental_score social_score governance_score"
     );
-    return res.status(200).json(aiRecommendations);
-  } catch (error) {
-    console.error("Error generating recommendations:", error);
-    console.error("Error stack:", error.stack);
 
-    // Fallback to mock data on error
-    console.log("Falling back to mock recommendations due to error.");
-    return res.status(200).json(generateMockRecommendations());
+    if (!suppliers || suppliers.length === 0) {
+      console.log("No suppliers found, returning mock data");
+      const mockData = generateMockRecommendations();
+      return res && res.json ? res.json(mockData) : mockData;
+    }
+
+    console.log(`Found ${suppliers.length} suppliers`);
+    console.log("Supplier data sample:", JSON.stringify(suppliers[0], null, 2));
+
+    const recommendations = suppliers
+      .map((supplier) => {
+        try {
+          // Use pre-calculated scores if available, otherwise calculate them
+          const environmentalScore =
+            supplier.environmental_score ||
+            ((supplier.co2_emissions || 0) +
+              (supplier.waste_management_score || 0) +
+              (supplier.energy_efficiency || 0) +
+              (supplier.water_usage || 0) +
+              (supplier.renewable_energy_percent || 0) +
+              (supplier.pollution_control || 0)) /
+              6;
+
+          const socialScore =
+            supplier.social_score ||
+            ((supplier.wage_fairness || 0) +
+              (supplier.human_rights_index || 0) +
+              (supplier.community_engagement || 0) +
+              (supplier.diversity_inclusion_score || 0) +
+              (supplier.worker_safety || 0)) /
+              5;
+
+          const governanceScore =
+            supplier.governance_score ||
+            ((supplier.transparency_score || 0) +
+              (supplier.corruption_risk || 0) +
+              (supplier.board_diversity || 0) +
+              (supplier.ethics_program || 0) +
+              (supplier.compliance_systems || 0) +
+              (supplier.quality_control_score || 0) +
+              (supplier.supplier_diversity || 0) +
+              (supplier.traceability || 0)) /
+              8;
+
+          // Normalize scores to be between 0 and 1
+          const normalizedScores = {
+            environmental: Math.min(Math.max(environmentalScore, 0), 1),
+            social: Math.min(Math.max(socialScore, 0), 1),
+            governance: Math.min(Math.max(governanceScore, 0), 1),
+          };
+
+          console.log(
+            "Normalized scores for supplier:",
+            supplier.name,
+            normalizedScores
+          );
+
+          // Determine the lowest score to focus recommendations
+          const lowestScore = Object.entries(normalizedScores).reduce(
+            (min, [key, value]) => (value < min.value ? { key, value } : min),
+            { key: "environmental", value: 1 }
+          );
+
+          // Generate recommendation based on the lowest score
+          const recommendation = {
+            _id: `rec-${supplier._id}-${Date.now()}-${Math.floor(
+              Math.random() * 1000
+            )}`,
+            title: `Improve ${lowestScore.key} performance for ${supplier.name}`,
+            description: `Focus on enhancing ${lowestScore.key} metrics to improve overall supplier performance.`,
+            category: lowestScore.key,
+            priority:
+              lowestScore.value < 0.3
+                ? "high"
+                : lowestScore.value < 0.6
+                ? "medium"
+                : "low",
+            status: "pending",
+            supplier: supplier._id,
+            supplierName: supplier.name,
+            aiExplanation: `Based on analysis of ${
+              supplier.name
+            }'s performance metrics, the ${lowestScore.key} score of ${(
+              lowestScore.value * 100
+            ).toFixed(1)}% is significantly lower than other areas.`,
+            estimatedImpact:
+              lowestScore.value < 0.3
+                ? "High"
+                : lowestScore.value < 0.6
+                ? "Medium"
+                : "Low",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          return recommendation;
+        } catch (error) {
+          console.error(
+            `Error processing supplier ${supplier?.name || "unknown"} (${
+              supplier?._id || "unknown"
+            }):`,
+            error
+          );
+          console.error(
+            "Supplier data causing error:",
+            JSON.stringify(supplier, null, 2)
+          );
+          return null;
+        }
+      })
+      .filter((rec) => rec !== null);
+
+    if (recommendations.length === 0) {
+      console.log("No valid recommendations generated, returning mock data");
+      const mockData = generateMockRecommendations();
+      return res && res.json ? res.json(mockData) : mockData;
+    }
+
+    console.log(`Generated ${recommendations.length} recommendations`);
+    console.log("First recommendation ID:", recommendations[0]._id);
+
+    // Allow this function to be called internally or as a route handler
+    if (res && res.json) {
+      return res.json(recommendations);
+    } else {
+      return recommendations;
+    }
+  } catch (error) {
+    console.error("Error in getRecommendations:", error);
+    console.error("Error stack:", error.stack);
+    if (res && res.status) {
+      res.status(500).json({
+        error: "Failed to generate recommendations",
+        details: error.message,
+        stack: error.stack,
+      });
+    } else {
+      throw error; // Re-throw for internal calls
+    }
   }
 };
 
@@ -252,18 +162,55 @@ exports.getRecommendations = async (req, res) => {
  */
 exports.getRecommendationById = async (req, res) => {
   try {
-    const recommendation = await Recommendation.findById(
-      req.params.id
-    ).populate("supplier", "name country industry ethical_score");
+    console.log("Fetching recommendation with ID:", req.params.id);
 
-    if (!recommendation) {
-      return res.status(404).json({ error: "Recommendation not found" });
+    // Check if this is one of the dynamic recommendations with our custom ID format
+    if (req.params.id.startsWith("rec-")) {
+      // Get all recommendations
+      const allRecommendations = await getRecommendationsInternal();
+
+      // Find the recommendation with matching ID (approximate match since IDs contain timestamps)
+      const idParts = req.params.id.split("-");
+      const supplierId = idParts[1]; // Extract supplier ID
+
+      // Find recommendations for this supplier
+      const supplierRecommendations = allRecommendations.filter((rec) =>
+        typeof rec.supplier === "string"
+          ? rec.supplier === supplierId
+          : rec.supplier && rec.supplier.toString() === supplierId
+      );
+
+      if (supplierRecommendations.length > 0) {
+        // Just return the first recommendation for this supplier
+        return res.status(200).json(supplierRecommendations[0]);
+      } else {
+        return res.status(404).json({ error: "Recommendation not found" });
+      }
     }
 
-    res.status(200).json(recommendation);
+    // Otherwise try to find a real recommendation in the database using MongoDB ObjectId
+    try {
+      const recommendation = await Recommendation.findById(
+        req.params.id
+      ).populate("supplier", "name country industry ethical_score");
+
+      if (!recommendation) {
+        return res.status(404).json({ error: "Recommendation not found" });
+      }
+
+      res.status(200).json(recommendation);
+    } catch (castError) {
+      console.error("Error casting recommendation ID:", castError);
+      return res
+        .status(404)
+        .json({ error: "Invalid recommendation ID format" });
+    }
   } catch (error) {
     console.error("Error fetching recommendation:", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack,
+    });
   }
 };
 
@@ -1068,10 +1015,7 @@ function generateGeneralRecommendations(count) {
   return generalRecommendations.slice(0, count);
 }
 
-/**
- * Generate mock recommendations for initial development
- * @returns {Array} Array of mock recommendations
- */
+// Define the mock data function directly within this file
 const generateMockRecommendations = () => {
   const today = new Date();
   const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -1251,3 +1195,123 @@ const generateMockRecommendations = () => {
     },
   ];
 };
+
+/**
+ * Internal function to generate recommendations
+ * @returns {Array} Array of recommendations
+ */
+async function getRecommendationsInternal() {
+  console.log("Fetching recommendations internally...");
+
+  // Get suppliers with their scores
+  const suppliers = await Supplier.find().select(
+    "name country industry co2_emissions waste_management_score energy_efficiency water_usage renewable_energy_percent pollution_control wage_fairness human_rights_index community_engagement diversity_inclusion_score worker_safety transparency_score corruption_risk board_diversity ethics_program compliance_systems quality_control_score supplier_diversity traceability ethical_score environmental_score social_score governance_score"
+  );
+
+  if (!suppliers || suppliers.length === 0) {
+    console.log("No suppliers found, returning mock data");
+    return generateMockRecommendations();
+  }
+
+  console.log(`Found ${suppliers.length} suppliers`);
+
+  const recommendations = suppliers
+    .map((supplier) => {
+      try {
+        // Use pre-calculated scores if available, otherwise calculate them
+        const environmentalScore =
+          supplier.environmental_score ||
+          ((supplier.co2_emissions || 0) +
+            (supplier.waste_management_score || 0) +
+            (supplier.energy_efficiency || 0) +
+            (supplier.water_usage || 0) +
+            (supplier.renewable_energy_percent || 0) +
+            (supplier.pollution_control || 0)) /
+            6;
+
+        const socialScore =
+          supplier.social_score ||
+          ((supplier.wage_fairness || 0) +
+            (supplier.human_rights_index || 0) +
+            (supplier.community_engagement || 0) +
+            (supplier.diversity_inclusion_score || 0) +
+            (supplier.worker_safety || 0)) /
+            5;
+
+        const governanceScore =
+          supplier.governance_score ||
+          ((supplier.transparency_score || 0) +
+            (supplier.corruption_risk || 0) +
+            (supplier.board_diversity || 0) +
+            (supplier.ethics_program || 0) +
+            (supplier.compliance_systems || 0) +
+            (supplier.quality_control_score || 0) +
+            (supplier.supplier_diversity || 0) +
+            (supplier.traceability || 0)) /
+            8;
+
+        // Normalize scores to be between 0 and 1
+        const normalizedScores = {
+          environmental: Math.min(Math.max(environmentalScore, 0), 1),
+          social: Math.min(Math.max(socialScore, 0), 1),
+          governance: Math.min(Math.max(governanceScore, 0), 1),
+        };
+
+        // Determine the lowest score to focus recommendations
+        const lowestScore = Object.entries(normalizedScores).reduce(
+          (min, [key, value]) => (value < min.value ? { key, value } : min),
+          { key: "environmental", value: 1 }
+        );
+
+        // Generate recommendation based on the lowest score
+        const recommendation = {
+          _id: `rec-${supplier._id}-${Date.now()}-${Math.floor(
+            Math.random() * 1000
+          )}`,
+          title: `Improve ${lowestScore.key} performance for ${supplier.name}`,
+          description: `Focus on enhancing ${lowestScore.key} metrics to improve overall supplier performance.`,
+          category: lowestScore.key,
+          priority:
+            lowestScore.value < 0.3
+              ? "high"
+              : lowestScore.value < 0.6
+              ? "medium"
+              : "low",
+          status: "pending",
+          supplier: supplier._id,
+          supplierName: supplier.name,
+          aiExplanation: `Based on analysis of ${
+            supplier.name
+          }'s performance metrics, the ${lowestScore.key} score of ${(
+            lowestScore.value * 100
+          ).toFixed(1)}% is significantly lower than other areas.`,
+          estimatedImpact:
+            lowestScore.value < 0.3
+              ? "High"
+              : lowestScore.value < 0.6
+              ? "Medium"
+              : "Low",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        return recommendation;
+      } catch (error) {
+        console.error(
+          `Error processing supplier ${supplier?.name || "unknown"} (${
+            supplier?._id || "unknown"
+          }):`,
+          error
+        );
+        return null;
+      }
+    })
+    .filter((rec) => rec !== null);
+
+  if (recommendations.length === 0) {
+    console.log("No valid recommendations generated, returning mock data");
+    return generateMockRecommendations();
+  }
+
+  console.log(`Generated ${recommendations.length} recommendations internally`);
+  return recommendations;
+}

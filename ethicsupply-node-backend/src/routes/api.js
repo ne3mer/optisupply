@@ -24,10 +24,47 @@ router.get("/", (req, res) => {
       analytics: "/api/suppliers/:id/analytics",
       mlStatus: "/api/ml/status",
       geoRiskAlerts: "/api/geo-risk-alerts",
-      recommendations: "/api/recommendations",
+      recommendations: "/api/suppliers/recommendations",
     },
   });
 });
+
+// ======= RE-ENABLE SUPPLIER ROUTES =======
+
+// Recommendation routes (Keep Active)
+router.get(
+  "/suppliers/recommendations",
+  recommendationController.getRecommendations
+);
+router.get(
+  "/suppliers/recommendations/",
+  recommendationController.getRecommendations
+);
+
+router.get(
+  "/suppliers/recommendations/:id",
+  recommendationController.getRecommendationById
+);
+router.post(
+  "/suppliers/recommendations",
+  recommendationController.createRecommendation
+);
+router.put(
+  "/suppliers/recommendations/:id",
+  recommendationController.updateRecommendation
+);
+router.delete(
+  "/suppliers/recommendations/:id",
+  recommendationController.deleteRecommendation
+);
+router.put(
+  "/suppliers/recommendations/:id/status",
+  recommendationController.updateStatus
+);
+router.get(
+  "/suppliers/:supplierId/recommendations/specific",
+  recommendationController.getRecommendationsBySupplier
+);
 
 // Supplier routes
 router.get("/suppliers", supplierController.getSuppliers);
@@ -36,63 +73,41 @@ router.get("/suppliers/:id", supplierController.getSupplierById);
 router.put("/suppliers/:id", supplierController.updateSupplier);
 router.delete("/suppliers/:id", supplierController.deleteSupplier);
 
-// Dashboard route
+// Dashboard route (uses supplierController)
 router.get("/dashboard", supplierController.getDashboard);
 router.get("/dashboard/", supplierController.getDashboard);
 
-// Supply chain graph route
+// Supply chain graph route (uses supplierController)
 router.get("/supply-chain-graph", supplierController.getSupplyChainGraph);
 
-// Supplier evaluation routes
+// Supplier evaluation routes (uses supplierController)
 router.get(
   "/suppliers/:supplierId/evaluate",
   supplierController.evaluateSupplier
 );
 router.post("/suppliers/evaluate", supplierController.evaluateSupplierPost);
 
-// Supplier analytics route
+// Supplier analytics route (uses supplierController)
 router.get("/suppliers/:id/analytics", supplierController.getSupplierAnalytics);
 router.get(
   "/suppliers/:id/analytics/",
   supplierController.getSupplierAnalytics
 );
 
-// Controversy routes
+// ======= END RE-ENABLED SUPPLIER ROUTES =======
+
+// Controversy routes (Keep Active for now)
 router.get("/controversies", controversyController.getAllControversies);
 router.get("/controversies/:id", controversyController.getControversyById);
 router.post("/controversies", controversyController.createControversy);
 router.put("/controversies/:id", controversyController.updateControversy);
 router.delete("/controversies/:id", controversyController.deleteControversy);
 
-// ML status route
+// ML status route (Keep Active for now)
 router.get("/ml/status", mlController.getMLStatus);
 router.get("/ml/status/", mlController.getMLStatus);
 
-// Recommendation routes
-router.get("/recommendations", recommendationController.getRecommendations);
-router.get("/recommendations/", recommendationController.getRecommendations);
-router.get(
-  "/recommendations/:id",
-  recommendationController.getRecommendationById
-);
-router.post("/recommendations", recommendationController.createRecommendation);
-router.put(
-  "/recommendations/:id",
-  recommendationController.updateRecommendation
-);
-router.delete(
-  "/recommendations/:id",
-  recommendationController.deleteRecommendation
-);
-router.put(
-  "/recommendations/:id/status",
-  recommendationController.updateStatus
-);
-router.get(
-  "/suppliers/:supplierId/recommendations",
-  recommendationController.getRecommendationsBySupplier
-);
-
+// ======= RE-ENABLE GEO RISK ROUTES =======
 // Geo Risk Alert routes
 router.get("/geo-risk-alerts", geoRiskController.getGeoRiskAlerts);
 router.get("/geo-risk-alerts/", geoRiskController.getGeoRiskAlerts);
@@ -106,5 +121,6 @@ router.get(
   geoRiskController.getAlertsByCountry
 );
 router.get("/geo-risk-alerts/type/:type", geoRiskController.getAlertsByType);
+// ======= END RE-ENABLED GEO RISK ROUTES =======
 
 module.exports = router;
