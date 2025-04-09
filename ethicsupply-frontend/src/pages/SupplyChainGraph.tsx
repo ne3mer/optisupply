@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  Suspense,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   getSupplyChainGraphData,
@@ -6,12 +13,14 @@ import {
   GraphLink,
   GraphData,
 } from "../services/api";
-import ForceGraph3D from "react-force-graph-3d";
-import ForceGraph2D from "react-force-graph-2d";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, Stars, useTexture, Html } from "@react-three/drei";
+import Globe from "three-globe";
 import * as THREE from "three";
+import { OrbitControls as DreiOrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
   Network,
-  BarChart3,
+  Globe as GlobeIcon, // Renamed to avoid conflict
   Maximize,
   Minimize,
   AlertTriangle,
@@ -21,18 +30,29 @@ import {
   EyeOff,
   Filter,
   Search,
+  SlidersHorizontal,
+  Loader,
+  Sun,
+  Moon,
+  CheckCircle,
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  Link as LinkIcon,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
-// Extended interfaces to fix typing issues
+// Extended interfaces (keep relevant parts, add lat/lng)
 interface NodeObject extends GraphNode {
-  x?: number;
-  y?: number;
-  z?: number;
+  lat?: number;
+  lng?: number;
+  // Keep other relevant fields if needed, e.g., ethical_score
 }
 
 interface LinkObject extends GraphLink {
-  source: string | NodeObject;
-  target: string | NodeObject;
+  // Ensure source/target are consistently handled if they might be objects
+  source: string | { id: string; lat?: number; lng?: number };
+  target: string | { id: string; lat?: number; lng?: number };
 }
 
 // Extended graph data interface
@@ -42,83 +62,146 @@ interface ExtendedGraphData extends GraphData {
   links: LinkObject[];
 }
 
-// Simple SpriteText implementation for text labels
-class SpriteText {
-  sprite: THREE.Sprite;
-  color: string = "#ffffff";
-  textHeight: number = 8;
-  position: { x: number; y: number; z: number } = { x: 0, y: 0, z: 0 };
-
-  constructor(text: string) {
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
-    if (context) {
-      context.font = "24px Arial";
-      context.fillStyle = "white";
-      context.fillText(text, 5, 20);
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.SpriteMaterial({ map: texture });
-    this.sprite = new THREE.Sprite(material);
-    return this;
+// Helper to get node coordinates
+const getNodeCoords = (
+  nodeIdentifier: string | { id: string; lat?: number; lng?: number },
+  nodes: NodeObject[]
+): { lat: number; lng: number } | null => {
+  const nodeId =
+    typeof nodeIdentifier === "string" ? nodeIdentifier : nodeIdentifier.id;
+  const node = nodes.find((n) => n.id === nodeId);
+  if (node && node.lat !== undefined && node.lng !== undefined) {
+    return { lat: node.lat, lng: node.lng };
   }
-}
+  return null;
+};
 
-// Define types for the force graph refs
-type ForceGraph2DInstance = {
-  centerAt: (x: number, y: number, ms: number) => void;
-  zoom: (scale: number, ms: number) => void;
-} & React.ComponentType<{
-  ref: React.RefObject<unknown>;
-  graphData: ExtendedGraphData;
-  nodeLabel?: (node: NodeObject) => string;
-  nodeCanvasObject?: (
-    node: NodeObject,
-    ctx: CanvasRenderingContext2D,
-    globalScale: number
-  ) => void;
-  linkCanvasObject?: (link: LinkObject, ctx: CanvasRenderingContext2D) => void;
-  onNodeHover?: (node: NodeObject | null) => void;
-  onNodeClick?: (node: NodeObject) => void;
-  onBackgroundClick?: () => void;
-  cooldownTicks?: number;
-  d3AlphaDecay?: number;
-  d3VelocityDecay?: number;
-  nodeRelSize?: number;
-  backgroundColor?: string;
-}>;
+// New component for the Earth
+const Earth = ({ nodes, links, onNodeHover, onNodeClick }) => {
+  const earthRef = useRef();
+  const { camera } = useThree();
+  const [hoveredNode, setHoveredNode] = useState(null);
 
-type ForceGraph3DInstance = {
-  cameraPosition: (
-    position: { x: number; y: number; z: number },
-    lookAt?: { x: number; y: number; z: number },
-    ms?: number
-  ) => void;
-} & React.ComponentType<{
-  ref: React.RefObject<unknown>;
-  graphData: ExtendedGraphData;
-  nodeLabel?: (node: NodeObject) => string;
-  nodeColor?: (node: NodeObject) => string;
-  nodeThreeObject?: (node: NodeObject) => THREE.Object3D;
-  linkColor?: (link: LinkObject) => string;
-  linkWidth?: (link: LinkObject) => number;
-  linkDirectionalParticles?: (link: LinkObject) => number;
-  linkDirectionalParticleWidth?: number;
-  linkDirectionalParticleSpeed?: number;
-  linkDirectionalArrowLength?: number;
-  linkDirectionalArrowRelPos?: number;
-  linkCurvature?: number;
-  onNodeHover?: (node: NodeObject | null) => void;
-  onNodeClick?: (node: NodeObject) => void;
-  onBackgroundClick?: () => void;
-  backgroundColor?: string;
-}>;
+  // Load Earth textures
+  const [earthTexture, bumpMap, specularMap] = useTexture([
+    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg",
+    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_normal_2048.jpg",
+    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg",
+  ]);
+
+  // Convert lat/lng to 3D coordinates
+  const latLngToVector3 = (lat, lng, radius) => {
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lng + 180) * (Math.PI / 180);
+    const x = -(radius * Math.sin(phi) * Math.cos(theta));
+    const z = radius * Math.sin(phi) * Math.sin(theta);
+    const y = radius * Math.cos(phi);
+    return new THREE.Vector3(x, y, z);
+  };
+
+  // Create animated arcs
+  const createArc = (start, end, color) => {
+    const curve = new THREE.CatmullRomCurve3([
+      start,
+      start
+        .clone()
+        .lerp(end, 0.5)
+        .add(new THREE.Vector3(0, 1, 0).multiplyScalar(0.5)),
+      end,
+    ]);
+
+    const points = curve.getPoints(50);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.6,
+    });
+    return new THREE.Line(geometry, material);
+  };
+
+  // Animation loop
+  useFrame((state) => {
+    if (earthRef.current) {
+      earthRef.current.rotation.y += 0.001;
+    }
+  });
+
+  return (
+    <group ref={earthRef}>
+      {/* Earth */}
+      <mesh>
+        <sphereGeometry args={[5, 64, 64]} />
+        <meshPhongMaterial
+          map={earthTexture}
+          bumpMap={bumpMap}
+          bumpScale={0.5}
+          specularMap={specularMap}
+          specular={new THREE.Color("grey")}
+          shininess={5}
+        />
+      </mesh>
+
+      {/* Nodes */}
+      {nodes.map((node) => {
+        const position = latLngToVector3(node.lat, node.lng, 5.1);
+        const color =
+          node.ethical_score > 75
+            ? "#4ade80"
+            : node.ethical_score > 50
+            ? "#fbbf24"
+            : "#f87171";
+
+        return (
+          <mesh
+            key={node.id}
+            position={position}
+            onPointerOver={() => {
+              setHoveredNode(node);
+              onNodeHover(node);
+            }}
+            onPointerOut={() => {
+              setHoveredNode(null);
+              onNodeHover(null);
+            }}
+            onClick={() => onNodeClick(node)}
+          >
+            <sphereGeometry args={[0.1, 16, 16]} />
+            <meshBasicMaterial color={color} />
+          </mesh>
+        );
+      })}
+
+      {/* Links */}
+      {links.map((link, index) => {
+        const sourceNode = nodes.find((n) => n.id === link.source);
+        const targetNode = nodes.find((n) => n.id === link.target);
+        if (!sourceNode || !targetNode) return null;
+
+        const start = latLngToVector3(sourceNode.lat, sourceNode.lng, 5.1);
+        const end = latLngToVector3(targetNode.lat, targetNode.lng, 5.1);
+        const color = link.ethical ? "#4ade80" : "#f87171";
+
+        return <primitive key={index} object={createArc(start, end, color)} />;
+      })}
+
+      {/* Hover info */}
+      {hoveredNode && (
+        <Html position={latLngToVector3(hoveredNode.lat, hoveredNode.lng, 5.2)}>
+          <div className="bg-white/90 p-2 rounded shadow-lg text-sm">
+            <p className="font-bold">{hoveredNode.name}</p>
+            <p>Score: {hoveredNode.ethical_score}%</p>
+            <p>{hoveredNode.country}</p>
+          </div>
+        </Html>
+      )}
+    </group>
+  );
+};
 
 const SupplyChainGraph = () => {
-  // Refs for the graph components
-  const graph2DRef = useRef<ForceGraph2DInstance | null>(null);
-  const graph3DRef = useRef<ForceGraph3DInstance | null>(null);
+  const globeEl = useRef<Globe | null>(null);
+  const controlsRef = useRef<any>(); // For OrbitControls
 
   // State management
   const [graphData, setGraphData] = useState<ExtendedGraphData>({
@@ -128,26 +211,26 @@ const SupplyChainGraph = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeObject | null>(null);
+  const [hoverNode, setHoverNode] = useState<NodeObject | null>(null);
   const [filterEthicalScore, setFilterEthicalScore] = useState<number>(0);
   const [showEthicalPathsOnly, setShowEthicalPathsOnly] =
     useState<boolean>(false);
   const [usingMockData, setUsingMockData] = useState<boolean>(false);
-  const [highlightNodes, setHighlightNodes] = useState(new Set());
-  const [highlightLinks, setHighlightLinks] = useState(new Set());
-  const [hoverNode, setHoverNode] = useState<NodeObject | null>(null);
 
   // UI state
-  const [view3D, setView3D] = useState<boolean>(false);
-  const [darkMode, setDarkMode] = useState<boolean>(false);
-  const [nodeSize, setNodeSize] = useState<number>(1);
-  const [linkWidth, setLinkWidth] = useState<number>(1);
-  const [showLabels, setShowLabels] = useState<boolean>(true);
-  const [showLegend, setShowLegend] = useState<boolean>(true);
+  const [darkMode, setDarkMode] = useState<boolean>(false); // Keep dark mode toggle
   const [filterPanelOpen, setFilterPanelOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [colorByType, setColorByType] = useState<boolean>(true);
-  const [colorByScore, setColorByScore] = useState<boolean>(false);
+  // Removed states related to 2D/3D view, node/link size specific to force graphs
+
+  // Create a ref for the root container
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // New state for node expansion
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+  const [selectedConnection, setSelectedConnection] =
+    useState<LinkObject | null>(null);
 
   // Load data
   useEffect(() => {
@@ -155,29 +238,51 @@ const SupplyChainGraph = () => {
       try {
         setLoading(true);
         const data = await getSupplyChainGraphData();
-        // Convert sources and targets to string IDs if they're objects
-        const processedLinks = data.links.map((link) => ({
-          ...link,
-          source:
-            typeof link.source === "object" &&
-            link.source !== null &&
-            "id" in link.source
-              ? link.source.id
-              : link.source,
-          target:
-            typeof link.target === "object" &&
-            link.target !== null &&
-            "id" in link.target
-              ? link.target.id
-              : link.target,
-        }));
+
+        // Ensure nodes have lat/lng (vital for globe)
+        const validNodes = data.nodes.filter(
+          (n) => n.lat !== undefined && n.lng !== undefined
+        ) as NodeObject[];
+        if (validNodes.length !== data.nodes.length) {
+          console.warn(
+            `Some nodes were filtered out due to missing lat/lng coordinates. ${
+              data.nodes.length - validNodes.length
+            } nodes out of ${data.nodes.length} were removed.`
+          );
+        }
+
+        // Process links to ensure source/target can be resolved to nodes with coords
+        const nodeMap = new Map(validNodes.map((n) => [n.id, n]));
+        const validLinks = data.links
+          .filter((link) => {
+            const sourceNode = nodeMap.get(
+              typeof link.source === "string" ? link.source : link.source.id
+            );
+            const targetNode = nodeMap.get(
+              typeof link.target === "string" ? link.target : link.target.id
+            );
+            return sourceNode && targetNode;
+          })
+          .map((link) => ({
+            // Ensure source/target are IDs for globe processing
+            ...link,
+            source:
+              typeof link.source === "string" ? link.source : link.source.id,
+            target:
+              typeof link.target === "string" ? link.target : link.target.id,
+          })) as LinkObject[];
 
         setGraphData({
-          nodes: data.nodes as NodeObject[],
-          links: processedLinks as LinkObject[],
+          nodes: validNodes,
+          links: validLinks,
           isMockData: data.isMockData,
         });
         setUsingMockData(!!data.isMockData);
+        console.log(
+          `Using ${data.isMockData ? "mock" : "real"} supply chain data with ${
+            validNodes.length
+          } nodes and ${validLinks.length} links.`
+        );
         setError(null);
       } catch (err) {
         console.error("Error fetching supply chain graph data:", err);
@@ -190,1067 +295,567 @@ const SupplyChainGraph = () => {
     fetchData();
   }, []);
 
-  // Function to compute if a full chain is ethical
-  const isFullChainEthical = useCallback(
-    (nodeId: string): boolean => {
-      // For a retailer, check if all connections back to raw materials are ethical
-      const node = graphData.nodes.find((n) => n.id === nodeId);
-      if (!node) return false;
+  // Filtered data for the globe
+  const filteredGraphData = useMemo(() => {
+    let nodes = graphData.nodes;
+    let links = graphData.links;
 
-      // If this is a raw material, it's the start of the chain
-      if (node.type === "rawMaterial") return true;
-
-      // Get all incoming links
-      const incomingLinks = graphData.links.filter((link) => {
-        const target =
-          typeof link.target === "object" && link.target !== null
-            ? link.target.id
-            : link.target;
-        return target === nodeId;
-      });
-
-      // If no incoming links, or any aren't ethical, the chain isn't fully ethical
-      if (incomingLinks.length === 0) return false;
-      if (incomingLinks.some((link) => link.ethical === false)) return false;
-
-      // Check all sources recursively
-      return incomingLinks.every((link) => {
-        const source =
-          typeof link.source === "object" && link.source !== null
-            ? link.source.id
-            : link.source;
-        return isFullChainEthical(
-          typeof source === "string" ? source : String(source)
-        );
-      });
-    },
-    [graphData]
-  );
-
-  // Filter nodes based on search term and ethical score
-  const getFilteredGraphData = useCallback(() => {
-    let filteredNodes = graphData.nodes;
-
-    // Filter by search term
+    // Filter nodes by search term
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
-      filteredNodes = filteredNodes.filter(
-        (node) =>
-          node.name.toLowerCase().includes(lowerSearchTerm) ||
-          (node.country && node.country.toLowerCase().includes(lowerSearchTerm))
+      const filteredNodeIds = new Set(
+        nodes
+          .filter(
+            (node) =>
+              node.name.toLowerCase().includes(lowerSearchTerm) ||
+              (node.country &&
+                node.country.toLowerCase().includes(lowerSearchTerm))
+          )
+          .map((n) => n.id)
+      );
+      nodes = nodes.filter((n) => filteredNodeIds.has(n.id));
+      // Filter links to only include those connecting filtered nodes
+      links = links.filter(
+        (l) =>
+          filteredNodeIds.has(l.source as string) &&
+          filteredNodeIds.has(l.target as string)
       );
     }
 
-    // Filter by ethical score
+    // Filter nodes by ethical score
     if (filterEthicalScore > 0) {
-      filteredNodes = filteredNodes.filter(
-        (node) => (node.ethical_score || 0) >= filterEthicalScore
+      const filteredNodeIds = new Set(
+        nodes
+          .filter((node) => (node.ethical_score || 0) >= filterEthicalScore)
+          .map((n) => n.id)
+      );
+      nodes = nodes.filter((n) => filteredNodeIds.has(n.id));
+      // Filter links again
+      links = links.filter(
+        (l) =>
+          filteredNodeIds.has(l.source as string) &&
+          filteredNodeIds.has(l.target as string)
       );
     }
 
-    // Get IDs of filtered nodes
-    const filteredNodeIds = new Set(filteredNodes.map((node) => node.id));
+    // Filter links by ethical status (if requested)
+    if (showEthicalPathsOnly) {
+      links = links.filter((link) => link.ethical);
+      // Optionally filter nodes to only include those involved in ethical links
+      const ethicalNodeIds = new Set();
+      links.forEach((link) => {
+        ethicalNodeIds.add(link.source);
+        ethicalNodeIds.add(link.target);
+      });
+      nodes = nodes.filter((node) => ethicalNodeIds.has(node.id));
+    }
 
-    // Filter links to only include connections between filtered nodes
-    let filteredLinks = graphData.links.filter((link) => {
-      const sourceId =
-        typeof link.source === "object" && link.source !== null
-          ? link.source.id
-          : link.source;
-      const targetId =
-        typeof link.target === "object" && link.target !== null
-          ? link.target.id
-          : link.target;
+    return { nodes, links };
+  }, [graphData, searchTerm, filterEthicalScore, showEthicalPathsOnly]);
 
-      return filteredNodeIds.has(sourceId) && filteredNodeIds.has(targetId);
+  // Update globe setup effect - we'll use a more direct approach
+  useEffect(() => {
+    if (!containerRef.current || loading || error || !filteredGraphData) return;
+
+    // Clear previous content
+    while (containerRef.current.firstChild) {
+      containerRef.current.removeChild(containerRef.current.firstChild);
+    }
+
+    // Create scene, camera, renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(darkMode ? 0x111827 : 0xf1f5f9);
+
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 250;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    containerRef.current.appendChild(renderer.domElement);
+
+    // Create globe
+    const globe = new Globe()
+      .globeImageUrl("//unpkg.com/three-globe/example/img/earth-night.jpg")
+      .pointsData(filteredGraphData.nodes)
+      .pointAltitude(0.01)
+      .pointRadius((d) => ((d.ethical_score || 50) / 100) * 0.5 + 0.1)
+      .pointColor((d) =>
+        (d.ethical_score || 0) > 75
+          ? "rgba(0, 255, 0, 0.75)"
+          : (d.ethical_score || 0) > 50
+          ? "rgba(255, 165, 0, 0.75)"
+          : "rgba(255, 0, 0, 0.75)"
+      )
+      .pointLat("lat")
+      .pointLng("lng");
+
+    // Setup point hover events
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // Add mousemove event listener to detect hover over points
+    renderer.domElement.addEventListener("mousemove", (event) => {
+      // Calculate mouse position in normalized device coordinates (-1 to +1)
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      // Update the picking ray with the camera and mouse position
+      raycaster.setFromCamera(mouse, camera);
+
+      // Calculate objects intersecting the picking ray
+      const intersects = raycaster.intersectObjects(globe.children, true);
+
+      if (intersects.length > 0) {
+        // Find the point data
+        const pointData = filteredGraphData.nodes.find((node) => {
+          // This is a simplistic approach - you might need to check position or object ID
+          const pointCoords = new THREE.Vector3(
+            node.lng,
+            node.lat,
+            0.01 // Using the pointAltitude
+          );
+          const distance = pointCoords.distanceTo(intersects[0].point);
+          return distance < 0.1; // Some threshold for considering it a match
+        });
+
+        if (pointData) {
+          setHoverNode(pointData);
+        } else {
+          setHoverNode(null);
+        }
+      } else {
+        setHoverNode(null);
+      }
     });
 
-    // If showing only ethical paths, filter further
-    if (showEthicalPathsOnly) {
-      filteredLinks = filteredLinks.filter((link) => link.ethical);
-    }
-
-    return {
-      nodes: filteredNodes,
-      links: filteredLinks,
-    };
-  }, [graphData, filterEthicalScore, showEthicalPathsOnly, searchTerm]);
-
-  // Memoized filtered data to prevent unnecessary recalculations
-  const filteredGraphData = useMemo(
-    () => getFilteredGraphData(),
-    [getFilteredGraphData]
-  );
-
-  // Node color based on type and ethical score
-  const getNodeColor = useCallback(
-    (node: NodeObject) => {
-      if (!colorByType && colorByScore && node.ethical_score !== undefined) {
-        // Color by ethical score
-        const score = node.ethical_score;
-        if (score >= 80) return "#059669"; // Green for high score
-        if (score >= 60) return "#059669"; // Green-yellow for good score
-        if (score >= 40) return "#D97706"; // Yellow for medium score
-        return "#DC2626"; // Red for low score
-      }
-
-      // Base color on node type
-      const baseColors: Record<string, string> = {
-        rawMaterial: "#8B5CF6", // Purple
-        supplier: "#3B82F6", // Blue
-        manufacturer: "#10B981", // Green
-        wholesaler: "#F59E0B", // Amber
-        distributor: "#6366F1", // Indigo
-        retailer: "#EC4899", // Pink
-      };
-
-      return baseColors[node.type] || "#9CA3AF";
-    },
-    [colorByType, colorByScore]
-  );
-
-  // Link color based on ethical status
-  const getLinkColor = useCallback(
-    (link: LinkObject) => {
-      return link.ethical
-        ? darkMode
-          ? "#10B981"
-          : "#059669" // Green in dark/light mode
-        : darkMode
-        ? "#EF4444"
-        : "#DC2626"; // Red in dark/light mode
-    },
-    [darkMode]
-  );
-
-  // Handle node hover
-  const handleNodeHover = useCallback(
-    (node: NodeObject | null) => {
-      setHoverNode(node);
-
-      if (!node) {
-        setHighlightNodes(new Set());
-        setHighlightLinks(new Set());
-        return;
-      }
-
-      // Get connected nodes and links
-      const connectedNodes = new Set([node.id]);
-      const connectedLinks = new Set();
-
-      // Add connected nodes and links in both directions
-      graphData.links.forEach((link) => {
-        const sourceId =
-          typeof link.source === "object" && link.source !== null
-            ? link.source.id
-            : link.source;
-        const targetId =
-          typeof link.target === "object" && link.target !== null
-            ? link.target.id
-            : link.target;
-
-        if (sourceId === node.id) {
-          connectedNodes.add(targetId);
-          connectedLinks.add(link);
-        }
-        if (targetId === node.id) {
-          connectedNodes.add(sourceId);
-          connectedLinks.add(link);
-        }
-      });
-
-      setHighlightNodes(connectedNodes);
-      setHighlightLinks(connectedLinks);
-    },
-    [graphData]
-  );
-
-  // Handle node click
-  const handleNodeClick = useCallback(
-    (node: NodeObject) => {
-      setSelectedNode(node);
-
-      if (view3D && graph3DRef.current) {
-        // Zoom in on the selected node
-        const distance = 100;
-        const distRatio =
-          1 + distance / Math.hypot(node.x || 0, node.y || 0, node.z || 0);
-
-        graph3DRef.current.cameraPosition(
-          {
-            x: (node.x || 0) * distRatio,
-            y: (node.y || 0) * distRatio,
-            z: (node.z || 0) * distRatio,
-          },
-          node,
-          1000
-        );
-      } else if (!view3D && graph2DRef.current) {
-        // Zoom in on the selected node in 2D
-        graph2DRef.current.centerAt(node.x || 0, node.y || 0, 1000);
-        graph2DRef.current.zoom(2.5, 1000);
-      }
-    },
-    [view3D]
-  );
-
-  // Handle background click to deselect node
-  const handleBackgroundClick = useCallback(() => {
-    setSelectedNode(null);
-
-    if (view3D && graph3DRef.current) {
-      // Reset camera in 3D
-      graph3DRef.current.cameraPosition(
-        { x: 0, y: 0, z: 500 },
-        { x: 0, y: 0, z: 0 },
-        1000
-      );
-    } else if (!view3D && graph2DRef.current) {
-      // Reset zoom in 2D
-      graph2DRef.current.centerAt(0, 0, 1000);
-      graph2DRef.current.zoom(1, 1000);
-    }
-  }, [view3D]);
-
-  // Custom node object for 3D view
-  const nodeThreeObject = useCallback(
-    (node: NodeObject) => {
-      const isHighlighted = highlightNodes.has(node.id);
-      const isSelected = selectedNode && selectedNode.id === node.id;
-
-      // Calculate node size based on type, if it's highlighted, and the user size setting
-      let size =
-        (node.type === "rawMaterial" ? 5 : node.type === "retailer" ? 8 : 6) *
-        nodeSize;
-
-      // Increase size if highlighted or selected
-      if (isHighlighted) size *= 1.2;
-      if (isSelected) size *= 1.4;
-
-      // Create a sphere
-      const sphere = new THREE.Mesh(
-        new THREE.SphereGeometry(size),
-        new THREE.MeshLambertMaterial({
-          color: getNodeColor(node),
-          transparent: !isHighlighted && !isSelected,
-          opacity: !isHighlighted && !isSelected ? 0.8 : 1.0,
-        })
-      );
-
-      // Add a text label if needed
-      if (showLabels || isHighlighted || isSelected) {
-        const sprite = new SpriteText(node.name);
-        sprite.color = darkMode ? "#ffffff" : "#000000";
-        sprite.textHeight = isSelected ? 10 : 8;
-        sprite.position.y = size + 10;
-        sphere.add(sprite.sprite);
-      }
-
-      return sphere;
-    },
-    [getNodeColor, highlightNodes, selectedNode, nodeSize, showLabels, darkMode]
-  );
-
-  // Custom node canvasing for 2D view
-  const paintNode = useCallback(
-    (node: NodeObject, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      const isHighlighted = highlightNodes.has(node.id);
-      const isSelected = selectedNode && selectedNode.id === node.id;
-
-      // Calculate node size based on type, if it's highlighted, and user size setting
-      let size =
-        (node.type === "rawMaterial"
-          ? 6
-          : node.type === "supplier"
-          ? 8
-          : node.type === "manufacturer"
-          ? 8
-          : node.type === "wholesaler"
-          ? 7
-          : node.type === "retailer"
-          ? 9
-          : 6) * nodeSize;
-
-      // Increase size if highlighted or selected
-      if (isHighlighted) size *= 1.2;
-      if (isSelected) size *= 1.4;
-
-      // Get node color
-      const color = getNodeColor(node);
-
-      // Draw node
-      ctx.beginPath();
-      ctx.arc(node.x || 0, node.y || 0, size, 0, 2 * Math.PI);
-      ctx.fillStyle = color;
-      ctx.fill();
-
-      // Draw border if highlighted or selected
-      if (isHighlighted || isSelected) {
-        ctx.strokeStyle = darkMode ? "#ffffff" : "#000000";
-        ctx.lineWidth = isSelected ? 2 : 1.5;
-        ctx.stroke();
-      }
-
-      // Add label if enabled or node is highlighted/selected
-      if (showLabels || isSelected || isHighlighted) {
-        ctx.font = `${Math.max(8, 12 / globalScale)}px Arial`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillStyle = darkMode ? "#ffffff" : "#000000";
-        ctx.fillText(
-          node.name,
-          node.x || 0,
-          (node.y || 0) + size + 8 / globalScale
-        );
-      }
-    },
-    [getNodeColor, highlightNodes, selectedNode, nodeSize, showLabels, darkMode]
-  );
-
-  // Custom link rendering for 2D view
-  const paintLink = useCallback(
-    (link: LinkObject, ctx: CanvasRenderingContext2D) => {
-      const isHighlighted = highlightLinks.has(link);
-      const color = getLinkColor(link);
-
-      // Extract coordinates
-      const source = link.source as NodeObject;
-      const target = link.target as NodeObject;
-
-      const sourceX = source.x !== undefined ? source.x : 0;
-      const sourceY = source.y !== undefined ? source.y : 0;
-      const targetX = target.x !== undefined ? target.x : 0;
-      const targetY = target.y !== undefined ? target.y : 0;
-
-      // Draw link with width based on user setting
-      ctx.beginPath();
-      ctx.moveTo(sourceX, sourceY);
-      ctx.lineTo(targetX, targetY);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = isHighlighted ? 2.5 * linkWidth : 1.5 * linkWidth;
-
-      // Add dashed effect for non-ethical links
-      if (!link.ethical) {
-        ctx.setLineDash([5, 3]);
+    // Add click event for selecting nodes
+    renderer.domElement.addEventListener("click", (event) => {
+      if (hoverNode) {
+        setSelectedNode(hoverNode);
       } else {
-        ctx.setLineDash([]);
+        setSelectedNode(null);
+      }
+    });
+
+    // Add arcs for links
+    const arcData = filteredGraphData.links
+      .map((link) => {
+        const sourceCoords = getNodeCoords(
+          link.source,
+          filteredGraphData.nodes
+        );
+        const targetCoords = getNodeCoords(
+          link.target,
+          filteredGraphData.nodes
+        );
+        if (!sourceCoords || !targetCoords) return null;
+
+        return {
+          ...link,
+          startLat: sourceCoords.lat,
+          startLng: sourceCoords.lng,
+          endLat: targetCoords.lat,
+          endLng: targetCoords.lng,
+        };
+      })
+      .filter(Boolean);
+
+    globe
+      .arcsData(arcData)
+      .arcDashLength(0.3)
+      .arcDashGap(0.1)
+      .arcDashAnimateTime(1000)
+      .arcColor((d) =>
+        d.ethical ? "rgba(0, 255, 0, 0.5)" : "rgba(255, 0, 0, 0.5)"
+      )
+      .arcStroke(0.3)
+      .arcAltitudeAutoScale(0.3);
+
+    // Add globe to scene
+    scene.add(globe);
+
+    // Add ambient light
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    // Add directional light
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+
+    // Add controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
+
+    // Handle window resize
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Animation loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // Clean up
+    return () => {
+      if (containerRef.current) {
+        while (containerRef.current.firstChild) {
+          containerRef.current.removeChild(containerRef.current.firstChild);
+        }
       }
 
-      ctx.stroke();
+      window.removeEventListener("resize", handleResize);
+      renderer.dispose();
+      controls.dispose();
+    };
+  }, [filteredGraphData, darkMode, loading, error]);
 
-      // Reset line dash
-      ctx.setLineDash([]);
-
-      // Draw direction arrow if highlighted
-      if (isHighlighted) {
-        const deltaX = targetX - sourceX;
-        const deltaY = targetY - sourceY;
-        const angle = Math.atan2(deltaY, deltaX);
-
-        // Position the arrow near the target node
-        const arrowLength = 10;
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        const targetNodeSize = 8; // Approximate
-
-        // Calculate position to draw arrow (before the target node)
-        const posX = sourceX + deltaX * (1 - targetNodeSize / distance);
-        const posY = sourceY + deltaY * (1 - targetNodeSize / distance);
-
-        ctx.beginPath();
-        ctx.moveTo(posX, posY);
-        ctx.lineTo(
-          posX - arrowLength * Math.cos(angle - Math.PI / 6),
-          posY - arrowLength * Math.sin(angle - Math.PI / 6)
-        );
-        ctx.lineTo(
-          posX - arrowLength * Math.cos(angle + Math.PI / 6),
-          posY - arrowLength * Math.sin(angle + Math.PI / 6)
-        );
-        ctx.closePath();
-        ctx.fillStyle = color;
-        ctx.fill();
-      }
-    },
-    [getLinkColor, highlightLinks, linkWidth]
-  );
-
-  // Toggle fullscreen mode
-  const toggleFullscreen = useCallback(() => {
+  // Handle fullscreen toggle
+  const toggleFullscreen = () => {
+    const elem = document.documentElement;
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      elem.requestFullscreen().catch((err) => {
+        alert(
+          `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+        );
       });
       setIsFullscreen(true);
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-        setIsFullscreen(false);
-      }
+      document.exitFullscreen();
+      setIsFullscreen(false);
     }
-  }, []);
+  };
+
+  // Toggle Dark Mode
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  // Toggle node expansion
+  const toggleNode = (nodeId: string) => {
+    const newExpanded = new Set(expandedNodes);
+    if (newExpanded.has(nodeId)) {
+      newExpanded.delete(nodeId);
+    } else {
+      newExpanded.add(nodeId);
+    }
+    setExpandedNodes(newExpanded);
+  };
+
+  // Get connection details
+  const getConnectionDetails = (link: LinkObject) => {
+    const sourceNode = graphData.nodes.find((n) => n.id === link.source);
+    const targetNode = graphData.nodes.find((n) => n.id === link.target);
+    if (!sourceNode || !targetNode) return null;
+
+    return {
+      source: sourceNode,
+      target: targetNode,
+      relationship: link.relationship || "Supplier Relationship",
+      ethical: link.ethical,
+      riskFactors: link.risk_factors || [],
+      complianceStatus: link.compliance_status || "Unknown",
+    };
+  };
 
   return (
-    <div
-      className={`min-h-screen ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-900"
-      } transition-colors duration-300`}
-    >
-      {/* Header Section */}
-      <div className="container mx-auto py-6 px-4">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6"
-        >
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center">
-              <Network
-                className={`h-8 w-8 ${
-                  darkMode ? "text-blue-400" : "text-blue-600"
-                } mr-2`}
-              />
-              Supply Chain Relationship Graph
+    <div className="relative w-full min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-black/50 backdrop-blur-sm">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Link to="/dashboard" className="text-white hover:text-gray-300">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <h1 className="text-2xl font-bold text-white">
+              Supply Chain Network
             </h1>
-            <p
-              className={`mt-1 ${darkMode ? "text-gray-300" : "text-gray-600"}`}
-            >
-              Interactive visualization of your entire supply chain network
-            </p>
-            {usingMockData && (
-              <p className="text-xs text-amber-500 mt-1 flex items-center">
-                <Info className="h-4 w-4 mr-1" />
-                Using demonstration data. Connect to the API for real supply
-                chain data.
-              </p>
-            )}
           </div>
-
-          {/* Main Controls */}
-          <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setView3D(!view3D)}
-              className={`px-3 py-2 rounded-lg shadow-sm flex items-center ${
-                darkMode
-                  ? "bg-gray-800 text-blue-400 hover:bg-gray-700"
-                  : "bg-white text-blue-600 hover:bg-gray-50"
-              }`}
-            >
-              {view3D ? "2D View" : "3D View"}
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+          <div className="flex items-center space-x-4">
+            <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`px-3 py-2 rounded-lg shadow-sm flex items-center ${
-                darkMode
-                  ? "bg-gray-800 text-blue-400 hover:bg-gray-700"
-                  : "bg-white text-blue-600 hover:bg-gray-50"
-              }`}
+              className="p-2 rounded-full hover:bg-white/10"
             >
-              {darkMode ? "Light Mode" : "Dark Mode"}
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              {darkMode ? (
+                <Sun className="w-6 h-6 text-white" />
+              ) : (
+                <Moon className="w-6 h-6 text-white" />
+              )}
+            </button>
+            <button
               onClick={toggleFullscreen}
-              className={`px-3 py-2 rounded-lg shadow-sm flex items-center ${
-                darkMode
-                  ? "bg-gray-800 text-blue-400 hover:bg-gray-700"
-                  : "bg-white text-blue-600 hover:bg-gray-50"
-              }`}
+              className="p-2 rounded-full hover:bg-white/10"
             >
               {isFullscreen ? (
-                <Minimize className="w-5 h-5" />
+                <Minimize className="w-6 h-6 text-white" />
               ) : (
-                <Maximize className="w-5 h-5" />
+                <Maximize className="w-6 h-6 text-white" />
               )}
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setFilterPanelOpen(!filterPanelOpen)}
-              className={`px-3 py-2 rounded-lg shadow-sm flex items-center ${
-                darkMode
-                  ? "bg-gray-800 text-blue-400 hover:bg-gray-700"
-                  : "bg-white text-blue-600 hover:bg-gray-50"
-              }`}
-            >
-              <Filter className="w-5 h-5 mr-1" />
-              Filters
-            </motion.button>
+            </button>
           </div>
-        </motion.div>
+        </div>
+      </div>
 
-        {/* Search and Filter Panel */}
-        <AnimatePresence>
-          {filterPanelOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`mb-6 rounded-lg shadow-sm overflow-hidden ${
-                darkMode ? "bg-gray-800" : "bg-white"
-              }`}
-            >
-              <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Search */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Search Suppliers
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search by name or country"
-                        className={`w-full px-4 py-2 rounded-lg border ${
-                          darkMode
-                            ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
-                        }`}
-                      />
-                      <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
-                    </div>
-                  </div>
+      {/* Main Canvas */}
+      <div className="w-full h-[60vh]">
+        <Canvas camera={{ position: [0, 0, 15], fov: 45 }}>
+          <ambientLight intensity={0.5} />
+          <pointLight position={[10, 10, 10]} intensity={1} />
+          <Stars
+            radius={100}
+            depth={50}
+            count={5000}
+            factor={4}
+            saturation={0}
+            fade
+          />
+          <Earth
+            nodes={filteredGraphData.nodes}
+            links={filteredGraphData.links}
+            onNodeHover={setHoverNode}
+            onNodeClick={setSelectedNode}
+          />
+          <OrbitControls
+            enableZoom={true}
+            enablePan={true}
+            enableRotate={true}
+            zoomSpeed={0.6}
+            panSpeed={0.5}
+            rotateSpeed={0.4}
+          />
+        </Canvas>
+      </div>
 
-                  {/* Ethical Score Filter */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Min. Ethical Score: {filterEthicalScore}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
-                      value={filterEthicalScore}
-                      onChange={(e) =>
-                        setFilterEthicalScore(parseInt(e.target.value, 10))
-                      }
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Toggle Ethical Paths */}
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id="ethical-paths"
-                      checked={showEthicalPathsOnly}
-                      onChange={() =>
-                        setShowEthicalPathsOnly(!showEthicalPathsOnly)
-                      }
-                      className="h-4 w-4 rounded"
-                    />
-                    <label
-                      htmlFor="ethical-paths"
-                      className={`ml-2 block text-sm ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Show only ethical connections
-                    </label>
-                  </div>
-
-                  {/* Visualization Options */}
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Visualization Options
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => setShowLabels(!showLabels)}
-                        className={`px-2 py-1 text-xs rounded ${
-                          showLabels
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {showLabels ? (
-                          <Eye className="w-3 h-3 inline mr-1" />
-                        ) : (
-                          <EyeOff className="w-3 h-3 inline mr-1" />
-                        )}
-                        Labels
-                      </button>
-                      <button
-                        onClick={() => setColorByScore(!colorByScore)}
-                        className={`px-2 py-1 text-xs rounded ${
-                          colorByScore
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        <BarChart3 className="w-3 h-3 inline mr-1" />
-                        Score Colors
-                      </button>
-                      <button
-                        onClick={() => setColorByType(!colorByType)}
-                        className={`px-2 py-1 text-xs rounded ${
-                          colorByType
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        <Filter className="w-3 h-3 inline mr-1" />
-                        Type Colors
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Advanced controls */}
-                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Node Size: {nodeSize.toFixed(1)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={nodeSize}
-                      onChange={(e) => setNodeSize(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      className={`block text-sm font-medium mb-2 ${
-                        darkMode ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Link Width: {linkWidth.toFixed(1)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={linkWidth}
-                      onChange={(e) => setLinkWidth(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Legend */}
-        {showLegend && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className={`mb-4 p-4 rounded-lg shadow-sm ${
-              darkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h2
-                className={`text-sm font-medium ${
-                  darkMode ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                Legend
+      {/* Flowchart Section */}
+      <div className="w-full bg-gray-800/90 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto p-4">
+          <div className="flex">
+            {/* Network Tree */}
+            <div className="w-1/2 p-4 overflow-y-auto border-r border-gray-700">
+              <h2 className="text-xl font-bold text-white mb-4">
+                Supplier Network
               </h2>
-              <button
-                onClick={() => setShowLegend(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <span className="sr-only">Close</span>
-                &times;
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center">
-                <span className="w-3 h-3 rounded-full bg-purple-500 mr-1"></span>
-                <span
-                  className={`text-xs ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Raw Material
-                </span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-3 h-3 rounded-full bg-blue-500 mr-1"></span>
-                <span
-                  className={`text-xs ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Supplier
-                </span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-3 h-3 rounded-full bg-green-500 mr-1"></span>
-                <span
-                  className={`text-xs ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Manufacturer
-                </span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-3 h-3 rounded-full bg-amber-500 mr-1"></span>
-                <span
-                  className={`text-xs ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Wholesaler
-                </span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-3 h-3 rounded-full bg-pink-500 mr-1"></span>
-                <span
-                  className={`text-xs ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Retailer
-                </span>
-              </div>
-              <div
-                className={`border-l ${
-                  darkMode ? "border-gray-700" : "border-gray-300"
-                } pl-2 flex items-center`}
-              >
-                <span className="w-6 h-1 bg-green-600 mr-1"></span>
-                <span
-                  className={`text-xs ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Ethical Link
-                </span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-6 h-1 border-t-2 border-dashed border-red-600 mr-1"></span>
-                <span
-                  className={`text-xs ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  Non-ethical Link
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Main content */}
-        <div
-          className={`rounded-lg shadow overflow-hidden ${
-            darkMode ? "bg-gray-800 border border-gray-700" : "bg-white"
-          }`}
-        >
-          {loading ? (
-            <div className="p-12 text-center">
-              <RefreshCw
-                className={`h-12 w-12 ${
-                  darkMode ? "text-gray-500" : "text-gray-400"
-                } animate-spin mx-auto`}
-              />
-              <p
-                className={`mt-4 ${
-                  darkMode ? "text-gray-300" : "text-gray-600"
-                }`}
-              >
-                Loading supply chain data...
-              </p>
-            </div>
-          ) : error ? (
-            <div className="p-12 text-center">
-              <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
-              <p className="mt-4 text-red-500">{error}</p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => window.location.reload()}
-                className="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
-              </motion.button>
-            </div>
-          ) : (
-            <div className="relative" style={{ height: "70vh" }}>
-              {filteredGraphData.nodes.length > 0 ? (
-                <>
-                  {/* 3D or 2D Graph based on view selection */}
-                  {view3D ? (
-                    <ForceGraph3D
-                      ref={graph3DRef}
-                      graphData={filteredGraphData}
-                      nodeLabel={(node) =>
-                        `${node.name} (${node.type})\nEthical Score: ${
-                          node.ethical_score || "N/A"
-                        }\nCountry: ${node.country || "Unknown"}`
-                      }
-                      nodeColor={getNodeColor}
-                      nodeThreeObject={nodeThreeObject}
-                      linkColor={getLinkColor}
-                      linkWidth={(link) =>
-                        highlightLinks.has(link) ? 2 * linkWidth : linkWidth
-                      }
-                      linkDirectionalParticles={(link) =>
-                        link.ethical ? 4 : 0
-                      }
-                      linkDirectionalParticleWidth={2}
-                      linkDirectionalParticleSpeed={0.005}
-                      linkDirectionalArrowLength={3.5}
-                      linkDirectionalArrowRelPos={1}
-                      linkCurvature={0.1}
-                      onNodeHover={handleNodeHover}
-                      onNodeClick={handleNodeClick}
-                      onBackgroundClick={handleBackgroundClick}
-                      backgroundColor={darkMode ? "#1F2937" : "#ffffff"}
-                    />
-                  ) : (
-                    <ForceGraph2D
-                      ref={graph2DRef}
-                      graphData={filteredGraphData}
-                      nodeCanvasObject={paintNode}
-                      linkCanvasObject={paintLink}
-                      onNodeHover={handleNodeHover}
-                      onNodeClick={handleNodeClick}
-                      onBackgroundClick={handleBackgroundClick}
-                      cooldownTicks={100}
-                      d3AlphaDecay={0.02}
-                      d3VelocityDecay={0.2}
-                      nodeRelSize={6}
-                      backgroundColor={darkMode ? "#1F2937" : "#ffffff"}
-                    />
-                  )}
-
-                  {/* Hover tooltip */}
-                  {hoverNode && (
+              <div className="space-y-2">
+                {graphData.nodes.map((node) => (
+                  <div key={node.id} className="bg-gray-700/50 rounded-lg p-3">
                     <div
-                      className={`absolute top-2 left-2 p-2 rounded-md shadow-lg border text-xs z-10 ${
-                        darkMode
-                          ? "bg-gray-800 border-gray-700 text-white"
-                          : "bg-white border-gray-200 text-gray-800"
-                      }`}
+                      className="flex items-center justify-between cursor-pointer"
+                      onClick={() => toggleNode(node.id)}
                     >
-                      <div className="font-bold">{hoverNode.name}</div>
-                      <div>
-                        Type:{" "}
-                        <span className="capitalize">{hoverNode.type}</span>
+                      <div className="flex items-center space-x-2">
+                        {expandedNodes.has(node.id) ? (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
+                        )}
+                        <span className="font-medium text-white">
+                          {node.name}
+                        </span>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            node.ethical_score > 75
+                              ? "bg-green-500/20 text-green-400"
+                              : node.ethical_score > 50
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : "bg-red-500/20 text-red-400"
+                          }`}
+                        >
+                          {node.ethical_score}%
+                        </span>
                       </div>
-                      <div>Country: {hoverNode.country}</div>
-                      {hoverNode.ethical_score && (
-                        <div>Ethical Score: {hoverNode.ethical_score}</div>
-                      )}
+                      <span className="text-sm text-gray-400">
+                        {node.country}
+                      </span>
                     </div>
-                  )}
 
-                  {/* Selected node info panel */}
-                  <AnimatePresence>
-                    {selectedNode && (
+                    {expandedNodes.has(node.id) && (
                       <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ duration: 0.3 }}
-                        className={`absolute top-4 right-4 w-72 p-4 rounded-lg shadow-lg border z-10 ${
-                          darkMode
-                            ? "bg-gray-800 border-gray-700 text-white"
-                            : "bg-white border-gray-200 text-gray-800"
-                        }`}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-2 pl-6 space-y-2"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg font-semibold">
-                            {selectedNode.name}
-                          </h3>
-                          <button
-                            onClick={() => setSelectedNode(null)}
-                            className="text-gray-400 hover:text-gray-600"
-                          >
-                            <span className="sr-only">Close</span>
-                            &times;
-                          </button>
+                        {graphData.links
+                          .filter(
+                            (link) =>
+                              link.source === node.id || link.target === node.id
+                          )
+                          .map((link) => {
+                            const isSource = link.source === node.id;
+                            const connectedNode = graphData.nodes.find(
+                              (n) =>
+                                n.id === (isSource ? link.target : link.source)
+                            );
+                            if (!connectedNode) return null;
+
+                            return (
+                              <div
+                                key={`${link.source}-${link.target}`}
+                                className="flex items-center space-x-2 p-2 rounded hover:bg-gray-600/50 cursor-pointer"
+                                onClick={() => setSelectedConnection(link)}
+                              >
+                                <LinkIcon
+                                  className={`w-4 h-4 ${
+                                    link.ethical
+                                      ? "text-green-400"
+                                      : "text-red-400"
+                                  }`}
+                                />
+                                <span className="text-sm text-gray-300">
+                                  {isSource ? "Supplies to" : "Supplied by"}{" "}
+                                  {connectedNode.name}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </motion.div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Connection Details */}
+            <div className="w-1/2 p-4 overflow-y-auto">
+              <h2 className="text-xl font-bold text-white mb-4">
+                Connection Details
+              </h2>
+              {selectedConnection ? (
+                <div className="bg-gray-700/50 rounded-lg p-4">
+                  {(() => {
+                    const details = getConnectionDetails(selectedConnection);
+                    if (!details) return null;
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="text-lg font-semibold text-white">
+                              {details.source.name} → {details.target.name}
+                            </h3>
+                            {details.ethical ? (
+                              <CheckCircle className="w-5 h-5 text-green-400" />
+                            ) : (
+                              <AlertTriangle className="w-5 h-5 text-red-400" />
+                            )}
+                          </div>
+                          <span className="text-sm text-gray-400">
+                            {details.relationship}
+                          </span>
                         </div>
-                        <div className="space-y-2 text-sm">
-                          <p>
-                            <span className="font-medium">Type:</span>{" "}
-                            <span className="capitalize">
-                              {selectedNode.type}
-                            </span>
-                          </p>
-                          <p>
-                            <span className="font-medium">Country:</span>{" "}
-                            {selectedNode.country}
-                          </p>
-                          <p>
-                            <span className="font-medium">Ethical Score:</span>{" "}
-                            {selectedNode.ethical_score}
-                          </p>
-                          {selectedNode.type === "supplier" && (
-                            <p>
-                              <span className="font-medium">
-                                Is Ethical Chain:
-                              </span>{" "}
-                              {isFullChainEthical(selectedNode.id)
-                                ? "Yes"
-                                : "No"}
-                            </p>
+
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-400 mb-2">
+                              Compliance Status
+                            </h4>
+                            <div
+                              className={`px-3 py-2 rounded ${
+                                details.complianceStatus === "Compliant"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : details.complianceStatus === "Non-Compliant"
+                                  ? "bg-red-500/20 text-red-400"
+                                  : "bg-yellow-500/20 text-yellow-400"
+                              }`}
+                            >
+                              {details.complianceStatus}
+                            </div>
+                          </div>
+
+                          {details.riskFactors.length > 0 && (
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-400 mb-2">
+                                Risk Factors
+                              </h4>
+                              <div className="space-y-2">
+                                {details.riskFactors.map((factor, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center space-x-2"
+                                  >
+                                    <AlertTriangle className="w-4 h-4 text-red-400" />
+                                    <span className="text-sm text-gray-300">
+                                      {factor}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           )}
 
-                          {/* Relationships section */}
-                          <div
-                            className={`border-t pt-2 mt-2 ${
-                              darkMode ? "border-gray-700" : "border-gray-200"
-                            }`}
-                          >
-                            <h4 className="font-medium mb-1">Connections:</h4>
-                            <div className="max-h-40 overflow-y-auto">
-                              {/* List incoming connections */}
-                              {graphData.links
-                                .filter((link) => {
-                                  const targetId =
-                                    typeof link.target === "object" &&
-                                    link.target
-                                      ? link.target.id
-                                      : link.target;
-                                  return targetId === selectedNode.id;
-                                })
-                                .map((link, idx) => {
-                                  const sourceId =
-                                    typeof link.source === "object" &&
-                                    link.source
-                                      ? link.source.id
-                                      : link.source;
-                                  const sourceNode = graphData.nodes.find(
-                                    (n) => n.id === sourceId
-                                  );
-                                  return (
-                                    <div
-                                      key={`in-${idx}`}
-                                      className="text-xs mb-1"
-                                    >
-                                      <span className="mr-1">←</span>
-                                      <span
-                                        className={
-                                          link.ethical
-                                            ? "text-green-600"
-                                            : "text-red-600"
-                                        }
-                                      >
-                                        {sourceNode?.name || sourceId}
-                                      </span>
-                                      <span
-                                        className={`${
-                                          darkMode
-                                            ? "text-gray-400"
-                                            : "text-gray-500"
-                                        }`}
-                                      >
-                                        {" "}
-                                        ({sourceNode?.type})
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-
-                              {/* List outgoing connections */}
-                              {graphData.links
-                                .filter((link) => {
-                                  const sourceId =
-                                    typeof link.source === "object" &&
-                                    link.source
-                                      ? link.source.id
-                                      : link.source;
-                                  return sourceId === selectedNode.id;
-                                })
-                                .map((link, idx) => {
-                                  const targetId =
-                                    typeof link.target === "object" &&
-                                    link.target
-                                      ? link.target.id
-                                      : link.target;
-                                  const targetNode = graphData.nodes.find(
-                                    (n) => n.id === targetId
-                                  );
-                                  return (
-                                    <div
-                                      key={`out-${idx}`}
-                                      className="text-xs mb-1"
-                                    >
-                                      <span className="mr-1">→</span>
-                                      <span
-                                        className={
-                                          link.ethical
-                                            ? "text-green-600"
-                                            : "text-red-600"
-                                        }
-                                      >
-                                        {targetNode?.name || targetId}
-                                      </span>
-                                      <span
-                                        className={`${
-                                          darkMode
-                                            ? "text-gray-400"
-                                            : "text-gray-500"
-                                        }`}
-                                      >
-                                        {" "}
-                                        ({targetNode?.type})
-                                      </span>
-                                    </div>
-                                  );
-                                })}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-400 mb-2">
+                                Source Supplier
+                              </h4>
+                              <div className="bg-gray-600/50 rounded p-3">
+                                <p className="text-white font-medium">
+                                  {details.source.name}
+                                </p>
+                                <p className="text-sm text-gray-400">
+                                  {details.source.country}
+                                </p>
+                                <p className="text-sm text-gray-400">
+                                  Score: {details.source.ethical_score}%
+                                </p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-400 mb-2">
+                                Target Supplier
+                              </h4>
+                              <div className="bg-gray-600/50 rounded p-3">
+                                <p className="text-white font-medium">
+                                  {details.target.name}
+                                </p>
+                                <p className="text-sm text-gray-400">
+                                  {details.target.country}
+                                </p>
+                                <p className="text-sm text-gray-400">
+                                  Score: {details.target.ethical_score}%
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </>
+                      </>
+                    );
+                  })()}
+                </div>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p
-                    className={`${
-                      darkMode ? "text-gray-400" : "text-gray-500"
-                    }`}
-                  >
-                    No nodes match the current filters.
-                  </p>
+                  <div className="text-center text-gray-400">
+                    <Info className="w-12 h-12 mx-auto mb-2" />
+                    <p>Select a connection to view details</p>
+                  </div>
                 </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

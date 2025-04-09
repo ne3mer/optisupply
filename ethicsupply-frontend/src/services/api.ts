@@ -811,12 +811,14 @@ function generateWeaknesses(data: SupplierEvaluation): string[] {
 
 function generateOpportunities(): string[] {
   return [
-    "Implement advanced emissions tracking technology",
-    "Develop comprehensive sustainability reporting framework",
-    "Expand renewable energy initiatives across operations",
-    "Strengthen supplier diversity program",
-    "Enhance worker development and training programs",
-  ].slice(0, 3);
+    "Carbon neutrality certification potential",
+    "Industry leadership in sustainable practices",
+    "Partnership with NGOs on social projects",
+    "Vertical integration with ethical suppliers",
+    "Development of circular economy initiatives",
+    "First-mover advantage in emerging markets",
+    "Consider joint training programs on ethical practices",
+  ];
 }
 
 function generateMockRecommendation(data: SupplierEvaluation): string {
@@ -848,9 +850,17 @@ function generateMockSuggestions(data: SupplierEvaluation): string[] {
     ];
   } else {
     return [
-      "Implement monthly compliance check-ins",
-      "Require sustainability improvement plan within 60 days",
-      "Consider alternative suppliers while monitoring improvements",
+      "Implement sustainable sourcing policy for key materials",
+      "Establish carbon offset program for emissions",
+      "Conduct third-party audit of labor practices",
+      "Improve transparency in governance structure",
+      "Enhance supplier diversity program effectiveness",
+      "Develop more robust environmental management system",
+      "Improve water usage efficiency in manufacturing",
+      "Update human rights policy and training",
+      "Strengthen anti-corruption compliance measures",
+      "Improve waste reduction and recycling initiatives",
+      "Explore expanding relationship to additional product lines",
     ];
   }
 }
@@ -870,9 +880,13 @@ function generateThreats(data: SupplierEvaluation): string[] {
   // Add generic threats if needed
   if (threats.length < 2) {
     threats.push(
-      "Increasing regulatory pressure in key markets",
-      "Rising consumer expectations for ethical sourcing",
-      "Competitive pressure from more sustainable market alternatives"
+      "Changing regulations in key operating regions",
+      "Increased stakeholder scrutiny on ethics",
+      "Supply chain disruption risks",
+      "Rising costs of sustainable materials",
+      "Negative public perception if improvement not shown",
+      "Loss of customers to more ethical competitors",
+      "Consider alternative suppliers while monitoring improvements"
     );
   }
 
@@ -1013,14 +1027,14 @@ function generateComplianceGaps(data: SupplierEvaluation): string[] {
 
 export const getRecommendations = async () => {
   try {
-    console.log("Fetching recommendations from API...");
+    console.log("Fetching AI-powered recommendations from API...");
     const response = await fetch(`${API_BASE_URL}/suppliers/recommendations/`);
 
     if (!response.ok) {
       console.warn(
-        `Recommendations API returned status ${response.status}. Using mock data.`
+        `Recommendations API returned status ${response.status}. Using AI-simulated data.`
       );
-      // Return sorted mock suppliers if the endpoint is not available
+      // Return enhanced mock suppliers with AI recommendations if the endpoint is not available
       return mockSuppliers
         .sort((a, b) => (b.ethical_score || 0) - (a.ethical_score || 0))
         .map((supplier) => {
@@ -1055,23 +1069,85 @@ export const getRecommendations = async () => {
             labor_dispute_risk: 0,
           };
 
+          // Calculate main scores to determine primary focus area
+          const environmentalScore = calculateEnvironmentalScore(supplierEval);
+          const socialScore = calculateSocialScore(supplierEval);
+          const governanceScore = calculateGovernanceScore(supplierEval);
+          const supplyChainScore = calculateSupplyChainScore(supplierEval);
+
+          // Determine the primary category based on the lowest score
+          const scores = [
+            { category: "Environmental", score: environmentalScore },
+            { category: "Social", score: socialScore },
+            { category: "Governance", score: governanceScore },
+            { category: "Supply Chain", score: supplyChainScore },
+          ];
+          scores.sort((a, b) => a.score - b.score);
+          const primaryCategory = scores[0].category;
+
+          // Determine urgency based on how low the score is
+          let urgency = "Medium";
+          if (scores[0].score < 0.4) urgency = "High";
+          else if (scores[0].score > 0.7) urgency = "Low";
+
+          // Generate AI explanation with more detailed insights
+          const generatedAiExplanation = {
+            reasoning:
+              generateActionItems(supplierEval, primaryCategory)?.[0] ||
+              `Low score in ${primaryCategory}.`,
+            impact_assessment: `Improving ${primaryCategory} score could enhance overall rating.`,
+            implementation_difficulty: urgency === "High" ? "Medium" : "Low",
+            timeframe: urgency === "High" ? "3-6 months" : "1-3 months",
+            comparative_insights:
+              generateComparativeInsights(supplierEval, primaryCategory) || [],
+            primary_category: primaryCategory,
+            urgency: urgency,
+            key_strengths: generateStrengths(supplierEval),
+            percentile_insights: generatePercentileInsights(
+              supplierEval,
+              primaryCategory
+            ),
+            action_items: generateActionItems(supplierEval, primaryCategory),
+          };
+
+          // Construct the mock Recommendation object matching the frontend interface
           return {
-            ...supplier,
-            recommendation: generateMockRecommendation(supplierEval),
+            _id: `mock-${supplier.id}`,
+            title: `Improve ${primaryCategory} for ${supplier.name}`,
+            description: generatedAiExplanation.reasoning,
+            category: primaryCategory,
+            priority: urgency,
+            status: "pending", // <-- Added missing status field
+            created_at: supplier.created_at,
+            updated_at: supplier.updated_at,
+            supplier: {
+              // Ensure nested supplier object matches frontend type
+              name: supplier.name,
+              country: supplier.country,
+              industry: supplier.industry || "Unknown",
+              ethical_score: supplier.ethical_score || 0,
+            },
+            ai_explanation: generatedAiExplanation, // Use the constructed explanation object
+            estimated_impact: {
+              // Add mock estimated impact
+              score_improvement: Math.floor(Math.random() * 5) + 1,
+              cost_savings: Math.floor(Math.random() * 10000) + 5000,
+              implementation_time: urgency === "High" ? 180 : 90,
+            },
             isMockData: true,
           };
         });
     }
 
     const data = await response.json();
-    console.log("Recommendations API response:", data);
+    console.log("AI Recommendations API response:", data);
 
     // Handle paginated response (Django REST Framework format)
     if (data && typeof data === "object") {
       // Check if the response has a 'results' field (paginated response)
       if (data.results && Array.isArray(data.results)) {
         console.log(
-          "Using paginated API results for recommendations:",
+          "Using paginated API results for AI recommendations:",
           data.results
         );
         if (data.results.length > 0) {
@@ -1081,13 +1157,15 @@ export const getRecommendations = async () => {
 
       // Handle non-paginated response
       if (Array.isArray(data) && data.length > 0) {
-        console.log("Using non-paginated API results for recommendations");
+        console.log("Using non-paginated API results for AI recommendations");
         return data;
       }
     }
 
-    // Return mock data if we couldn't get valid data from the API
-    console.warn("API returned empty recommendations data. Using mock data.");
+    // Return enhanced mock data if we couldn't get valid data from the API
+    console.warn(
+      "API returned empty recommendation data. Using AI-simulated data."
+    );
     return mockSuppliers
       .sort((a, b) => (b.ethical_score || 0) - (a.ethical_score || 0))
       .map((supplier) => {
@@ -1122,15 +1200,77 @@ export const getRecommendations = async () => {
           labor_dispute_risk: 0,
         };
 
+        // Calculate main scores to determine primary focus area
+        const environmentalScore = calculateEnvironmentalScore(supplierEval);
+        const socialScore = calculateSocialScore(supplierEval);
+        const governanceScore = calculateGovernanceScore(supplierEval);
+        const supplyChainScore = calculateSupplyChainScore(supplierEval);
+
+        // Determine the primary category based on the lowest score
+        const scores = [
+          { category: "Environmental", score: environmentalScore },
+          { category: "Social", score: socialScore },
+          { category: "Governance", score: governanceScore },
+          { category: "Supply Chain", score: supplyChainScore },
+        ];
+        scores.sort((a, b) => a.score - b.score);
+        const primaryCategory = scores[0].category;
+
+        // Determine urgency based on how low the score is
+        let urgency = "Medium";
+        if (scores[0].score < 0.4) urgency = "High";
+        else if (scores[0].score > 0.7) urgency = "Low";
+
+        // Generate AI explanation with more detailed insights
+        const generatedAiExplanation = {
+          reasoning:
+            generateActionItems(supplierEval, primaryCategory)?.[0] ||
+            `Low score in ${primaryCategory}.`,
+          impact_assessment: `Improving ${primaryCategory} score could enhance overall rating.`,
+          implementation_difficulty: urgency === "High" ? "Medium" : "Low",
+          timeframe: urgency === "High" ? "3-6 months" : "1-3 months",
+          comparative_insights:
+            generateComparativeInsights(supplierEval, primaryCategory) || [],
+          primary_category: primaryCategory,
+          urgency: urgency,
+          key_strengths: generateStrengths(supplierEval),
+          percentile_insights: generatePercentileInsights(
+            supplierEval,
+            primaryCategory
+          ),
+          action_items: generateActionItems(supplierEval, primaryCategory),
+        };
+
+        // Construct the mock Recommendation object matching the frontend interface
         return {
-          ...supplier,
-          recommendation: generateMockRecommendation(supplierEval),
+          _id: `mock-${supplier.id}`,
+          title: `Improve ${primaryCategory} for ${supplier.name}`,
+          description: generatedAiExplanation.reasoning,
+          category: primaryCategory,
+          priority: urgency,
+          status: "pending", // <-- Added missing status field
+          created_at: supplier.created_at,
+          updated_at: supplier.updated_at,
+          supplier: {
+            // Ensure nested supplier object matches frontend type
+            name: supplier.name,
+            country: supplier.country,
+            industry: supplier.industry || "Unknown",
+            ethical_score: supplier.ethical_score || 0,
+          },
+          ai_explanation: generatedAiExplanation, // Use the constructed explanation object
+          estimated_impact: {
+            // Add mock estimated impact
+            score_improvement: Math.floor(Math.random() * 5) + 1,
+            cost_savings: Math.floor(Math.random() * 10000) + 5000,
+            implementation_time: urgency === "High" ? 180 : 90,
+          },
           isMockData: true,
         };
       });
   } catch (error) {
-    console.error("Error fetching recommendations:", error);
-    // Return sorted mock suppliers in case of error
+    console.error("Error fetching AI recommendations:", error);
+    // Return enhanced mock suppliers in case of error
     return mockSuppliers
       .sort((a, b) => (b.ethical_score || 0) - (a.ethical_score || 0))
       .map((supplier) => {
@@ -1165,9 +1305,71 @@ export const getRecommendations = async () => {
           labor_dispute_risk: 0,
         };
 
+        // Calculate main scores to determine primary focus area
+        const environmentalScore = calculateEnvironmentalScore(supplierEval);
+        const socialScore = calculateSocialScore(supplierEval);
+        const governanceScore = calculateGovernanceScore(supplierEval);
+        const supplyChainScore = calculateSupplyChainScore(supplierEval);
+
+        // Determine the primary category based on the lowest score
+        const scores = [
+          { category: "Environmental", score: environmentalScore },
+          { category: "Social", score: socialScore },
+          { category: "Governance", score: governanceScore },
+          { category: "Supply Chain", score: supplyChainScore },
+        ];
+        scores.sort((a, b) => a.score - b.score);
+        const primaryCategory = scores[0].category;
+
+        // Determine urgency based on how low the score is
+        let urgency = "Medium";
+        if (scores[0].score < 0.4) urgency = "High";
+        else if (scores[0].score > 0.7) urgency = "Low";
+
+        // Generate AI explanation with more detailed insights
+        const generatedAiExplanation = {
+          reasoning:
+            generateActionItems(supplierEval, primaryCategory)?.[0] ||
+            `Low score in ${primaryCategory}.`,
+          impact_assessment: `Improving ${primaryCategory} score could enhance overall rating.`,
+          implementation_difficulty: urgency === "High" ? "Medium" : "Low",
+          timeframe: urgency === "High" ? "3-6 months" : "1-3 months",
+          comparative_insights:
+            generateComparativeInsights(supplierEval, primaryCategory) || [],
+          primary_category: primaryCategory,
+          urgency: urgency,
+          key_strengths: generateStrengths(supplierEval),
+          percentile_insights: generatePercentileInsights(
+            supplierEval,
+            primaryCategory
+          ),
+          action_items: generateActionItems(supplierEval, primaryCategory),
+        };
+
+        // Construct the mock Recommendation object matching the frontend interface
         return {
-          ...supplier,
-          recommendation: generateMockRecommendation(supplierEval),
+          _id: `mock-${supplier.id}`,
+          title: `Improve ${primaryCategory} for ${supplier.name}`,
+          description: generatedAiExplanation.reasoning,
+          category: primaryCategory,
+          priority: urgency,
+          status: "pending", // <-- Added missing status field
+          created_at: supplier.created_at,
+          updated_at: supplier.updated_at,
+          supplier: {
+            // Ensure nested supplier object matches frontend type
+            name: supplier.name,
+            country: supplier.country,
+            industry: supplier.industry || "Unknown",
+            ethical_score: supplier.ethical_score || 0,
+          },
+          ai_explanation: generatedAiExplanation, // Use the constructed explanation object
+          estimated_impact: {
+            // Add mock estimated impact
+            score_improvement: Math.floor(Math.random() * 5) + 1,
+            cost_savings: Math.floor(Math.random() * 10000) + 5000,
+            implementation_time: urgency === "High" ? 180 : 90,
+          },
           isMockData: true,
         };
       });
@@ -2082,6 +2284,8 @@ export interface GraphNode {
   ethical_score?: number;
   group?: number;
   level?: number;
+  lat?: number; // Added latitude
+  lng?: number; // Added longitude
 }
 
 export interface GraphLink {
@@ -2114,10 +2318,55 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
       }
 
       const data = await response.json();
+
+      // Ensure all nodes have lat/lng coordinates
+      const countryCoords: Record<string, { lat: number; lng: number }> = {
+        USA: { lat: 38.9637, lng: -95.7129 },
+        China: { lat: 35.8617, lng: 104.1954 },
+        Germany: { lat: 51.1657, lng: 10.4515 },
+        Brazil: { lat: -14.235, lng: -51.9253 },
+        India: { lat: 20.5937, lng: 78.9629 },
+        Vietnam: { lat: 14.0583, lng: 108.2772 },
+        Mexico: { lat: 23.6345, lng: -102.5528 },
+        Canada: { lat: 56.1304, lng: -106.3468 },
+        Taiwan: { lat: 23.6978, lng: 120.9605 },
+        Japan: { lat: 36.2048, lng: 138.2529 },
+        "South Korea": { lat: 35.9078, lng: 127.7669 },
+        UK: { lat: 55.3781, lng: -3.436 },
+        France: { lat: 46.6034, lng: 1.8883 },
+        Australia: { lat: -25.2744, lng: 133.7751 },
+        Nigeria: { lat: 9.082, lng: 8.6753 },
+        // Default for unknown countries
+        Unknown: { lat: 0, lng: 0 },
+      };
+
+      // Make sure each node has coordinates
+      const nodesWithCoords = data.nodes.map((node) => {
+        if (node.lat !== undefined && node.lng !== undefined) {
+          return node; // Node already has coordinates
+        }
+
+        // Try to get coordinates based on country
+        if (node.country && countryCoords[node.country]) {
+          return {
+            ...node,
+            lat: countryCoords[node.country].lat + (Math.random() - 0.5) * 5, // Add jitter
+            lng: countryCoords[node.country].lng + (Math.random() - 0.5) * 5, // Add jitter
+          };
+        }
+
+        // If no country or unknown country, use random coordinates
+        return {
+          ...node,
+          lat: Math.random() * 180 - 90, // Random latitude between -90 and 90
+          lng: Math.random() * 360 - 180, // Random longitude between -180 and 180
+        };
+      });
+
       return {
-        nodes: data.nodes,
+        nodes: nodesWithCoords,
         links: data.links,
-        isMockData: true,
+        isMockData: false,
       };
     } catch (error) {
       console.error("Error fetching supply chain graph data:", error);
@@ -2131,251 +2380,103 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
 
 // Mock data for supply chain graph
 const getMockSupplyChainGraphData = (): GraphData => {
+  // Approximate coordinates for countries
+  const countryCoords: Record<string, { lat: number; lng: number }> = {
+    USA: { lat: 38.9637, lng: -95.7129 },
+    China: { lat: 35.8617, lng: 104.1954 },
+    Germany: { lat: 51.1657, lng: 10.4515 },
+    Brazil: { lat: -14.235, lng: -51.9253 },
+    India: { lat: 20.5937, lng: 78.9629 },
+    Vietnam: { lat: 14.0583, lng: 108.2772 },
+    Mexico: { lat: 23.6345, lng: -102.5528 },
+    Canada: { lat: 56.1304, lng: -106.3468 },
+    Taiwan: { lat: 23.6978, lng: 120.9605 },
+    Japan: { lat: 36.2048, lng: 138.2529 },
+    "South Korea": { lat: 35.9078, lng: 127.7669 },
+    UK: { lat: 55.3781, lng: -3.436 },
+    France: { lat: 46.6034, lng: 1.8883 },
+    Australia: { lat: -25.2744, lng: 133.7751 },
+    Nigeria: { lat: 9.082, lng: 8.6753 },
+  };
+
+  const nodeTypes = [
+    "supplier",
+    "manufacturer",
+    "wholesaler",
+    "rawMaterial",
+    "distributor",
+    "retailer",
+  ];
+
+  const countries = Object.keys(countryCoords);
+  const numNodes = 40; // Increased node count for better visualization
+  const nodes: GraphNode[] = [];
+  const supplierNames = [
+    "EcoFabrics Ltd.",
+    "GreenTech Solutions",
+    "Sustainable Circuits",
+    "Ethical Components Inc.",
+    "Pure Harvest Organics",
+    "Renewable Resources Co.",
+    "FairTrade Goods",
+    "Transparent Textiles",
+    "Clean Energy Systems",
+    "BioPlastics Innovations",
+    "AquaPure Filters",
+    "Solaris Panels",
+    "GeoThermal Drilling",
+    "WindTurbine Parts",
+    "AgriFutures Corp",
+    "Oceanic Goods",
+    "Forest Stewardship Timber",
+    "Mineral Extraction Ethical",
+    "LaborLink Apparel",
+    "CommunityCrafts Co-op",
+  ]; // More diverse names
+
+  for (let i = 0; i < numNodes; i++) {
+    const country = countries[i % countries.length];
+    const coords = countryCoords[country] || { lat: 0, lng: 0 };
+    nodes.push({
+      id: `node_${i}`,
+      name: `${supplierNames[i % supplierNames.length]} (${country})`,
+      type: nodeTypes[i % nodeTypes.length] as GraphNode["type"],
+      country: country,
+      ethical_score: 50 + Math.random() * 50, // 50-100
+      group: Math.floor(Math.random() * 5), // Assign random groups
+      level: Math.floor(Math.random() * 3), // Assign random levels for potential layering
+      lat: coords.lat + (Math.random() - 0.5) * 5, // Add slight jitter
+      lng: coords.lng + (Math.random() - 0.5) * 5, // Add slight jitter
+    });
+  }
+
+  const links: GraphLink[] = [];
+  const numLinks = 60; // Increased link count
+  for (let i = 0; i < numLinks; i++) {
+    const sourceIndex = Math.floor(Math.random() * numNodes);
+    let targetIndex = Math.floor(Math.random() * numNodes);
+    // Ensure source and target are different
+    while (targetIndex === sourceIndex) {
+      targetIndex = Math.floor(Math.random() * numNodes);
+    }
+    const sourceNode = nodes[sourceIndex];
+    const targetNode = nodes[targetIndex];
+    const isEthical =
+      (sourceNode.ethical_score ?? 0) > 70 &&
+      (targetNode.ethical_score ?? 0) > 70;
+    links.push({
+      source: sourceNode.id,
+      target: targetNode.id,
+      type: Math.random() > 0.7 ? "Primary" : "Secondary",
+      strength: Math.random(),
+      ethical: isEthical,
+    });
+  }
+
+  // Corrected return statement
   return {
-    nodes: [
-      // Raw Materials
-      {
-        id: "cotton",
-        name: "Cotton",
-        type: "rawMaterial",
-        level: 1,
-        ethical_score: 85,
-        country: "India",
-      },
-      {
-        id: "oil",
-        name: "Crude Oil",
-        type: "rawMaterial",
-        level: 1,
-        ethical_score: 40,
-        country: "Saudi Arabia",
-      },
-      {
-        id: "minerals",
-        name: "Rare Earth Minerals",
-        type: "rawMaterial",
-        level: 1,
-        ethical_score: 30,
-        country: "China",
-      },
-      {
-        id: "aluminum",
-        name: "Aluminum",
-        type: "rawMaterial",
-        level: 1,
-        ethical_score: 60,
-        country: "Australia",
-      },
-      {
-        id: "timber",
-        name: "Timber",
-        type: "rawMaterial",
-        level: 1,
-        ethical_score: 75,
-        country: "Brazil",
-      },
-
-      // Suppliers
-      {
-        id: "s1",
-        name: "EcoFabrics Inc",
-        type: "supplier",
-        level: 2,
-        ethical_score: 90,
-        country: "India",
-      },
-      {
-        id: "s2",
-        name: "PlastiCorp",
-        type: "supplier",
-        level: 2,
-        ethical_score: 45,
-        country: "China",
-      },
-      {
-        id: "s3",
-        name: "GlobalMetal Ltd",
-        type: "supplier",
-        level: 2,
-        ethical_score: 65,
-        country: "Australia",
-      },
-      {
-        id: "s4",
-        name: "WoodWorks",
-        type: "supplier",
-        level: 2,
-        ethical_score: 80,
-        country: "Canada",
-      },
-      {
-        id: "s5",
-        name: "ChemTech Industries",
-        type: "supplier",
-        level: 2,
-        ethical_score: 55,
-        country: "Germany",
-      },
-
-      // Manufacturers
-      {
-        id: "m1",
-        name: "EcoApparel",
-        type: "manufacturer",
-        level: 3,
-        ethical_score: 88,
-        country: "Portugal",
-      },
-      {
-        id: "m2",
-        name: "TechBuild Inc",
-        type: "manufacturer",
-        level: 3,
-        ethical_score: 72,
-        country: "Taiwan",
-      },
-      {
-        id: "m3",
-        name: "GlobalProducts",
-        type: "manufacturer",
-        level: 3,
-        ethical_score: 50,
-        country: "Mexico",
-      },
-      {
-        id: "m4",
-        name: "FurniturePlus",
-        type: "manufacturer",
-        level: 3,
-        ethical_score: 83,
-        country: "Sweden",
-      },
-      {
-        id: "m5",
-        name: "AutoParts Ltd",
-        type: "manufacturer",
-        level: 3,
-        ethical_score: 65,
-        country: "Japan",
-      },
-
-      // Wholesalers
-      {
-        id: "w1",
-        name: "Fashion Distributors",
-        type: "wholesaler",
-        level: 4,
-        ethical_score: 78,
-        country: "France",
-      },
-      {
-        id: "w2",
-        name: "Tech Wholesale Group",
-        type: "wholesaler",
-        level: 4,
-        ethical_score: 60,
-        country: "United States",
-      },
-      {
-        id: "w3",
-        name: "Global Goods Inc",
-        type: "wholesaler",
-        level: 4,
-        ethical_score: 55,
-        country: "Netherlands",
-      },
-      {
-        id: "w4",
-        name: "Home Solutions",
-        type: "wholesaler",
-        level: 4,
-        ethical_score: 75,
-        country: "Denmark",
-      },
-      {
-        id: "w5",
-        name: "Auto Wholesale",
-        type: "wholesaler",
-        level: 4,
-        ethical_score: 62,
-        country: "Germany",
-      },
-
-      // Retailers
-      {
-        id: "r1",
-        name: "Eco Clothes",
-        type: "retailer",
-        level: 5,
-        ethical_score: 85,
-        country: "United Kingdom",
-      },
-      {
-        id: "r2",
-        name: "TechShop",
-        type: "retailer",
-        level: 5,
-        ethical_score: 68,
-        country: "United States",
-      },
-      {
-        id: "r3",
-        name: "Global Mart",
-        type: "retailer",
-        level: 5,
-        ethical_score: 52,
-        country: "Canada",
-      },
-      {
-        id: "r4",
-        name: "Design Home",
-        type: "retailer",
-        level: 5,
-        ethical_score: 80,
-        country: "Italy",
-      },
-      {
-        id: "r5",
-        name: "Auto World",
-        type: "retailer",
-        level: 5,
-        ethical_score: 60,
-        country: "France",
-      },
-    ],
-    links: [
-      // Raw Materials to Suppliers
-      { source: "cotton", target: "s1", ethical: true },
-      { source: "oil", target: "s2", ethical: false },
-      { source: "minerals", target: "s2", ethical: false },
-      { source: "aluminum", target: "s3", ethical: true },
-      { source: "timber", target: "s4", ethical: true },
-
-      // Some suppliers to multiple manufacturers
-      { source: "s1", target: "m1", ethical: true },
-      { source: "s2", target: "m2", ethical: false },
-      { source: "s2", target: "m3", ethical: false },
-      { source: "s3", target: "m5", ethical: true },
-      { source: "s3", target: "m2", ethical: true },
-      { source: "s4", target: "m4", ethical: true },
-      { source: "s5", target: "m3", ethical: false },
-      { source: "s5", target: "m5", ethical: false },
-
-      // Manufacturers to Wholesalers
-      { source: "m1", target: "w1", ethical: true },
-      { source: "m2", target: "w2", ethical: true },
-      { source: "m3", target: "w3", ethical: false },
-      { source: "m4", target: "w4", ethical: true },
-      { source: "m5", target: "w5", ethical: true },
-      { source: "m2", target: "w3", ethical: true },
-
-      // Wholesalers to Retailers
-      { source: "w1", target: "r1", ethical: true },
-      { source: "w2", target: "r2", ethical: true },
-      { source: "w3", target: "r3", ethical: false },
-      { source: "w4", target: "r4", ethical: true },
-      { source: "w5", target: "r5", ethical: true },
-    ],
+    nodes,
+    links,
     isMockData: true,
   };
 };
@@ -2704,3 +2805,409 @@ const generateMockAnalyticsData = (id: string): SupplierAnalyticsData => {
     isMockData: true,
   };
 };
+
+// Helper function to generate percentile insights based on supplier data
+function generatePercentileInsights(
+  data: SupplierEvaluation,
+  primaryCategory: string
+): string[] {
+  const insights: string[] = [];
+
+  // Add 1-2 general insights
+  if (data.ethical_score) {
+    insights.push(
+      `This supplier's overall ethical score of ${data.ethical_score.toFixed(
+        1
+      )}% places them in the ${getPercentileText(
+        data.ethical_score
+      )} of industry peers.`
+    );
+  }
+
+  // Add category-specific insights
+  switch (primaryCategory) {
+    case "Environmental":
+      if (data.co2_emissions) {
+        insights.push(
+          `CO2 emissions are ${
+            data.co2_emissions > 50 ? "higher" : "lower"
+          } than ${Math.abs(
+            50 - data.co2_emissions
+          )}% of comparable suppliers in the ${data.industry} industry.`
+        );
+      }
+      if (data.waste_management_score) {
+        insights.push(
+          `Waste management practices rank in the ${getPercentileText(
+            data.waste_management_score * 100
+          )} percentile compared to industry standards.`
+        );
+      }
+      break;
+    case "Social":
+      if (data.wage_fairness) {
+        insights.push(
+          `Wage fairness score is in the ${getPercentileText(
+            data.wage_fairness * 100
+          )} compared to the industry average of 0.65.`
+        );
+      }
+      if (data.human_rights_index) {
+        insights.push(
+          `Human rights compliance ranks in the ${getPercentileText(
+            data.human_rights_index * 100
+          )} of suppliers in ${data.country}.`
+        );
+      }
+      break;
+    case "Governance":
+      if (data.transparency_score) {
+        insights.push(
+          `Transparency practices rank in the ${getPercentileText(
+            data.transparency_score * 100
+          )} of the industry benchmark.`
+        );
+      }
+      if (data.corruption_risk) {
+        insights.push(
+          `Corruption risk exposure is ${
+            data.corruption_risk > 0.5 ? "higher" : "lower"
+          } than ${Math.round(
+            Math.abs(0.5 - data.corruption_risk) * 100
+          )}% of peers in similar regions.`
+        );
+      }
+      break;
+    case "Supply Chain":
+      if (data.delivery_efficiency) {
+        insights.push(
+          `Delivery efficiency ranks in the ${getPercentileText(
+            data.delivery_efficiency * 100
+          )} of industry standards.`
+        );
+      }
+      if (data.traceability) {
+        insights.push(
+          `Supply chain traceability is better than ${Math.round(
+            data.traceability * 100
+          )}% of comparable suppliers.`
+        );
+      }
+      break;
+  }
+
+  // Add at least one insight if none were generated
+  if (insights.length === 0) {
+    insights.push(
+      `This supplier's performance in ${primaryCategory.toLowerCase()} metrics requires attention, with opportunities for significant improvement compared to industry benchmarks.`
+    );
+  }
+
+  return insights;
+}
+
+// Helper function to generate comparative insights based on supplier data
+function generateComparativeInsights(
+  data: SupplierEvaluation,
+  primaryCategory: string
+): string[] {
+  const insights: string[] = [];
+
+  // Add category-specific insights with specific metrics
+  switch (primaryCategory) {
+    case "Environmental":
+      if (data.co2_emissions !== undefined) {
+        insights.push(
+          `CO2 emissions are ${
+            data.co2_emissions > 50
+              ? data.co2_emissions - 50
+              : 50 - data.co2_emissions
+          }% ${
+            data.co2_emissions > 50 ? "above" : "below"
+          } industry average of 50 tons.`
+        );
+      }
+      if (data.water_usage !== undefined) {
+        insights.push(
+          `Water usage efficiency is ${
+            data.water_usage > 50 ? "below average" : "above average"
+          } with utilization at ${
+            data.water_usage
+          } cubic meters per production unit.`
+        );
+      }
+      if (data.renewable_energy_percent !== undefined) {
+        insights.push(
+          `Renewable energy usage at ${data.renewable_energy_percent}% compared to industry average of 35%.`
+        );
+      }
+      break;
+    case "Social":
+      if (data.wage_fairness !== undefined) {
+        insights.push(
+          `Wage fairness ratio of ${(data.wage_fairness * 100).toFixed(
+            1
+          )}% compared to regional average of 65%.`
+        );
+      }
+      if (data.human_rights_index !== undefined) {
+        insights.push(
+          `Human rights compliance score of ${(
+            data.human_rights_index * 100
+          ).toFixed(1)}% versus global standard of 70%.`
+        );
+      }
+      if (data.diversity_inclusion_score !== undefined) {
+        insights.push(
+          `Diversity and inclusion score of ${(
+            data.diversity_inclusion_score * 100
+          ).toFixed(1)}% against benchmark of 60%.`
+        );
+      }
+      break;
+    case "Governance":
+      if (data.transparency_score !== undefined) {
+        insights.push(
+          `Transparency rating of ${(data.transparency_score * 100).toFixed(
+            1
+          )}% compared to industry standard of 65%.`
+        );
+      }
+      if (data.corruption_risk !== undefined) {
+        insights.push(
+          `Corruption risk index of ${(data.corruption_risk * 100).toFixed(
+            1
+          )}% versus acceptable threshold of 30%.`
+        );
+      }
+      if (data.ethics_program !== undefined) {
+        insights.push(
+          `Ethics program maturity at ${(data.ethics_program * 100).toFixed(
+            1
+          )}% compared to best practice score of 80%.`
+        );
+      }
+      break;
+    case "Supply Chain":
+      if (data.delivery_efficiency !== undefined) {
+        insights.push(
+          `Delivery efficiency rating of ${(
+            data.delivery_efficiency * 100
+          ).toFixed(1)}% against industry average of 75%.`
+        );
+      }
+      if (data.quality_control_score !== undefined) {
+        insights.push(
+          `Quality control performance at ${(
+            data.quality_control_score * 100
+          ).toFixed(1)}% versus benchmark of 80%.`
+        );
+      }
+      if (data.traceability !== undefined) {
+        insights.push(
+          `Supply chain traceability index of ${(
+            data.traceability * 100
+          ).toFixed(1)}% compared to industry goal of 85%.`
+        );
+      }
+      break;
+  }
+
+  // Add general cross-category insight as well
+  if (data.ethical_score) {
+    const categories = [
+      "environmental",
+      "social",
+      "governance",
+      "supply chain",
+    ];
+    const randomCategory =
+      categories[Math.floor(Math.random() * categories.length)];
+    insights.push(
+      `Overall ethical score is ${
+        data.ethical_score > 70 ? "strong" : "below optimal"
+      } at ${data.ethical_score.toFixed(
+        1
+      )}%, with ${randomCategory} metrics having the greatest impact on overall rating.`
+    );
+  }
+
+  // Add at least one insight if none were generated
+  if (insights.length === 0) {
+    insights.push(
+      `This supplier's ${primaryCategory.toLowerCase()} metrics require detailed assessment, as current performance indicates potential gaps in meeting industry standards.`
+    );
+  }
+
+  return insights;
+}
+
+// Helper function to generate actionable recommendations
+function generateActionItems(
+  data: SupplierEvaluation,
+  primaryCategory: string
+): string[] {
+  const actions: string[] = [];
+
+  // Add category-specific action items
+  switch (primaryCategory) {
+    case "Environmental":
+      if (data.co2_emissions && data.co2_emissions > 40) {
+        actions.push(
+          `Implement carbon reduction plan targeting ${Math.round(
+            (data.co2_emissions - 30) / 2
+          )}% decrease in emissions over next 18 months.`
+        );
+      }
+      if (data.water_usage && data.water_usage > 40) {
+        actions.push(
+          `Adopt water recycling systems to reduce consumption by 30% within 12 months.`
+        );
+      }
+      if (
+        !data.renewable_energy_percent ||
+        data.renewable_energy_percent < 40
+      ) {
+        actions.push(
+          `Increase renewable energy sourcing to minimum 40% through power purchase agreements or on-site generation.`
+        );
+      }
+      if (!data.waste_management_score || data.waste_management_score < 0.7) {
+        actions.push(
+          `Implement comprehensive waste reduction program with circular economy principles and zero-waste targets.`
+        );
+      }
+      break;
+    case "Social":
+      if (!data.wage_fairness || data.wage_fairness < 0.7) {
+        actions.push(
+          `Conduct wage equity audit to establish fair compensation structure based on regional living wage standards.`
+        );
+      }
+      if (!data.human_rights_index || data.human_rights_index < 0.7) {
+        actions.push(
+          `Implement enhanced human rights due diligence process with quarterly monitoring and annual third-party verification.`
+        );
+      }
+      if (
+        !data.diversity_inclusion_score ||
+        data.diversity_inclusion_score < 0.6
+      ) {
+        actions.push(
+          `Establish diversity, equity and inclusion program with measurable targets and executive accountability.`
+        );
+      }
+      if (!data.worker_safety || data.worker_safety < 0.8) {
+        actions.push(
+          `Upgrade workplace safety protocols with enhanced training and incident prevention systems.`
+        );
+      }
+      break;
+    case "Governance":
+      if (!data.transparency_score || data.transparency_score < 0.7) {
+        actions.push(
+          `Enhance disclosure practices through comprehensive ESG reporting aligned with GRI standards.`
+        );
+      }
+      if (data.corruption_risk && data.corruption_risk > 0.3) {
+        actions.push(
+          `Strengthen anti-corruption controls with enhanced training, whistleblower protection, and third-party verification.`
+        );
+      }
+      if (!data.board_diversity || data.board_diversity < 0.5) {
+        actions.push(
+          `Improve governance structure with increased board diversity and ESG oversight committee.`
+        );
+      }
+      if (!data.ethics_program || data.ethics_program < 0.6) {
+        actions.push(
+          `Implement robust ethics program with clear code of conduct, training, and compliance monitoring.`
+        );
+      }
+      break;
+    case "Supply Chain":
+      if (!data.delivery_efficiency || data.delivery_efficiency < 0.7) {
+        actions.push(
+          `Optimize logistics operations to improve delivery efficiency and reduce transportation emissions.`
+        );
+      }
+      if (!data.quality_control_score || data.quality_control_score < 0.8) {
+        actions.push(
+          `Implement enhanced quality management system with continuous improvement protocols.`
+        );
+      }
+      if (!data.traceability || data.traceability < 0.6) {
+        actions.push(
+          `Deploy blockchain-based traceability system to track products from raw materials to finished goods.`
+        );
+      }
+      if (!data.supplier_diversity || data.supplier_diversity < 0.5) {
+        actions.push(
+          `Expand supplier diversity program with targets for minority and women-owned business inclusion.`
+        );
+      }
+      break;
+  }
+
+  // Add at least one general action item
+  if (data.ethical_score && data.ethical_score < 75) {
+    actions.push(
+      `Develop comprehensive ESG improvement roadmap with quarterly progress reviews and executive accountability.`
+    );
+  } else {
+    actions.push(
+      `Enhance ESG data collection systems to enable more granular performance tracking and improvement identification.`
+    );
+  }
+
+  // Add industry-specific action if possible
+  if (data.industry) {
+    const industryActions = {
+      Electronics:
+        "Implement closed-loop recycling for electronic components and packaging materials.",
+      "Food & Beverage":
+        "Transition to sustainable packaging alternatives and reduce food waste across operations.",
+      Apparel:
+        "Adopt sustainably sourced materials and implement water-efficient manufacturing processes.",
+      Automotive:
+        "Accelerate transition to low-carbon manufacturing processes and circular material usage.",
+      Manufacturing:
+        "Implement energy efficiency measures across production facilities and optimize resource use.",
+    };
+
+    if (data.industry in industryActions) {
+      actions.push(industryActions[data.industry]);
+    }
+  }
+
+  // Ensure we have at least 3 actions
+  while (actions.length < 3) {
+    const generalActions = [
+      "Establish supplier code of conduct with clear ESG requirements and verification protocols.",
+      "Implement data-driven sustainability KPIs with regular executive review and improvement planning.",
+      "Develop ESG training program for all employees to build organization-wide sustainability capacity.",
+      "Create transparency dashboard for real-time tracking and reporting of key sustainability metrics.",
+    ];
+
+    const randomAction =
+      generalActions[Math.floor(Math.random() * generalActions.length)];
+    if (!actions.includes(randomAction)) {
+      actions.push(randomAction);
+    }
+  }
+
+  return actions.slice(0, 4); // Return at most 4 action items
+}
+
+// Helper function to get percentile text
+function getPercentileText(score: number): string {
+  if (score >= 90) return "top 10%";
+  if (score >= 80) return "top 20%";
+  if (score >= 70) return "top 30%";
+  if (score >= 60) return "top 40%";
+  if (score >= 50) return "average range";
+  if (score >= 40) return "bottom 40%";
+  if (score >= 30) return "bottom 30%";
+  if (score >= 20) return "bottom 20%";
+  return "bottom 10%";
+}
