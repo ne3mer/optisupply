@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import NavigationBar from "./components/Navbar";
 import LandingPage from "./pages/LandingPage";
+import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 import EvaluateSupplier from "./pages/EvaluateSupplier";
 import Recommendations from "./pages/Recommendations";
@@ -61,56 +62,87 @@ function App() {
       <RecoilRoot>
         <Router>
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-            <NavigationBar />
-            <main className="pt-16">
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="suppliers" element={<SuppliersList />} />
-                  <Route path="suppliers/add" element={<AddSupplier />} />
-                  <Route path="suppliers/:id" element={<SupplierDetails />} />
-                  <Route
-                    path="suppliers/:id/edit"
-                    element={<SupplierEditForm />}
-                  />
-                  <Route
-                    path="suppliers/:id/scorecard"
-                    element={<SupplierScorecard />}
-                  />
-                  <Route
-                    path="suppliers/:id/analytics"
-                    element={<SupplierAnalytics />}
-                  />
-                  <Route
-                    path="supplier-analytics/:id"
-                    element={<SupplierAnalyticsRedirect />}
-                  />
-                  <Route
-                    path="suppliers/:id/assessment"
-                    element={<SupplierAssessment />}
-                  />
-                  <Route
-                    path="suppliers/evaluate"
-                    element={<EvaluateSupplier />}
-                  />
-                  <Route path="recommendations" element={<Recommendations />} />
-                  <Route
-                    path="supply-chain-graph"
-                    element={
-                      <ReactFlowProvider>
-                        <SupplyChainGraph />
-                      </ReactFlowProvider>
-                    }
-                  />
-                  <Route path="geo-risk-mapping" element={<GeoRiskMapping />} />
-                  <Route path="about" element={<OptiSupplyAboutPage />} />
-                  <Route path="3d-visualization" element={<Redirect3D />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </main>
+            <Routes>
+              {/* Public Landing Page - No Navigation Bar */}
+              <Route path="/" element={<HomePage />} />
+
+              {/* Protected App Routes - With Navigation Bar */}
+              <Route
+                path="/*"
+                element={
+                  <>
+                    <NavigationBar />
+                    <main className="pt-16">
+                      <Routes>
+                        <Route path="/" element={<Layout />}>
+                          <Route index element={<Dashboard />} />
+                          <Route path="dashboard" element={<Dashboard />} />
+                          <Route path="suppliers" element={<SuppliersList />} />
+                          <Route
+                            path="suppliers/add"
+                            element={<AddSupplier />}
+                          />
+                          <Route
+                            path="suppliers/:id"
+                            element={<SupplierDetails />}
+                          />
+                          <Route
+                            path="suppliers/:id/edit"
+                            element={<SupplierEditForm />}
+                          />
+                          <Route
+                            path="suppliers/:id/scorecard"
+                            element={<SupplierScorecard />}
+                          />
+                          <Route
+                            path="suppliers/:id/analytics"
+                            element={<SupplierAnalytics />}
+                          />
+                          <Route
+                            path="supplier-analytics/:id"
+                            element={<SupplierAnalyticsRedirect />}
+                          />
+                          <Route
+                            path="suppliers/:id/assessment"
+                            element={<SupplierAssessment />}
+                          />
+                          <Route
+                            path="suppliers/evaluate"
+                            element={<EvaluateSupplier />}
+                          />
+                          <Route
+                            path="recommendations"
+                            element={<Recommendations />}
+                          />
+                          <Route
+                            path="supply-chain-graph"
+                            element={
+                              <ReactFlowProvider>
+                                <SupplyChainGraph />
+                              </ReactFlowProvider>
+                            }
+                          />
+                          <Route
+                            path="geo-risk-mapping"
+                            element={<GeoRiskMapping />}
+                          />
+                          <Route
+                            path="about"
+                            element={<OptiSupplyAboutPage />}
+                          />
+                          <Route
+                            path="3d-visualization"
+                            element={<Redirect3D />}
+                          />
+                          <Route path="settings" element={<Settings />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Route>
+                      </Routes>
+                    </main>
+                  </>
+                }
+              />
+            </Routes>
           </div>
         </Router>
         <Toaster position="top-right" />

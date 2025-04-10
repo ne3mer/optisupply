@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="450px" viewBox="0 0 800 450" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <title>Dashboard Illustration</title>
+  <defs>
+    <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="bgGradient">
+      <stop stop-color="#1E293B" offset="0%"></stop>
+      <stop stop-color="#0F172A" offset="100%"></stop>
+    </linearGradient>
+    <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="cardGradient">
+      <stop stop-color="#1E293B" offset="0%"></stop>
+      <stop stop-color="#0F172A" offset="100%"></stop>
+    </linearGradient>
+    <linearGradient x1="0%" y1="0%" x2="100%" y2="0%" id="chartGradient1">
+      <stop stop-color="#00F0FF" offset="0%"></stop>
+      <stop stop-color="#4D5BFF" offset="100%"></stop>
+    </linearGradient>
+    <linearGradient x1="0%" y1="0%" x2="100%" y2="0%" id="chartGradient2">
+      <stop stop-color="#FF00FF" offset="0%"></stop>
+      <stop stop-color="#4D5BFF" offset="100%"></stop>
+    </linearGradient>
+    <linearGradient x1="0%" y1="0%" x2="100%" y2="0%" id="chartGradient3">
+      <stop stop-color="#00FF8F" offset="0%"></stop>
+      <stop stop-color="#00F0FF" offset="100%"></stop>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect fill="url(#bgGradient)" x="0" y="0" width="800" height="450" rx="8"></rect>
+  
+  <!-- Navigation Bar -->
+  <rect fill="#1E293B" x="0" y="0" width="800" height="50" rx="8"></rect>
+  <rect fill="#00F0FF" x="20" y="15" width="20" height="20" rx="4"></rect>
+  <text font-family="Arial" font-size="16" font-weight="bold" fill="#FFFFFF" x="50" y="30">EthicSupply</text>
+  
+  <!-- Navigation Items -->
+  <text font-family="Arial" font-size="14" fill="#94A3B8" x="200" y="30">Dashboard</text>
+  <text font-family="Arial" font-size="14" fill="#94A3B8" x="300" y="30">Suppliers</text>
+  <text font-family="Arial" font-size="14" fill="#94A3B8" x="380" y="30">Analytics</text>
+  <text font-family="Arial" font-size="14" fill="#94A3B8" x="460" y="30">Mapping</text>
+  
+  <!-- Top Stats Cards -->
+  <g transform="translate(20, 70)">
+    <!-- Card 1 -->
+    <rect fill="url(#cardGradient)" stroke="#2D3748" stroke-width="1" x="0" y="0" width="180" height="100" rx="8"></rect>
+    <text font-family="Arial" font-size="14" fill="#94A3B8" x="15" y="30">Ethical Score Avg</text>
+    <text font-family="Arial" font-size="28" font-weight="bold" fill="#00F0FF" x="15" y="70">76.8</text>
+    <path d="M120,70 L140,50 L160,60 L180,30" stroke="#00F0FF" stroke-width="2" fill="none"></path>
+  </g>
+  
+  <g transform="translate(220, 70)">
+    <!-- Card 2 -->
+    <rect fill="url(#cardGradient)" stroke="#2D3748" stroke-width="1" x="0" y="0" width="180" height="100" rx="8"></rect>
+    <text font-family="Arial" font-size="14" fill="#94A3B8" x="15" y="30">High Risk Suppliers</text>
+    <text font-family="Arial" font-size="28" font-weight="bold" fill="#FF4D4D" x="15" y="70">12</text>
+    <circle cx="130" cy="50" r="25" fill="none" stroke="#FF4D4D" stroke-width="8" stroke-dasharray="110, 50"></circle>
+  </g>
+  
+  <g transform="translate(420, 70)">
+    <!-- Card 3 -->
+    <rect fill="url(#cardGradient)" stroke="#2D3748" stroke-width="1" x="0" y="0" width="180" height="100" rx="8"></rect>
+    <text font-family="Arial" font-size="14" fill="#94A3B8" x="15" y="30">ESG Performance</text>
+    <text font-family="Arial" font-size="28" font-weight="bold" fill="#00FF8F" x="15" y="70">+4.2%</text>
+    <path d="M120,60 L130,40 L140,50 L150,30 L160,35 L170,25" stroke="#00FF8F" stroke-width="2" fill="none"></path>
+  </g>
+  
+  <g transform="translate(620, 70)">
+    <!-- Card 4 -->
+    <rect fill="url(#cardGradient)" stroke="#2D3748" stroke-width="1" x="0" y="0" width="160" height="100" rx="8"></rect>
+    <text font-family="Arial" font-size="14" fill="#94A3B8" x="15" y="30">Active Alerts</text>
+    <text font-family="Arial" font-size="28" font-weight="bold" fill="#FFD700" x="15" y="70">7</text>
+    <rect x="100" y="40" width="10" height="20" fill="#FFD700" rx="2"></rect>
+    <rect x="115" y="30" width="10" height="30" fill="#FFD700" rx="2"></rect>
+    <rect x="130" y="45" width="10" height="15" fill="#FFD700" rx="2"></rect>
+    <rect x="145" y="35" width="10" height="25" fill="#FFD700" rx="2"></rect>
+  </g>
+  
+  <!-- Main Chart -->
+  <g transform="translate(20, 190)">
+    <rect fill="url(#cardGradient)" stroke="#2D3748" stroke-width="1" x="0" y="0" width="460" height="240" rx="8"></rect>
+    <text font-family="Arial" font-size="16" font-weight="bold" fill="#FFFFFF" x="20" y="30">Supplier Ethical Performance Trends</text>
+    
+    <!-- Chart Legend -->
+    <circle cx="20" cy="60" r="5" fill="#00F0FF"></circle>
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="30" y="65">Environmental</text>
+    
+    <circle cx="150" cy="60" r="5" fill="#FF00FF"></circle>
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="160" y="65">Social</text>
+    
+    <circle cx="250" cy="60" r="5" fill="#00FF8F"></circle>
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="260" y="65">Governance</text>
+    
+    <!-- Chart Grid -->
+    <line x1="40" y1="90" x2="40" y2="210" stroke="#2D3748" stroke-width="1"></line>
+    <line x1="40" y1="210" x2="420" y2="210" stroke="#2D3748" stroke-width="1"></line>
+    
+    <line x1="40" y1="120" x2="420" y2="120" stroke="#2D3748" stroke-width="1" opacity="0.5"></line>
+    <line x1="40" y1="150" x2="420" y2="150" stroke="#2D3748" stroke-width="1" opacity="0.5"></line>
+    <line x1="40" y1="180" x2="420" y2="180" stroke="#2D3748" stroke-width="1" opacity="0.5"></line>
+    
+    <!-- Chart Labels -->
+    <text font-family="Arial" font-size="10" fill="#94A3B8" x="80" y="225">Jan</text>
+    <text font-family="Arial" font-size="10" fill="#94A3B8" x="140" y="225">Feb</text>
+    <text font-family="Arial" font-size="10" fill="#94A3B8" x="200" y="225">Mar</text>
+    <text font-family="Arial" font-size="10" fill="#94A3B8" x="260" y="225">Apr</text>
+    <text font-family="Arial" font-size="10" fill="#94A3B8" x="320" y="225">May</text>
+    <text font-family="Arial" font-size="10" fill="#94A3B8" x="380" y="225">Jun</text>
+    
+    <!-- Chart Data - Environmental Line -->
+    <path d="M80,180 C100,170 120,150 140,160 C160,170 180,160 200,150 C220,140 240,130 260,120 C280,110 300,105 320,100 C340,95 360,90 380,85" stroke="url(#chartGradient1)" stroke-width="3" fill="none"></path>
+    
+    <!-- Chart Data - Social Line -->
+    <path d="M80,190 C100,185 120,180 140,170 C160,160 180,155 200,160 C220,165 240,155 260,150 C280,145 300,140 320,130 C340,125 360,130 380,125" stroke="url(#chartGradient2)" stroke-width="3" fill="none"></path>
+    
+    <!-- Chart Data - Governance Line -->
+    <path d="M80,170 C100,160 120,165 140,155 C160,145 180,150 200,145 C220,140 240,135 260,130 C280,125 300,115 320,110 C340,105 360,100 380,95" stroke="url(#chartGradient3)" stroke-width="3" fill="none"></path>
+  </g>
+  
+  <!-- Right Side - Supplier List -->
+  <g transform="translate(500, 190)">
+    <rect fill="url(#cardGradient)" stroke="#2D3748" stroke-width="1" x="0" y="0" width="280" height="240" rx="8"></rect>
+    <text font-family="Arial" font-size="16" font-weight="bold" fill="#FFFFFF" x="20" y="30">Top Ethical Suppliers</text>
+    
+    <!-- Table Headers -->
+    <text font-family="Arial" font-size="12" fill="#94A3B8" x="20" y="60">Supplier</text>
+    <text font-family="Arial" font-size="12" fill="#94A3B8" x="180" y="60">Score</text>
+    <text font-family="Arial" font-size="12" fill="#94A3B8" x="240" y="60">Risk</text>
+    
+    <!-- Divider -->
+    <line x1="20" y1="70" x2="260" y2="70" stroke="#2D3748" stroke-width="1"></line>
+    
+    <!-- Row 1 -->
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="20" y="95">EcoFriendly Mfg.</text>
+    <text font-family="Arial" font-size="12" fill="#00FF8F" x="180" y="95">91.5</text>
+    <rect x="240" y="85" width="30" height="14" rx="7" fill="#00FF8F" opacity="0.2"></rect>
+    <text font-family="Arial" font-size="10" fill="#00FF8F" x="245" y="95">LOW</text>
+    
+    <!-- Row 2 -->
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="20" y="125">Pharma Global Ltd.</text>
+    <text font-family="Arial" font-size="12" fill="#00F0FF" x="180" y="125">83.7</text>
+    <rect x="240" y="115" width="30" height="14" rx="7" fill="#00F0FF" opacity="0.2"></rect>
+    <text font-family="Arial" font-size="10" fill="#00F0FF" x="245" y="125">LOW</text>
+    
+    <!-- Row 3 -->
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="20" y="155">Precision Electronics</text>
+    <text font-family="Arial" font-size="12" fill="#00F0FF" x="180" y="155">80.2</text>
+    <rect x="240" y="145" width="30" height="14" rx="7" fill="#00F0FF" opacity="0.2"></rect>
+    <text font-family="Arial" font-size="10" fill="#00F0FF" x="245" y="155">LOW</text>
+    
+    <!-- Row 4 -->
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="20" y="185">CarbonFreight Logistics</text>
+    <text font-family="Arial" font-size="12" fill="#FFD700" x="180" y="185">77.5</text>
+    <rect x="240" y="175" width="40" height="14" rx="7" fill="#FFD700" opacity="0.2"></rect>
+    <text font-family="Arial" font-size="10" fill="#FFD700" x="242" y="185">MEDIUM</text>
+    
+    <!-- Row 5 -->
+    <text font-family="Arial" font-size="12" fill="#FFFFFF" x="20" y="215">Sustainable Apparel Co.</text>
+    <text font-family="Arial" font-size="12" fill="#FFD700" x="180" y="215">71.5</text>
+    <rect x="240" y="205" width="40" height="14" rx="7" fill="#FFD700" opacity="0.2"></rect>
+    <text font-family="Arial" font-size="10" fill="#FFD700" x="242" y="215">MEDIUM</text>
+  </g>
+</svg> 
