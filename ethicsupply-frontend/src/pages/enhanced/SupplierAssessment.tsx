@@ -358,6 +358,15 @@ const SupplierAssessment = () => {
       const isNewFormat =
         evaluation.scores && typeof evaluation.scores === "object";
 
+      console.log("Recommendations data:", {
+        hasRecommendationField: !!evaluation.recommendation,
+        hasRecommendationsArray: !!evaluation.recommendations,
+        recommendationsLength: evaluation.recommendations?.length,
+        firstRecommendation: evaluation.recommendations?.[0],
+        hasSuggestions: !!evaluation.suggestions,
+        suggestionsLength: evaluation.suggestions?.length,
+      });
+
       // If new format, adapt it to the format expected by the component
       const adaptedResult = isNewFormat
         ? {
@@ -1059,7 +1068,11 @@ const SupplierAssessment = () => {
                           }}
                         >
                           {result.recommendation ||
-                            "No specific recommendation provided."}
+                            (result.recommendations &&
+                            result.recommendations.length > 0
+                              ? result.recommendations[0].action ||
+                                result.recommendations[0].details
+                              : "No specific recommendation provided.")}
                         </p>
                         {result.suggestions &&
                           result.suggestions.length > 0 && (
@@ -1069,6 +1082,31 @@ const SupplierAssessment = () => {
                             >
                               {result.suggestions.map((s, i) => (
                                 <li key={i}>{s}</li>
+                              ))}
+                            </ul>
+                          )}
+                        {/* Show recommendations array if available */}
+                        {!result.suggestions &&
+                          result.recommendations &&
+                          result.recommendations.length > 0 && (
+                            <ul
+                              className="list-decimal list-inside text-sm space-y-1 pl-2"
+                              style={{ color: colors.textMuted }}
+                            >
+                              {result.recommendations.map((rec, i) => (
+                                <li key={i}>
+                                  {rec.action || rec.details}
+                                  {rec.impact && (
+                                    <span className="block text-xs ml-6 mt-1">
+                                      Impact: {rec.impact}
+                                    </span>
+                                  )}
+                                  {rec.difficulty && (
+                                    <span className="block text-xs ml-6">
+                                      Difficulty: {rec.difficulty}
+                                    </span>
+                                  )}
+                                </li>
                               ))}
                             </ul>
                           )}
