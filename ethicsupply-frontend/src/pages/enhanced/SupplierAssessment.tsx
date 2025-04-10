@@ -61,10 +61,10 @@ const safeFormat = (
   console.log("Formatting value:", value, typeof value);
   if (value === undefined || value === null) return "N/A";
   try {
-    return value.toFixed(decimals);
+    return Number(value).toFixed(decimals);
   } catch (error) {
     console.error("Error formatting value:", error);
-    return "Error";
+    return "N/A";
   }
 };
 
