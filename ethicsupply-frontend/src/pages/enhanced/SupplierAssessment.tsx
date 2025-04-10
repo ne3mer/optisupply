@@ -45,6 +45,8 @@ const colors = {
 
 // Helper for coloring score values
 const getScoreColor = (score: number): string => {
+  console.log("Getting color for score:", score, typeof score);
+  if (score === undefined || score === null) return colors.textMuted; // Handle undefined
   if (score >= 80) return colors.success;
   if (score >= 60) return colors.primary;
   if (score >= 40) return colors.warning;
@@ -56,8 +58,14 @@ const safeFormat = (
   value: number | undefined | null,
   decimals: number = 1
 ): string => {
+  console.log("Formatting value:", value, typeof value);
   if (value === undefined || value === null) return "N/A";
-  return value.toFixed(decimals);
+  try {
+    return value.toFixed(decimals);
+  } catch (error) {
+    console.error("Error formatting value:", error);
+    return "Error";
+  }
 };
 
 const LoadingIndicator = ({ message = "Loading Data..." }) => (
@@ -357,7 +365,9 @@ const SupplierAssessment = () => {
         );
       }
 
+      console.log("Setting result state:", evaluation);
       setResult(evaluation);
+      console.log("Changing tab to results");
       setActiveTab("results");
       setUsingMockData(evaluation.isMockData === true);
 
@@ -811,6 +821,12 @@ const SupplierAssessment = () => {
             {/* Results Display */}
             {activeTab === "results" && (
               <div>
+                {console.log(
+                  "Rendering results tab, isSubmitting:",
+                  isSubmitting,
+                  "result:",
+                  result
+                )}
                 {isSubmitting && (
                   <LoadingIndicator message="Evaluating Supplier..." />
                 )}
