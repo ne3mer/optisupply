@@ -82,8 +82,16 @@ const getRiskColor = (riskLevel: string | undefined) => {
 };
 
 const getScoreColor = (score: number | null | undefined) => {
-  const s = score ?? 0;
-  return s >= 80 ? colors.success : s >= 60 ? colors.warning : colors.error;
+  if (score === null || score === undefined) return colors.textMuted;
+
+  // Normalize score to 0-100 scale if it's in 0-1 range
+  const normalizedScore = score > 0 && score <= 1 ? score * 100 : score;
+
+  if (normalizedScore >= 80) return "#10b981"; // emerald-500
+  if (normalizedScore >= 60) return "#14b8a6"; // teal-500
+  if (normalizedScore >= 40) return "#f59e0b"; // amber-500
+  if (normalizedScore >= 20) return "#f97316"; // orange-500
+  return "#ef4444"; // red-500
 };
 
 // --- SuppliersList Component ---
@@ -193,7 +201,7 @@ const SuppliersList = () => {
             Supplier <span style={{ color: colors.primary }}>Registry</span>
           </h1>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Link
+            <Link
               to="/add-supplier"
               className="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
               style={{
@@ -203,23 +211,23 @@ const SuppliersList = () => {
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Register New Supplier
-          </Link>
+            </Link>
           </motion.div>
-      </div>
+        </div>
 
         {/* Filters and Search */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
-                <MagnifyingGlassIcon
+            <MagnifyingGlassIcon
               className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5"
               style={{ color: colors.textMuted }}
-                />
-              <input
-                type="text"
+            />
+            <input
+              type="text"
               placeholder="Search by supplier name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2"
               style={{
                 backgroundColor: colors.inputBg,
@@ -227,12 +235,12 @@ const SuppliersList = () => {
                 color: colors.text,
                 "--tw-ring-color": colors.primary, // For focus ring
               }}
-              />
-            </div>
+            />
+          </div>
 
           {/* Country Filter */}
-              <div className="relative">
-                <select
+          <div className="relative">
+            <select
               value={filterCountry}
               onChange={(e) => setFilterCountry(e.target.value)}
               className="w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2"
@@ -251,12 +259,12 @@ const SuppliersList = () => {
                   {c}
                 </option>
               ))}
-                </select>
+            </select>
             <ChevronDownIcon
               className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
               style={{ color: colors.textMuted }}
             />
-                </div>
+          </div>
           {/* Industry Filter */}
           <div className="relative">
             <select
@@ -283,7 +291,7 @@ const SuppliersList = () => {
               className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
               style={{ color: colors.textMuted }}
             />
-              </div>
+          </div>
           {/* Risk Filter */}
           <div className="relative">
             <select
@@ -335,7 +343,7 @@ const SuppliersList = () => {
                   key={supplierId}
                   variants={itemVariants}
                   className="rounded-lg border backdrop-blur-sm overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-primary/20"
-                          style={{
+                  style={{
                     backgroundColor: colors.panel,
                     borderColor: colors.accent + "40",
                   }}
@@ -377,7 +385,13 @@ const SuppliersList = () => {
                         className="text-lg font-bold font-mono"
                         style={{ color: scoreColor }}
                       >
-                        {supplier.ethical_score?.toFixed(1) ?? "N/A"}
+                        {supplier.ethical_score !== null &&
+                        supplier.ethical_score !== undefined
+                          ? supplier.ethical_score > 0 &&
+                            supplier.ethical_score <= 1
+                            ? (supplier.ethical_score * 100).toFixed(1)
+                            : supplier.ethical_score.toFixed(1)
+                          : "N/A"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -403,7 +417,7 @@ const SuppliersList = () => {
                   {/* Card Footer - Action */}
                   <div
                     className="p-3 border-t"
-                        style={{
+                    style={{
                       borderColor: colors.accent + "30",
                       backgroundColor: colors.accent + "10",
                     }}
@@ -418,7 +432,7 @@ const SuppliersList = () => {
                     >
                       View Dossier <ArrowRightIcon className="h-4 w-4 ml-2" />
                     </button>
-                </div>
+                  </div>
                 </motion.div>
               );
             })
@@ -426,11 +440,11 @@ const SuppliersList = () => {
             <div className="col-span-full text-center py-16">
               <p style={{ color: colors.textMuted }}>
                 No suppliers match the current filters.
-                  </p>
-                </div>
+              </p>
+            </div>
           )}
         </motion.div>
-            )}
+      )}
     </div>
   );
 };

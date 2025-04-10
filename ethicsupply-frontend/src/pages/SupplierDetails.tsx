@@ -97,8 +97,16 @@ const getRiskColor = (riskLevel: string | undefined) => {
   }
 };
 const getScoreColor = (score: number | null | undefined) => {
-  const s = score ?? 0;
-  return s >= 80 ? colors.success : s >= 60 ? colors.warning : colors.error;
+  if (score === null || score === undefined) return colors.textMuted;
+
+  // Normalize score to 0-100 scale if it's in 0-1 range
+  const normalizedScore = score > 0 && score <= 1 ? score * 100 : score;
+
+  if (normalizedScore >= 80) return "#10b981"; // emerald-500
+  if (normalizedScore >= 60) return "#14b8a6"; // teal-500
+  if (normalizedScore >= 40) return "#f59e0b"; // amber-500
+  if (normalizedScore >= 20) return "#f97316"; // orange-500
+  return "#ef4444"; // red-500
 };
 
 // --- Detail Item Component ---
@@ -124,8 +132,33 @@ const DetailItem: React.FC<DetailItemProps> = ({
   const scoreSuffix = isScore ? (
     <span style={{ color: colors.textMuted }}> / 100</span>
   ) : null;
+
+  // Convert values from 0-1 to 0-100 for display
+  let processedValue = value;
+  if (typeof value === "number") {
+    // Check if the value is between 0-1 and should be displayed as a percentage
+    if (
+      value >= 0 &&
+      value <= 1 &&
+      (isScore ||
+        label.toLowerCase().includes("score") ||
+        label.toLowerCase().includes("index") ||
+        label.toLowerCase().includes("efficiency") ||
+        label.toLowerCase().includes("fairness") ||
+        label.toLowerCase().includes("inclusion") ||
+        label.toLowerCase().includes("engagement") ||
+        label.toLowerCase().includes("safety") ||
+        label.toLowerCase().includes("control") ||
+        label.toLowerCase().includes("risk"))
+    ) {
+      processedValue = value * 100;
+    }
+  }
+
   const finalValue =
-    typeof value === "number" ? value.toFixed(isScore ? 1 : 2) : displayValue;
+    typeof processedValue === "number"
+      ? processedValue.toFixed(isScore ? 1 : 2)
+      : displayValue;
 
   return (
     <div
@@ -206,7 +239,12 @@ const SupplierDetails = () => {
   }, [id]);
 
   // --- Memoized Values ---
-  const overallScore = useMemo(() => supplier?.ethical_score ?? 0, [supplier]);
+  const overallScore = useMemo(() => {
+    const score = supplier?.ethical_score ?? 0;
+    // Normalize to 0-100 scale if it's in 0-1 range
+    return (score > 0 && score <= 1) ? score * 100 : score;
+  }, [supplier]);
+  
   const scoreColor = useMemo(() => getScoreColor(overallScore), [overallScore]);
   const riskColor = useMemo(
     () => getRiskColor(supplier?.risk_level),
@@ -334,9 +372,7 @@ const SupplierDetails = () => {
             </h3>
             <div className="space-y-3">
               <button
-                onClick={() =>
-                  navigate(`/supplier-assessment?id=${supplierId}`)
-                }
+                onClick={() => navigate(`/suppliers/${supplierId}/assessment`)}
                 className="w-full flex items-center justify-center text-sm py-2 px-4 rounded hover:opacity-90 transition-opacity duration-200"
                 style={{
                   backgroundColor: colors.primary,
@@ -356,7 +392,7 @@ const SupplierDetails = () => {
                 <ChartBarIcon className="h-5 w-5 mr-2" /> View AI Analytics
               </button>
               <button
-                onClick={() => navigate(`/suppliers/edit/${supplierId}`)} // Assuming edit route
+                onClick={() => navigate(`/suppliers/${supplierId}/edit`)} // Fixed edit route path
                 className="w-full flex items-center justify-center text-sm py-2 px-4 rounded border hover:bg-accent/10 transition-colors duration-200"
                 style={{ borderColor: colors.accent, color: colors.accent }}
               >
