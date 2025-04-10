@@ -36,7 +36,10 @@ async function connectToDatabase() {
     console.error(
       `Connection error details: ${JSON.stringify(error, null, 2)}`
     );
-    process.exit(1);
+
+    // Instead of exiting the process, throw the error to allow fallback
+    // This allows our fallback mechanism to catch the error and provide mock data
+    throw new Error(`Failed to connect to MongoDB: ${error.message}`);
   }
 }
 
