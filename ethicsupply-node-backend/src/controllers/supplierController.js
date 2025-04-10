@@ -73,7 +73,20 @@ exports.getSupplierById = async (req, res) => {
 // Create a new supplier
 exports.createSupplier = async (req, res) => {
   try {
+    // Create a new supplier with the provided data
     const newSupplier = new db.Supplier(req.body);
+
+    // Calculate scores based on the supplier data
+    const scores = await calculateSupplierScores(newSupplier);
+
+    // Apply calculated scores to the supplier object
+    newSupplier.ethical_score = scores.ethical_score || 0;
+    newSupplier.environmental_score = scores.environmental_score || 0;
+    newSupplier.social_score = scores.social_score || 0;
+    newSupplier.governance_score = scores.governance_score || 0;
+    newSupplier.risk_level = scores.risk_level || "medium";
+
+    // Save the supplier with the calculated scores
     const savedSupplier = await newSupplier.save();
     res.status(201).json(savedSupplier);
   } catch (error) {
@@ -85,14 +98,32 @@ exports.createSupplier = async (req, res) => {
 // Update a supplier
 exports.updateSupplier = async (req, res) => {
   try {
-    const updatedSupplier = await db.Supplier.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (!updatedSupplier) {
+    // First get the existing supplier
+    const existingSupplier = await db.Supplier.findById(req.params.id);
+    if (!existingSupplier) {
       return res.status(404).json({ message: "Supplier not found" });
     }
+
+    // Update the supplier with the new data
+    Object.assign(existingSupplier, req.body);
+
+    // Calculate scores based on the updated supplier data
+    const scores = await calculateSupplierScores(existingSupplier);
+
+    // Apply calculated scores to the supplier object
+    existingSupplier.ethical_score =
+      scores.ethical_score || existingSupplier.ethical_score || 0;
+    existingSupplier.environmental_score =
+      scores.environmental_score || existingSupplier.environmental_score || 0;
+    existingSupplier.social_score =
+      scores.social_score || existingSupplier.social_score || 0;
+    existingSupplier.governance_score =
+      scores.governance_score || existingSupplier.governance_score || 0;
+    existingSupplier.risk_level =
+      scores.risk_level || existingSupplier.risk_level || "medium";
+
+    // Save the updated supplier
+    const updatedSupplier = await existingSupplier.save();
     res.status(200).json(updatedSupplier);
   } catch (error) {
     console.error("Error updating supplier:", error);
@@ -429,57 +460,67 @@ exports.evaluateSupplierPost = async (req, res) => {
 };
 
 // Helper functions for score calculations
-function calculateEnvironmentalScore(data) {
+function calculateEnvironmentalScore(supplier) {
   const metrics = [
-    1 - Math.min(1, data.co2_emissions / 100), // Lower is better for CO2
-    1 - Math.min(1, data.water_usage / 100), // Lower is better for water usage
-    data.energy_efficiency || 0.5,
-    data.waste_management_score || 0.5,
-    data.renewable_energy_percent ? data.renewable_energy_percent / 100 : 0.3,
-    data.pollution_control || 0.5,
+    supplier.energy_efficiency || 0.5,
+    supplier.pollution_control || 0.5,
+    supplier.waste_management_score || 0.5,
+    normalizeWaterUsage(supplier.water_usage || 50),
+    normalizeEnergyPercent(supplier.renewable_energy_percent || 0),
   ];
   return metrics.reduce((sum, val) => sum + val, 0) / metrics.length;
 }
 
-function calculateSocialScore(data) {
+function calculateSocialScore(supplier) {
   const metrics = [
-    data.wage_fairness || 0.5,
-    data.human_rights_index || 0.5,
-    data.diversity_inclusion_score || 0.5,
-    data.community_engagement || 0.5,
-    data.worker_safety || 0.5,
+    supplier.wage_fairness || 0.5,
+    supplier.human_rights_index || 0.5,
+    supplier.diversity_inclusion_score || 0.5,
+    supplier.community_engagement || 0.5,
+    supplier.worker_safety || 0.5,
   ];
   return metrics.reduce((sum, val) => sum + val, 0) / metrics.length;
 }
 
-function calculateGovernanceScore(data) {
+function calculateGovernanceScore(supplier) {
   const metrics = [
-    data.transparency_score || 0.5,
-    1 - (data.corruption_risk || 0.5), // Lower corruption risk is better
-    data.board_diversity || 0.5,
-    data.ethics_program || 0.5,
-    data.compliance_systems || 0.5,
+    supplier.transparency_score || 0.5,
+    1 - (supplier.corruption_risk || 0.5), // Invert - higher corruption risk = lower score
+    supplier.board_diversity || 0.5,
+    supplier.ethics_program || 0.5,
+    supplier.compliance_systems || 0.5,
   ];
   return metrics.reduce((sum, val) => sum + val, 0) / metrics.length;
 }
 
-function calculateSupplyChainScore(data) {
+function calculateSupplyChainScore(supplier) {
   const metrics = [
-    data.delivery_efficiency || 0.5,
-    data.quality_control_score || 0.5,
-    data.supplier_diversity || 0.5,
-    data.traceability || 0.5,
+    supplier.delivery_efficiency || 0.5,
+    supplier.quality_control_score || 0.5,
+    supplier.supplier_diversity || 0.5,
+    supplier.traceability || 0.5,
   ];
   return metrics.reduce((sum, val) => sum + val, 0) / metrics.length;
 }
 
-function calculateRiskScore(data) {
+function calculateRiskScore(supplier) {
   const metrics = [
-    data.geopolitical_risk || 0.5,
-    data.climate_risk || 0.5,
-    data.labor_dispute_risk || 0.5,
+    supplier.geopolitical_risk || 0.5,
+    supplier.climate_risk || 0.5,
+    supplier.labor_dispute_risk || 0.5,
   ];
   return metrics.reduce((sum, val) => sum + val, 0) / metrics.length;
+}
+
+// Helper functions to normalize values to a 0-1 scale
+function normalizeWaterUsage(waterUsage) {
+  // Assume typical range is 0-100, lower is better
+  return Math.max(0, Math.min(1, 1 - waterUsage / 100));
+}
+
+function normalizeEnergyPercent(percent) {
+  // Convert percentage (0-100) to 0-1 scale
+  return Math.max(0, Math.min(1, percent / 100));
 }
 
 // Helper functions for generating assessment details
@@ -762,3 +803,56 @@ exports.getSupplierAnalytics = async (req, res) => {
       .json({ error: `Failed to fetch analytics: ${error.message}` });
   }
 };
+
+// Helper function to calculate supplier scores
+async function calculateSupplierScores(supplier) {
+  try {
+    // Basic environmental score calculation (on a 0-1 scale)
+    const environmentalScore = calculateEnvironmentalScore(supplier);
+
+    // Basic social score calculation (on a 0-1 scale)
+    const socialScore = calculateSocialScore(supplier);
+
+    // Basic governance score calculation (on a 0-1 scale)
+    const governanceScore = calculateGovernanceScore(supplier);
+
+    // Calculate supply chain score
+    const supplyChainScore = calculateSupplyChainScore(supplier);
+
+    // Calculate risk score
+    const riskScore = calculateRiskScore(supplier);
+
+    // Calculate overall ethical score (weighted average, on a 0-1 scale)
+    const ethicalScore =
+      environmentalScore * 0.25 +
+      socialScore * 0.25 +
+      governanceScore * 0.25 +
+      supplyChainScore * 0.15 +
+      (1 - riskScore) * 0.1;
+
+    // Determine risk level based on the ethical score
+    let riskLevel = "high";
+    if (ethicalScore >= 0.7) {
+      riskLevel = "low";
+    } else if (ethicalScore >= 0.4) {
+      riskLevel = "medium";
+    }
+
+    return {
+      ethical_score: ethicalScore,
+      environmental_score: environmentalScore,
+      social_score: socialScore,
+      governance_score: governanceScore,
+      risk_level: riskLevel,
+    };
+  } catch (error) {
+    console.error("Error calculating supplier scores:", error);
+    return {
+      ethical_score: 0.5,
+      environmental_score: 0.5,
+      social_score: 0.5,
+      governance_score: 0.5,
+      risk_level: "medium",
+    };
+  }
+}
