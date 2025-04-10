@@ -409,13 +409,44 @@ module.exports = async (req, res) => {
   try {
     // Try to initialize the Express app with MongoDB
     console.log("Attempting to initialize server with MongoDB connection");
+    console.log(
+      `MongoDB URI defined: ${process.env.MONGODB_URI ? "Yes" : "No"}`
+    );
+    console.log(
+      `MongoDB URI starts with: ${
+        process.env.MONGODB_URI
+          ? process.env.MONGODB_URI.substring(0, 20) + "..."
+          : "undefined"
+      }`
+    );
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(
+      `CORS Origins: ${
+        process.env.CORS_ALLOWED_ORIGINS || "Not set - using defaults"
+      }`
+    );
+
     const app = await startServer();
-    console.log("Successfully initialized server with MongoDB connection");
     return app(req, res);
   } catch (error) {
-    console.error("Failed to start server with MongoDB:", error);
+    // If MongoDB connection fails, fall back to mock server
+    console.error("Failed to initialize main server:", error);
+    console.error(
+      "Error details:",
+      JSON.stringify(
+        {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        },
+        null,
+        2
+      )
+    );
     console.log("Falling back to mock server");
-    const fallbackApp = createMockServer();
-    return fallbackApp(req, res);
+
+    // Create a mock server without MongoDB dependency
+    const mockApp = createMockServer();
+    return mockApp(req, res);
   }
 };
