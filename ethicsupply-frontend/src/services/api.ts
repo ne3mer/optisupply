@@ -443,11 +443,11 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
     while (nextUrl) {
       const response = await fetch(nextUrl);
 
-    if (!response.ok) {
+      if (!response.ok) {
         throw new Error(`API returned status ${response.status}`);
-    }
+      }
 
-    const data = await response.json();
+      const data = await response.json();
       console.log("API response data:", data);
 
       // Handle paginated response (Django REST Framework format)
@@ -2010,165 +2010,175 @@ export const getSupplierAnalytics = async (
 };
 
 // Mock data generator for supplier analytics
-function getMockSupplierAnalytics(supplierId: number): SupplierAnalytics {
-  const supplier =
-    mockSuppliers.find((s) => s.id === supplierId) || mockSuppliers[0];
+function getMockSupplierAnalytics(supplierId: number): SupplierAnalyticsData {
+  // Create more realistic mock data based on the supplier ID
+  const randomBase =
+    parseInt(supplierId.toString().slice(-3)) ||
+    Math.floor(Math.random() * 100);
+
+  // Generate scores in 0-100 range
+  const ethicalScore = Math.min(95, Math.max(40, 65 + (randomBase % 30)));
+  const environmentalScore = Math.min(98, Math.max(35, 60 + (randomBase % 35)));
+  const socialScore = Math.min(95, Math.max(45, 70 + (randomBase % 25)));
+  const governanceScore = Math.min(90, Math.max(40, 65 + (randomBase % 20)));
+
+  // Get supplier name from mock suppliers or generate one
+  const supplier = mockSuppliers.find((s) => s.id === supplierId);
+  const supplierName = supplier?.name || `Supplier ${supplierId}`;
+  const supplierCountry =
+    supplier?.country ||
+    ["United States", "China", "Germany", "Japan", "India"][randomBase % 5];
+  const supplierIndustry =
+    supplier?.industry ||
+    ["Manufacturing", "Technology", "Consumer Goods", "Energy", "Healthcare"][
+      randomBase % 5
+    ];
+
+  // Risk level based on ethical score
+  const riskLevel =
+    ethicalScore >= 75 ? "Low" : ethicalScore >= 55 ? "Medium" : "High";
 
   return {
     supplier: {
-      id: supplier.id,
-      name: supplier.name,
-      country: supplier.country,
-      industry: "Manufacturing",
-      ethical_score: supplier.ethical_score || 78,
-      environmental_score: supplier.ethical_score
-        ? supplier.ethical_score * 0.9
-        : 72,
-      social_score: supplier.ethical_score ? supplier.ethical_score * 1.05 : 82,
-      governance_score: supplier.ethical_score
-        ? supplier.ethical_score * 0.98
-        : 76,
-      overall_score: supplier.ethical_score
-        ? supplier.ethical_score * 0.99
-        : 77,
-      risk_level: "Medium",
-      co2_emissions: supplier.co2_emissions || 65,
-      water_usage: 58,
-      energy_efficiency: 0.68,
-      waste_management_score: supplier.waste_management_score || 0.75,
-      wage_fairness: supplier.wage_fairness || 0.85,
-      human_rights_index: supplier.human_rights_index || 0.79,
-      diversity_inclusion_score: 0.82,
-      community_engagement: 0.73,
-      transparency_score: 0.74,
-      corruption_risk: 0.22,
-      delivery_efficiency: supplier.delivery_efficiency || 0.88,
-      quality_control_score: 0.91,
-      esg_reports: [
-        { year: 2021, environmental: 0.65, social: 0.78, governance: 0.7 },
-        { year: 2022, environmental: 0.68, social: 0.8, governance: 0.73 },
-        { year: 2023, environmental: 0.72, social: 0.82, governance: 0.76 },
-      ],
-      media_sentiment: [
-        {
-          source: "Industry News",
-          date: "2023-10-15",
-          score: 0.8,
-          headline: `${supplier.name} Leads in Sustainable Manufacturing`,
-        },
-        {
-          source: "Financial Times",
-          date: "2023-09-08",
-          score: 0.6,
-          headline: `Mixed Results for ${supplier.name}'s Q3 Performance`,
-        },
-        {
-          source: "Twitter",
-          date: "2023-11-20",
-          score: -0.2,
-          headline: `Customers Report Delays in ${supplier.name}'s Supply Chain`,
-        },
-      ],
-      controversies: [
-        {
-          issue: "Employee Complaint",
-          date: "2023-07-12",
-          severity: "Low",
-          status: "Resolved",
-        },
-        {
-          issue: "Environmental Fine",
-          date: "2022-05-18",
-          severity: "Medium",
-          status: "Resolved",
-        },
-      ],
+      id: supplierId,
+      name: supplierName,
+      country: supplierCountry,
+      industry: supplierIndustry,
+      ethical_score: ethicalScore,
+      environmental_score: environmentalScore,
+      social_score: socialScore,
+      governance_score: governanceScore,
+      risk_level: riskLevel,
+      overall_score: ethicalScore,
     },
     industry_average: {
       ethical_score: 65,
       environmental_score: 60,
       social_score: 68,
       governance_score: 63,
-      overall_score: 64,
-      co2_emissions: 75,
-      water_usage: 70,
-      energy_efficiency: 0.58,
-      waste_management_score: 0.62,
-      wage_fairness: 0.72,
-      human_rights_index: 0.68,
-      diversity_inclusion_score: 0.65,
-      community_engagement: 0.6,
-      transparency_score: 0.61,
-      corruption_risk: 0.3,
-      delivery_efficiency: 0.75,
-      quality_control_score: 0.8,
     },
-    similar_suppliers: [],
-    recommendations: [
+    peer_comparison: [
+      {
+        name: `${supplierIndustry} Company A`,
+        country: ["United States", "France", "Sweden"][randomBase % 3],
+        ethical_score: Math.min(
+          95,
+          Math.max(50, ethicalScore - 5 + (randomBase % 10))
+        ),
+      },
+      {
+        name: `${supplierIndustry} Company B`,
+        country: ["Germany", "Japan", "Canada"][randomBase % 3],
+        ethical_score: Math.min(
+          95,
+          Math.max(50, ethicalScore - 10 + (randomBase % 20))
+        ),
+      },
+      {
+        name: `${supplierIndustry} Company C`,
+        country: ["South Korea", "United Kingdom", "Australia"][randomBase % 3],
+        ethical_score: Math.min(
+          95,
+          Math.max(50, ethicalScore - 8 + (randomBase % 15))
+        ),
+      },
+    ],
+    risk_factors: [
+      {
+        factor: "Supply Chain Disruption",
+        severity:
+          randomBase % 3 === 0
+            ? "High"
+            : randomBase % 3 === 1
+            ? "Medium"
+            : "Low",
+        probability: randomBase % 2 === 0 ? "Medium" : "Low",
+        description:
+          "Potential disruptions due to reliance on suppliers in regions with geopolitical instability.",
+      },
+      {
+        factor: "Regulatory Compliance",
+        severity: randomBase % 2 === 0 ? "High" : "Medium",
+        probability:
+          randomBase % 3 === 0
+            ? "High"
+            : randomBase % 3 === 1
+            ? "Medium"
+            : "Low",
+        description:
+          "Risk of non-compliance with upcoming carbon emissions regulations in key markets.",
+      },
+      {
+        factor: "Labor Practices",
+        severity: randomBase % 3 === 0 ? "Medium" : "Low",
+        probability: randomBase % 2 === 0 ? "Low" : "Medium",
+        description:
+          "Potential issues with labor practices in certain manufacturing facilities requiring attention.",
+      },
+      {
+        factor: "Material Sourcing",
+        severity: randomBase % 2 === 0 ? "Medium" : "Low",
+        probability: randomBase % 3 === 0 ? "Medium" : "Low",
+        description:
+          "Concerns about sustainable sourcing practices for key materials in the supply chain.",
+      },
+    ],
+    ai_recommendations: [
       {
         area: "Environmental",
-        suggestion: "Implement water recycling systems in manufacturing plants",
+        suggestion:
+          "Implement water recycling systems in manufacturing plants to reduce consumption by up to 40%.",
         impact: "High",
         difficulty: "Medium",
       },
       {
         area: "Social",
         suggestion:
-          "Expand community engagement program to include educational initiatives",
+          "Expand community engagement program to include educational initiatives in supplier regions.",
         impact: "Medium",
         difficulty: "Low",
       },
       {
         area: "Governance",
         suggestion:
-          "Enhance board diversity and establish an independent ethics committee",
+          "Enhance board diversity and establish an independent ethics committee for improved oversight.",
         impact: "Medium",
         difficulty: "Medium",
       },
-    ],
-    improvement_potential: {
-      co2_emissions: 18,
-      water_usage: 22,
-      energy_efficiency: 15,
-      waste_management_score: 12,
-      transparency_score: 18,
-      corruption_risk: 10,
-    },
-    risk_factors: [
       {
-        factor: "Supply Chain Disruption",
-        severity: "Medium",
-        probability: "Medium",
-        description:
-          "Potential disruptions due to reliance on suppliers in regions with geopolitical instability",
+        area: environmentalScore < 70 ? "Environmental" : "Supply Chain",
+        suggestion:
+          environmentalScore < 70
+            ? "Transition to renewable energy sources for manufacturing facilities to reduce carbon footprint."
+            : "Implement blockchain-based supply chain tracking to improve transparency and traceability.",
+        impact: "High",
+        difficulty: "High",
       },
       {
-        factor: "Regulatory Compliance",
-        severity: "High",
-        probability: "Low",
-        description:
-          "Risk of non-compliance with upcoming carbon emissions regulations",
+        area: socialScore < 70 ? "Social" : "Governance",
+        suggestion:
+          socialScore < 70
+            ? "Develop comprehensive worker well-being programs including mental health support and work-life balance initiatives."
+            : "Strengthen whistleblower protection policies and reporting mechanisms for ethical concerns.",
+        impact: socialScore < 70 ? "Medium" : "High",
+        difficulty: "Medium",
       },
     ],
-    cluster_info: {
-      cluster_id: 2,
-      size: 15,
-      avg_ethical_score: 0.75,
-      avg_environmental_score: 0.71,
-      avg_social_score: 0.78,
-      avg_governance_score: 0.73,
-      description:
-        "Above-average performers with strong social responsibility programs",
-    },
-    prediction: {
-      next_quarter_score: 0.79,
-      confidence: 0.85,
-      factors: [
-        { factor: "Seasonal efficiency improvements", impact: 0.02 },
-        { factor: "Expanding diversity initiatives", impact: 0.03 },
-        { factor: "Pending environmental litigation", impact: -0.01 },
-      ],
-    },
+    sentiment_trend: [
+      { date: "2023-01", score: Math.round((0.2 + 1) * 50) },
+      { date: "2023-02", score: Math.round((0.3 + 1) * 50) },
+      { date: "2023-03", score: Math.round((0.1 + 1) * 50) },
+      { date: "2023-04", score: Math.round((-0.1 + 1) * 50) },
+      { date: "2023-05", score: Math.round((0.2 + 1) * 50) },
+      { date: "2023-06", score: Math.round((0.4 + 1) * 50) },
+      { date: "2023-07", score: Math.round((0.5 + 1) * 50) },
+      { date: "2023-08", score: Math.round((0.6 + 1) * 50) },
+      { date: "2023-09", score: Math.round((0.4 + 1) * 50) },
+      { date: "2023-10", score: Math.round((0.5 + 1) * 50) },
+      { date: "2023-11", score: Math.round((0.7 + 1) * 50) },
+      { date: "2023-12", score: Math.round((0.8 + 1) * 50) },
+    ],
+    isMockData: true,
   };
 }
 
@@ -2348,7 +2358,7 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
 
         // Try to get coordinates based on country
         if (node.country && countryCoords[node.country]) {
-      return {
+          return {
             ...node,
             lat: countryCoords[node.country].lat + (Math.random() - 0.5) * 5, // Add jitter
             lng: countryCoords[node.country].lng + (Math.random() - 0.5) * 5, // Add jitter
