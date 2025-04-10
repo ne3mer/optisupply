@@ -42,6 +42,34 @@ function createMockServer() {
     })
   );
 
+  // Explicit handler for OPTIONS requests to ensure proper CORS headers
+  app.options("*", function (req, res) {
+    // Get origin from request
+    const origin = req.headers.origin;
+
+    // Only set allow-origin for origins in our allowed list
+    if (
+      origin &&
+      config.cors.origins &&
+      config.cors.origins.indexOf(origin) !== -1
+    ) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Access-Control-Allow-Credentials", "true");
+      res.header(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+      );
+      res.header(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-Requested-With, X-HTTP-Method-Override"
+      );
+      res.status(204).end();
+    } else {
+      // For origins not in our list, don't set CORS headers
+      res.status(204).end();
+    }
+  });
+
   // Basic middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -352,6 +380,32 @@ function createMockServer() {
 
 // Serverless function handler for Vercel
 module.exports = async (req, res) => {
+  // Handle OPTIONS requests at the serverless function level first
+  if (req.method === "OPTIONS") {
+    const origin = req.headers.origin;
+
+    // Get allowed origins from config
+    const allowedOrigins =
+      config.cors && config.cors.origins ? config.cors.origins : [];
+
+    // If origin is allowed, set the proper CORS headers
+    if (origin && allowedOrigins.indexOf(origin) !== -1) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+      );
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-Requested-With, X-HTTP-Method-Override"
+      );
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
+      res.status(204).end();
+      return;
+    }
+  }
+
   try {
     // Try to initialize the Express app with MongoDB
     console.log("Attempting to initialize server with MongoDB connection");
