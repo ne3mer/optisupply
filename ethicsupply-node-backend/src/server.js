@@ -31,9 +31,28 @@ async function startServer() {
 
     // CORS configuration
     const corsOptions = {
-      origin: "https://optisupply.vercel.app",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization"],
+      origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests) or from allowed origins
+        if (
+          !origin ||
+          (config.cors.origins && config.cors.origins.indexOf(origin) !== -1)
+        ) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      methods: config.cors.methods || [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+      ],
+      allowedHeaders: config.cors.allowedHeaders || [
+        "Content-Type",
+        "Authorization",
+      ],
       credentials: true,
       preflightContinue: false,
       optionsSuccessStatus: 204,
@@ -42,7 +61,7 @@ async function startServer() {
     // Apply CORS middleware
     app.use(cors(corsOptions));
 
-    // Handle OPTIONS requests
+    // Handle OPTIONS requests (important for preflight)
     app.options("*", cors(corsOptions));
 
     // Other middleware
