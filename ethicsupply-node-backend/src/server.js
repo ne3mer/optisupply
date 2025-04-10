@@ -19,15 +19,15 @@ async function startServer() {
     await connectToDatabase();
     console.log("Connected to MongoDB");
 
-    // Seed data if in development mode
-    if (config.env === "development") {
-      try {
-        await runSeeders();
-        console.log("Initial data seeded successfully");
-      } catch (seedErr) {
-        console.error("Error seeding data:", seedErr);
-      }
-    }
+    // Seed data if in development mode - COMMENTED OUT
+    // if (config.env === "development") {
+    //   try {
+    //     await runSeeders();
+    //     console.log("Initial data seeded successfully");
+    //   } catch (seedErr) {
+    //     console.error("Error seeding data:", seedErr);
+    //   }
+    // }
 
     // CORS configuration
     const corsOptions = {
