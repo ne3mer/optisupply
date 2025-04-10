@@ -1985,27 +1985,41 @@ const calculateMockRiskLevel = (data: Record<string, any>): string => {
 };
 
 export const getSupplierAnalytics = async (
-  supplierId: number
-): Promise<SupplierAnalytics> => {
+  supplierId: number | string
+): Promise<SupplierAnalyticsData> => {
   try {
     console.log(`Fetching analytics for supplier ${supplierId}...`);
     const response = await fetch(
-      `${API_BASE_URL}/suppliers/${supplierId}/analytics/`
+      `${API_URL}/suppliers/${supplierId}/analytics`
     );
 
     if (!response.ok) {
       console.warn(
         `Analytics API returned status ${response.status}. Using mock data.`
       );
-      return getMockSupplierAnalytics(supplierId);
+      return getMockSupplierAnalytics(Number(supplierId));
     }
 
     const data = await response.json();
     console.log("Supplier analytics API response:", data);
+
+    // Check if data is empty or doesn't contain proper values
+    if (
+      !data ||
+      !data.supplier ||
+      data.supplier.ethical_score === 0 ||
+      data.supplier.environmental_score === 0
+    ) {
+      console.warn(
+        "API returned data with empty/zero values, using mock data instead"
+      );
+      return getMockSupplierAnalytics(Number(supplierId));
+    }
+
     return data;
   } catch (error) {
     console.error("Error fetching supplier analytics:", error);
-    return getMockSupplierAnalytics(supplierId);
+    return getMockSupplierAnalytics(Number(supplierId));
   }
 };
 

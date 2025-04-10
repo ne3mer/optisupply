@@ -254,45 +254,76 @@ const SupplierAnalytics = () => {
               result.supplierName ||
               result.supplier?.name ||
               `Supplier ${id}`,
-            ethical_score:
+            ethical_score: normalizeScore(
               result.ethicalScore ||
-              result.ethical_score ||
-              result.supplier?.ethical_score ||
-              0,
-            environmental_score:
+                result.ethical_score ||
+                result.supplier?.ethical_score ||
+                0
+            ),
+            environmental_score: normalizeScore(
               result.environmentalScore ||
-              result.environmental_score ||
-              result.supplier?.environmental_score ||
-              0,
-            social_score:
+                result.environmental_score ||
+                result.supplier?.environmental_score ||
+                0
+            ),
+            social_score: normalizeScore(
               result.socialScore ||
-              result.social_score ||
-              result.supplier?.social_score ||
-              0,
-            governance_score:
+                result.social_score ||
+                result.supplier?.social_score ||
+                0
+            ),
+            governance_score: normalizeScore(
               result.governanceScore ||
-              result.governance_score ||
-              result.supplier?.governance_score ||
-              0,
+                result.governance_score ||
+                result.supplier?.governance_score ||
+                0
+            ),
             risk_level:
               result.riskLevel ||
               result.risk_level ||
               result.supplier?.risk_level ||
               "Medium",
           },
-          industry_average: result.industry_average || {
-            ethical_score: 65,
-            environmental_score: 60,
-            social_score: 70,
-            governance_score: 65,
+          industry_average: {
+            ethical_score: normalizeScore(
+              result.industry_average?.ethical_score ?? 65
+            ),
+            environmental_score: normalizeScore(
+              result.industry_average?.environmental_score ?? 60
+            ),
+            social_score: normalizeScore(
+              result.industry_average?.social_score ?? 70
+            ),
+            governance_score: normalizeScore(
+              result.industry_average?.governance_score ?? 65
+            ),
           },
           risk_factors: result.risk_factors || result.riskFactors || [],
           ai_recommendations:
             result.ai_recommendations || result.recommendations || [],
           sentiment_trend:
-            result.sentiment_trend || result.sentimentTrend || [],
+            result.sentiment_trend?.map((item) => ({
+              ...item,
+              score:
+                typeof item.score === "number" &&
+                item.score >= -1 &&
+                item.score <= 1
+                  ? Math.round((item.score + 1) * 50) // Convert -1 to 1 range to 0-100
+                  : item.score,
+            })) ||
+            result.sentimentTrend ||
+            [],
           isMockData: result.isMockData === true,
         };
+
+        // Helper function to normalize scores from 0-1 to 0-100 scale
+        function normalizeScore(score: number | null | undefined): number {
+          if (score === null || score === undefined) return 0;
+          // If score is already in 0-100 range, return as is
+          if (score > 1) return score;
+          // Otherwise convert from 0-1 to 0-100
+          return score * 100;
+        }
 
         console.log("Normalized analytics data:", normalizedData);
         setData(normalizedData);
