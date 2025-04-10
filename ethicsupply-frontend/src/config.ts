@@ -5,7 +5,10 @@
  * Defaults to the Vercel deployed backend, with local fallback for development
  */
 export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://optisupply-backend.vercel.app/api";
+  import.meta.env.VITE_API_URL ||
+  (window.location.hostname === "localhost"
+    ? "http://localhost:8080/api"
+    : "https://optisupply-backend.vercel.app/api");
 
 /**
  * Feature flags to enable/disable certain features
