@@ -354,9 +354,27 @@ const SupplierAssessment = () => {
         throw new Error("Invalid evaluation result received");
       }
 
+      // Check if we have the new API response structure (with nested scores)
+      const isNewFormat =
+        evaluation.scores && typeof evaluation.scores === "object";
+
+      // If new format, adapt it to the format expected by the component
+      const adaptedResult = isNewFormat
+        ? {
+            ...evaluation,
+            ethical_score: evaluation.scores.overall,
+            environmental_score: evaluation.scores.environmental,
+            social_score: evaluation.scores.social,
+            governance_score: evaluation.scores.governance,
+            supply_chain_score: evaluation.scores.supply_chain,
+            risk_score: evaluation.scores.risk,
+          }
+        : evaluation;
+
       // Check critical fields needed for display
       if (
-        evaluation.ethical_score === undefined ||
+        (!isNewFormat && evaluation.ethical_score === undefined) ||
+        (isNewFormat && evaluation.scores.overall === undefined) ||
         !evaluation.assessment ||
         !evaluation.assessment.strengths
       ) {
@@ -365,8 +383,8 @@ const SupplierAssessment = () => {
         );
       }
 
-      console.log("Setting result state:", evaluation);
-      setResult(evaluation);
+      console.log("Setting result state:", adaptedResult);
+      setResult(adaptedResult);
       console.log("Changing tab to results");
       setActiveTab("results");
       setUsingMockData(evaluation.isMockData === true);
@@ -870,9 +888,19 @@ const SupplierAssessment = () => {
                         </p>
                         <p
                           className="text-2xl font-bold font-mono"
-                          style={{ color: getScoreColor(result.ethical_score) }}
+                          style={{
+                            color: getScoreColor(
+                              result.ethical_score !== undefined
+                                ? result.ethical_score
+                                : result.scores?.overall
+                            ),
+                          }}
                         >
-                          {safeFormat(result.ethical_score)}
+                          {safeFormat(
+                            result.ethical_score !== undefined
+                              ? result.ethical_score
+                              : result.scores?.overall
+                          )}
                         </p>
                       </div>
                       <div
@@ -891,10 +919,18 @@ const SupplierAssessment = () => {
                         <p
                           className="text-2xl font-bold font-mono"
                           style={{
-                            color: getScoreColor(result.environmental_score),
+                            color: getScoreColor(
+                              result.environmental_score !== undefined
+                                ? result.environmental_score
+                                : result.scores?.environmental
+                            ),
                           }}
                         >
-                          {safeFormat(result.environmental_score)}
+                          {safeFormat(
+                            result.environmental_score !== undefined
+                              ? result.environmental_score
+                              : result.scores?.environmental
+                          )}
                         </p>
                       </div>
                       <div
@@ -912,9 +948,19 @@ const SupplierAssessment = () => {
                         </p>
                         <p
                           className="text-2xl font-bold font-mono"
-                          style={{ color: getScoreColor(result.social_score) }}
+                          style={{
+                            color: getScoreColor(
+                              result.social_score !== undefined
+                                ? result.social_score
+                                : result.scores?.social
+                            ),
+                          }}
                         >
-                          {safeFormat(result.social_score)}
+                          {safeFormat(
+                            result.social_score !== undefined
+                              ? result.social_score
+                              : result.scores?.social
+                          )}
                         </p>
                       </div>
                       <div
@@ -933,10 +979,18 @@ const SupplierAssessment = () => {
                         <p
                           className="text-2xl font-bold font-mono"
                           style={{
-                            color: getScoreColor(result.governance_score),
+                            color: getScoreColor(
+                              result.governance_score !== undefined
+                                ? result.governance_score
+                                : result.scores?.governance
+                            ),
                           }}
                         >
-                          {safeFormat(result.governance_score)}
+                          {safeFormat(
+                            result.governance_score !== undefined
+                              ? result.governance_score
+                              : result.scores?.governance
+                          )}
                         </p>
                       </div>
                     </div>
