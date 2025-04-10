@@ -21,7 +21,7 @@ const HomePage = () => {
       <nav className="container mx-auto px-6 py-6 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 text-2xl font-bold">
-            EthicSupply
+            OptiSupply
           </span>
         </div>
         <div className="hidden md:flex space-x-8 text-gray-300">
@@ -66,7 +66,7 @@ const HomePage = () => {
               </span>
             </h1>
             <p className="text-gray-300 text-xl mb-8">
-              EthicSupply is an AI-powered platform for ethical supply chain
+              OptiSupply is an AI-powered platform for ethical supply chain
               management, helping businesses make sustainable decisions with
               comprehensive analytics and actionable insights.
             </p>
@@ -256,7 +256,7 @@ const HomePage = () => {
                 How It Works
               </h2>
               <p className="text-gray-400 max-w-2xl mx-auto">
-                EthicSupply simplifies the complex process of ethical supply
+                OptiSupply simplifies the complex process of ethical supply
                 chain management through a systematic approach.
               </p>
             </motion.div>
@@ -299,7 +299,7 @@ const HomePage = () => {
               About The Project
             </h2>
             <p className="text-gray-300 mb-4">
-              EthicSupply represents a breakthrough in supply chain management
+              OptiSupply represents a breakthrough in supply chain management
               technology, combining advanced AI with ethical assessment
               frameworks to help businesses make more responsible sourcing
               decisions.
@@ -368,7 +368,7 @@ const HomePage = () => {
             Ready to Transform Your Supply Chain?
           </h2>
           <p className="text-gray-300 max-w-2xl mx-auto mb-8">
-            Join forward-thinking companies that are leveraging EthicSupply to
+            Join forward-thinking companies that are leveraging OptiSupply to
             build more sustainable, ethical, and resilient supply chains.
           </p>
           <Link
@@ -385,7 +385,7 @@ const HomePage = () => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-white font-bold text-lg mb-4">EthicSupply</h3>
+              <h3 className="text-white font-bold text-lg mb-4">OptiSupply</h3>
               <p className="text-gray-400 text-sm">
                 AI-powered ethical supply chain management platform for modern
                 businesses.
@@ -422,7 +422,7 @@ const HomePage = () => {
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-500 text-sm mb-4 md:mb-0">
-              © 2023 EthicSupply. Budapest Metropolitan University. All rights
+              © 2023 OptiSupply. Budapest Metropolitan University. All rights
               reserved.
             </p>
             <div className="flex space-x-4">
