@@ -13,7 +13,7 @@ const API_URL = formatUrl(API_BASE_URL);
 // Helper function to construct API endpoints
 const getEndpoint = (path: string) => {
   // Remove leading and trailing slashes from path
-  const cleanPath = path.replace(/^\/+|\/+$/g, "");
+  const cleanPath = path.replace(/^\/+|\/+$/g, ""); // Corrected regex
   return `${API_URL}/${cleanPath}`;
 };
 
@@ -438,9 +438,7 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
   try {
     const response = await fetch(getEndpoint("suppliers"), {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
 
@@ -459,8 +457,11 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
 
 export const getSupplier = async (id: number | string): Promise<Supplier> => {
   try {
-    console.log(`Fetching supplier with ID ${id} from API...`);
-    const response = await fetch(`${API_BASE_URL}/suppliers/${id}/`);
+    const response = await fetch(getEndpoint(`suppliers/${id}`), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -504,13 +505,11 @@ export const evaluateSupplier = async (
   supplierData: SupplierEvaluation
 ): Promise<EvaluationResult> => {
   try {
-    console.log("Submitting supplier data to API:", supplierData);
-    const response = await fetch(`${API_BASE_URL}/suppliers/evaluate/`, {
+    const response = await fetch(getEndpoint("suppliers/evaluate"), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(supplierData),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -1352,8 +1351,11 @@ export const getRecommendations = async () => {
 
 export const getDashboardData = async (): Promise<DashboardData> => {
   try {
-    console.log("Fetching dashboard data from API...");
-    const response = await fetch(`${API_BASE_URL}/dashboard/`);
+    const response = await fetch(getEndpoint("dashboard"), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
 
     if (!response.ok) {
       console.warn(
@@ -1519,9 +1521,13 @@ export const getDetailedAnalysis = async (
   supplierId: number
 ): Promise<DetailedAnalysis> => {
   try {
-    console.log(`Fetching detailed analysis for supplier ${supplierId}...`);
     const response = await fetch(
-      `${API_BASE_URL}/suppliers/${supplierId}/detailed_analysis/`
+      getEndpoint(`suppliers/${supplierId}/analytics`),
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      }
     );
 
     if (!response.ok) {
@@ -1535,7 +1541,11 @@ export const getDetailedAnalysis = async (
     console.log("Detailed analysis API response:", data);
     return data;
   } catch (error) {
-    console.error("Error fetching detailed analysis:", error);
+    console.error(
+      `Error fetching detailed analysis for supplier ${supplierId}:`,
+      error
+    );
+    // Fallback to mock data
     return getMockDetailedAnalysis(supplierId);
   }
 };
@@ -1545,15 +1555,13 @@ export const simulateChanges = async (
   changes: Record<string, number>
 ): Promise<Record<string, any>> => {
   try {
-    console.log(`Simulating changes for supplier ${supplierId}:`, changes);
     const response = await fetch(
-      `${API_BASE_URL}/suppliers/${supplierId}/simulate_changes/`,
+      getEndpoint(`suppliers/${supplierId}/simulate`),
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ changes }),
+        credentials: "include",
       }
     );
 
@@ -1568,7 +1576,11 @@ export const simulateChanges = async (
     console.log("Simulation API response:", data);
     return data;
   } catch (error) {
-    console.error("Error simulating changes:", error);
+    console.error(
+      `Error simulating changes for supplier ${supplierId}:`,
+      error
+    );
+    // Fallback to mock data
     return getMockSimulationResult(supplierId, changes);
   }
 };
@@ -1775,19 +1787,11 @@ export const addSupplier = async (
   supplierData: Record<string, any>
 ): Promise<Supplier> => {
   try {
-    console.log("Adding new supplier to API:", supplierData);
-
-    // Ensure we have the required fields
-    if (!supplierData.name || !supplierData.country || !supplierData.industry) {
-      throw new Error("Missing required fields: name, country, or industry");
-    }
-
-    const response = await fetch(`${API_URL}/suppliers/`, {
+    const response = await fetch(getEndpoint("suppliers"), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(supplierData),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -2195,8 +2199,11 @@ export interface MLStatus {
 // Get Machine Learning Status from the API
 export const getMLStatus = async (): Promise<MLStatus> => {
   try {
-    console.log("Fetching ML status from API...");
-    const response = await fetch(`${API_BASE_URL}/ml/status/`);
+    const response = await fetch(getEndpoint("ml/status"), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
 
     if (!response.ok) {
       console.warn(
@@ -2213,7 +2220,7 @@ export const getMLStatus = async (): Promise<MLStatus> => {
     };
   } catch (error) {
     console.error("Error fetching ML status:", error);
-    return getMockMLStatus();
+    return getMockMLStatus(); // Fallback to mock
   }
 };
 
@@ -2258,9 +2265,7 @@ export const checkApiConnection = async (): Promise<boolean> => {
   try {
     const response = await fetch(getEndpoint("health-check"), {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
     });
     return response.ok;
@@ -2309,7 +2314,11 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
 
   if (isConnected) {
     try {
-      const response = await fetch(`${API_BASE_URL}/supply-chain-graph/`);
+      const response = await fetch(getEndpoint("supply-chain-graph"), {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
 
       if (!response.ok) {
         console.warn(
@@ -2496,7 +2505,11 @@ export interface GeoRiskAlert {
 // Function to fetch geo risk alerts
 export async function getGeoRiskAlerts(): Promise<GeoRiskAlert[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/geo-risk-alerts/`);
+    const response = await fetch(getEndpoint("geo-risk-alerts"), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
 
     if (!response.ok) {
       throw new Error(`Geo Risk Alerts API returned status ${response.status}`);
@@ -2592,25 +2605,12 @@ export const updateSupplier = async (
   id: string,
   supplierData: Partial<Supplier> // Use Partial as we might only send updated fields
 ): Promise<Supplier> => {
-  // Determine the correct ID field to use (_id or id)
-  // Backend likely expects the MongoDB _id if that's what it uses primarily
-  const endpointId = id; // Assuming the id passed is the correct one for the endpoint
-  const url = `${API_URL}/suppliers/${endpointId}`; // Use API_URL which handles http/https
-
-  console.log(
-    `Updating supplier ${endpointId} at ${url} with data:`,
-    supplierData
-  );
-
   try {
-    const response = await fetch(url, {
-      method: "PUT", // Or "PATCH" if the backend supports partial updates
-      headers: {
-        "Content-Type": "application/json",
-        // Add any authentication headers if required, e.g.:
-        // 'Authorization': `Bearer ${getToken()}`,
-      },
+    const response = await fetch(getEndpoint(`suppliers/${id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(supplierData),
+      credentials: "include",
     });
 
     if (!response.ok) {
@@ -2666,16 +2666,11 @@ export interface SupplierAnalyticsData {
 export const getSupplierAnalyticsData = async (
   id: string
 ): Promise<SupplierAnalyticsData> => {
-  const url = `${API_URL}/suppliers/${id}/analytics`; // Use API_URL and specific endpoint
-  console.log(`Fetching analytics for supplier ${id} from ${url}`);
-
   try {
-    const response = await fetch(url, {
+    const response = await fetch(getEndpoint(`suppliers/${id}/analytics`), {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        // Add authentication headers if needed
-      },
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
     });
 
     if (!response.ok) {
