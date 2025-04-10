@@ -9,10 +9,10 @@ import {
   LightBulbIcon,
   CubeTransparentIcon,
   ScaleIcon,
-  DocumentReportIcon,
+  DocumentTextIcon,
   UserGroupIcon,
   ServerIcon,
-} from "@heroicons/react/outline";
+} from "@heroicons/react/24/outline";
 
 const HomePage = () => {
   return (
@@ -192,7 +192,7 @@ const HomePage = () => {
             delay={0.5}
           />
           <FeatureCard
-            icon={<DocumentReportIcon className="w-7 h-7" />}
+            icon={<DocumentTextIcon className="w-7 h-7" />}
             title="ESG Reporting"
             description="Generate comprehensive reports for stakeholders, regulators, and sustainability certifications."
             delay={0.6}
