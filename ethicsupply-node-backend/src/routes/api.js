@@ -7,7 +7,7 @@ const geoRiskController = require("../controllers/geoRiskController");
 const recommendationController = require("../controllers/recommendationController");
 
 // Health check route
-router.get(["/health-check", "/health-check/"], (req, res) => {
+router.get("/health-check", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
@@ -36,11 +36,6 @@ router.get(
   "/suppliers/recommendations",
   recommendationController.getRecommendations
 );
-router.get(
-  "/suppliers/recommendations/",
-  recommendationController.getRecommendations
-);
-
 router.get(
   "/suppliers/recommendations/:id",
   recommendationController.getRecommendationById
@@ -75,7 +70,6 @@ router.delete("/suppliers/:id", supplierController.deleteSupplier);
 
 // Dashboard route (uses supplierController)
 router.get("/dashboard", supplierController.getDashboard);
-router.get("/dashboard/", supplierController.getDashboard);
 
 // Supply chain graph route (uses supplierController)
 router.get("/supply-chain-graph", supplierController.getSupplyChainGraph);
@@ -89,10 +83,6 @@ router.post("/suppliers/evaluate", supplierController.evaluateSupplierPost);
 
 // Supplier analytics route (uses supplierController)
 router.get("/suppliers/:id/analytics", supplierController.getSupplierAnalytics);
-router.get(
-  "/suppliers/:id/analytics/",
-  supplierController.getSupplierAnalytics
-);
 
 // ======= END RE-ENABLED SUPPLIER ROUTES =======
 
@@ -105,12 +95,10 @@ router.delete("/controversies/:id", controversyController.deleteControversy);
 
 // ML status route (Keep Active for now)
 router.get("/ml/status", mlController.getMLStatus);
-router.get("/ml/status/", mlController.getMLStatus);
 
 // ======= RE-ENABLE GEO RISK ROUTES =======
 // Geo Risk Alert routes
 router.get("/geo-risk-alerts", geoRiskController.getGeoRiskAlerts);
-router.get("/geo-risk-alerts/", geoRiskController.getGeoRiskAlerts);
 router.get("/geo-risk-alerts/:id", geoRiskController.getGeoRiskAlertById);
 router.post("/geo-risk-alerts", geoRiskController.createGeoRiskAlert);
 router.put("/geo-risk-alerts/:id", geoRiskController.updateGeoRiskAlert);
