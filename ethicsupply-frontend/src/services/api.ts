@@ -1,5 +1,4 @@
 // API URL and service functions for the application
-// Using port 8000 for the Django server
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
@@ -10,6 +9,13 @@ const formatUrl = (url: string) => {
 };
 
 const API_URL = formatUrl(API_BASE_URL);
+
+// Helper function to construct API endpoints
+const getEndpoint = (path: string) => {
+  // Remove leading and trailing slashes from path
+  const cleanPath = path.replace(/^\/+|\/+$/g, "");
+  return `${API_URL}/${cleanPath}`;
+};
 
 export interface Supplier {
   id: number;
@@ -430,51 +436,24 @@ const mockSuppliers: Supplier[] = [
 
 export const getSuppliers = async (): Promise<Supplier[]> => {
   try {
-    console.log("Fetching suppliers from API...");
-    let allSuppliers: Supplier[] = [];
-    let nextUrl = `${API_BASE_URL}/suppliers/`;
+    const response = await fetch(getEndpoint("suppliers"), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
 
-    // Fetch all pages of suppliers
-    while (nextUrl) {
-      const response = await fetch(nextUrl);
-
-      if (!response.ok) {
-        throw new Error(`API returned status ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("API response data:", data);
-
-      // Handle paginated response (Django REST Framework format)
-      if (data && typeof data === "object") {
-        // Check if the response has a 'results' field (paginated response)
-        if (data.results && Array.isArray(data.results)) {
-          console.log("Using paginated API results:", data.results);
-          if (data.results.length > 0) {
-            allSuppliers = [...allSuppliers, ...data.results];
-          }
-          // Update nextUrl for pagination
-          nextUrl = data.next;
-        } else if (Array.isArray(data) && data.length > 0) {
-          // Handle non-paginated response
-          console.log("Using non-paginated API results");
-          allSuppliers = data;
-          break; // No pagination, exit loop
-        } else {
-          break; // No more data
-        }
-      } else {
-        break; // Unexpected response format
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return allSuppliers.map((supplier) => ({
-      ...supplier,
-      isMockData: false,
-    }));
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error("Error fetching suppliers:", error);
-    throw error;
+    // Return mock data as fallback
+    return mockSuppliers.map((supplier) => ({ ...supplier, isMockData: true }));
   }
 };
 
@@ -2277,9 +2256,12 @@ function getMockMLStatus(): MLStatus {
 // Export a function to check if the API is available
 export const checkApiConnection = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/ml/status/`, {
-      method: "HEAD",
-      cache: "no-cache",
+    const response = await fetch(getEndpoint("health-check"), {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
     });
     return response.ok;
   } catch (error) {
