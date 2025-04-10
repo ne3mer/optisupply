@@ -29,15 +29,23 @@ async function startServer() {
       }
     }
 
-    // Middleware
-    app.use(
-      cors({
-        origin: config.cors.origins || "*",
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-        credentials: true,
-      })
-    );
+    // CORS configuration
+    const corsOptions = {
+      origin: "https://optisupply.vercel.app",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: true,
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    };
+
+    // Apply CORS middleware
+    app.use(cors(corsOptions));
+
+    // Handle OPTIONS requests
+    app.options("*", cors(corsOptions));
+
+    // Other middleware
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(requestLogger);
