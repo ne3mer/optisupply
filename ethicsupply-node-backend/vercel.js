@@ -1,8 +1,14 @@
 // Vercel deployment entry point
 const express = require("express");
 const cors = require("cors");
-const startServer = require("./src/server");
-const config = require("./src/config/app"); // Ensure config is imported
+const path = require("path");
+const { connectToDatabase } = require("./src/config/database");
+const apiRoutes = require("./src/routes/api");
+const requestLogger = require("./src/middleware/requestLogger");
+const { notFound, errorHandler } = require("./src/middleware/errorHandler");
+const config = require("./src/config/app");
+const EthicalScoringModel = require("./src/ml/EthicalScoringModel");
+const mlController = require("./src/controllers/mlController");
 
 // Create mock server for Vercel deployment when MongoDB connection fails
 function createMockServer() {
@@ -11,7 +17,7 @@ function createMockServer() {
   );
   const app = express();
 
-  // CORS middleware - allow all origins for Vercel
+  // CORS middleware for Vercel
   app.use(
     cors({
       // Use the same origin validation logic as the main server
@@ -36,7 +42,7 @@ function createMockServer() {
         "Content-Type",
         "Authorization",
       ],
-      credentials: true, // Keep credentials allowed
+      credentials: true,
       preflightContinue: false,
       optionsSuccessStatus: 204,
     })
@@ -378,6 +384,105 @@ function createMockServer() {
   return app;
 }
 
+// Initialize Express app for production with MongoDB
+async function initializeMainApp() {
+  try {
+    // Print diagnostic information
+    console.log(
+      `MongoDB URI defined: ${process.env.MONGODB_URI ? "Yes" : "No"}`
+    );
+    console.log(
+      `MongoDB URI starts with: ${
+        process.env.MONGODB_URI
+          ? process.env.MONGODB_URI.substring(0, 20) + "..."
+          : "undefined"
+      }`
+    );
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(
+      `CORS Origins: ${
+        process.env.CORS_ALLOWED_ORIGINS || "Not set - using defaults"
+      }`
+    );
+
+    await connectToDatabase();
+    console.log("Connected to MongoDB");
+
+    const app = express();
+
+    // CORS configuration
+    const corsOptions = {
+      origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests) or from allowed origins
+        if (
+          !origin ||
+          (config.cors.origins && config.cors.origins.indexOf(origin) !== -1)
+        ) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      methods: config.cors.methods || [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+      ],
+      allowedHeaders: config.cors.allowedHeaders || [
+        "Content-Type",
+        "Authorization",
+      ],
+      credentials: true,
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+    };
+
+    // Apply CORS middleware
+    app.use(cors(corsOptions));
+
+    // Handle OPTIONS requests (important for preflight)
+    app.options("*", cors(corsOptions));
+
+    // Other middleware
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use(requestLogger);
+
+    // Serve static files
+    app.use("/public", express.static(path.join(__dirname, "public")));
+
+    // Health check routes
+    app.get("/api/health-check", (req, res) => {
+      res.status(200).json({ status: "ok", mode: "production" });
+    });
+    app.get("/api/ml/status", mlController.getMLStatus);
+
+    // API routes
+    app.use("/api", apiRoutes);
+
+    // Error handling middleware
+    app.use(notFound);
+    app.use(errorHandler);
+
+    // Initialize ML Model
+    const scoringModel = new EthicalScoringModel();
+    await scoringModel.initialize();
+    console.log("ML model initialized successfully");
+
+    return app;
+  } catch (error) {
+    console.error("Server initialization failed:", error);
+    console.error("Error details:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
+    throw error;
+  }
+}
+
 // Serverless function handler for Vercel
 module.exports = async (req, res) => {
   // Handle OPTIONS requests at the serverless function level first
@@ -409,24 +514,11 @@ module.exports = async (req, res) => {
   try {
     // Try to initialize the Express app with MongoDB
     console.log("Attempting to initialize server with MongoDB connection");
-    console.log(
-      `MongoDB URI defined: ${process.env.MONGODB_URI ? "Yes" : "No"}`
-    );
-    console.log(
-      `MongoDB URI starts with: ${
-        process.env.MONGODB_URI
-          ? process.env.MONGODB_URI.substring(0, 20) + "..."
-          : "undefined"
-      }`
-    );
-    console.log(`Environment: ${process.env.NODE_ENV}`);
-    console.log(
-      `CORS Origins: ${
-        process.env.CORS_ALLOWED_ORIGINS || "Not set - using defaults"
-      }`
-    );
 
-    const app = await startServer();
+    // Use our new function that doesn't call app.listen()
+    const app = await initializeMainApp();
+
+    // Handle the request with the initialized app
     return app(req, res);
   } catch (error) {
     // If MongoDB connection fails, fall back to mock server
