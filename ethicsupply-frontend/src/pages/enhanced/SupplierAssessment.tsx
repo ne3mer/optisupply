@@ -51,6 +51,15 @@ const getScoreColor = (score: number): string => {
   return colors.error;
 };
 
+// Helper to safely format numeric values
+const safeFormat = (
+  value: number | undefined | null,
+  decimals: number = 1
+): string => {
+  if (value === undefined || value === null) return "N/A";
+  return value.toFixed(decimals);
+};
+
 const LoadingIndicator = ({ message = "Loading Data..." }) => (
   <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
     <motion.div
@@ -470,43 +479,38 @@ const SupplierAssessment = () => {
     onChange,
     unit = "",
   }) => (
-    <div className="mb-6">
-      <div className="flex justify-between items-center mb-1">
-        <label
-          htmlFor={name}
-          className="block text-sm font-medium"
-          style={{ color: colors.textMuted }}
-        >
-          {label}
-        </label>
+    <div
+      className="flex flex-col mb-4 border p-4 rounded"
+      style={{ borderColor: colors.accent + "30" }}
+    >
+      <label
+        htmlFor={name}
+        className="block text-sm mb-1"
+        style={{ color: colors.text }}
+      >
+        {label}
+      </label>
+      <div className="flex items-center gap-4">
+        <input
+          type="range"
+          id={name}
+          name={name}
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={onChange}
+          className="w-full"
+        />
         <span
-          className="text-sm font-mono font-semibold"
-          style={{ color: colors.primary }}
+          className="text-sm font-mono min-w-[60px] text-right"
+          style={{ color: colors.accent }}
         >
-          {typeof value === "number"
-            ? value.toFixed(unit === "%" ? 0 : 2)
-            : "N/A"}
-          {unit}
+          {value !== undefined && value !== null
+            ? safeFormat(value, unit === "%" ? 0 : 2) + unit
+            : "N/A" + unit}
         </span>
       </div>
-      <input
-        type="range"
-        id={name}
-        name={name}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={onChange}
-        data-type="number" // Used in handleChange
-        className="w-full h-2 rounded-lg appearance-none cursor-pointer range-slider"
-        style={
-          {
-            /* Custom slider styles can go here using CSS variables or direct styles */
-          }
-        }
-      />
-      {/* Add CSS for .range-slider thumb and track later */}
     </div>
   );
 
@@ -852,7 +856,7 @@ const SupplierAssessment = () => {
                           className="text-2xl font-bold font-mono"
                           style={{ color: getScoreColor(result.ethical_score) }}
                         >
-                          {result.ethical_score.toFixed(1)}
+                          {safeFormat(result.ethical_score)}
                         </p>
                       </div>
                       <div
@@ -874,7 +878,7 @@ const SupplierAssessment = () => {
                             color: getScoreColor(result.environmental_score),
                           }}
                         >
-                          {result.environmental_score.toFixed(1)}
+                          {safeFormat(result.environmental_score)}
                         </p>
                       </div>
                       <div
@@ -894,7 +898,7 @@ const SupplierAssessment = () => {
                           className="text-2xl font-bold font-mono"
                           style={{ color: getScoreColor(result.social_score) }}
                         >
-                          {result.social_score.toFixed(1)}
+                          {safeFormat(result.social_score)}
                         </p>
                       </div>
                       <div
@@ -916,7 +920,7 @@ const SupplierAssessment = () => {
                             color: getScoreColor(result.governance_score),
                           }}
                         >
-                          {result.governance_score.toFixed(1)}
+                          {safeFormat(result.governance_score)}
                         </p>
                       </div>
                     </div>
