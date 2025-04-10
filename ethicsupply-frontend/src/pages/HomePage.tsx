@@ -313,12 +313,26 @@ const HomePage = () => {
               <h3 className="text-lg font-semibold text-white mb-3">
                 Created by:
               </h3>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-4 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                   NF
                 </div>
                 <div>
                   <p className="text-white font-medium">Nima Afshar</p>
+                  <p className="text-gray-400 text-sm">
+                    Budapest Metropolitan University
+                  </p>
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-3">
+                Supervised by:
+              </h3>
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  AV
+                </div>
+                <div>
+                  <p className="text-white font-medium">Dr. Alpár Vera Noémi</p>
                   <p className="text-gray-400 text-sm">
                     Budapest Metropolitan University
                   </p>
