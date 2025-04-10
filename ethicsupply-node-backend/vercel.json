@@ -2,21 +2,25 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/server.js",
+      "src": "index.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "src/server.js",
+      "dest": "index.js",
       "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       "headers": {
-        "Access-Control-Allow-Origin": "https://optisupply.vercel.app",
+        "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With, X-HTTP-Method-Override",
         "Access-Control-Allow-Credentials": "true"
       }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
     }
   ],
   "env": {
