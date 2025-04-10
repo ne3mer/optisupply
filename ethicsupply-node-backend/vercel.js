@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const startServer = require("./src/server");
+const config = require("./src/config/app"); // Ensure config is imported
 
 // Create mock server for Vercel deployment when MongoDB connection fails
 function createMockServer() {
@@ -13,15 +14,31 @@ function createMockServer() {
   // CORS middleware - allow all origins for Vercel
   app.use(
     cors({
-      origin: "*",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: [
+      // Use the same origin validation logic as the main server
+      origin: function (origin, callback) {
+        if (
+          !origin ||
+          (config.cors.origins && config.cors.origins.indexOf(origin) !== -1)
+        ) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      methods: config.cors.methods || [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+      ],
+      allowedHeaders: config.cors.allowedHeaders || [
         "Content-Type",
         "Authorization",
-        "X-Requested-With",
-        "X-HTTP-Method-Override",
       ],
-      credentials: true,
+      credentials: true, // Keep credentials allowed
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
     })
   );
 
