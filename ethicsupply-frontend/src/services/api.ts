@@ -467,9 +467,7 @@ export const getSupplier = async (id: number | string): Promise<Supplier> => {
       if (response.status === 404) {
         console.warn(`Supplier with ID ${id} not found. Trying mock data.`);
         // Try to find the supplier in mock data
-        const mockSupplier = mockSuppliers.find(
-          (s) => s.id === Number(id) || s._id === id
-        );
+        const mockSupplier = mockSuppliers.find((s) => s.id === Number(id));
         if (mockSupplier) {
           return { ...mockSupplier, isMockData: true };
         }
@@ -489,9 +487,7 @@ export const getSupplier = async (id: number | string): Promise<Supplier> => {
     console.error(`Error fetching supplier with ID ${id}:`, error);
 
     // Try to find the supplier in mock data as a fallback
-    const mockSupplier = mockSuppliers.find(
-      (s) => s.id === Number(id) || s._id === id
-    );
+    const mockSupplier = mockSuppliers.find((s) => s.id === Number(id));
     if (mockSupplier) {
       console.log(`Using mock data for supplier ${id}`);
       return { ...mockSupplier, isMockData: true };
