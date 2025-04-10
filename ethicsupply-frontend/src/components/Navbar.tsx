@@ -17,7 +17,9 @@ import {
   TrendingUp,
   LogOut, // Assuming a logout function exists
   Activity, // Logo icon
+  Info, // <-- Import the Info icon
 } from "lucide-react";
+import { useTheme } from "../contexts/ThemeContext";
 
 // Interface for Nav Item
 interface NavItem {
@@ -31,31 +33,11 @@ const MENU_RADIUS = 120; // Radius of the expanded menu items
 const ITEM_SIZE = 48; // Size of individual menu item buttons
 
 const Navbar = () => {
+  const { darkMode, toggleDarkMode } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(
-    () => localStorage.getItem("theme") === "dark"
-  );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDarkMode]);
-
-  // Close menu on route change
-  useEffect(() => {
-    setIsOpen(false);
-  }, [location.pathname]);
-
-  const toggleDarkMode = () => {
-    setIsDarkMode((prev) => !prev);
-  };
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const handleSearch = () => {
     console.log("Open Search"); // Placeholder for search functionality
@@ -82,6 +64,7 @@ const Navbar = () => {
     },
     { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={18} /> },
     { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={18} /> },
+    { name: "About", path: "/about", icon: <Info size={18} /> },
   ];
 
   const itemVariants = {
@@ -128,7 +111,13 @@ const Navbar = () => {
     (path === "/suppliers" && location.pathname.startsWith("/supplier")); // Highlight Suppliers for related pages too
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700/50 shadow-sm transition-colors duration-300">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg"
+          : "bg-transparent"
+      }`}
+    >
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
@@ -180,48 +169,39 @@ const Navbar = () => {
               className={`relative flex items-center transition-all duration-300 ease-in-out ${
                 isSearchOpen ? "w-48 md:w-64" : "w-10"
               }`}
-              layout // Animate layout changes
+              layout
             >
-              <input
-                type="search"
-                placeholder="Search..."
-                className={`absolute inset-y-0 right-0 h-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-full leading-5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 ease-in-out ${
-                  isSearchOpen
-                    ? "w-full opacity-100 pointer-events-auto"
-                    : "w-0 opacity-0 pointer-events-none"
-                }`}
-                onBlur={() => setIsSearchOpen(false)} // Close on blur
-              />
               <motion.button
                 onClick={() => setIsSearchOpen(true)}
-                className="absolute inset-y-0 right-0 h-10 w-10 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none z-10"
+                className="h-10 w-10 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none z-10"
                 whileTap={{ scale: 0.9 }}
               >
                 <Search className="h-5 w-5" />
               </motion.button>
+              <input
+                type="search"
+                placeholder="Search..."
+                className={`absolute inset-y-0 left-0 h-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-full leading-5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 ease-in-out ${
+                  isSearchOpen
+                    ? "w-full opacity-100 pointer-events-auto"
+                    : "w-0 opacity-0 pointer-events-none"
+                }`}
+                onBlur={() => setIsSearchOpen(false)}
+              />
             </motion.div>
 
             {/* Dark Mode Toggle */}
-            <motion.button
+            <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
-              whileTap={{ scale: 0.9, rotate: 15 }}
-              title={
-                isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"
-              }
+              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label="Toggle dark mode"
             >
-              <AnimatePresence initial={false} mode="wait">
-                <motion.div
-                  key={isDarkMode ? "sun" : "moon"}
-                  initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
-                  animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                  exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-                </motion.div>
-              </AnimatePresence>
-            </motion.button>
+              {darkMode ? (
+                <Sun size={20} className="text-yellow-500" />
+              ) : (
+                <Moon size={20} className="text-gray-600" />
+              )}
+            </button>
 
             {/* Settings Button */}
             <motion.button
@@ -232,18 +212,9 @@ const Navbar = () => {
             >
               <Settings size={20} />
             </motion.button>
-
-            {/* User/Logout (Optional) */}
-            {/* Add user profile dropdown or logout button here */}
           </div>
-
-          {/* Mobile Menu Button (Implement if needed) */}
-          {/* <button className="md:hidden p-2 rounded-md ..."> ... </button> */}
         </div>
       </div>
-
-      {/* Mobile Menu Panel (Implement if needed) */}
-      {/* <AnimatePresence> {isOpen && mobile menu content} </AnimatePresence> */}
     </nav>
   );
 };

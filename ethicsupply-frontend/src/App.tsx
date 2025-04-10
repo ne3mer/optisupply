@@ -18,9 +18,16 @@ import SupplierAnalytics from "./pages/SupplierAnalytics";
 import SupplierAssessment from "./pages/enhanced/SupplierAssessment";
 import GeoRiskMapping from "./pages/GeoRiskMapping";
 import SupplyChainGraph from "./pages/SupplyChainGraph";
-import About from "./pages/About";
+import OptiSupplyAboutPage from "./pages/AboutPage";
 import SupplierEditForm from "./pages/SupplierEditForm";
 import { useEffect } from "react";
+import { RecoilRoot } from "recoil";
+import { ReactFlowProvider } from "reactflow";
+import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import Layout from "./components/Layout";
+import Settings from "./pages/Settings";
+import NotFound from "./pages/NotFound";
 
 // Redirect component for suppliers/:id to supplier-details/:id
 const SupplierRedirect = () => {
@@ -34,6 +41,12 @@ const ScorecardRedirect = () => {
   return <Navigate replace to={`/supplier-scorecard/${id}`} />;
 };
 
+// Redirect component for supplier-analytics/:id to suppliers/:id/analytics
+const SupplierAnalyticsRedirect = () => {
+  const { id } = useParams();
+  return <Navigate replace to={`/suppliers/${id}/analytics`} />;
+};
+
 // Add a component that will redirect to the 3D visualization
 const Redirect3D = () => {
   useEffect(() => {
@@ -44,44 +57,65 @@ const Redirect3D = () => {
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen bg-neutral-50">
-        <NavigationBar />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/suppliers" element={<SuppliersList />} />
-            <Route path="/supplier-details/:id" element={<SupplierDetails />} />
-            <Route path="/suppliers/:id" element={<SupplierRedirect />} />
-            <Route
-              path="/suppliers/:id/scorecard"
-              element={<ScorecardRedirect />}
-            />
-            <Route path="/evaluate-supplier" element={<EvaluateSupplier />} />
-            <Route path="/recommendations" element={<Recommendations />} />
-            <Route
-              path="/supplier-scorecard/:id?"
-              element={<SupplierScorecard />}
-            />
-            <Route
-              path="/supplier-analytics/:id?"
-              element={<SupplierAnalytics />}
-            />
-            <Route path="/add-supplier" element={<AddSupplier />} />
-            <Route
-              path="/supplier-assessment"
-              element={<SupplierAssessment />}
-            />
-            <Route path="/geo-risk-mapping" element={<GeoRiskMapping />} />
-            <Route path="/supply-chain-graph" element={<SupplyChainGraph />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/3d-visualization" element={<Redirect3D />} />
-            <Route path="/suppliers/edit/:id" element={<SupplierEditForm />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+    <ThemeProvider>
+      <RecoilRoot>
+        <Router>
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            <NavigationBar />
+            <main className="pt-16">
+              <Routes>
+                <Route path="/" element={<Layout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="suppliers" element={<SuppliersList />} />
+                  <Route path="suppliers/add" element={<AddSupplier />} />
+                  <Route path="suppliers/:id" element={<SupplierDetails />} />
+                  <Route
+                    path="suppliers/:id/edit"
+                    element={<SupplierEditForm />}
+                  />
+                  <Route
+                    path="suppliers/:id/scorecard"
+                    element={<SupplierScorecard />}
+                  />
+                  <Route
+                    path="suppliers/:id/analytics"
+                    element={<SupplierAnalytics />}
+                  />
+                  <Route
+                    path="supplier-analytics/:id"
+                    element={<SupplierAnalyticsRedirect />}
+                  />
+                  <Route
+                    path="suppliers/:id/assessment"
+                    element={<SupplierAssessment />}
+                  />
+                  <Route
+                    path="suppliers/evaluate"
+                    element={<EvaluateSupplier />}
+                  />
+                  <Route path="recommendations" element={<Recommendations />} />
+                  <Route
+                    path="supply-chain-graph"
+                    element={
+                      <ReactFlowProvider>
+                        <SupplyChainGraph />
+                      </ReactFlowProvider>
+                    }
+                  />
+                  <Route path="geo-risk-mapping" element={<GeoRiskMapping />} />
+                  <Route path="about" element={<OptiSupplyAboutPage />} />
+                  <Route path="3d-visualization" element={<Redirect3D />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </main>
+          </div>
+        </Router>
+        <Toaster position="top-right" />
+      </RecoilRoot>
+    </ThemeProvider>
   );
 }
 
