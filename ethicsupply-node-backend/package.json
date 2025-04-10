@@ -4,8 +4,8 @@
   "description": "Node.js backend for EthicSupply with MongoDB",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node dev-server.js",
+    "dev": "nodemon dev-server.js",
     "test": "jest"
   },
   "dependencies": {
