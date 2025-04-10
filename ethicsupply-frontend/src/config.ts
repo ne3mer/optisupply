@@ -2,11 +2,10 @@
 
 /**
  * Base URL for API requests
- * In development, we use the local Django server
- * In production, this would be set to the deployed API endpoint
+ * Defaults to the Vercel deployed backend, with local fallback for development
  */
 export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+  import.meta.env.VITE_API_URL || "https://optisupply-backend.vercel.app/api";
 
 /**
  * Feature flags to enable/disable certain features
