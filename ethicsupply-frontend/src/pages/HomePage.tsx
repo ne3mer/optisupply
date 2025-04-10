@@ -92,14 +92,56 @@ const HomePage = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <div className="relative w-full h-[400px] bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 rounded-2xl overflow-hidden shadow-2xl border border-emerald-500/30">
-              <div className="absolute inset-0 bg-[url('/images/world-map-dots.svg')] bg-no-repeat bg-center opacity-20"></div>
               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-emerald-600/40 to-cyan-600/40 rounded-2xl"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4/5 z-10">
-                <img
-                  src="/images/dashboard-illustration.svg"
-                  alt="EthicSupply Dashboard Preview"
-                  className="w-full h-auto rounded-lg shadow-2xl"
-                />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-4/5 bg-slate-900/70 backdrop-blur-sm p-6 rounded-lg border border-emerald-500/30 shadow-2xl">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="h-3 w-24 bg-emerald-500/40 rounded-full"></div>
+                      <div className="h-3 w-32 bg-cyan-500/40 rounded-full"></div>
+                      <div className="h-3 w-20 bg-emerald-500/40 rounded-full"></div>
+                    </div>
+                    <div>
+                      <div className="flex space-x-1">
+                        <div className="h-16 w-16 bg-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400 font-bold">
+                          85
+                        </div>
+                        <div className="h-16 w-16 bg-cyan-500/30 rounded-lg flex items-center justify-center text-cyan-400 font-bold">
+                          92
+                        </div>
+                        <div className="h-16 w-16 bg-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400 font-bold">
+                          76
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 h-32 w-full bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-lg relative overflow-hidden">
+                    <div className="absolute bottom-0 left-0 w-full h-20">
+                      <svg
+                        viewBox="0 0 400 100"
+                        preserveAspectRatio="none"
+                        className="w-full h-full"
+                      >
+                        <path
+                          d="M0,50 C50,30 100,60 150,40 C200,20 250,60 300,40 C350,20 400,50 400,50 L400,100 L0,100 Z"
+                          fill="rgba(16, 185, 129, 0.3)"
+                        />
+                        <path
+                          d="M0,70 C50,40 100,80 150,60 C200,40 250,80 300,60 C350,40 400,70 400,70 L400,100 L0,100 Z"
+                          fill="rgba(6, 182, 212, 0.3)"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-between">
+                    <div className="text-xs text-gray-400">
+                      Supply Chain Ethics Dashboard
+                    </div>
+                    <div className="text-xs text-emerald-400">
+                      AI-Powered Analytics
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full opacity-60 blur-2xl"></div>
