@@ -111,5 +111,29 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-// Export the server initialization function
-module.exports = startServer;
+// Start the server
+(async () => {
+  try {
+    const appInstance = await startServer();
+    const port = config.port || 8000; // Use port from config or default
+
+    const server = appInstance.listen(port, () => {
+      console.log(`\n🚀 Server listening on port ${port}`);
+      console.log(`   API accessible at http://localhost:${port}/api`);
+      console.log(`   Environment: ${config.env}`);
+    });
+
+    // Graceful shutdown
+    process.on("SIGTERM", () => {
+      console.log("SIGTERM signal received: closing HTTP server");
+      server.close(() => {
+        console.log("HTTP server closed");
+        // Close DB connection if necessary
+        process.exit(0);
+      });
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+})();
