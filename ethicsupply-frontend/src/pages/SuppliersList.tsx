@@ -202,7 +202,7 @@ const SuppliersList = () => {
           </h1>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link
-              to="/add-supplier"
+              to="/suppliers/add"
               className="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
               style={{
                 backgroundColor: colors.accent,
