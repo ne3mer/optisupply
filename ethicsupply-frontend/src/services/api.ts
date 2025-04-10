@@ -1,6 +1,6 @@
 // API URL and service functions for the application
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+  import.meta.env.VITE_API_URL || "https://optisupply-backend.vercel.app/api";
 
 // Ensure proper URL formatting
 const formatUrl = (url: string) => {

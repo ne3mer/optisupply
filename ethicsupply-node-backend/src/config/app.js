@@ -18,6 +18,9 @@ const config = {
           "http://localhost:5174",
           "http://127.0.0.1:5174",
           "https://ethicsupply-frontend.vercel.app",
+          "https://optisupply.vercel.app",
+          "https://optisupply-frontend.vercel.app",
+          "https://optisupply-backend.vercel.app",
         ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
