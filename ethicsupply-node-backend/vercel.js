@@ -1,14 +1,7 @@
 // Vercel deployment entry point
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
-const { connectToDatabase } = require("./src/config/database");
-const apiRoutes = require("./src/routes/api");
-const requestLogger = require("./src/middleware/requestLogger");
-const { notFound, errorHandler } = require("./src/middleware/errorHandler");
-const config = require("./src/config/app");
-const EthicalScoringModel = require("./src/ml/EthicalScoringModel");
-const mlController = require("./src/controllers/mlController");
+const startServer = require("./src/server");
 
 // Create mock server for Vercel deployment when MongoDB connection fails
 function createMockServer() {
@@ -17,64 +10,20 @@ function createMockServer() {
   );
   const app = express();
 
-  // CORS middleware for Vercel
+  // CORS middleware - allow all origins for Vercel
   app.use(
     cors({
-      // Use the same origin validation logic as the main server
-      origin: function (origin, callback) {
-        if (
-          !origin ||
-          (config.cors.origins && config.cors.origins.indexOf(origin) !== -1)
-        ) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
-      methods: config.cors.methods || [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE",
-        "OPTIONS",
-      ],
-      allowedHeaders: config.cors.allowedHeaders || [
+      origin: "*",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: [
         "Content-Type",
         "Authorization",
+        "X-Requested-With",
+        "X-HTTP-Method-Override",
       ],
       credentials: true,
-      preflightContinue: false,
-      optionsSuccessStatus: 204,
     })
   );
-
-  // Explicit handler for OPTIONS requests to ensure proper CORS headers
-  app.options("*", function (req, res) {
-    // Get origin from request
-    const origin = req.headers.origin;
-
-    // Only set allow-origin for origins in our allowed list
-    if (
-      origin &&
-      config.cors.origins &&
-      config.cors.origins.indexOf(origin) !== -1
-    ) {
-      res.header("Access-Control-Allow-Origin", origin);
-      res.header("Access-Control-Allow-Credentials", "true");
-      res.header(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
-      );
-      res.header(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, X-Requested-With, X-HTTP-Method-Override"
-      );
-      res.status(204).end();
-    } else {
-      // For origins not in our list, don't set CORS headers
-      res.status(204).end();
-    }
-  });
 
   // Basic middleware
   app.use(express.json());
@@ -255,92 +204,21 @@ function createMockServer() {
         "Enhance sustainability disclosures with GRI standards",
         "Develop climate adaptation strategy",
       ],
-
-      // Risk Assessment
-      risk_factors: [
-        {
-          factor: "Climate Change",
-          severity: "Medium",
-          probability: "High",
-          mitigation: "Develop climate adaptation strategy",
-        },
-        {
-          factor: "Labor Disputes",
-          severity: "Low",
-          probability: "Medium",
-          mitigation: "Strengthen worker engagement programs",
-        },
-        {
-          factor: "Supply Chain Disruption",
-          severity: "Medium",
-          probability: "Medium",
-          mitigation: "Diversify supplier base and enhance monitoring",
-        },
-      ],
-
-      // Compliance Status
-      compliance: {
-        status: "Partial Compliance",
-        standards_met: ["ISO 14001", "ISO 9001", "OHSAS 18001"],
-        certifications: ["Fair Trade", "Carbon Trust", "B Corp"],
-        gaps: ["GRI Reporting", "Science-Based Targets", "TCFD Disclosures"],
-      },
-
-      // Industry Comparison - commonly missing but needed for charts
-      industry_comparison: {
-        percentile: 75,
-        average_score: 0.72,
-        top_performer_score: 0.94,
-      },
-
-      // Additional metrics commonly used in visualizations
-      metrics: {
-        carbon_footprint: 15.3,
-        water_usage: 32.5,
-        energy_efficiency: 0.87,
-        waste_reduction: 0.76,
-        renewable_energy: 0.45,
-        supplier_diversity: 0.68,
-        community_impact: 0.72,
-      },
-
-      // Improvement scenarios
-      improvement_scenarios: [
-        {
-          name: "Renewable Energy Investment",
-          description: "Increase renewable energy usage to 75%",
-          impact: {
-            environmental_score: 0.15,
-            overall_score: 0.08,
-          },
-        },
-        {
-          name: "Supply Chain Transparency",
-          description: "Implement blockchain tracking for all suppliers",
-          impact: {
-            supply_chain_score: 0.18,
-            overall_score: 0.06,
-          },
-        },
-      ],
-
-      // Time series data (needed for charts)
-      historical_performance: {
-        ethical_scores: [0.76, 0.79, 0.82, 0.85],
-        carbon_emissions: [18.2, 16.5, 14.8, 12.5],
-        time_periods: ["2020", "2021", "2022", "2023"],
-      },
     };
 
     res.json(evaluationResult);
   });
 
-  // Dashboard mock data
+  // Mock dashboard data endpoint
   app.get("/api/dashboard", (req, res) => {
     res.json({
       totalSuppliers: 12,
       avgEthicalScore: "75.3",
-      riskBreakdown: { high: 1, medium: 4, low: 7 },
+      riskBreakdown: {
+        high: 1,
+        medium: 4,
+        low: 7,
+      },
       avgCo2Emissions: 23.9,
       suppliers_by_country: {
         "United States": 4,
@@ -373,172 +251,20 @@ function createMockServer() {
     });
   });
 
-  // 404 handler
-  app.use((req, res) => {
-    res.status(404).json({
-      error: "Endpoint not found",
-      message: "The requested API endpoint does not exist in fallback mode",
-    });
-  });
-
   return app;
 }
 
-// Initialize Express app for production with MongoDB
-async function initializeMainApp() {
-  try {
-    // Print diagnostic information
-    console.log(
-      `MongoDB URI defined: ${process.env.MONGODB_URI ? "Yes" : "No"}`
-    );
-    console.log(
-      `MongoDB URI starts with: ${
-        process.env.MONGODB_URI
-          ? process.env.MONGODB_URI.substring(0, 20) + "..."
-          : "undefined"
-      }`
-    );
-    console.log(`Environment: ${process.env.NODE_ENV}`);
-    console.log(
-      `CORS Origins: ${
-        process.env.CORS_ALLOWED_ORIGINS || "Not set - using defaults"
-      }`
-    );
-
-    await connectToDatabase();
-    console.log("Connected to MongoDB");
-
-    const app = express();
-
-    // CORS configuration
-    const corsOptions = {
-      origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests) or from allowed origins
-        if (
-          !origin ||
-          (config.cors.origins && config.cors.origins.indexOf(origin) !== -1)
-        ) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
-      methods: config.cors.methods || [
-        "GET",
-        "POST",
-        "PUT",
-        "DELETE",
-        "OPTIONS",
-      ],
-      allowedHeaders: config.cors.allowedHeaders || [
-        "Content-Type",
-        "Authorization",
-      ],
-      credentials: true,
-      preflightContinue: false,
-      optionsSuccessStatus: 204,
-    };
-
-    // Apply CORS middleware
-    app.use(cors(corsOptions));
-
-    // Handle OPTIONS requests (important for preflight)
-    app.options("*", cors(corsOptions));
-
-    // Other middleware
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
-    app.use(requestLogger);
-
-    // Serve static files
-    app.use("/public", express.static(path.join(__dirname, "public")));
-
-    // Health check routes
-    app.get("/api/health-check", (req, res) => {
-      res.status(200).json({ status: "ok", mode: "production" });
-    });
-    app.get("/api/ml/status", mlController.getMLStatus);
-
-    // API routes
-    app.use("/api", apiRoutes);
-
-    // Error handling middleware
-    app.use(notFound);
-    app.use(errorHandler);
-
-    // Initialize ML Model
-    const scoringModel = new EthicalScoringModel();
-    await scoringModel.initialize();
-    console.log("ML model initialized successfully");
-
-    return app;
-  } catch (error) {
-    console.error("Server initialization failed:", error);
-    console.error("Error details:", {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-    });
-    throw error;
-  }
-}
-
-// Serverless function handler for Vercel
 module.exports = async (req, res) => {
-  // Handle OPTIONS requests at the serverless function level first
-  if (req.method === "OPTIONS") {
-    const origin = req.headers.origin;
-
-    // Get allowed origins from config
-    const allowedOrigins =
-      config.cors && config.cors.origins ? config.cors.origins : [];
-
-    // If origin is allowed, set the proper CORS headers
-    if (origin && allowedOrigins.indexOf(origin) !== -1) {
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      res.setHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
-      );
-      res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, X-Requested-With, X-HTTP-Method-Override"
-      );
-      res.setHeader("Access-Control-Allow-Credentials", "true");
-      res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
-      res.status(204).end();
-      return;
-    }
-  }
-
   try {
     // Try to initialize the Express app with MongoDB
     console.log("Attempting to initialize server with MongoDB connection");
-
-    // Use our new function that doesn't call app.listen()
-    const app = await initializeMainApp();
-
-    // Handle the request with the initialized app
+    const app = await startServer();
+    console.log("Successfully initialized server with MongoDB connection");
     return app(req, res);
   } catch (error) {
-    // If MongoDB connection fails, fall back to mock server
-    console.error("Failed to initialize main server:", error);
-    console.error(
-      "Error details:",
-      JSON.stringify(
-        {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        },
-        null,
-        2
-      )
-    );
+    console.error("Failed to start server with MongoDB:", error);
     console.log("Falling back to mock server");
-
-    // Create a mock server without MongoDB dependency
-    const mockApp = createMockServer();
-    return mockApp(req, res);
+    const fallbackApp = createMockServer();
+    return fallbackApp(req, res);
   }
 };
