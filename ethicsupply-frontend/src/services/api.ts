@@ -3,18 +3,13 @@
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
-// Make sure we're using HTTP for local development
-const ensureHttp = (url: string) => {
-  if (
-    url.startsWith("https://localhost") ||
-    url.startsWith("https://127.0.0.1")
-  ) {
-    return url.replace("https://", "http://");
-  }
-  return url;
+// Ensure proper URL formatting
+const formatUrl = (url: string) => {
+  // Remove trailing slashes and ensure single slashes
+  return url.replace(/\/+$/, "").replace(/([^:]\/)\/+/g, "$1");
 };
 
-const API_URL = ensureHttp(API_BASE_URL);
+const API_URL = formatUrl(API_BASE_URL);
 
 export interface Supplier {
   id: number;
