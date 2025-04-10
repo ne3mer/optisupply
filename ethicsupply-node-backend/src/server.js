@@ -26,16 +26,16 @@ async function startServer() {
         console.log("Initial data seeded successfully");
       } catch (seedErr) {
         console.error("Error seeding data:", seedErr);
-        // Decide if you want to proceed without seeding or exit
       }
     }
 
     // Middleware
     app.use(
       cors({
-        origin: "*", // Allow all origins in development
+        origin: config.cors.origins || "*",
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
       })
     );
     app.use(express.json());
@@ -45,15 +45,11 @@ async function startServer() {
     // Serve static files
     app.use("/public", express.static(path.join(__dirname, "../public")));
 
-    // Direct health check route
+    // Health check routes
     app.get("/api/health-check", (req, res) => {
       res.status(200).json({ status: "ok" });
     });
-    app.get("/api/health-check/", (req, res) => {
-      res.status(200).json({ status: "ok" });
-    });
     app.get("/api/ml/status", mlController.getMLStatus);
-    app.get("/api/ml/status/", mlController.getMLStatus);
 
     // API routes
     app.use("/api", apiRoutes);
@@ -62,27 +58,17 @@ async function startServer() {
     app.use(notFound);
     app.use(errorHandler);
 
-    // Start server only after DB connection is successful
-    const PORT = 8000; // Hardcode port 8000 for frontend compatibility
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT} in ${config.env} mode`);
-      console.log(`API available at http://localhost:${PORT}/api`);
-    });
-  } catch (dbErr) {
-    console.error("MongoDB connection failed. Server not started.", dbErr);
-    process.exit(1); // Exit if DB connection fails
+    // Initialize ML Model
+    const scoringModel = new EthicalScoringModel();
+    await scoringModel.initialize();
+    console.log("ML model initialized successfully");
+
+    return app;
+  } catch (error) {
+    console.error("Server initialization failed:", error);
+    throw error;
   }
 }
-
-// Initialize ML Model (can happen concurrently or before DB connection)
-const scoringModel = new EthicalScoringModel();
-scoringModel
-  .initialize()
-  .then(() => console.log("ML model initialized successfully"))
-  .catch((err) => console.error("Error initializing ML model:", err));
-
-// Call the async function to connect to DB and start the server
-startServer();
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err) => {
@@ -98,5 +84,5 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-// Export app for testing
-module.exports = app;
+// Export the server initialization function
+module.exports = startServer;
