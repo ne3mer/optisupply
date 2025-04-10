@@ -1,1264 +1,1232 @@
-import { useEffect, useState, useRef } from "react";
-import { getRecommendations } from "../services/api";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence, useSpring } from "framer-motion";
+import { getRecommendations, Recommendation } from "../services/api";
 import {
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  MinusIcon,
-  InformationCircleIcon,
-  XCircleIcon,
-  ChartBarIcon,
-  LightBulbIcon,
-  SparklesIcon,
-  ChartPieIcon,
-  AcademicCapIcon,
-  BeakerIcon,
-  GlobeAltIcon,
-  BuildingLibraryIcon,
-  UserGroupIcon,
-  ShieldCheckIcon,
-  ArrowRightIcon,
-  ArrowPathIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  CalendarIcon,
-  BriefcaseIcon,
-  CheckCircleIcon,
-  DocumentIcon,
-  CursorArrowRaysIcon,
-  TagIcon,
-  BoltIcon,
-  FireIcon,
-  ClipboardDocumentIcon,
-  PresentationChartLineIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from "@heroicons/react/24/outline";
-import { Link } from "react-router-dom";
+  AlertTriangle,
+  ArrowDownUp,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  Info,
+  ListChecks,
+  Loader2,
+  Target,
+  Users,
+  Zap,
+  RefreshCcw,
+  ExternalLink,
+  BarChart2,
+  ArrowRightCircle,
+  Award,
+  Calendar,
+  Star,
+  TrendingUp,
+  Lightbulb,
+  ThumbsUp,
+  Eye,
+  Clock,
+  FileText,
+  MoreHorizontal,
+  Globe,
+  AlertCircle,
+  Search,
+  Tags,
+  Sliders,
+} from "lucide-react";
+import { useInView } from "react-intersection-observer";
 
-// Define types for recommendations data
-interface Supplier {
-  name: string;
-  country: string;
-  industry: string;
-  ethical_score: number;
-}
+// --- MOCK DATA for Fallback ---
+const generateMockRecommendationsFallback = (): Recommendation[] => [
+  {
+    _id: "mock-1",
+    title: "Improve Environmental Score",
+    description:
+      "Implement water recycling and treatment systems to reduce water usage and pollution.",
+    category: "environmental",
+    priority: "high",
+    status: "pending",
+    supplier: { name: "Eco Friendly Manufacturing" },
+    ai_explanation:
+      "High water usage pattern detected in production processes, currently 50% above industry benchmark. Water recycling could reduce usage by 30-40%.",
+    estimated_impact:
+      "Significant water savings of approximately 500,000 gallons per year with potential cost reduction of $25,000 annually.",
+    created_at: new Date().toISOString(),
+    isMockData: true,
+    action: "Implement water recycling",
+    impact: "High",
+    difficulty: "Medium",
+    timeframe: "6 months",
+    details: "Focus on production lines A and B first.",
+  },
+  {
+    _id: "mock-2",
+    title: "Enhance Worker Safety Programs",
+    description:
+      "Implement comprehensive worker safety training and monitoring systems across all production facilities.",
+    category: "social",
+    priority: "medium",
+    status: "in_progress",
+    supplier: { name: "Global Tech Solutions" },
+    ai_explanation:
+      "Recent safety assessment revealed gaps in worker training and protective equipment usage. Workplace incident rate is 15% above industry average.",
+    estimated_impact:
+      "Expected 70% reduction in workplace incidents and improved compliance with international labor standards.",
+    created_at: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+    isMockData: true,
+    action: "Conduct safety audits",
+    impact: "Medium",
+    difficulty: "Low",
+    timeframe: "3 months",
+    details: "Mandatory training sessions for all staff.",
+  },
+  {
+    _id: "mock-3",
+    title: "Implement Transparent Governance Practices",
+    description:
+      "Establish clear governance framework and reporting mechanisms that align with international standards.",
+    category: "governance",
+    priority: "low",
+    status: "completed",
+    supplier: { name: "Nordic Renewables" },
+    ai_explanation:
+      "Analysis shows potential for improved stakeholder trust through enhanced transparency in decision-making processes and financial reporting.",
+    estimated_impact:
+      "Improved investor relations and potential for higher ESG ratings, with estimated 15% increase in investor confidence metrics.",
+    created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+    isMockData: true,
+    action: "Publish annual ESG report",
+    impact: "Low",
+    difficulty: "Medium",
+    timeframe: "12 months",
+    details: "Follow GRI standards for reporting.",
+  },
+];
 
-interface AIExplanation {
-  reasoning: string;
-  impact_assessment: string;
-  implementation_difficulty: string;
-  timeframe: string;
-  comparative_insights: string[];
-  primary_category?: string;
-  urgency?: string;
-  key_strengths?: string[];
-  percentile_insights?: string;
-  action_items?: string[];
-}
+// --- Supplier List Theme Colors ---
+const colors = {
+  background: "#0D0F1A",
+  panel: "rgba(25, 28, 43, 0.8)",
+  primary: "#00F0FF", // Teal
+  secondary: "#FF00FF", // Magenta
+  accent: "#4D5BFF", // Blue
+  text: "#E0E0FF",
+  textMuted: "#8A94C8",
+  success: "#00FF8F", // Green
+  warning: "#FFD700", // Yellow
+  error: "#FF4D4D", // Red
+  inputBg: "rgba(40, 44, 66, 0.9)",
+};
 
-interface EstimatedImpact {
-  score_improvement: number;
-  cost_savings: number;
-  implementation_time: number;
-}
+// --- Adjusted Configs for Dark Theme ---
+const categoryConfig = {
+  environmental: {
+    icon: <Zap className="h-5 w-5" />,
+    color: colors.primary, // Teal
+    bgLight: "bg-cyan-900/20", // Adjusted for dark theme
+    bgDark: "dark:bg-cyan-950/30",
+    border: "border-cyan-700",
+    gradient: `from-[${colors.primary}]/20 to-[${colors.accent}]/20`, // Teal to Blue
+  },
+  social: {
+    icon: <Users className="h-5 w-5" />,
+    color: colors.accent, // Blue
+    bgLight: "bg-blue-900/20",
+    bgDark: "dark:bg-blue-950/30",
+    border: "border-blue-700",
+    gradient: `from-[${colors.accent}]/20 to-[${colors.secondary}]/20`, // Blue to Magenta
+  },
+  governance: {
+    icon: <Target className="h-5 w-5" />,
+    color: colors.secondary, // Magenta
+    bgLight: "bg-purple-900/20",
+    bgDark: "dark:bg-purple-950/30",
+    border: "border-purple-700",
+    gradient: `from-[${colors.secondary}]/20 to-[${colors.primary}]/20`, // Magenta to Teal
+  },
+};
 
-interface Recommendation {
-  _id: string;
-  title: string;
-  description: string;
-  category: string;
-  priority: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  supplier: Supplier;
-  ai_explanation: AIExplanation;
-  estimated_impact: EstimatedImpact;
-  isMockData?: boolean;
-  isAiGenerated?: boolean;
-  confidence_score?: number;
-  generation_method?: string;
-  data_sources?: string[];
-}
+const priorityConfig = {
+  high: {
+    icon: <AlertCircle className="h-4 w-4" />,
+    color: colors.error, // Red
+    bgLight: "bg-red-900/20",
+    bgDark: "dark:bg-red-950/30",
+    border: "border-red-700",
+    label: "High Priority",
+  },
+  medium: {
+    icon: <AlertTriangle className="h-4 w-4" />,
+    color: colors.warning, // Yellow
+    bgLight: "bg-yellow-900/20",
+    bgDark: "dark:bg-yellow-950/30",
+    border: "border-yellow-700",
+    label: "Medium Priority",
+  },
+  low: {
+    icon: <Info className="h-4 w-4" />,
+    color: colors.success, // Green
+    bgLight: "bg-green-900/20",
+    bgDark: "dark:bg-green-950/30",
+    border: "border-green-700",
+    label: "Low Priority",
+  },
+};
 
-const Recommendations = () => {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [usingMockData, setUsingMockData] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterPriority, setFilterPriority] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedRecommendation, setSelectedRecommendation] =
-    useState<Recommendation | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [sortBy, setSortBy] = useState<
-    "priority" | "impact" | "date" | "score"
-  >("priority");
-  const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "in_progress" | "completed"
-  >("all");
+const statusConfig = {
+  pending: {
+    icon: <Clock className="h-4 w-4" />,
+    color: colors.textMuted, // Grayish-blue
+    bgLight: "bg-gray-700/20",
+    bgDark: "dark:bg-gray-800/50",
+    border: "border-gray-600",
+    label: "Pending",
+  },
+  in_progress: {
+    icon: <Loader2 className="h-4 w-4 animate-spin" />,
+    color: colors.accent, // Blue
+    bgLight: "bg-blue-900/20",
+    bgDark: "dark:bg-blue-950/30",
+    border: "border-blue-700",
+    label: "In Progress",
+  },
+  completed: {
+    icon: <CheckCircle className="h-4 w-4" />,
+    color: colors.success, // Green
+    bgLight: "bg-green-900/20",
+    bgDark: "dark:bg-green-950/30",
+    border: "border-green-700",
+    label: "Completed",
+  },
+};
 
-  const fetchRecommendations = async () => {
-    try {
-      setLoading(true);
-      const data = await getRecommendations();
-      console.log("Recommendations data received:", data);
-      setRecommendations(data);
-      setError(null);
+// Animated Badge Component
+const AnimatedBadge = ({ children, className = "", style = {} }) => {
+  return (
+    <motion.span
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
+      style={style}
+    >
+      {children}
+    </motion.span>
+  );
+};
 
-      // Check if we're using mock data
-      if (data && Array.isArray(data) && data.length > 0) {
-        const isMock = data[0].isMockData === true;
-        console.log("Using mock recommendations data:", isMock);
-        setUsingMockData(isMock);
-      } else {
-        setUsingMockData(false);
-      }
-    } catch (err) {
-      console.error("Error fetching recommendations:", err);
-      setError("Failed to fetch recommendations. Please try again later.");
-      setUsingMockData(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+// Recommendation Card Component (Dark Theme Adjustments)
+const RecommendationCard = ({
+  recommendation,
+  isExpanded,
+  onToggleExpand,
+  index,
+}: {
+  recommendation: Recommendation;
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  index: number;
+}) => {
+  const { ref, inView } = useInView({
+    triggerOnce: true,
+    threshold: 0.1,
+  });
 
-  useEffect(() => {
-    fetchRecommendations();
-  }, []);
+  const currentStatus = recommendation.status || "pending";
+  const statusInfo = statusConfig[currentStatus] || statusConfig.pending;
 
-  const refreshData = async () => {
-    setRefreshing(true);
-    await fetchRecommendations();
-    setTimeout(() => setRefreshing(false), 1000);
-  };
+  const currentPriority = recommendation.priority || "medium";
+  const priorityInfo = priorityConfig[currentPriority] || priorityConfig.medium;
 
-  const toggleExpand = (id: string) => {
-    setExpandedItems((prevExpanded) =>
-      prevExpanded.includes(id)
-        ? prevExpanded.filter((item) => item !== id)
-        : [...prevExpanded, id]
-    );
-  };
+  const currentCategory = recommendation.category || "governance";
+  const categoryInfo =
+    categoryConfig[currentCategory] || categoryConfig.governance;
 
-  const isExpanded = (id: string) => expandedItems.includes(id);
-
-  const viewDetails = (recommendation: Recommendation) => {
-    setSelectedRecommendation(recommendation);
-    setShowDetailsModal(true);
-  };
-
-  const closeDetailsModal = () => {
-    setShowDetailsModal(false);
-    setSelectedRecommendation(null);
-  };
-
-  const getScoreBadge = (score: number) => {
-    let variant = "success";
-    let icon = ArrowTrendingUpIcon;
-    if (score < 60) {
-      variant = "danger";
-      icon = ArrowTrendingDownIcon;
-    } else if (score < 80) {
-      variant = "warning";
-      icon = MinusIcon;
-    }
-    return { variant, icon };
-  };
-
-  const getCategoryIcon = (category?: string) => {
-    switch (category?.toLowerCase()) {
-      case "environmental":
-        return <GlobeAltIcon className="h-5 w-5 text-emerald-500" />;
-      case "social":
-        return <UserGroupIcon className="h-5 w-5 text-blue-500" />;
-      case "governance":
-        return <BuildingLibraryIcon className="h-5 w-5 text-purple-500" />;
-      case "supply chain":
-        return <ChartBarIcon className="h-5 w-5 text-amber-500" />;
-      case "compliance":
-        return <ShieldCheckIcon className="h-5 w-5 text-indigo-500" />;
-      default:
-        return <LightBulbIcon className="h-5 w-5 text-yellow-500" />;
-    }
-  };
-
-  const getPriorityBadge = (priority: string | undefined | null) => {
-    if (!priority) {
-      return (
-        <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
-          Unknown
-        </span>
-      );
-    }
-
-    const priorityLower = priority.toLowerCase();
-    if (priorityLower === "high") {
-      return (
-        <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700">
-          High
-        </span>
-      );
-    } else if (priorityLower === "medium") {
-      return (
-        <span className="inline-flex items-center rounded-md bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
-          Medium
-        </span>
-      );
-    } else if (priorityLower === "low") {
-      return (
-        <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-          Low
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-700">
-        {priority}
-      </span>
-    );
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "pending":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            <ClockIcon className="h-3 w-3 mr-1" />
-            Pending
-          </span>
-        );
-      case "in_progress":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            <ArrowPathIcon className="h-3 w-3 mr-1" />
-            In Progress
-          </span>
-        );
-      case "completed":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            <CheckCircleIcon className="h-3 w-3 mr-1" />
-            Completed
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-            {status}
-          </span>
-        );
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Filter and sort recommendations
-  const filteredRecommendations = recommendations
-    .filter((rec) => {
-      // Filter by category
-      const matchesCategory =
-        filterCategory === "all" ||
-        rec.category?.toLowerCase() === filterCategory.toLowerCase();
-
-      // Filter by priority
-      const matchesPriority =
-        filterPriority === "all" ||
-        rec.priority?.toLowerCase() === filterPriority.toLowerCase();
-
-      // Filter by status
-      const matchesStatus =
-        filterStatus === "all" ||
-        rec.status?.toLowerCase() === filterStatus.toLowerCase();
-
-      // Filter by search term (supplier name, country, industry)
-      const matchesSearch =
-        searchTerm === "" ||
-        rec.supplier?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rec.supplier?.country
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        rec.supplier?.industry
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        rec.title?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      // Filter by tab
-      const matchesTab =
-        activeTab === "all" ||
-        rec.status?.toLowerCase() === activeTab.toLowerCase();
-
-      return (
-        matchesCategory &&
-        matchesPriority &&
-        matchesStatus &&
-        matchesSearch &&
-        matchesTab
-      );
-    })
-    .sort((a, b) => {
-      // Sort by selected criteria
-      switch (sortBy) {
-        case "priority":
-          // Convert priority to numeric value for sorting
-          const priorityValue = {
-            high: 3,
-            medium: 2,
-            low: 1,
-          };
-          return (
-            (priorityValue[b.priority?.toLowerCase()] || 0) -
-            (priorityValue[a.priority?.toLowerCase()] || 0)
-          );
-
-        case "impact":
-          // Sort by estimated score improvement
-          return (
-            (b.estimated_impact?.score_improvement || 0) -
-            (a.estimated_impact?.score_improvement || 0)
-          );
-
-        case "date":
-          // Sort by creation date (newest first)
-          return (
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-
-        case "score":
-          // Sort by supplier ethical score (lowest first, as they need more attention)
-          return (
-            (a.supplier?.ethical_score || 0) - (b.supplier?.ethical_score || 0)
-          );
-
-        default:
-          return 0;
-      }
-    });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="space-y-8">
-            <div className="px-6 py-8 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg text-white">
-              <h1 className="text-3xl font-bold flex items-center">
-                <SparklesIcon className="h-8 w-8 mr-2" />
-                AI-Powered Recommendations
-              </h1>
-              <p className="mt-2 text-blue-100">
-                Analyzing your supply chain for ethical optimization
-                opportunities...
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-gray-800 border border-gray-700 rounded-xl shadow-xl overflow-hidden animate-pulse"
-                >
-                  <div className="h-2 bg-gradient-to-r from-blue-400 to-indigo-500 w-full"></div>
-                  <div className="p-5 space-y-4">
-                    <div className="h-6 bg-gray-700 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                    <div className="h-20 bg-gray-700 rounded"></div>
-                    <div className="flex space-x-3">
-                      <div className="h-6 bg-gray-700 rounded w-1/4"></div>
-                      <div className="h-6 bg-gray-700 rounded w-1/4"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 text-center text-gray-400">
-              <p className="text-sm">
-                Analyzing supplier data and generating intelligent
-                recommendations...
-              </p>
-              <div className="mt-4 flex justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const createdDate = recommendation.created_at
+    ? new Date(recommendation.created_at).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "Date unknown";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-gray-900 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="px-6 py-8 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg text-white">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-3xl font-bold flex items-center">
-                  <SparklesIcon className="h-8 w-8 mr-2" />
-                  AI-Powered Recommendations
-                </h1>
-                <p className="mt-2 text-blue-100 max-w-3xl">
-                  Data-driven supplier optimization strategies prioritized for
-                  maximum ethical and business impact
+    <motion.div
+      ref={ref}
+      layout
+      initial={{ opacity: 0, y: 50 }}
+      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+      transition={{
+        duration: 0.5,
+        delay: index * 0.1,
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+      }}
+      className={`border ${categoryInfo.border} rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 mb-6`}
+      style={{
+        backgroundColor: colors.panel,
+        borderColor: categoryInfo.border,
+      }}
+    >
+      <div
+        className={`h-1.5 w-full bg-gradient-to-r ${categoryInfo.gradient}`}
+        style={{
+          background: `linear-gradient(to right, ${categoryInfo.gradient
+            .split(" ")[0]
+            .replace("from-", "")
+            .replace("[", "")
+            .replace("]", "")}, ${categoryInfo.gradient
+            .split(" ")[1]
+            .replace("to-", "")
+            .replace("[", "")
+            .replace("]", "")})`,
+        }}
+      />
+
+      <button
+        onClick={onToggleExpand}
+        className="flex items-start justify-between w-full p-5 text-left hover:bg-gray-700/20 transition-colors focus:outline-none"
+      >
+        <div className="flex-1 pr-4">
+          <div className="flex flex-wrap gap-2 mb-3">
+            <AnimatedBadge
+              className={`${categoryInfo.bgLight} ${categoryInfo.bgDark} ${categoryInfo.border} px-2.5 py-0.5`}
+              style={{
+                color: categoryInfo.color,
+                backgroundColor: categoryInfo.bgLight,
+                borderColor: categoryInfo.border,
+              }}
+            >
+              {categoryInfo.icon}
+              <span className="capitalize">{currentCategory}</span>
+            </AnimatedBadge>
+
+            <AnimatedBadge
+              className={`${priorityInfo.bgLight} ${priorityInfo.bgDark} ${priorityInfo.border} px-2.5 py-0.5`}
+              style={{
+                color: priorityInfo.color,
+                backgroundColor: priorityInfo.bgLight,
+                borderColor: priorityInfo.border,
+              }}
+            >
+              {priorityInfo.icon}
+              <span>{priorityInfo.label}</span>
+            </AnimatedBadge>
+
+            <AnimatedBadge
+              className={`${statusInfo.bgLight} ${statusInfo.bgDark} ${statusInfo.border} px-2.5 py-0.5`}
+              style={{
+                color: statusInfo.color,
+                backgroundColor: statusInfo.bgLight,
+                borderColor: statusInfo.border,
+              }}
+            >
+              {statusInfo.icon}
+              <span>{statusInfo.label}</span>
+            </AnimatedBadge>
+          </div>
+
+          <h3
+            className="text-xl font-semibold group-hover:text-blue-400 transition-colors mb-2"
+            style={{ color: colors.text }}
+          >
+            {recommendation.title || "Untitled Recommendation"}
+          </h3>
+
+          <p className="text-sm mb-3" style={{ color: colors.textMuted }}>
+            <span className="inline-flex items-center gap-1.5">
+              <Globe className="h-4 w-4" style={{ color: colors.accent }} />
+              <span style={{ color: colors.accent }}>
+                {typeof recommendation.supplier === "object"
+                  ? recommendation.supplier.name
+                  : "Unknown Supplier"}
+              </span>
+            </span>
+
+            <span className="ml-4 inline-flex items-center gap-1.5">
+              <Calendar
+                className="h-4 w-4"
+                style={{ color: colors.textMuted }}
+              />
+              {createdDate}
+            </span>
+          </p>
+
+          {!isExpanded && (
+            <p
+              className="text-sm line-clamp-2"
+              style={{ color: colors.textMuted }}
+            >
+              {recommendation.description || "No description available."}
+            </p>
+          )}
+        </div>
+
+        <div className="flex-shrink-0 p-1">
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.3, type: "spring" }}
+            className={`p-1.5 rounded-full ${categoryInfo.bgLight}`}
+            style={{
+              color: categoryInfo.color,
+              backgroundColor: categoryInfo.bgLight,
+            }}
+          >
+            <ChevronDown className="h-5 w-5" />
+          </motion.div>
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            key="content"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden border-t border-gray-700"
+          >
+            <div className="p-5 space-y-4">
+              <div className="space-y-2">
+                <div
+                  className="flex items-center gap-2 text-sm font-medium"
+                  style={{ color: colors.textMuted }}
+                >
+                  <FileText className="h-4 w-4 text-gray-500" />
+                  Description
+                </div>
+                <p className="pl-6" style={{ color: colors.text }}>
+                  {recommendation.description || "No description available."}
                 </p>
               </div>
-              <div className="mt-4 md:mt-0">
-                <button
-                  onClick={refreshData}
-                  className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition-all flex items-center"
-                >
-                  <ArrowPathIcon
-                    className={`h-5 w-5 mr-2 ${
-                      refreshing ? "animate-spin" : ""
-                    }`}
-                  />
-                  Refresh Analysis
-                </button>
-              </div>
-            </div>
-          </div>
 
-          {/* Error message */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl bg-red-900 border border-red-700 p-4 text-red-100"
-            >
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm">{error}</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Mock data notice */}
-          {usingMockData && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl bg-blue-900 border border-blue-700 p-4 text-blue-100"
-            >
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <InformationCircleIcon className="h-5 w-5 text-blue-400" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium">
-                    Using AI-Simulated Recommendations
-                  </h3>
-                  <div className="mt-1 text-sm opacity-90">
-                    <p>
-                      Currently displaying AI-simulated recommendations based on
-                      supplier data patterns. Live AI recommendations will be
-                      used when the API connection is established.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Filters and tabs */}
-          <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-white flex items-center mb-6">
-                <BoltIcon className="h-6 w-6 text-blue-400 mr-2" />
-                Intelligent Supply Chain Optimization
-              </h2>
-
-              {/* Tabs */}
-              <div className="border-b border-gray-700 -mx-6 px-6 mb-6">
-                <div className="flex overflow-x-auto scrollbar-hide">
-                  <button
-                    onClick={() => setActiveTab("all")}
-                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 ${
-                      activeTab === "all"
-                        ? "border-blue-500 text-blue-400"
-                        : "border-transparent text-gray-400 hover:text-gray-300"
-                    }`}
+              {recommendation.ai_explanation && (
+                <div className="space-y-2">
+                  <div
+                    className="flex items-center gap-2 text-sm font-medium"
+                    style={{ color: colors.textMuted }}
                   >
-                    All Recommendations
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("pending")}
-                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 ${
-                      activeTab === "pending"
-                        ? "border-blue-500 text-blue-400"
-                        : "border-transparent text-gray-400 hover:text-gray-300"
-                    }`}
-                  >
-                    Pending
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("in_progress")}
-                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 ${
-                      activeTab === "in_progress"
-                        ? "border-blue-500 text-blue-400"
-                        : "border-transparent text-gray-400 hover:text-gray-300"
-                    }`}
-                  >
-                    In Progress
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("completed")}
-                    className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 ${
-                      activeTab === "completed"
-                        ? "border-blue-500 text-blue-400"
-                        : "border-transparent text-gray-400 hover:text-gray-300"
-                    }`}
-                  >
-                    Completed
-                  </button>
-                </div>
-              </div>
-
-              {/* Search and filter controls */}
-              <div className="flex flex-col lg:flex-row justify-between gap-4 mb-6">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search recommendations..."
-                    className="pl-3 pr-10 py-2 bg-gray-700 border border-gray-600 text-white rounded-lg focus:ring-blue-500 focus:border-blue-500 w-full lg:w-64"
-                  />
-                  <span className="absolute right-3 top-2.5 text-gray-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {/* Category filter */}
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="bg-gray-700 border border-gray-600 text-white rounded-lg py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">All Categories</option>
-                    <option value="environmental">Environmental</option>
-                    <option value="social">Social</option>
-                    <option value="governance">Governance</option>
-                    <option value="supply chain">Supply Chain</option>
-                  </select>
-
-                  {/* Priority filter */}
-                  <select
-                    value={filterPriority}
-                    onChange={(e) => setFilterPriority(e.target.value)}
-                    className="bg-gray-700 border border-gray-600 text-white rounded-lg py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">All Priorities</option>
-                    <option value="high">High Priority</option>
-                    <option value="medium">Medium Priority</option>
-                    <option value="low">Low Priority</option>
-                  </select>
-
-                  {/* Sort by */}
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-gray-700 border border-gray-600 text-white rounded-lg py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="priority">Sort by Priority</option>
-                    <option value="impact">Sort by Impact</option>
-                    <option value="date">Sort by Date</option>
-                    <option value="score">Sort by Ethical Score</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white shadow-xl rounded-xl border border-gray-100">
-            <div className="p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <AcademicCapIcon className="h-6 w-6 text-emerald-600 mr-2" />
-                  Smart Supplier Recommendations
-                </h2>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Search input */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search suppliers..."
-                      className="pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-64"
+                    <Lightbulb
+                      className="h-4 w-4"
+                      style={{ color: colors.warning }}
                     />
-                    <span className="absolute right-3 top-2.5 text-gray-400">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                    </span>
+                    AI Insights
                   </div>
-
-                  {/* Filter dropdown */}
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="border border-gray-300 rounded-lg py-2 px-3 focus:ring-emerald-500 focus:border-emerald-500"
+                  <div
+                    className={`pl-6 p-3 rounded-lg border ${categoryInfo.border}`}
+                    style={{
+                      backgroundColor: categoryInfo.bgLight,
+                      borderColor: categoryInfo.border,
+                      color: colors.text,
+                    }}
                   >
-                    <option value="all">All Categories</option>
-                    <option value="environmental">Environmental</option>
-                    <option value="social">Social</option>
-                    <option value="governance">Governance</option>
-                    <option value="supply chain">Supply Chain</option>
-                    <option value="compliance">Compliance</option>
-                  </select>
+                    {typeof recommendation.ai_explanation === "object"
+                      ? recommendation.ai_explanation.reasoning ||
+                        "No AI explanation available."
+                      : recommendation.ai_explanation}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Results count */}
-              <div className="mb-4 text-gray-400 text-sm">
-                Showing {filteredRecommendations.length} of{" "}
-                {recommendations.length} recommendations
-              </div>
-
-              {/* Recommendations grid */}
-              {filteredRecommendations.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredRecommendations.map((recommendation) => (
-                    <motion.div
-                      key={recommendation._id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden flex flex-col h-full group"
-                    >
-                      {/* Category indicator bar */}
-                      <div
-                        className={`h-1.5 w-full ${
-                          recommendation.category === "environmental"
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                            : recommendation.category === "social"
-                            ? "bg-gradient-to-r from-blue-500 to-indigo-500"
-                            : recommendation.category === "governance"
-                            ? "bg-gradient-to-r from-purple-500 to-pink-500"
-                            : "bg-gradient-to-r from-amber-500 to-orange-500"
-                        }`}
-                      ></div>
-
-                      <div className="p-5 flex-grow flex flex-col justify-between">
-                        <div>
-                          {/* Title and badges */}
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center mb-2 -ml-1">
-                              {getCategoryIcon(recommendation.category)}
-                              <span className="ml-1 text-xs uppercase tracking-wide text-gray-400 font-medium">
-                                {recommendation.category}
-                              </span>
-                            </div>
-                            <div className="flex gap-1.5">
-                              {getPriorityBadge(recommendation.priority)}
-                              {getStatusBadge(recommendation.status)}
-                            </div>
-                          </div>
-
-                          <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
-                            {recommendation.title}
-                          </h3>
-
-                          <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                            {recommendation.description}
-                          </p>
-
-                          {/* Supplier info */}
-                          <div className="mb-4 bg-gray-900 rounded-lg p-3 text-sm">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="font-medium text-blue-300">
-                                {recommendation.supplier.name}
-                              </span>
-                              <div className="flex items-center">
-                                <span
-                                  className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                    recommendation.supplier.ethical_score >= 80
-                                      ? "bg-green-900 text-green-300"
-                                      : recommendation.supplier.ethical_score >=
-                                        60
-                                      ? "bg-yellow-900 text-yellow-300"
-                                      : "bg-red-900 text-red-300"
-                                  }`}
-                                >
-                                  {recommendation.supplier.ethical_score}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="text-xs text-gray-500 flex items-center">
-                              <span>{recommendation.supplier.industry}</span>
-                              <span className="mx-1.5">•</span>
-                              <span>{recommendation.supplier.country}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Recommendation metrics */}
-                        <div>
-                          <div className="mb-3 grid grid-cols-2 gap-2">
-                            <div className="flex items-center text-gray-400">
-                              <CurrencyDollarIcon className="h-4 w-4 mr-1.5 text-green-400" />
-                              <span className="text-xs font-medium text-green-400">
-                                {formatCurrency(
-                                  recommendation.estimated_impact.cost_savings
-                                )}
-                              </span>
-                            </div>
-                            <div className="flex items-center text-gray-400">
-                              <PresentationChartLineIcon className="h-4 w-4 mr-1.5 text-blue-400" />
-                              <span className="text-xs font-medium text-blue-400">
-                                +
-                                {
-                                  recommendation.estimated_impact
-                                    .score_improvement
-                                }{" "}
-                                points
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex justify-between gap-2">
-                            <button
-                              onClick={() => toggleExpand(recommendation._id)}
-                              className="flex-1 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm rounded-lg flex items-center justify-center"
-                            >
-                              {isExpanded(recommendation._id) ? (
-                                <>
-                                  <ChevronUpIcon className="h-4 w-4 mr-1.5" />
-                                  Less
-                                </>
-                              ) : (
-                                <>
-                                  <ChevronDownIcon className="h-4 w-4 mr-1.5" />
-                                  More
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => viewDetails(recommendation)}
-                              className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg flex items-center justify-center"
-                            >
-                              <CursorArrowRaysIcon className="h-4 w-4 mr-1.5" />
-                              Details
-                            </button>
-                          </div>
-
-                          {/* Expanded content */}
-                          <AnimatePresence>
-                            {isExpanded(recommendation._id) && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                className="mt-4 pt-4 border-t border-gray-700"
-                              >
-                                <h4 className="text-sm font-medium text-gray-300 mb-2">
-                                  AI Analysis:
-                                </h4>
-                                <p className="text-sm text-gray-400 mb-3">
-                                  {recommendation.ai_explanation.reasoning}
-                                </p>
-
-                                <div className="grid grid-cols-2 gap-2 mb-3">
-                                  <div className="text-xs text-gray-500">
-                                    <span className="block text-gray-400 font-medium">
-                                      Implementation:
-                                    </span>
-                                    {
-                                      recommendation.ai_explanation
-                                        .implementation_difficulty
-                                    }
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    <span className="block text-gray-400 font-medium">
-                                      Timeframe:
-                                    </span>
-                                    {recommendation.ai_explanation.timeframe}
-                                  </div>
-                                </div>
-
-                                <div className="text-xs text-gray-500">
-                                  <span className="block text-gray-400 font-medium mb-1">
-                                    Insights:
-                                  </span>
-                                  <ul className="space-y-1">
-                                    {recommendation.ai_explanation.comparative_insights?.map(
-                                      (insight, i) => (
-                                        <li
-                                          key={i}
-                                          className="flex items-start"
-                                        >
-                                          <span className="text-blue-400 mr-1.5">
-                                            •
-                                          </span>
-                                          {insight}
-                                        </li>
-                                      )
-                                    )}
-                                  </ul>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-gray-800 border border-gray-700 rounded-xl p-8 text-center">
-                  <LightBulbIcon className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-300">
-                    No recommendations found
-                  </h3>
-                  <p className="mt-2 text-gray-500">
-                    Try adjusting your filters or search criteria
+              {recommendation.estimated_impact && (
+                <div className="space-y-2">
+                  <div
+                    className="flex items-center gap-2 text-sm font-medium"
+                    style={{ color: colors.textMuted }}
+                  >
+                    <TrendingUp
+                      className="h-4 w-4"
+                      style={{ color: colors.success }}
+                    />
+                    Estimated Impact
+                  </div>
+                  <p className="pl-6" style={{ color: colors.text }}>
+                    {typeof recommendation.estimated_impact === "object"
+                      ? `Score Improvement: ${
+                          recommendation.estimated_impact.score_improvement ||
+                          "N/A"
+                        }, Cost Savings: $${
+                          recommendation.estimated_impact.cost_savings || "N/A"
+                        }, Time: ${
+                          recommendation.estimated_impact.implementation_time ||
+                          "N/A"
+                        } days`
+                      : recommendation.estimated_impact}
                   </p>
                 </div>
               )}
-            </div>
-          </div>
 
-          <div className="bg-white shadow-xl rounded-xl border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-emerald-50 to-white">
-              <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                <InformationCircleIcon className="h-5 w-5 text-emerald-600 mr-2" />
-                About Our AI Recommendation Engine
-              </h3>
-            </div>
-            <div className="p-6">
-              <div className="prose prose-emerald max-w-none">
-                <p>
-                  Our AI-powered recommendation engine analyzes multiple ethical
-                  and environmental factors to provide transparent, data-driven
-                  supplier recommendations.
-                </p>
-
-                <h4>How It Works</h4>
-                <p>
-                  The system combines machine learning algorithms with ethical
-                  frameworks to evaluate suppliers across five key dimensions:
-                </p>
-
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 list-none pl-0">
-                  <li className="flex items-start">
-                    <div className="bg-emerald-100 p-2 rounded-lg mr-3">
-                      <GlobeAltIcon className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <span className="font-medium block">
-                        Environmental Impact
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        CO2 emissions, water usage, waste management
-                      </span>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="bg-blue-100 p-2 rounded-lg mr-3">
-                      <UserGroupIcon className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <span className="font-medium block">
-                        Social Responsibility
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        Labor practices, diversity, community impact
-                      </span>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="bg-purple-100 p-2 rounded-lg mr-3">
-                      <BuildingLibraryIcon className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <span className="font-medium block">Governance</span>
-                      <span className="text-sm text-gray-500">
-                        Ethics, transparency, anti-corruption measures
-                      </span>
-                    </div>
-                  </li>
-                  <li className="flex items-start">
-                    <div className="bg-amber-100 p-2 rounded-lg mr-3">
-                      <ChartBarIcon className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <span className="font-medium block">Supply Chain</span>
-                      <span className="text-sm text-gray-500">
-                        Traceability, delivery, quality control
-                      </span>
-                    </div>
-                  </li>
-                  <li className="flex items-start sm:col-span-2">
-                    <div className="bg-indigo-100 p-2 rounded-lg mr-3">
-                      <ShieldCheckIcon className="h-5 w-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <span className="font-medium block">Risk Assessment</span>
-                      <span className="text-sm text-gray-500">
-                        Geopolitical, climate, regulatory, and labor risks
-                      </span>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-5 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-gray-400 font-medium text-sm">
-                  High Priority
-                </h3>
-                <FireIcon className="h-5 w-5 text-red-500" />
-              </div>
-              <p className="text-3xl font-bold text-white">
-                {recommendations.filter((r) => r.priority === "high").length}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Critical issues requiring immediate attention
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-5 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-gray-400 font-medium text-sm">
-                  Potential Savings
-                </h3>
-                <CurrencyDollarIcon className="h-5 w-5 text-green-500" />
-              </div>
-              <p className="text-3xl font-bold text-white">
-                {formatCurrency(
-                  recommendations.reduce(
-                    (total, rec) =>
-                      total + (rec.estimated_impact?.cost_savings || 0),
-                    0
-                  )
-                )}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Estimated annual cost savings
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-5 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-gray-400 font-medium text-sm">
-                  Score Impact
-                </h3>
-                <PresentationChartLineIcon className="h-5 w-5 text-blue-500" />
-              </div>
-              <p className="text-3xl font-bold text-white">
-                +
-                {recommendations.reduce(
-                  (total, rec) =>
-                    total + (rec.estimated_impact?.score_improvement || 0),
-                  0
-                )}{" "}
-                pts
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Potential ethical score improvement
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-5 shadow-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-gray-400 font-medium text-sm">Completed</h3>
-                <CheckCircleIcon className="h-5 w-5 text-emerald-500" />
-              </div>
-              <p className="text-3xl font-bold text-white">
-                {recommendations.filter((r) => r.status === "completed").length}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Successfully implemented recommendations
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Detailed recommendation modal */}
-      <AnimatePresence>
-        {showDetailsModal && selectedRecommendation && (
-          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-70"
-              onClick={closeDetailsModal}
-            ></motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl mx-4 overflow-hidden"
-            >
-              {/* Modal header with colored bar */}
-              <div
-                className={`h-2 w-full ${
-                  selectedRecommendation.category === "environmental"
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                    : selectedRecommendation.category === "social"
-                    ? "bg-gradient-to-r from-blue-500 to-indigo-500"
-                    : selectedRecommendation.category === "governance"
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500"
-                    : "bg-gradient-to-r from-amber-500 to-orange-500"
-                }`}
-              ></div>
-
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center">
-                    {getCategoryIcon(selectedRecommendation.category)}
-                    <h3 className="text-xl font-bold text-white ml-2">
-                      {selectedRecommendation.title}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={closeDetailsModal}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <XCircleIcon className="h-6 w-6" />
-                  </button>
+              <div className="pt-3 flex justify-between items-center border-t border-gray-700">
+                <div
+                  className="text-xs flex items-center gap-1.5"
+                  style={{ color: colors.textMuted }}
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  Last updated:{" "}
+                  {recommendation.updated_at
+                    ? new Date(recommendation.updated_at).toLocaleDateString()
+                    : createdDate}
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {getPriorityBadge(selectedRecommendation.priority)}
-                  {getStatusBadge(selectedRecommendation.status)}
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
-                    <BriefcaseIcon className="h-3 w-3 mr-1" />
-                    {selectedRecommendation.supplier.industry}
-                  </span>
-                  {selectedRecommendation.isAiGenerated && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-900 text-blue-300">
-                      <SparklesIcon className="h-3 w-3 mr-1" />
-                      AI Generated
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-gray-300 mb-6">
-                  {selectedRecommendation.description}
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div className="bg-gray-800 rounded-lg p-4">
-                    <div className="flex items-center mb-2">
-                      <CurrencyDollarIcon className="h-5 w-5 mr-2 text-green-400" />
-                      <h4 className="text-sm font-medium text-gray-300">
-                        Potential Savings
-                      </h4>
-                    </div>
-                    <p className="text-2xl font-bold text-white">
-                      {formatCurrency(
-                        selectedRecommendation.estimated_impact.cost_savings
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Estimated annual cost reduction
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-800 rounded-lg p-4">
-                    <div className="flex items-center mb-2">
-                      <PresentationChartLineIcon className="h-5 w-5 mr-2 text-blue-400" />
-                      <h4 className="text-sm font-medium text-gray-300">
-                        Score Impact
-                      </h4>
-                    </div>
-                    <p className="text-2xl font-bold text-white">
-                      +
-                      {
-                        selectedRecommendation.estimated_impact
-                          .score_improvement
-                      }{" "}
-                      points
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Potential ethical score improvement
-                    </p>
-                  </div>
-
-                  <div className="bg-gray-800 rounded-lg p-4">
-                    <div className="flex items-center mb-2">
-                      <CalendarIcon className="h-5 w-5 mr-2 text-purple-400" />
-                      <h4 className="text-sm font-medium text-gray-300">
-                        Implementation Time
-                      </h4>
-                    </div>
-                    <p className="text-2xl font-bold text-white">
-                      {Math.round(
-                        selectedRecommendation.estimated_impact
-                          .implementation_time / 30
-                      )}{" "}
-                      months
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Estimated time to complete
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
-                      <LightBulbIcon className="h-4 w-4 mr-2 text-yellow-400" />
-                      AI Analysis
-                    </h4>
-                    <div className="bg-gray-800 rounded-lg p-4">
-                      <p className="text-sm text-gray-300 mb-4">
-                        {selectedRecommendation.ai_explanation.reasoning}
-                      </p>
-                      <div className="grid grid-cols-2 gap-3 text-xs text-gray-400">
-                        <div>
-                          <span className="block text-gray-500 mb-1">
-                            Implementation Difficulty:
-                          </span>
-                          {
-                            selectedRecommendation.ai_explanation
-                              .implementation_difficulty
-                          }
-                        </div>
-                        <div>
-                          <span className="block text-gray-500 mb-1">
-                            Timeframe:
-                          </span>
-                          {selectedRecommendation.ai_explanation.timeframe}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
-                      <ChartBarIcon className="h-4 w-4 mr-2 text-blue-400" />
-                      Comparative Insights
-                    </h4>
-                    <div className="bg-gray-800 rounded-lg p-4">
-                      <ul className="space-y-2 text-sm text-gray-400">
-                        {selectedRecommendation.ai_explanation.comparative_insights?.map(
-                          (insight, i) => (
-                            <li key={i} className="flex items-start">
-                              <span className="text-blue-400 mr-2">•</span>
-                              {insight}
-                            </li>
-                          )
-                        )}
-                      </ul>
-                      <div className="mt-4 pt-4 border-t border-gray-700">
-                        <p className="text-sm text-gray-300">
-                          {
-                            selectedRecommendation.ai_explanation
-                              .impact_assessment
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-800 rounded-lg p-4 mb-6">
-                  <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center">
-                    <BuildingLibraryIcon className="h-4 w-4 mr-2 text-indigo-400" />
-                    Supplier Information
-                  </h4>
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <p className="text-lg font-medium text-white">
-                        {selectedRecommendation.supplier.name}
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        {selectedRecommendation.supplier.country} •{" "}
-                        {selectedRecommendation.supplier.industry}
-                      </p>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="text-sm text-gray-400 mr-2">
-                        Ethical Score:
-                      </span>
-                      <span
-                        className={`px-2 py-1 rounded text-sm font-medium ${
-                          selectedRecommendation.supplier.ethical_score >= 80
-                            ? "bg-green-900 text-green-300"
-                            : selectedRecommendation.supplier.ethical_score >=
-                              60
-                            ? "bg-yellow-900 text-yellow-300"
-                            : "bg-red-900 text-red-300"
-                        }`}
-                      >
-                        {selectedRecommendation.supplier.ethical_score}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={closeDetailsModal}
-                    className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
-                  >
-                    Close
-                  </button>
-                  <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center">
-                    <DocumentIcon className="h-5 w-5 mr-2" />
-                    Generate Report
-                  </button>
-                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border ${categoryInfo.border}`}
+                  style={{
+                    color: categoryInfo.color,
+                    backgroundColor: categoryInfo.bgLight,
+                    borderColor: categoryInfo.border,
+                  }}
+                >
+                  <span>Take Action</span>
+                  <ArrowRightCircle className="h-4 w-4" />
+                </motion.button>
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
+    </motion.div>
+  );
+};
+
+// Main Page Component (Dark Theme Adjustments)
+const RecommendationsPage = () => {
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [usingMockData, setUsingMockData] = useState(false);
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("createdAt_desc");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filtersVisible, setFiltersVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      setIsLoading(true);
+      setError(null);
+      setUsingMockData(false);
+      try {
+        console.log("Fetching recommendations from API...");
+        const response = await getRecommendations();
+        console.log("Recommendations API raw response:", response);
+
+        let fetchedData: Recommendation[];
+        let isMock = false;
+
+        if (Array.isArray(response)) {
+          fetchedData = response;
+          console.log("API returned an array directly.");
+        } else if (
+          response &&
+          typeof response === "object" &&
+          Array.isArray(response.data)
+        ) {
+          fetchedData = response.data;
+          isMock =
+            typeof response.isMockData === "boolean"
+              ? response.isMockData
+              : false;
+          console.log(`API returned object. isMockData: ${isMock}`);
+        } else {
+          console.warn(
+            "Unexpected API response structure. Using fallback mock data."
+          );
+          fetchedData = generateMockRecommendationsFallback();
+          isMock = true;
+        }
+
+        setRecommendations(
+          fetchedData.map((r) => ({
+            ...r,
+            _id:
+              r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
+          }))
+        );
+        setUsingMockData(isMock);
+      } catch (error) {
+        console.error("Error fetching recommendations:", error);
+        setError("Failed to fetch recommendations. Using mock data instead.");
+        setRecommendations(generateMockRecommendationsFallback());
+        setUsingMockData(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
+
+  const handleToggleExpand = (id: string | undefined) => {
+    if (!id) return;
+    setExpandedCardId(expandedCardId === id ? null : id);
+  };
+
+  // Filtering and Sorting Logic
+  const filteredAndSortedRecommendations = useMemo(() => {
+    let results = [...recommendations];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(
+        (rec) =>
+          rec.title?.toLowerCase().includes(query) ||
+          rec.description?.toLowerCase().includes(query) ||
+          (typeof rec.supplier === "object" &&
+            rec.supplier?.name?.toLowerCase().includes(query)) ||
+          (typeof rec.ai_explanation === "string" &&
+            rec.ai_explanation?.toLowerCase().includes(query)) ||
+          (typeof rec.ai_explanation === "object" &&
+            rec.ai_explanation?.reasoning?.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply category filter
+    if (filterCategory !== "all") {
+      results = results.filter((rec) => rec.category === filterCategory);
+    }
+
+    // Apply priority filter
+    if (filterPriority !== "all") {
+      results = results.filter((rec) => rec.priority === filterPriority);
+    }
+
+    // Apply status filter
+    if (filterStatus !== "all") {
+      results = results.filter((rec) => rec.status === filterStatus);
+    }
+
+    // Apply sorting
+    const [sortField, sortDirection] = sortBy.split("_");
+    results.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortField) {
+        case "title":
+          comparison = (a.title || "").localeCompare(b.title || "");
+          break;
+        case "priority":
+          const priorityOrder = { high: 0, medium: 1, low: 2 };
+          comparison =
+            (priorityOrder[a.priority as keyof typeof priorityOrder] || 99) -
+            (priorityOrder[b.priority as keyof typeof priorityOrder] || 99);
+          break;
+        case "category":
+          comparison = (a.category || "").localeCompare(b.category || "");
+          break;
+        case "status":
+          const statusOrder = { pending: 0, in_progress: 1, completed: 2 };
+          comparison =
+            (statusOrder[a.status as keyof typeof statusOrder] || 99) -
+            (statusOrder[b.status as keyof typeof statusOrder] || 99);
+          break;
+        case "supplier":
+          const nameA =
+            typeof a.supplier === "object" ? a.supplier.name || "" : "";
+          const nameB =
+            typeof b.supplier === "object" ? b.supplier.name || "" : "";
+          comparison = nameA.localeCompare(nameB);
+          break;
+        case "createdAt":
+        default:
+          const dateA = new Date(a.created_at).getTime();
+          const dateB = new Date(b.created_at).getTime();
+          comparison = dateA - dateB;
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return results;
+  }, [
+    recommendations,
+    searchQuery,
+    filterCategory,
+    filterPriority,
+    filterStatus,
+    sortBy,
+  ]);
+
+  // Component Renderer (Dark Theme)
+  return (
+    <div
+      className="min-h-screen p-4 md:p-8"
+      style={{ backgroundColor: colors.background, color: colors.text }}
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-10"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <h1
+                className="text-3xl font-bold tracking-tight"
+                style={{ color: colors.text }}
+              >
+                Smart{" "}
+                <span style={{ color: colors.primary }}>Recommendations</span>
+              </h1>
+              <p className="mt-1 max-w-3xl" style={{ color: colors.textMuted }}>
+                AI-powered recommendations to improve ethical scores and
+                sustainability across your supply chain.
+              </p>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setIsLoading(true);
+                setTimeout(() => {
+                  setRecommendations(generateMockRecommendationsFallback());
+                  setIsLoading(false);
+                }, 800);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors"
+              style={{
+                backgroundColor: colors.accent,
+                color: colors.background,
+              }}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              <span>Refresh</span>
+            </motion.button>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {[
+              {
+                label: "High Priority",
+                count: recommendations.filter((r) => r.priority === "high")
+                  .length,
+                icon: (
+                  <AlertCircle
+                    className="h-5 w-5"
+                    style={{ color: colors.error }}
+                  />
+                ),
+                bgColor: colors.error + "20",
+                borderColor: colors.error + "80",
+                textColor: colors.error,
+              },
+              {
+                label: "In Progress",
+                count: recommendations.filter((r) => r.status === "in_progress")
+                  .length,
+                icon: (
+                  <Loader2
+                    className="h-5 w-5 animate-spin"
+                    style={{ color: colors.accent }}
+                  />
+                ),
+                bgColor: colors.accent + "20",
+                borderColor: colors.accent + "80",
+                textColor: colors.accent,
+              },
+              {
+                label: "Total Recommendations",
+                count: recommendations.length,
+                icon: (
+                  <BarChart2
+                    className="h-5 w-5"
+                    style={{ color: colors.primary }}
+                  />
+                ),
+                bgColor: colors.primary + "20",
+                borderColor: colors.primary + "80",
+                textColor: colors.primary,
+              },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                className={`flex items-center p-4 rounded-xl border`}
+                style={{
+                  backgroundColor: stat.bgColor,
+                  borderColor: stat.borderColor,
+                }}
+              >
+                <div
+                  className={`rounded-full p-3 mr-4`}
+                  style={{ backgroundColor: stat.bgColor }}
+                >
+                  {stat.icon}
+                </div>
+                <div>
+                  <p className="text-sm" style={{ color: colors.textMuted }}>
+                    {stat.label}
+                  </p>
+                  <p
+                    className={`text-2xl font-bold`}
+                    style={{ color: stat.textColor }}
+                  >
+                    {stat.count}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Search and Filter Controls */}
+          <div
+            className="rounded-xl shadow-sm border p-4"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "30",
+            }}
+          >
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="relative w-full md:w-96">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                  style={{ color: colors.textMuted }}
+                />
+                <input
+                  type="text"
+                  placeholder="Search recommendations..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border focus:ring-2 focus:outline-none transition-all"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.accent + "50",
+                    color: colors.text,
+                  }}
+                />
+              </div>
+
+              <div className="flex-1 flex items-center gap-2">
+                <button
+                  onClick={() => setFiltersVisible(!filtersVisible)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
+                  style={{
+                    borderColor: colors.accent + "50",
+                    color: colors.textMuted,
+                  }}
+                >
+                  <Filter className="h-4 w-4" />
+                  <span>Filters</span>
+                  <motion.span
+                    animate={{ rotate: filtersVisible ? 180 : 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </motion.span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const [field, dir] = sortBy.split("_");
+                    setSortBy(`${field}_${dir === "asc" ? "desc" : "asc"}`);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
+                  style={{
+                    borderColor: colors.accent + "50",
+                    color: colors.textMuted,
+                  }}
+                >
+                  <ArrowDownUp className="h-4 w-4" />
+                  <span>
+                    {sortBy.split("_")[0].charAt(0).toUpperCase() +
+                      sortBy.split("_")[0].slice(1)}
+                  </span>
+                  <span className="text-xs">
+                    {sortBy.split("_")[1] === "asc" ? "↑" : "↓"}
+                  </span>
+                </button>
+
+                {(filterCategory !== "all" ||
+                  filterPriority !== "all" ||
+                  filterStatus !== "all") && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    onClick={() => {
+                      setFilterCategory("all");
+                      setFilterPriority("all");
+                      setFilterStatus("all");
+                    }}
+                    className="ml-auto flex items-center gap-1 px-3 py-2 rounded-lg border font-medium hover:bg-red-900/50 transition-colors"
+                    style={{
+                      borderColor: colors.error + "80",
+                      backgroundColor: colors.error + "20",
+                      color: colors.error,
+                    }}
+                  >
+                    <span>Clear Filters</span>
+                  </motion.button>
+                )}
+              </div>
+            </div>
+
+            {/* Expanded Filter Options */}
+            <AnimatePresence>
+              {filtersVisible && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden pt-4 mt-4 border-t border-gray-700"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Category Filter */}
+                    <div>
+                      <label
+                        className="block text-sm font-medium mb-1"
+                        style={{ color: colors.textMuted }}
+                      >
+                        Category
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {["all", "environmental", "social", "governance"].map(
+                          (category) => {
+                            const config =
+                              categoryConfig[category] ||
+                              categoryConfig.governance;
+                            const isActive = filterCategory === category;
+                            return (
+                              <button
+                                key={category}
+                                onClick={() => setFilterCategory(category)}
+                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border`}
+                                style={{
+                                  color: isActive
+                                    ? config.color
+                                    : colors.textMuted,
+                                  backgroundColor: isActive
+                                    ? config.bgLight
+                                    : colors.inputBg,
+                                  borderColor: isActive
+                                    ? config.border
+                                    : colors.accent + "50",
+                                }}
+                              >
+                                {category === "all" ? (
+                                  "All Categories"
+                                ) : (
+                                  <>
+                                    {React.cloneElement(config.icon, {
+                                      style: {
+                                        color: isActive
+                                          ? config.color
+                                          : colors.textMuted,
+                                      },
+                                    })}
+                                    <span className="ml-1 capitalize">
+                                      {category}
+                                    </span>
+                                  </>
+                                )}
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Priority Filter */}
+                    <div>
+                      <label
+                        className="block text-sm font-medium mb-1"
+                        style={{ color: colors.textMuted }}
+                      >
+                        Priority
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {["all", "high", "medium", "low"].map((priority) => {
+                          const config =
+                            priorityConfig[priority] || priorityConfig.medium;
+                          const isActive = filterPriority === priority;
+                          return (
+                            <button
+                              key={priority}
+                              onClick={() => setFilterPriority(priority)}
+                              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border`}
+                              style={{
+                                color: isActive
+                                  ? config.color
+                                  : colors.textMuted,
+                                backgroundColor: isActive
+                                  ? config.bgLight
+                                  : colors.inputBg,
+                                borderColor: isActive
+                                  ? config.border
+                                  : colors.accent + "50",
+                              }}
+                            >
+                              {priority === "all" ? (
+                                "All Priorities"
+                              ) : (
+                                <>
+                                  {React.cloneElement(config.icon, {
+                                    style: {
+                                      color: isActive
+                                        ? config.color
+                                        : colors.textMuted,
+                                    },
+                                  })}
+                                  <span className="ml-1">{config.label}</span>
+                                </>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Status Filter */}
+                    <div>
+                      <label
+                        className="block text-sm font-medium mb-1"
+                        style={{ color: colors.textMuted }}
+                      >
+                        Status
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {["all", "pending", "in_progress", "completed"].map(
+                          (status) => {
+                            const config =
+                              statusConfig[status] || statusConfig.pending;
+                            const isActive = filterStatus === status;
+                            return (
+                              <button
+                                key={status}
+                                onClick={() => setFilterStatus(status)}
+                                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border`}
+                                style={{
+                                  color: isActive
+                                    ? config.color
+                                    : colors.textMuted,
+                                  backgroundColor: isActive
+                                    ? config.bgLight
+                                    : colors.inputBg,
+                                  borderColor: isActive
+                                    ? config.border
+                                    : colors.accent + "50",
+                                }}
+                              >
+                                {status === "all" ? (
+                                  "All Statuses"
+                                ) : (
+                                  <>
+                                    {React.cloneElement(config.icon, {
+                                      style: {
+                                        color: isActive
+                                          ? config.color
+                                          : colors.textMuted,
+                                      },
+                                    })}
+                                    <span className="ml-1">{config.label}</span>
+                                  </>
+                                )}
+                              </button>
+                            );
+                          }
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Main Content */}
+        <div>
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center"
+              >
+                <Loader2
+                  className="h-12 w-12 animate-spin mb-4"
+                  style={{ color: colors.primary }}
+                />
+                <p
+                  className="text-lg font-medium"
+                  style={{ color: colors.textMuted }}
+                >
+                  Loading recommendations...
+                </p>
+              </motion.div>
+            </div>
+          ) : error ? (
+            <div
+              className="flex flex-col items-center justify-center py-16 rounded-xl border"
+              style={{
+                backgroundColor: colors.error + "20",
+                borderColor: colors.error + "80",
+              }}
+            >
+              <AlertTriangle
+                className="h-12 w-12 mb-4"
+                style={{ color: colors.error }}
+              />
+              <h2
+                className="text-xl font-semibold mb-2"
+                style={{ color: colors.error }}
+              >
+                Error Loading Recommendations
+              </h2>
+              <p className="mb-4" style={{ color: colors.error }}>
+                {error}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 rounded-lg font-medium transition-colors"
+                style={{
+                  backgroundColor: colors.error,
+                  color: colors.background,
+                }}
+              >
+                Try Again
+              </button>
+            </div>
+          ) : filteredAndSortedRecommendations.length === 0 ? (
+            <div
+              className="flex flex-col items-center justify-center py-16 rounded-xl border"
+              style={{
+                backgroundColor: colors.panel,
+                borderColor: colors.accent + "30",
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col items-center max-w-md text-center"
+              >
+                <Search
+                  className="h-12 w-12 mb-4"
+                  style={{ color: colors.textMuted }}
+                />
+                <h2
+                  className="text-xl font-semibold mb-2"
+                  style={{ color: colors.text }}
+                >
+                  No Recommendations Found
+                </h2>
+                <p className="mb-4" style={{ color: colors.textMuted }}>
+                  {searchQuery
+                    ? `No recommendations match your search for "${searchQuery}"`
+                    : "No recommendations match your current filters"}
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterCategory("all");
+                    setFilterPriority("all");
+                    setFilterStatus("all");
+                  }}
+                  className="px-4 py-2 rounded-lg font-medium transition-colors"
+                  style={{
+                    backgroundColor: colors.accent,
+                    color: colors.background,
+                  }}
+                >
+                  Clear All Filters
+                </button>
+              </motion.div>
+            </div>
+          ) : (
+            <>
+              {usingMockData && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6 rounded-lg border p-4 flex items-center gap-3"
+                  style={{
+                    backgroundColor: colors.warning + "20",
+                    borderColor: colors.warning + "80",
+                  }}
+                >
+                  <AlertTriangle
+                    className="h-5 w-5"
+                    style={{ color: colors.warning }}
+                  />
+                  <p className="text-sm" style={{ color: colors.warning }}>
+                    Viewing mock data. Connect to a real backend for production
+                    use.
+                  </p>
+                </motion.div>
+              )}
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm" style={{ color: colors.textMuted }}>
+                    Showing {filteredAndSortedRecommendations.length}{" "}
+                    recommendation
+                    {filteredAndSortedRecommendations.length !== 1 ? "s" : ""}
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <label
+                      className="text-sm"
+                      style={{ color: colors.textMuted }}
+                    >
+                      Sort by:
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="rounded border text-sm p-1 focus:ring-2 focus:outline-none"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.accent + "50",
+                        color: colors.text,
+                      }}
+                    >
+                      <option value="createdAt_desc">Newest First</option>
+                      <option value="createdAt_asc">Oldest First</option>
+                      <option value="priority_desc">Priority (High-Low)</option>
+                      <option value="priority_asc">Priority (Low-High)</option>
+                      <option value="title_asc">Title (A-Z)</option>
+                      <option value="title_desc">Title (Z-A)</option>
+                      <option value="supplier_asc">Supplier (A-Z)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommendation Cards */}
+              <div className="mt-6">
+                {filteredAndSortedRecommendations.map(
+                  (recommendation, index) => (
+                    <RecommendationCard
+                      key={recommendation._id}
+                      recommendation={recommendation}
+                      isExpanded={expandedCardId === recommendation._id}
+                      onToggleExpand={() =>
+                        handleToggleExpand(recommendation._id)
+                      }
+                      index={index}
+                    />
+                  )
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default Recommendations;
+export default RecommendationsPage;

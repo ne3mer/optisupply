@@ -18,6 +18,9 @@ import {
   PencilIcon, // Edit
   PlayIcon, // Run Assessment
   ChartBarIcon, // View Analytics
+  GlobeAltIcon, // Added for Geopolitical Risk
+  CloudIcon, // Added for Climate Risk
+  UsersIcon, // Added for Labor Dispute Risk
 } from "@heroicons/react/24/outline";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -242,9 +245,9 @@ const SupplierDetails = () => {
   const overallScore = useMemo(() => {
     const score = supplier?.ethical_score ?? 0;
     // Normalize to 0-100 scale if it's in 0-1 range
-    return (score > 0 && score <= 1) ? score * 100 : score;
+    return score > 0 && score <= 1 ? score * 100 : score;
   }, [supplier]);
-  
+
   const scoreColor = useMemo(() => getScoreColor(overallScore), [overallScore]);
   const riskColor = useMemo(
     () => getRiskColor(supplier?.risk_level),
@@ -591,7 +594,7 @@ const SupplierDetails = () => {
             </div>
           </div>
 
-          {/* Add Compliance, Risk Factors, ESG Reports, Media Sentiment, Controversies Sections Here Later */}
+          {/* Compliance & Risk Factors Card */}
           <div
             className="p-4 rounded-lg border backdrop-blur-sm"
             style={{
@@ -600,16 +603,82 @@ const SupplierDetails = () => {
             }}
           >
             <h3
-              className="text-lg font-semibold mb-3"
+              className="text-lg font-semibold mb-3 flex items-center"
               style={{ color: colors.text }}
             >
-              Compliance & Risk Factors
+              <DocumentTextIcon className="h-5 w-5 mr-2 text-accent" />{" "}
+              Compliance & <FireIcon className="h-5 w-5 ml-2 mr-2 text-error" />{" "}
+              Risk Factors
             </h3>
-            <p className="text-sm italic" style={{ color: colors.textMuted }}>
-              (Detailed Compliance & Risk data sections to be implemented)
-            </p>
-            {/* Placeholder Content */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+              {/* Compliance related */}
+              <DetailItem
+                label="Human Rights Index"
+                value={supplier.human_rights_index}
+                icon={UserGroupIcon}
+              />
+              <DetailItem
+                label="Compliance Systems"
+                value={supplier.compliance_systems}
+                icon={ShieldCheckIcon}
+              />
+              <DetailItem
+                label="Ethics Program Strength"
+                value={supplier.ethics_program}
+                icon={ShieldCheckIcon}
+              />
+              {/* Add more compliance-related fields if available in Supplier model */}
+
+              {/* Risk related */}
+              <DetailItem
+                label="Overall Risk Level"
+                value={supplier.risk_level || "Unknown"}
+                icon={ShieldExclamationIcon}
+                color={getRiskColor(supplier.risk_level)} // Use color helper
+              />
+              <DetailItem
+                label="Corruption Risk"
+                value={supplier.corruption_risk}
+                icon={ShieldExclamationIcon}
+                color={getScoreColor(supplier.corruption_risk)} // Color based on score (lower is better)
+              />
+              <DetailItem
+                label="Geopolitical Risk"
+                value={supplier.geopolitical_risk}
+                icon={GlobeAltIcon} // Example icon
+                color={getScoreColor(supplier.geopolitical_risk)}
+              />
+              <DetailItem
+                label="Climate Risk"
+                value={supplier.climate_risk}
+                icon={CloudIcon} // Example icon
+                color={getScoreColor(supplier.climate_risk)}
+              />
+              <DetailItem
+                label="Labor Dispute Risk"
+                value={supplier.labor_dispute_risk}
+                icon={UsersIcon} // Example icon
+                color={getScoreColor(supplier.labor_dispute_risk)}
+              />
+            </div>
           </div>
+
+          {/* Add ESG Reports, Media Sentiment, Controversies Sections Here Later */}
+          {/* Placeholder for future sections */}
+          {/* 
+          <div className="p-4 rounded-lg border backdrop-blur-sm" style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>ESG Reports</h3>
+            <p className="text-sm italic" style={{ color: colors.textMuted }}>(ESG report listing to be implemented)</p>
+          </div>
+          <div className="p-4 rounded-lg border backdrop-blur-sm" style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>Media Sentiment</h3>
+            <p className="text-sm italic" style={{ color: colors.textMuted }}>(Media sentiment analysis to be implemented)</p>
+          </div>
+          <div className="p-4 rounded-lg border backdrop-blur-sm" style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}>
+            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>Controversies</h3>
+            <p className="text-sm italic" style={{ color: colors.textMuted }}>(Controversy tracking to be implemented)</p>
+          </div>
+          */}
         </motion.div>
       </div>
     </div>

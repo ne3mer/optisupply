@@ -10,8 +10,8 @@ export interface DashboardData {
     low: number;
     medium: number;
   };
-  // Mark previously expected fields as optional, as they might be missing
-  avg_co2_emissions?: number; // Keep original name for now or switch later
+  // Use the correct key name from the API response
+  avgCo2Emissions?: number; // Changed from avg_co2_emissions
   suppliers_by_country?: Record<string, number>;
   ethical_score_distribution?: Array<{ range: string; count: number }>;
   co2_emissions_by_industry?: Array<{ name: string; value: number }>;
@@ -109,6 +109,7 @@ export const getDashboardData = async (): Promise<DashboardData> => {
 
     const data = await response.json();
     console.log("Dashboard API response:", data);
+    console.log("Raw API Data Received:", JSON.stringify(data));
 
     // Convert any 0-1 values to 0-100 scale
     const convertedData = convertToPercentage(data);
@@ -154,7 +155,7 @@ export const getMockDashboardData = (): DashboardData => {
     totalSuppliers: 12,
     avgEthicalScore: "75.3", // Already in 0-100 format
     riskBreakdown: { high: 1, medium: 4, low: 7 },
-    avg_co2_emissions: 23.9,
+    avgCo2Emissions: 23.9,
     suppliers_by_country: {
       "United States": 4,
       "United Kingdom": 1,

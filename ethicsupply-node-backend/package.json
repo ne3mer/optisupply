@@ -9,17 +9,19 @@
     "test": "jest"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "mongoose": "^8.1.1",
-    "morgan": "^1.10.0",
-    "helmet": "^7.1.0",
-    "compression": "^1.7.4",
     "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
     "ml-kmeans": "^6.0.0",
     "ml-matrix": "^6.10.4",
     "ml-pca": "^4.0.2",
+    "mongoose": "^8.1.1",
+    "morgan": "^1.10.0",
     "node-cache": "^5.1.2"
   },
   "devDependencies": {

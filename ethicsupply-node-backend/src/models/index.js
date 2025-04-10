@@ -1,18 +1,27 @@
-// Export all models from this directory
-const Recommendation = require("./Recommendation");
-const Supplier = require("./Supplier");
+const mongoose = require("mongoose");
+
+// Import all model files
+// const Alert = require("./Alert"); // Removed unused model
+// const AnalysisResult = require("./AnalysisResult"); // Removed unused model
 const Controversy = require("./Controversy");
 const GeoRiskAlert = require("./GeoRiskAlert");
-const SupplierESGReport = require("./SupplierESGReport");
-const MediaSentiment = require("./MediaSentiment");
-const ScoringWeight = require("./ScoringWeight");
+// const Kpi = require("./Kpi"); // Removed unused model
+const Recommendation = require("./Recommendation");
+const Report = require("./Report");
+const Risk = require("./Risk");
+const Supplier = require("./Supplier");
+const User = require("./User");
 
+// Export all models
 module.exports = {
-  Recommendation,
-  Supplier,
+  // Alert, // Removed unused model
+  // AnalysisResult, // Removed unused model
   Controversy,
   GeoRiskAlert,
-  SupplierESGReport,
-  MediaSentiment,
-  ScoringWeight,
+  // Kpi, // Removed unused model
+  Recommendation,
+  Report,
+  Risk,
+  Supplier,
+  User,
 };

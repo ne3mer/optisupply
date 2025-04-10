@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
-  PieChart,
-  Pie,
-  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Cell,
   Legend,
 } from "recharts";
 
@@ -17,24 +20,36 @@ interface CO2EmissionsChartProps {
   data: CO2Emission[];
 }
 
-const COLORS = [
-  "#059669",
-  "#10b981",
-  "#14b8a6",
-  "#0ea5e9",
-  "#6366f1",
-  "#8b5cf6",
-  "#ec4899",
+// Use dashboard colors
+const chartColors = [
+  "#00F0FF", // Teal
+  "#FF00FF", // Magenta
+  "#00FF8F", // Green
+  "#FFD700", // Yellow
+  "#8B5CF6", // Purple
+  "#38BDF8", // Sky Blue
+  "#EC4899", // Pink
+  "#10B981", // Emerald
 ];
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border border-gray-200 shadow-md rounded-md">
-        <p className="text-sm font-medium">{`${payload[0].name}`}</p>
-        <p className="text-sm text-gray-700">{`CO₂ Emissions: ${payload[0].value.toFixed(
+      <div
+        className="rounded-md border backdrop-blur-sm p-2 text-sm shadow-lg"
+        style={{
+          backgroundColor: "rgba(13, 15, 26, 0.9)", // colors.tooltipBg
+          borderColor: "rgba(77, 91, 255, 0.4)", // colors.accent + "40"
+          color: "#E0E0FF", // colors.text
+        }}
+      >
+        <p
+          className="mb-1 font-semibold"
+          style={{ color: "#E0E0FF" }} // colors.text
+        >{`${label}`}</p>
+        <p style={{ color: "#8A94C8" }}>{`CO₂: ${payload[0].value.toFixed(
           1
-        )} tons`}</p>
+        )} t`}</p>
       </div>
     );
   }
@@ -42,32 +57,54 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
-  // Ensure we have data to display
-  const chartData =
-    data && data.length > 0 ? data : [{ name: "No Data", value: 1 }];
+  // Sort data descending by value and prepare for chart
+  const sortedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    return [...data]
+      .filter((d) => d.value > 0) // Filter out zero values if needed
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
+
+  if (sortedData.length === 0) {
+    return <p className="text-center">No CO₂ emission data available.</p>;
+  }
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie
-          data={chartData}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="value"
-          label={({ name, percent }) =>
-            `${name} ${(percent * 100).toFixed(0)}%`
-          }
-        >
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip content={<CustomTooltip />} />
+      <BarChart
+        data={sortedData}
+        layout="vertical"
+        margin={{ top: 5, right: 30, left: 50, bottom: 5 }} // Adjust margins for labels
+      >
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="rgba(77, 91, 255, 0.1)"
+          horizontal={false}
+        />
+        <XAxis type="number" stroke="#8A94C8" fontSize={12} />
+        <YAxis
+          dataKey="name"
+          type="category"
+          stroke="#8A94C8"
+          fontSize={12}
+          width={120} // Increase width for longer labels
+          tick={{ fill: "#E0E0FF" }}
+          interval={0} // Ensure all labels are shown
+        />
+        <Tooltip
+          content={<CustomTooltip />}
+          cursor={{ fill: "rgba(77, 91, 255, 0.1)" }}
+        />
         <Legend />
-      </PieChart>
+        <Bar dataKey="value" name="CO₂ Emissions (tons)" radius={[0, 4, 4, 0]}>
+          {sortedData.map((entry, index) => (
+            <Cell
+              key={`cell-${index}`}
+              fill={chartColors[index % chartColors.length]}
+            />
+          ))}
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 };

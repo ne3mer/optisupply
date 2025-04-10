@@ -5,7 +5,6 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
-import { fetchWithTimeout } from "../utils/api";
 
 interface Supplier {
   id: number;
@@ -23,7 +22,7 @@ const RecentSuppliersList: React.FC = () => {
   useEffect(() => {
     const fetchRecentSuppliers = async () => {
       try {
-        const response = await fetchWithTimeout("/api/suppliers/recent/", {
+        const response = await fetch("/api/suppliers/recent/", {
           method: "GET",
         });
 

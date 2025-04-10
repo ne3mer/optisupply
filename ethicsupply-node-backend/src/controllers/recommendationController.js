@@ -1,4 +1,5 @@
 const { Recommendation, Supplier } = require("../models");
+const mongoose = require("mongoose");
 
 /**
  * Get all recommendations
@@ -162,51 +163,67 @@ exports.getRecommendations = async (req, res) => {
  */
 exports.getRecommendationById = async (req, res) => {
   try {
-    console.log("Fetching recommendation with ID:", req.params.id);
+    const requestedId = req.params.id;
+    console.log("Fetching recommendation with ID:", requestedId);
 
     // Check if this is one of the dynamic recommendations with our custom ID format
-    if (req.params.id.startsWith("rec-")) {
-      // Get all recommendations
+    if (requestedId.startsWith("rec-")) {
+      console.log("Handling dynamic recommendation ID...");
+      // Regenerate all recommendations (consider caching in a real app)
       const allRecommendations = await getRecommendationsInternal();
 
-      // Find the recommendation with matching ID (approximate match since IDs contain timestamps)
-      const idParts = req.params.id.split("-");
-      const supplierId = idParts[1]; // Extract supplier ID
-
-      // Find recommendations for this supplier
-      const supplierRecommendations = allRecommendations.filter((rec) =>
-        typeof rec.supplier === "string"
-          ? rec.supplier === supplierId
-          : rec.supplier && rec.supplier.toString() === supplierId
+      // Find the recommendation with the exact matching ID
+      const recommendation = allRecommendations.find(
+        (rec) => rec._id === requestedId
       );
 
-      if (supplierRecommendations.length > 0) {
-        // Just return the first recommendation for this supplier
-        return res.status(200).json(supplierRecommendations[0]);
+      if (recommendation) {
+        console.log("Found dynamic recommendation:", recommendation._id);
+        return res.status(200).json(recommendation);
       } else {
+        console.log("Dynamic recommendation not found with ID:", requestedId);
         return res.status(404).json({ error: "Recommendation not found" });
       }
     }
 
-    // Otherwise try to find a real recommendation in the database using MongoDB ObjectId
+    // If not a dynamic ID, assume it's a standard MongoDB ObjectId
+    // and try to find it in the database (this part might be removed if only dynamic ones exist)
+    console.log(
+      "Attempting to fetch recommendation from database as ObjectId..."
+    );
     try {
+      // Validate if it's a potential ObjectId before querying
+      if (!mongoose.Types.ObjectId.isValid(requestedId)) {
+        console.log("Invalid ObjectId format:", requestedId);
+        return res
+          .status(400)
+          .json({ error: "Invalid recommendation ID format" });
+      }
+
       const recommendation = await Recommendation.findById(
-        req.params.id
+        requestedId
       ).populate("supplier", "name country industry ethical_score");
 
       if (!recommendation) {
+        console.log(
+          "Recommendation not found in database with ID:",
+          requestedId
+        );
         return res.status(404).json({ error: "Recommendation not found" });
       }
 
+      console.log("Found recommendation in database:", recommendation._id);
       res.status(200).json(recommendation);
-    } catch (castError) {
-      console.error("Error casting recommendation ID:", castError);
-      return res
-        .status(404)
-        .json({ error: "Invalid recommendation ID format" });
+    } catch (dbError) {
+      // Catch potential errors during database query itself, beyond CastError
+      console.error("Error querying database for recommendation:", dbError);
+      res.status(500).json({
+        error: "Database error fetching recommendation",
+        details: dbError.message,
+      });
     }
   } catch (error) {
-    console.error("Error fetching recommendation:", error);
+    console.error("General error in getRecommendationById:", error);
     res.status(500).json({
       error: error.message,
       stack: error.stack,
@@ -564,7 +581,7 @@ function generateRecommendationsForWeakAreas(supplier, weakAreas) {
     // Safely access supplier properties for reasoning strings, providing defaults
     const co2EmissionsValue = supplier?.co2_emissions ?? 50; // Default to benchmark if missing
     const waterUsageValue = supplier?.water_usage ?? 60; // Default to benchmark if missing
-    const ethicalScoreValue = supplier?.ethical_score ?? 0.65; // Default score
+    const overallScore = supplier?.ethical_score ?? 0.65; // Default score - using semantic variable name while keeping field name for compatibility
 
     // Generate recommendation based on category and specific metrics
     if (category === "environmental") {
@@ -791,7 +808,7 @@ function generateRecommendationsForWeakAreas(supplier, weakAreas) {
         name: supplier?.name || "Unknown Supplier",
         country: supplier?.country || "Unknown Country",
         industry: supplier?.industry || "Unknown Industry",
-        ethical_score: Math.round((supplier?.ethical_score ?? 0.65) * 100),
+        ethical_score: Math.round(overallScore * 100),
       },
       ai_explanation: {
         reasoning,
@@ -1197,121 +1214,114 @@ const generateMockRecommendations = () => {
 };
 
 /**
- * Internal function to generate recommendations
- * @returns {Array} Array of recommendations
+ * Internal helper to get recommendations without Express response
+ * (Used by getRecommendationById for dynamic IDs)
  */
 async function getRecommendationsInternal() {
-  console.log("Fetching recommendations internally...");
+  try {
+    // This replicates the logic from getRecommendations but returns data directly
+    const suppliers = await Supplier.find().select(
+      "name country industry co2_emissions waste_management_score energy_efficiency water_usage renewable_energy_percent pollution_control wage_fairness human_rights_index community_engagement diversity_inclusion_score worker_safety transparency_score corruption_risk board_diversity ethics_program compliance_systems quality_control_score supplier_diversity traceability ethical_score environmental_score social_score governance_score"
+    );
 
-  // Get suppliers with their scores
-  const suppliers = await Supplier.find().select(
-    "name country industry co2_emissions waste_management_score energy_efficiency water_usage renewable_energy_percent pollution_control wage_fairness human_rights_index community_engagement diversity_inclusion_score worker_safety transparency_score corruption_risk board_diversity ethics_program compliance_systems quality_control_score supplier_diversity traceability ethical_score environmental_score social_score governance_score"
-  );
+    if (!suppliers || suppliers.length === 0) {
+      return generateMockRecommendations();
+    }
 
-  if (!suppliers || suppliers.length === 0) {
-    console.log("No suppliers found, returning mock data");
-    return generateMockRecommendations();
+    const recommendations = suppliers
+      .map((supplier) => {
+        try {
+          // ... (score calculation logic as in getRecommendations) ...
+          const environmentalScore =
+            supplier.environmental_score ||
+            ((supplier.co2_emissions || 0) +
+              (supplier.waste_management_score || 0) +
+              (supplier.energy_efficiency || 0) +
+              (supplier.water_usage || 0) +
+              (supplier.renewable_energy_percent || 0) +
+              (supplier.pollution_control || 0)) /
+              6;
+
+          const socialScore =
+            supplier.social_score ||
+            ((supplier.wage_fairness || 0) +
+              (supplier.human_rights_index || 0) +
+              (supplier.community_engagement || 0) +
+              (supplier.diversity_inclusion_score || 0) +
+              (supplier.worker_safety || 0)) /
+              5;
+
+          const governanceScore =
+            supplier.governance_score ||
+            ((supplier.transparency_score || 0) +
+              (supplier.corruption_risk || 0) +
+              (supplier.board_diversity || 0) +
+              (supplier.ethics_program || 0) +
+              (supplier.compliance_systems || 0) +
+              (supplier.quality_control_score || 0) +
+              (supplier.supplier_diversity || 0) +
+              (supplier.traceability || 0)) /
+              8;
+
+          // Normalize scores to be between 0 and 1
+          const normalizedScores = {
+            environmental: Math.min(Math.max(environmentalScore, 0), 1),
+            social: Math.min(Math.max(socialScore, 0), 1),
+            governance: Math.min(Math.max(governanceScore, 0), 1),
+          };
+
+          // Determine the lowest score to focus recommendations
+          const lowestScore = Object.entries(normalizedScores).reduce(
+            (min, [key, value]) => (value < min.value ? { key, value } : min),
+            { key: "environmental", value: 1 }
+          );
+
+          const recommendation = {
+            _id: `rec-${supplier._id}-${Date.now()}-${Math.floor(
+              Math.random() * 1000
+            )}`,
+            title: `Improve ${lowestScore.key} performance for ${supplier.name}`,
+            description: `Focus on enhancing ${lowestScore.key} metrics to improve overall supplier performance.`,
+            category: lowestScore.key,
+            priority:
+              lowestScore.value < 0.3
+                ? "high"
+                : lowestScore.value < 0.6
+                ? "medium"
+                : "low",
+            status: "pending",
+            supplier: supplier._id,
+            supplierName: supplier.name,
+            aiExplanation: `Based on analysis of ${
+              supplier.name
+            }'s performance metrics, the ${lowestScore.key} score of ${(
+              lowestScore.value * 100
+            ).toFixed(1)}% is significantly lower than other areas.`,
+            estimatedImpact:
+              lowestScore.value < 0.3
+                ? "High"
+                : lowestScore.value < 0.6
+                ? "Medium"
+                : "Low",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          return recommendation;
+        } catch (error) {
+          console.error(
+            `Error processing supplier (internal): ${supplier?.name}`,
+            error
+          );
+          return null;
+        }
+      })
+      .filter((rec) => rec !== null);
+
+    return recommendations.length > 0
+      ? recommendations
+      : generateMockRecommendations();
+  } catch (error) {
+    console.error("Error in getRecommendationsInternal:", error);
+    return []; // Return empty array on error
   }
-
-  console.log(`Found ${suppliers.length} suppliers`);
-
-  const recommendations = suppliers
-    .map((supplier) => {
-      try {
-        // Use pre-calculated scores if available, otherwise calculate them
-        const environmentalScore =
-          supplier.environmental_score ||
-          ((supplier.co2_emissions || 0) +
-            (supplier.waste_management_score || 0) +
-            (supplier.energy_efficiency || 0) +
-            (supplier.water_usage || 0) +
-            (supplier.renewable_energy_percent || 0) +
-            (supplier.pollution_control || 0)) /
-            6;
-
-        const socialScore =
-          supplier.social_score ||
-          ((supplier.wage_fairness || 0) +
-            (supplier.human_rights_index || 0) +
-            (supplier.community_engagement || 0) +
-            (supplier.diversity_inclusion_score || 0) +
-            (supplier.worker_safety || 0)) /
-            5;
-
-        const governanceScore =
-          supplier.governance_score ||
-          ((supplier.transparency_score || 0) +
-            (supplier.corruption_risk || 0) +
-            (supplier.board_diversity || 0) +
-            (supplier.ethics_program || 0) +
-            (supplier.compliance_systems || 0) +
-            (supplier.quality_control_score || 0) +
-            (supplier.supplier_diversity || 0) +
-            (supplier.traceability || 0)) /
-            8;
-
-        // Normalize scores to be between 0 and 1
-        const normalizedScores = {
-          environmental: Math.min(Math.max(environmentalScore, 0), 1),
-          social: Math.min(Math.max(socialScore, 0), 1),
-          governance: Math.min(Math.max(governanceScore, 0), 1),
-        };
-
-        // Determine the lowest score to focus recommendations
-        const lowestScore = Object.entries(normalizedScores).reduce(
-          (min, [key, value]) => (value < min.value ? { key, value } : min),
-          { key: "environmental", value: 1 }
-        );
-
-        // Generate recommendation based on the lowest score
-        const recommendation = {
-          _id: `rec-${supplier._id}-${Date.now()}-${Math.floor(
-            Math.random() * 1000
-          )}`,
-          title: `Improve ${lowestScore.key} performance for ${supplier.name}`,
-          description: `Focus on enhancing ${lowestScore.key} metrics to improve overall supplier performance.`,
-          category: lowestScore.key,
-          priority:
-            lowestScore.value < 0.3
-              ? "high"
-              : lowestScore.value < 0.6
-              ? "medium"
-              : "low",
-          status: "pending",
-          supplier: supplier._id,
-          supplierName: supplier.name,
-          aiExplanation: `Based on analysis of ${
-            supplier.name
-          }'s performance metrics, the ${lowestScore.key} score of ${(
-            lowestScore.value * 100
-          ).toFixed(1)}% is significantly lower than other areas.`,
-          estimatedImpact:
-            lowestScore.value < 0.3
-              ? "High"
-              : lowestScore.value < 0.6
-              ? "Medium"
-              : "Low",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        return recommendation;
-      } catch (error) {
-        console.error(
-          `Error processing supplier ${supplier?.name || "unknown"} (${
-            supplier?._id || "unknown"
-          }):`,
-          error
-        );
-        return null;
-      }
-    })
-    .filter((rec) => rec !== null);
-
-  if (recommendations.length === 0) {
-    console.log("No valid recommendations generated, returning mock data");
-    return generateMockRecommendations();
-  }
-
-  console.log(`Generated ${recommendations.length} recommendations internally`);
-  return recommendations;
 }

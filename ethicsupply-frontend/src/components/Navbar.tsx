@@ -34,37 +34,45 @@ const ITEM_SIZE = 48; // Size of individual menu item buttons
 
 const Navbar = () => {
   const { darkMode, toggleDarkMode } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleSearch = () => {
-    console.log("Open Search"); // Placeholder for search functionality
-    setIsOpen(false); // Close menu after action
+    console.log("Open Search"); // Placeholder
+    setIsMobileMenuOpen(false);
   };
 
   const handleSettings = () => {
     console.log("Open Settings"); // Placeholder
-    setIsOpen(false);
+    setIsMobileMenuOpen(false);
   };
 
   const handleLogout = () => {
     console.log("Logout"); // Placeholder
-    setIsOpen(false);
+    setIsMobileMenuOpen(false);
   };
 
   const navItems: NavItem[] = [
-    { name: "Dashboard", path: "/dashboard", icon: <BarChart3 size={18} /> },
-    { name: "Suppliers", path: "/suppliers", icon: <List size={18} /> },
+    { name: "Dashboard", path: "/dashboard", icon: <BarChart3 size={20} /> },
+    { name: "Suppliers", path: "/suppliers", icon: <List size={20} /> },
     {
       name: "Recommendations",
       path: "/recommendations",
-      icon: <TrendingUp size={18} />,
+      icon: <TrendingUp size={20} />,
     },
-    { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={18} /> },
-    { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={18} /> },
-    { name: "About", path: "/about", icon: <Info size={18} /> },
+    { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={20} /> },
+    { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={20} /> },
+    { name: "About", path: "/about", icon: <Info size={20} /> },
   ];
 
   const itemVariants = {
@@ -108,12 +116,15 @@ const Navbar = () => {
 
   const isActivePath = (path: string) =>
     location.pathname === path ||
-    (path === "/suppliers" && location.pathname.startsWith("/supplier")); // Highlight Suppliers for related pages too
+    (path === "/suppliers" &&
+      (location.pathname.startsWith("/suppliers/") ||
+        location.pathname.startsWith("/supplier-details/") ||
+        location.pathname.startsWith("/supplier-scorecard/")));
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
+        isScrolled || isMobileMenuOpen
           ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg"
           : "bg-transparent"
       }`}
@@ -125,12 +136,13 @@ const Navbar = () => {
             <Link
               to="/dashboard"
               className="flex-shrink-0 flex items-center space-x-2 group"
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <div className="h-8 w-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
                 <Activity className="h-5 w-5 text-white" />
               </div>
               <span className="font-bold text-gray-900 dark:text-white text-xl tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200">
-                OptiEthic
+                OptiSupply
               </span>
             </Link>
           </div>
@@ -143,7 +155,7 @@ const Navbar = () => {
                   to={item.path}
                   className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ease-in-out group ${
                     isActivePath(item.path)
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 scale-105 shadow-sm"
+                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-800/60 dark:text-emerald-300"
                       : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
@@ -162,8 +174,8 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center space-x-1 md:space-x-2">
+          {/* Right Side Actions (Desktop) */}
+          <div className="hidden md:flex items-center space-x-1 md:space-x-2">
             {/* Search Button/Input Area */}
             <motion.div
               className={`relative flex items-center transition-all duration-300 ease-in-out ${
@@ -203,18 +215,97 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* Settings Button */}
-            <motion.button
-              onClick={handleSettings}
+            {/* Settings Button - Changed to Link */}
+            <Link
+              to="/settings" // Navigate to settings page
               className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
-              whileTap={{ scale: 0.9 }}
               title="Settings"
             >
-              <Settings size={20} />
-            </motion.button>
+              <motion.div whileTap={{ scale: 0.9 }}>
+                {" "}
+                {/* Keep tap animation */}
+                <Settings size={20} />
+              </motion.div>
+            </Link>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Panel */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="md:hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-lg overflow-hidden"
+          >
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                    isActivePath(item.path)
+                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
+                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                  }`}
+                >
+                  <span className="mr-3">{item.icon}</span>
+                  {item.name}
+                </Link>
+              ))}
+              <div className="pt-4 pb-2 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleSearch}
+                  className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                >
+                  <Search className="mr-3 h-5 w-5" /> Search
+                </button>
+                <button
+                  onClick={() => {
+                    toggleDarkMode();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                  aria-label="Toggle dark mode"
+                >
+                  {darkMode ? (
+                    <Sun className="mr-3 h-5 w-5 text-yellow-500" />
+                  ) : (
+                    <Moon className="mr-3 h-5 w-5 text-gray-600" />
+                  )}
+                  {darkMode ? "Light Mode" : "Dark Mode"}
+                </button>
+                <Link
+                  to="/settings"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                >
+                  <Settings className="mr-3 h-5 w-5" /> Settings
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };
