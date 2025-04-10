@@ -113,3 +113,20 @@ process.on("uncaughtException", (err) => {
 
 // Export the server initialization function
 module.exports = startServer;
+
+// If this file is run directly (not imported), start the server
+if (require.main === module) {
+  const PORT = process.env.PORT || 8000;
+
+  startServer()
+    .then((app) => {
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        console.log(`API accessible at http://localhost:${PORT}/api`);
+      });
+    })
+    .catch((err) => {
+      console.error("Failed to start server:", err);
+      process.exit(1);
+    });
+}

@@ -227,11 +227,11 @@ const formatSentimentValue = (value: string | number) => {
 
 // Main component
 const SupplierAnalytics = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -243,96 +243,15 @@ const SupplierAnalytics = () => {
 
       try {
         setLoading(true);
-        // Use ID directly without casting to avoid TypeScript error
         const result = await getSupplierAnalytics(id);
-
-        // Check API response structure and normalize it
-        const normalizedData = {
-          supplier: {
-            name:
-              result.name ||
-              result.supplierName ||
-              result.supplier?.name ||
-              `Supplier ${id}`,
-            ethical_score: normalizeScore(
-              result.ethicalScore ||
-                result.ethical_score ||
-                result.supplier?.ethical_score ||
-                0
-            ),
-            environmental_score: normalizeScore(
-              result.environmentalScore ||
-                result.environmental_score ||
-                result.supplier?.environmental_score ||
-                0
-            ),
-            social_score: normalizeScore(
-              result.socialScore ||
-                result.social_score ||
-                result.supplier?.social_score ||
-                0
-            ),
-            governance_score: normalizeScore(
-              result.governanceScore ||
-                result.governance_score ||
-                result.supplier?.governance_score ||
-                0
-            ),
-            risk_level:
-              result.riskLevel ||
-              result.risk_level ||
-              result.supplier?.risk_level ||
-              "Medium",
-          },
-          industry_average: {
-            ethical_score: normalizeScore(
-              result.industry_average?.ethical_score ?? 65
-            ),
-            environmental_score: normalizeScore(
-              result.industry_average?.environmental_score ?? 60
-            ),
-            social_score: normalizeScore(
-              result.industry_average?.social_score ?? 70
-            ),
-            governance_score: normalizeScore(
-              result.industry_average?.governance_score ?? 65
-            ),
-          },
-          risk_factors: result.risk_factors || result.riskFactors || [],
-          ai_recommendations:
-            result.ai_recommendations || result.recommendations || [],
-          sentiment_trend:
-            result.sentiment_trend?.map((item) => ({
-              ...item,
-              score:
-                typeof item.score === "number" &&
-                item.score >= -1 &&
-                item.score <= 1
-                  ? Math.round((item.score + 1) * 50) // Convert -1 to 1 range to 0-100
-                  : item.score,
-            })) ||
-            result.sentimentTrend ||
-            [],
-          isMockData: result.isMockData === true,
-        };
-
-        // Helper function to normalize scores from 0-1 to 0-100 scale
-        function normalizeScore(score: number | null | undefined): number {
-          if (score === null || score === undefined) return 0;
-          // If score is already in 0-100 range, return as is
-          if (score > 1) return score;
-          // Otherwise convert from 0-1 to 0-100
-          return score * 100;
-        }
-
-        console.log("Normalized analytics data:", normalizedData);
-        setData(normalizedData);
+        console.log("Normalized analytics data:", result);
+        setData(result);
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching analytics:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to load analytics"
+          err instanceof Error ? err.message : "Failed to load analytics data"
         );
-      } finally {
         setLoading(false);
       }
     };
@@ -454,12 +373,12 @@ const SupplierAnalytics = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto mt-8">
           {/* Performance Overview */}
           <Card
             title="Performance Overview"
             icon={ChartBarIcon}
-            className="md:col-span-2 lg:col-span-1"
+            className="md:col-span-2 xl:col-span-1"
           >
             <div className="space-y-4">
               <ScoreCard
@@ -493,7 +412,7 @@ const SupplierAnalytics = () => {
           <Card
             title="Performance Benchmark"
             icon={ChartPieIcon}
-            className="md:col-span-2"
+            className="md:col-span-2 xl:col-span-1"
           >
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -559,7 +478,7 @@ const SupplierAnalytics = () => {
           <Card
             title="Risk Assessment"
             icon={FireIcon}
-            className="lg:col-span-1"
+            className="xl:col-span-1"
           >
             <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {risk_factors && risk_factors.length > 0 ? (
@@ -624,60 +543,89 @@ const SupplierAnalytics = () => {
           <Card
             title="AI Recommendations"
             icon={LightBulbIcon}
-            className="md:col-span-2 lg:col-span-2"
+            className="xl:col-span-3"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {ai_recommendations && ai_recommendations.length > 0 ? (
-                ai_recommendations.map((rec, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="p-4 rounded-lg border border-dashed"
-                    style={{
-                      backgroundColor: "rgba(0,0,0,0.1)",
-                      borderColor: colors.primary + "30",
-                    }}
-                  >
+            <div className="mt-3">
+              {ai_recommendations?.length > 0 ? (
+                <div className="space-y-4">
+                  {ai_recommendations.map((rec, idx) => (
                     <div
-                      className="mb-1 text-xs uppercase tracking-wider"
-                      style={{ color: colors.primary }}
+                      key={idx}
+                      className="p-4 rounded-lg border"
+                      style={{
+                        backgroundColor: "rgba(9, 14, 27, 0.6)",
+                        borderColor: colors.accent + "30",
+                      }}
                     >
-                      {rec.area}
+                      <div className="flex items-center mb-2">
+                        <div
+                          className="p-1 rounded mr-2"
+                          style={{ backgroundColor: colors.primary + "30" }}
+                        >
+                          <SparklesIcon
+                            className="h-4 w-4"
+                            style={{ color: colors.primary }}
+                          />
+                        </div>
+                        <h4 className="font-semibold">
+                          {rec.area || "Improvement"}
+                        </h4>
+                      </div>
+                      <p className="ml-7 mb-3 text-sm">{rec.suggestion}</p>
+
+                      {/* Add impact and difficulty indicators */}
+                      {rec.impact && rec.difficulty && (
+                        <div className="ml-7 flex items-center text-xs gap-4">
+                          <span
+                            className="px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor:
+                                rec.impact === "High"
+                                  ? colors.success + "30"
+                                  : rec.impact === "Medium"
+                                  ? colors.warning + "30"
+                                  : colors.error + "30",
+                              color:
+                                rec.impact === "High"
+                                  ? colors.success
+                                  : rec.impact === "Medium"
+                                  ? colors.warning
+                                  : colors.error,
+                            }}
+                          >
+                            Impact: {rec.impact}
+                          </span>
+                          <span
+                            className="px-2 py-1 rounded-full"
+                            style={{
+                              backgroundColor:
+                                rec.difficulty === "Low"
+                                  ? colors.success + "30"
+                                  : rec.difficulty === "Medium"
+                                  ? colors.warning + "30"
+                                  : colors.error + "30",
+                              color:
+                                rec.difficulty === "Low"
+                                  ? colors.success
+                                  : rec.difficulty === "Medium"
+                                  ? colors.warning
+                                  : colors.error,
+                            }}
+                          >
+                            Difficulty: {rec.difficulty}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <p className="mb-3 text-sm" style={{ color: colors.text }}>
-                      {rec.suggestion}
-                    </p>
-                    <div className="flex gap-3 text-xs">
-                      <span
-                        className="px-2 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: colors.success + "20",
-                          color: colors.success,
-                        }}
-                      >
-                        Impact: {rec.impact}
-                      </span>
-                      <span
-                        className="px-2 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: colors.warning + "20",
-                          color: colors.warning,
-                        }}
-                      >
-                        Difficulty: {rec.difficulty}
-                      </span>
-                    </div>
-                  </motion.div>
-                ))
+                  ))}
+                </div>
               ) : (
-                <div
-                  className="text-center p-4 col-span-2"
+                <p
+                  className="text-center py-6"
                   style={{ color: colors.textMuted }}
                 >
-                  No recommendations available
-                </div>
+                  No recommendations available for this supplier
+                </p>
               )}
             </div>
           </Card>
@@ -687,7 +635,7 @@ const SupplierAnalytics = () => {
             <Card
               title="Media Sentiment Analysis"
               icon={ArrowTrendingUpIcon}
-              className="md:col-span-2 lg:col-span-1"
+              className="md:col-span-2 xl:col-span-1"
             >
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -735,6 +683,164 @@ const SupplierAnalytics = () => {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+            </Card>
+          )}
+
+          {/* Add Performance Projection Card */}
+          {data?.performance_projection && (
+            <Card
+              title="Performance Projection"
+              icon={ArrowTrendingUpIcon}
+              className="xl:col-span-2"
+            >
+              <div className="mt-2">
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart
+                    data={data.performance_projection}
+                    margin={{ top: 5, right: 10, left: 10, bottom: 15 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke={colors.accent + "20"}
+                    />
+                    <XAxis
+                      dataKey="period"
+                      tick={{ fill: colors.textMuted, fontSize: 12 }}
+                    />
+                    <YAxis
+                      tick={{ fill: colors.textMuted, fontSize: 12 }}
+                      domain={[0, 100]}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: colors.panel,
+                        borderColor: colors.accent + "30",
+                        color: colors.text,
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="projected_score"
+                      name="Projected Score"
+                      stroke={colors.success}
+                      strokeWidth={2}
+                      dot={{
+                        fill: colors.background,
+                        stroke: colors.success,
+                        strokeWidth: 2,
+                        r: 4,
+                      }}
+                      activeDot={{
+                        fill: colors.success,
+                        stroke: colors.background,
+                        strokeWidth: 2,
+                        r: 6,
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div
+                  className="text-center text-xs mt-2"
+                  style={{ color: colors.textMuted }}
+                >
+                  Projected ethical performance over time based on current
+                  strategy
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Add ESG Impact Card */}
+          {data?.esg_impact && (
+            <Card
+              title="Sustainability Impact"
+              icon={GlobeAltIcon}
+              className="xl:col-span-1"
+            >
+              <div className="space-y-4 mt-3">
+                {Object.entries(data.esg_impact).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="flex justify-between items-center p-3 rounded-lg"
+                    style={{ backgroundColor: "rgba(9, 14, 27, 0.6)" }}
+                  >
+                    <div className="text-sm">
+                      {key
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </div>
+                    <div
+                      className="px-3 py-1 rounded-full text-sm font-medium"
+                      style={{
+                        backgroundColor:
+                          typeof value === "string" && value.includes("%")
+                            ? colors.success + "20"
+                            : colors.primary + "20",
+                        color:
+                          typeof value === "string" && value.includes("%")
+                            ? colors.success
+                            : colors.primary,
+                      }}
+                    >
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Add ML Confidence Card */}
+          {data?.ml_confidence && (
+            <Card
+              title="AI Analysis Confidence"
+              icon={SparklesIcon}
+              className="xl:col-span-3"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                {Object.entries(data.ml_confidence).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="p-4 rounded-lg border flex flex-col items-center justify-center text-center"
+                    style={{
+                      backgroundColor: "rgba(9, 14, 27, 0.6)",
+                      borderColor: colors.accent + "20",
+                      minHeight: "120px",
+                    }}
+                  >
+                    <div
+                      className="text-3xl font-bold mb-2"
+                      style={{
+                        color:
+                          value >= 90
+                            ? colors.success
+                            : value >= 80
+                            ? colors.primary
+                            : value >= 70
+                            ? colors.warning
+                            : colors.error,
+                      }}
+                    >
+                      {value}%
+                    </div>
+                    <div
+                      className="text-sm"
+                      style={{ color: colors.textMuted }}
+                    >
+                      {key
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="text-center text-xs mt-4"
+                style={{ color: colors.textMuted }}
+              >
+                Confidence metrics for the AI-powered analysis and
+                recommendations
               </div>
             </Card>
           )}
