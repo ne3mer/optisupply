@@ -1,3 +1,4 @@
+/* Unused About component - superseded by AboutPage.tsx
 import {
   AcademicCapIcon,
   UserIcon,
@@ -118,3 +119,4 @@ const About = () => {
 };
 
 export default About;
+*/

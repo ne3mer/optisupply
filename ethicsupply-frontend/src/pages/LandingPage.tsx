@@ -1,3 +1,4 @@
+/* Unused LandingPage component - the app now uses HomePage as the main landing page
 import React, {
   Suspense,
   useEffect,
@@ -402,3 +403,4 @@ const LandingPage = () => {
 };
 
 export default LandingPage;
+*/

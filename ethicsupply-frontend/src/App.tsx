@@ -6,7 +6,7 @@ import {
   useParams,
 } from "react-router-dom";
 import NavigationBar from "./components/Navbar";
-import LandingPage from "./pages/LandingPage";
+// import LandingPage from "./pages/LandingPage"; // Unused component
 import HomePage from "./pages/HomePage";
 import Dashboard from "./pages/Dashboard";
 import EvaluateSupplier from "./pages/EvaluateSupplier";

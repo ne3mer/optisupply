@@ -2026,6 +2026,31 @@ function getMockSupplierAnalytics(supplierId: number): SupplierAnalyticsData {
   const riskLevel =
     ethicalScore >= 75 ? "Low" : ethicalScore >= 55 ? "Medium" : "High";
 
+  // Generate performance projection data for 6 months
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const performanceProjection = [];
+
+  for (let i = 0; i < 6; i++) {
+    const projectionMonth = (currentMonth + i) % 12;
+    const projectionYear = currentYear + Math.floor((currentMonth + i) / 12);
+    const monthName = new Date(
+      projectionYear,
+      projectionMonth,
+      1
+    ).toLocaleString("default", { month: "short" });
+    const yearShort = projectionYear.toString().slice(-2);
+
+    // Generate a small improvement trend based on the current score
+    const improvement = Math.min(0.5 + i * 1.2, 15); // Progressive improvement
+    const projectedScore = Math.min(100, ethicalScore + improvement);
+
+    performanceProjection.push({
+      period: `${monthName} '${yearShort}`,
+      projected_score: Math.round(projectedScore * 10) / 10,
+    });
+  }
+
   return {
     supplier: {
       id: supplierId,
@@ -2153,19 +2178,20 @@ function getMockSupplierAnalytics(supplierId: number): SupplierAnalyticsData {
       },
     ],
     sentiment_trend: [
-      { date: "2023-01", score: Math.round((0.2 + 1) * 50) },
-      { date: "2023-02", score: Math.round((0.3 + 1) * 50) },
-      { date: "2023-03", score: Math.round((0.1 + 1) * 50) },
-      { date: "2023-04", score: Math.round((-0.1 + 1) * 50) },
-      { date: "2023-05", score: Math.round((0.2 + 1) * 50) },
-      { date: "2023-06", score: Math.round((0.4 + 1) * 50) },
-      { date: "2023-07", score: Math.round((0.5 + 1) * 50) },
-      { date: "2023-08", score: Math.round((0.6 + 1) * 50) },
-      { date: "2023-09", score: Math.round((0.4 + 1) * 50) },
-      { date: "2023-10", score: Math.round((0.5 + 1) * 50) },
-      { date: "2023-11", score: Math.round((0.7 + 1) * 50) },
-      { date: "2023-12", score: Math.round((0.8 + 1) * 50) },
+      { date: "2023-01", score: 0.2 - 0.5 }, // Normalized to -0.5 to 0.5 range
+      { date: "2023-02", score: 0.3 - 0.5 },
+      { date: "2023-03", score: 0.1 - 0.5 },
+      { date: "2023-04", score: -0.1 - 0.5 },
+      { date: "2023-05", score: 0.2 - 0.5 },
+      { date: "2023-06", score: 0.4 - 0.5 },
+      { date: "2023-07", score: 0.5 - 0.5 },
+      { date: "2023-08", score: 0.6 - 0.5 },
+      { date: "2023-09", score: 0.4 - 0.5 },
+      { date: "2023-10", score: 0.5 - 0.5 },
+      { date: "2023-11", score: 0.7 - 0.5 },
+      { date: "2023-12", score: 0.8 - 0.5 },
     ],
+    performance_projection: performanceProjection,
     isMockData: true,
   };
 }
@@ -2654,6 +2680,7 @@ export interface SupplierAnalyticsData {
     difficulty: string;
   }>;
   sentiment_trend?: Array<{ date: string; score: number }>; // e.g., -1 to 1
+  performance_projection?: Array<{ period: string; projected_score: number }>; // Performance projection data
   // Add other potential fields: controversies, esg_report_summary, etc.
   isMockData?: boolean;
 }
@@ -2793,6 +2820,12 @@ const generateMockAnalyticsData = (id: string): SupplierAnalyticsData => {
       { date: "2024-02", score: 0.3 },
       { date: "2024-03", score: 0.1 },
       { date: "2024-04", score: 0.4 },
+    ],
+    performance_projection: [
+      { period: "Jan '24", projected_score: 78 },
+      { period: "Feb '24", projected_score: 79 },
+      { period: "Mar '24", projected_score: 80 },
+      { period: "Apr '24", projected_score: 81 },
     ],
     isMockData: true,
   };

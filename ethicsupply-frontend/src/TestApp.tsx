@@ -1,3 +1,4 @@
+/* Unused test component
 import React from "react";
 
 const TestApp: React.FC = () => {
@@ -12,3 +13,4 @@ const TestApp: React.FC = () => {
 };
 
 export default TestApp;
+*/

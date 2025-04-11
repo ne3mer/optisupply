@@ -1,3 +1,4 @@
+/* Unused analytics component - superseded by SupplierAnalytics.tsx 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getSupplierAnalytics, SupplierAnalyticsData } from "../services/api";

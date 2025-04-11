@@ -1,3 +1,4 @@
+/* Unused simplified application
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
@@ -19,3 +20,4 @@ function SimplifiedApp() {
 }
 
 export default SimplifiedApp;
+*/
