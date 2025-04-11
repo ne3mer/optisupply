@@ -13,8 +13,8 @@ function createMockServer() {
   // CORS middleware - allow all origins for Vercel
   app.use(
     cors({
-      origin: "*",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      origin: true, // Allow all origins
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowedHeaders: [
         "Content-Type",
         "Authorization",
@@ -22,8 +22,12 @@ function createMockServer() {
         "X-HTTP-Method-Override",
       ],
       credentials: true,
+      maxAge: 86400, // Cache preflight requests for 24 hours
     })
   );
+
+  // Handle OPTIONS requests explicitly
+  app.options("*", cors());
 
   // Basic middleware
   app.use(express.json());
@@ -255,6 +259,23 @@ function createMockServer() {
 }
 
 module.exports = async (req, res) => {
+  // Add CORS headers for serverless function
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
+  );
+
+  // Handle OPTIONS method for preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   try {
     // Try to initialize the Express app with MongoDB
     console.log("Attempting to initialize server with MongoDB connection");
