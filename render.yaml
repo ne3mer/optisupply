@@ -1,33 +1,29 @@
 services:
-  # Django backend service
+  # Backend service
   - type: web
     name: optiethic-backend
-    runtime: python
-    rootDir: ethicsupply-backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn ethicsupply.wsgi:application
+    runtime: node
+    rootDir: ethicsupply-node-backend
+    buildCommand: npm install
+    startCommand: node src/server.js
     envVars:
-      - key: DEBUG
-        value: False
-      - key: SECRET_KEY
-        generateValue: true
-      - key: ALLOWED_HOSTS
-        value: .onrender.com
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
       - key: CORS_ALLOWED_ORIGINS
-        value: https://optiethic-frontend.onrender.com
-      - key: DATABASE_URL
-        fromDatabase:
-          name: optiethic-db
-          property: connectionString
+        value: https://optiethic-frontend.onrender.com,https://optisupply-frontend.render.com
 
   # React frontend as a static site
   - type: web
     name: optiethic-frontend
     runtime: static
     rootDir: ethicsupply-frontend
-    buildCommand: yarn install && VITE_SKIP_TS_CHECK=true yarn build
+    buildCommand: ./build.sh
     staticPublishPath: ./dist
     envVars:
+      - key: NODE_VERSION
+        value: 18.18.0
       - key: VITE_API_URL
         value: https://optiethic-backend.onrender.com/api
       - key: VITE_ENABLE_MOCK_DATA
