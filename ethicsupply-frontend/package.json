@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --skipLibCheck --noEmit && vite build",
@@ -83,5 +86,10 @@
     "three-bmfont-text": "npm:three-bmfont-text@^3.0.1",
     "react": "^18.2.0",
     "aframe": "^1.4.2"
+  },
+  "overrides": {
+    "@typescript-eslint/eslint-plugin": {
+      "node": ">=18.18.0"
+    }
   }
 }
