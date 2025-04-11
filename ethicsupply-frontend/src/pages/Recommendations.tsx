@@ -219,11 +219,13 @@ const RecommendationCard = ({
   recommendation,
   isExpanded,
   onToggleExpand,
+  onActionClick,
   index,
 }: {
   recommendation: Recommendation;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  onActionClick: () => void;
   index: number;
 }) => {
   const { ref, inView } = useInView({
@@ -472,6 +474,7 @@ const RecommendationCard = ({
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  onClick={onActionClick}
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border ${categoryInfo.border}`}
                   style={{
                     color: categoryInfo.color,
@@ -564,6 +567,20 @@ const RecommendationsPage = () => {
   const handleToggleExpand = (id: string | undefined) => {
     if (!id) return;
     setExpandedCardId(expandedCardId === id ? null : id);
+  };
+
+  // NEW: Function to handle "Take Action" click
+  const handleTakeAction = (id: string | undefined) => {
+    if (!id) return;
+    setRecommendations((prevRecs) =>
+      prevRecs.map((rec) =>
+        rec._id === id ? { ...rec, status: "in_progress" } : rec
+      )
+    );
+    console.log(`Action planned for recommendation ID: ${id}`);
+    // In a real application, you would also make an API call here
+    // to update the status on the backend, e.g.:
+    // updateRecommendationStatus(id, 'in_progress');
   };
 
   // Filtering and Sorting Logic
@@ -1216,6 +1233,7 @@ const RecommendationsPage = () => {
                       onToggleExpand={() =>
                         handleToggleExpand(recommendation._id)
                       }
+                      onActionClick={() => handleTakeAction(recommendation._id)}
                       index={index}
                     />
                   )

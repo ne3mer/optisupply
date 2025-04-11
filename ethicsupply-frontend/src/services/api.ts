@@ -165,11 +165,30 @@ export interface DashboardData {
 }
 
 export interface Recommendation {
+  _id?: string; // Optional ID from MongoDB
+  id?: string | number; // Fallback ID if _id is not present
   action: string;
   impact: string;
   difficulty: string;
   timeframe: string;
   details: string;
+  title?: string; // From mock data
+  description?: string; // From mock data
+  category?: "environmental" | "social" | "governance"; // From mock data
+  priority?: "high" | "medium" | "low"; // From mock data
+  status?: "pending" | "in_progress" | "completed"; // From mock data
+  supplier?: { name: string } | string; // Can be object or string ID
+  ai_explanation?: string | { reasoning?: string }; // From mock data
+  estimated_impact?:
+    | string
+    | {
+        score_improvement?: number;
+        cost_savings?: number;
+        implementation_time?: number;
+      }; // From mock data
+  created_at?: string; // From mock data
+  updated_at?: string; // Optional updated timestamp
+  isMockData?: boolean; // Flag if it's mock data
 }
 
 export interface ImprovementScenario {
