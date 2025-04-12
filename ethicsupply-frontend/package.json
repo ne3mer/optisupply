@@ -51,7 +51,10 @@
     "clsx": "^2.1.0",
     "dagre": "^0.8.5",
     "date-fns": "^3.3.1",
+    "file-saver": "^2.0.5",
     "framer-motion": "^12.6.3",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.359.0",
     "react": "^18.2.0",
     "react-circular-progressbar": "^2.2.0",
@@ -64,7 +67,8 @@
     "recoil": "^0.7.7",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
-    "three": "^0.152.2"
+    "three": "^0.152.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",

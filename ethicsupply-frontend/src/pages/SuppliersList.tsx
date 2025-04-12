@@ -2,6 +2,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { getSuppliers, Supplier } from "../services/api"; // Corrected path
 import { motion, AnimatePresence } from "framer-motion";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -23,6 +27,9 @@ import {
   ClockIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
+  DocumentArrowDownIcon,
+  DocumentIcon,
+  TableCellsIcon,
 } from "@heroicons/react/24/outline";
 
 // --- Reusing Dashboard Colors & Helpers ---
@@ -139,6 +146,9 @@ const SuppliersList = () => {
     null
   );
   const [showModal, setShowModal] = useState(false);
+
+  // Export dropdown state
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     const fetchSuppliers = async () => {
@@ -601,6 +611,135 @@ const SuppliersList = () => {
     { action: "Monitor News Coverage", priority: "low", timeframe: "Ongoing" },
   ];
 
+  // Format supplier data for export
+  const formatSuppliersForExport = (suppliers: Supplier[]) => {
+    return suppliers.map((supplier) => ({
+      Name: supplier.name || "N/A",
+      ID: supplier._id || supplier.id || "N/A",
+      Country: supplier.country || "N/A",
+      Industry: supplier.industry || "N/A",
+      "Ethical Score": formatScore(supplier.ethical_score),
+      "Environmental Score": formatScore(supplier.environmental_score),
+      "Social Score": formatScore(supplier.social_score),
+      "Governance Score": formatScore(supplier.governance_score),
+      "Risk Level": supplier.risk_level || "N/A",
+      "Date Added": new Date(
+        supplier.created_at || Date.now()
+      ).toLocaleDateString(),
+    }));
+  };
+
+  // Helper to format scores consistently
+  const formatScore = (score: number | null | undefined) => {
+    if (score === null || score === undefined) return "N/A";
+    return score > 0 && score <= 1
+      ? (score * 100).toFixed(1)
+      : score.toFixed(1);
+  };
+
+  // Export to CSV
+  const exportToCSV = () => {
+    try {
+      const exportData = formatSuppliersForExport(filteredSuppliers);
+      const headers = Object.keys(exportData[0]);
+
+      // Create CSV content
+      let csvContent = headers.join(",") + "\n";
+
+      exportData.forEach((row) => {
+        const values = headers.map((header) => {
+          const value = row[header];
+          // Wrap values with commas in quotes
+          return typeof value === "string" && value.includes(",")
+            ? `"${value}"`
+            : value;
+        });
+        csvContent += values.join(",") + "\n";
+      });
+
+      // Create and download the file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+      saveAs(
+        blob,
+        `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
+      );
+
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error("Error exporting to CSV:", error);
+      alert("Failed to export to CSV. Please try again.");
+    }
+  };
+
+  // Export to Excel
+  const exportToExcel = () => {
+    try {
+      const exportData = formatSuppliersForExport(filteredSuppliers);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers");
+
+      // Create and download the file
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array",
+      });
+      const blob = new Blob([excelBuffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+      });
+      saveAs(
+        blob,
+        `suppliers_export_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      alert("Failed to export to Excel. Please try again.");
+    }
+  };
+
+  // Export to PDF
+  const exportToPDF = () => {
+    try {
+      const exportData = formatSuppliersForExport(filteredSuppliers);
+      const headers = Object.keys(exportData[0]);
+      const rows = exportData.map((row) =>
+        headers.map((header) => row[header])
+      );
+
+      // Create PDF document
+      const doc = new jsPDF("landscape");
+
+      // Add title
+      doc.setFontSize(18);
+      doc.text("Suppliers Data Export", 14, 22);
+
+      // Add date
+      doc.setFontSize(11);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+
+      // Add table
+      doc.autoTable({
+        head: [headers],
+        body: rows,
+        startY: 35,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      // Save the PDF
+      doc.save(
+        `suppliers_export_${new Date().toISOString().split("T")[0]}.pdf`
+      );
+
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error("Error exporting to PDF:", error);
+      alert("Failed to export to PDF. Please try again.");
+    }
+  };
+
   return (
     <div
       className="min-h-screen p-4 md:p-8"
@@ -618,6 +757,65 @@ const SuppliersList = () => {
             Supplier <span style={{ color: colors.primary }}>Registry</span>
           </h1>
           <div className="flex space-x-2">
+            {/* Export Menu */}
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                style={{
+                  backgroundColor: showExportMenu
+                    ? colors.primary
+                    : colors.panel,
+                  color: showExportMenu ? colors.background : colors.textMuted,
+                }}
+                onClick={() => setShowExportMenu(!showExportMenu)}
+              >
+                <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
+                Export Data
+              </motion.button>
+
+              {/* Export Dropdown Menu */}
+              <AnimatePresence>
+                {showExportMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 mt-2 z-10 w-48 rounded-md shadow-lg"
+                    style={{ backgroundColor: colors.panel }}
+                  >
+                    <div className="py-1 rounded-md">
+                      <button
+                        onClick={exportToCSV}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <DocumentIcon className="h-4 w-4 mr-3" />
+                        Export as CSV
+                      </button>
+                      <button
+                        onClick={exportToExcel}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <TableCellsIcon className="h-4 w-4 mr-3" />
+                        Export as Excel
+                      </button>
+                      <button
+                        onClick={exportToPDF}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <DocumentIcon className="h-4 w-4 mr-3" />
+                        Export as PDF
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
