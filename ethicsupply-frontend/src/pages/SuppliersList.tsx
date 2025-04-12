@@ -876,27 +876,49 @@ const SuppliersList = () => {
   // Format supplier data for export
   const formatSuppliersForExport = (suppliers: Supplier[]) => {
     return suppliers.map((supplier) => ({
-      Name: supplier.name || "N/A",
-      ID: supplier._id || supplier.id || "N/A",
+      "Supplier Name": supplier.name || "N/A",
       Country: supplier.country || "N/A",
       Industry: supplier.industry || "N/A",
-      "Ethical Score": formatScore(supplier.ethical_score),
-      "Environmental Score": formatScore(supplier.environmental_score),
-      "Social Score": formatScore(supplier.social_score),
-      "Governance Score": formatScore(supplier.governance_score),
       "Risk Level": supplier.risk_level || "N/A",
-      "Date Added": new Date(
-        supplier.created_at || Date.now()
-      ).toLocaleDateString(),
+      "Ethical Score":
+        supplier.ethical_score !== null && supplier.ethical_score !== undefined
+          ? supplier.ethical_score > 0 && supplier.ethical_score <= 1
+            ? (supplier.ethical_score * 100).toFixed(1)
+            : supplier.ethical_score.toFixed(1)
+          : "N/A",
+      "Environmental Score":
+        supplier.environmental_score !== null &&
+        supplier.environmental_score !== undefined
+          ? supplier.environmental_score > 0 &&
+            supplier.environmental_score <= 1
+            ? (supplier.environmental_score * 100).toFixed(1)
+            : supplier.environmental_score.toFixed(1)
+          : "N/A",
+      "Social Score":
+        supplier.social_score !== null && supplier.social_score !== undefined
+          ? supplier.social_score > 0 && supplier.social_score <= 1
+            ? (supplier.social_score * 100).toFixed(1)
+            : supplier.social_score.toFixed(1)
+          : "N/A",
+      "Governance Score":
+        supplier.governance_score !== null &&
+        supplier.governance_score !== undefined
+          ? supplier.governance_score > 0 && supplier.governance_score <= 1
+            ? (supplier.governance_score * 100).toFixed(1)
+            : supplier.governance_score.toFixed(1)
+          : "N/A",
+      "CO2 Emissions":
+        supplier.co2_emissions !== null && supplier.co2_emissions !== undefined
+          ? supplier.co2_emissions.toFixed(2)
+          : "N/A",
+      "Delivery Efficiency":
+        supplier.delivery_efficiency !== null &&
+        supplier.delivery_efficiency !== undefined
+          ? supplier.delivery_efficiency.toFixed(2)
+          : "N/A",
+      Status: supplier.status || "N/A",
+      "Last Updated": supplier.last_updated || "N/A",
     }));
-  };
-
-  // Helper to format scores consistently
-  const formatScore = (score: number | null | undefined) => {
-    if (score === null || score === undefined) return "N/A";
-    return score > 0 && score <= 1
-      ? (score * 100).toFixed(1)
-      : score.toFixed(1);
   };
 
   // Export to CSV
