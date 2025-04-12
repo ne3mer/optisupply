@@ -301,11 +301,11 @@ const SliderField = ({
 };
 
 // --- Helper Components for Real-time ESG Scoring ---
-const ScoreGauge = ({ value, label, color }) => {
+const ScoreGauge = ({ value, label, color, impactWeight = null }) => {
   const normalizedValue = value > 0 && value <= 1 ? value * 100 : value;
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center group relative">
       <div className="w-20 h-20 mb-2">
         <CircularProgressbar
           value={normalizedValue || 0}
@@ -322,10 +322,118 @@ const ScoreGauge = ({ value, label, color }) => {
       <span className="text-xs font-medium" style={{ color: colors.textMuted }}>
         {label}
       </span>
+
+      {/* Impact Weight Tooltip */}
+      {impactWeight !== null && (
+        <div
+          className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full mb-2 px-2 py-1 rounded text-xs whitespace-nowrap -translate-x-1/2 left-1/2 z-10"
+          style={{
+            backgroundColor: colors.panel,
+            color: color,
+            border: `1px solid ${color}`,
+          }}
+        >
+          <span className="font-semibold">
+            {(impactWeight * 100).toFixed(0)}% Impact
+          </span>{" "}
+          on overall score
+          <div
+            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-2 h-2"
+            style={{
+              backgroundColor: colors.panel,
+              border: `1px solid ${color}`,
+              borderTop: "none",
+              borderLeft: "none",
+            }}
+          ></div>
+        </div>
+      )}
     </div>
   );
 };
 
+// Component to display metric impact weight
+const MetricImpactRow = ({
+  label,
+  value,
+  weight,
+  category,
+  unit = "",
+  isRisk = false,
+}) => {
+  const normalizedValue =
+    typeof value === "number"
+      ? value > 0 && value <= 1
+        ? value * 100
+        : value
+      : 0;
+
+  // Get impact percentage (value × weight)
+  const impact = normalizedValue * weight;
+
+  // Determine color based on value and if it's a risk metric (where lower is better)
+  const getValueColor = () => {
+    if (isRisk) {
+      // For risk metrics, lower is better
+      if (normalizedValue < 30) return colors.success;
+      if (normalizedValue < 70) return colors.warning;
+      return colors.error;
+    } else {
+      // For most metrics, higher is better
+      if (normalizedValue > 70) return colors.success;
+      if (normalizedValue > 30) return colors.warning;
+      return colors.error;
+    }
+  };
+
+  // Category colors
+  const categoryColors = {
+    environmental: colors.success,
+    social: colors.primary,
+    governance: colors.secondary,
+  };
+
+  const categoryColor = categoryColors[category] || colors.text;
+
+  return (
+    <div
+      className="flex items-center justify-between py-1 border-b border-dashed last:border-0"
+      style={{ borderColor: `${colors.accent}30` }}
+    >
+      <div className="flex items-center">
+        <div
+          className="w-2 h-2 mr-2 rounded-full"
+          style={{ backgroundColor: categoryColor }}
+        ></div>
+        <span style={{ color: colors.text }}>{label}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span style={{ color: getValueColor() }}>
+          {normalizedValue.toFixed(1)}
+          {unit}
+        </span>
+        <div className="flex flex-col items-end">
+          <div className="flex items-center gap-1">
+            <div className="h-1 w-12 rounded-full bg-gray-700">
+              <div
+                className="h-1 rounded-full"
+                style={{
+                  width: `${weight * 100}%`,
+                  backgroundColor: categoryColor,
+                }}
+              ></div>
+            </div>
+            <span className="text-xs" style={{ color: colors.textMuted }}>
+              {(weight * 100).toFixed(0)}%
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Risk Badge Component
 const RiskBadge = ({ riskLevel }) => {
   const getRiskColor = (level) => {
     switch (level.toLowerCase()) {
@@ -364,92 +472,98 @@ const RiskBadge = ({ riskLevel }) => {
 };
 
 const ESGScorePreview = ({ formData }) => {
+  // Define category weights for the overall score
+  const categoryWeights = {
+    environmental: 0.33,
+    social: 0.33,
+    governance: 0.34,
+  };
+
+  // Define metric weights within each category
+  const environmentalWeights = {
+    energy_efficiency: 0.25,
+    waste_management_score: 0.25,
+    pollution_control: 0.2,
+    renewable_energy_percent: 0.3,
+  };
+
+  const socialWeights = {
+    wage_fairness: 0.25,
+    human_rights_index: 0.3,
+    diversity_inclusion_score: 0.15,
+    community_engagement: 0.15,
+    worker_safety: 0.15,
+  };
+
+  const governanceWeights = {
+    transparency_score: 0.25,
+    corruption_risk: 0.25,
+    board_diversity: 0.15,
+    ethics_program: 0.2,
+    compliance_systems: 0.15,
+  };
+
+  // Calculate normalized renewable energy percentage (0-1 scale)
+  const normalizedRenewableEnergy =
+    (formData.renewable_energy_percent || 0) / 100;
+
   // Calculate environmental score - weighted average of environmental metrics
   const environmentalScore = useMemo(() => {
-    const weights = {
-      energy_efficiency: 0.25,
-      waste_management_score: 0.25,
-      pollution_control: 0.2,
-      renewable_energy_percent: 0.3, // Normalize from 0-100 to 0-1
-    };
-
-    // Calculate normalized renewable energy percentage (0-1 scale)
-    const normalizedRenewableEnergy =
-      (formData.renewable_energy_percent || 0) / 100;
-
     // Weighted average calculation
     const weightedSum =
-      (formData.energy_efficiency || 0) * weights.energy_efficiency +
-      (formData.waste_management_score || 0) * weights.waste_management_score +
-      (formData.pollution_control || 0) * weights.pollution_control +
-      normalizedRenewableEnergy * weights.renewable_energy_percent;
+      (formData.energy_efficiency || 0) *
+        environmentalWeights.energy_efficiency +
+      (formData.waste_management_score || 0) *
+        environmentalWeights.waste_management_score +
+      (formData.pollution_control || 0) *
+        environmentalWeights.pollution_control +
+      normalizedRenewableEnergy * environmentalWeights.renewable_energy_percent;
 
     // Return the score rounded to 2 decimal places
     return Math.round(weightedSum * 100) / 100;
-  }, [formData]);
+  }, [formData, normalizedRenewableEnergy]);
 
   // Calculate social score - weighted average of social metrics
   const socialScore = useMemo(() => {
-    const weights = {
-      wage_fairness: 0.25,
-      human_rights_index: 0.3,
-      diversity_inclusion_score: 0.15,
-      community_engagement: 0.15,
-      worker_safety: 0.15,
-    };
-
     // Weighted average calculation
     const weightedSum =
-      (formData.wage_fairness || 0) * weights.wage_fairness +
-      (formData.human_rights_index || 0) * weights.human_rights_index +
+      (formData.wage_fairness || 0) * socialWeights.wage_fairness +
+      (formData.human_rights_index || 0) * socialWeights.human_rights_index +
       (formData.diversity_inclusion_score || 0) *
-        weights.diversity_inclusion_score +
-      (formData.community_engagement || 0) * weights.community_engagement +
-      (formData.worker_safety || 0) * weights.worker_safety;
+        socialWeights.diversity_inclusion_score +
+      (formData.community_engagement || 0) *
+        socialWeights.community_engagement +
+      (formData.worker_safety || 0) * socialWeights.worker_safety;
 
     // Return the score rounded to 2 decimal places
     return Math.round(weightedSum * 100) / 100;
   }, [formData]);
+
+  // Invert corruption risk (1 - value) since lower corruption risk is better
+  const invertedCorruptionRisk = 1 - (formData.corruption_risk || 0);
 
   // Calculate governance score - weighted average of governance metrics
   const governanceScore = useMemo(() => {
-    const weights = {
-      transparency_score: 0.25,
-      corruption_risk: 0.25, // Lower is better, so we'll invert this
-      board_diversity: 0.15,
-      ethics_program: 0.2,
-      compliance_systems: 0.15,
-    };
-
-    // Invert corruption risk (1 - value) since lower corruption risk is better
-    const invertedCorruptionRisk = 1 - (formData.corruption_risk || 0);
-
     // Weighted average calculation
     const weightedSum =
-      (formData.transparency_score || 0) * weights.transparency_score +
-      invertedCorruptionRisk * weights.corruption_risk +
-      (formData.board_diversity || 0) * weights.board_diversity +
-      (formData.ethics_program || 0) * weights.ethics_program +
-      (formData.compliance_systems || 0) * weights.compliance_systems;
+      (formData.transparency_score || 0) *
+        governanceWeights.transparency_score +
+      invertedCorruptionRisk * governanceWeights.corruption_risk +
+      (formData.board_diversity || 0) * governanceWeights.board_diversity +
+      (formData.ethics_program || 0) * governanceWeights.ethics_program +
+      (formData.compliance_systems || 0) * governanceWeights.compliance_systems;
 
     // Return the score rounded to 2 decimal places
     return Math.round(weightedSum * 100) / 100;
-  }, [formData]);
+  }, [formData, invertedCorruptionRisk]);
 
   // Calculate overall ESG score
   const overallScore = useMemo(() => {
-    // Weight for each category
-    const weights = {
-      environmental: 0.33,
-      social: 0.33,
-      governance: 0.34,
-    };
-
     // Weighted average of the three component scores
     const weightedSum =
-      environmentalScore * weights.environmental +
-      socialScore * weights.social +
-      governanceScore * weights.governance;
+      environmentalScore * categoryWeights.environmental +
+      socialScore * categoryWeights.social +
+      governanceScore * categoryWeights.governance;
 
     // Return the score rounded to 2 decimal places
     return Math.round(weightedSum * 100) / 100;
@@ -462,6 +576,196 @@ const ESGScorePreview = ({ formData }) => {
     if (overallScore >= 0.25) return "High";
     return "Critical";
   }, [overallScore]);
+
+  // Get top contributing factors (both positive and negative)
+  const topContributors = useMemo(() => {
+    // Calculate impact of each metric on final score
+    const metrics = [
+      {
+        name: "Energy Efficiency",
+        value: formData.energy_efficiency || 0,
+        weight:
+          environmentalWeights.energy_efficiency *
+          categoryWeights.environmental,
+        category: "environmental",
+        isPositive: (formData.energy_efficiency || 0) > 0.6,
+      },
+      {
+        name: "Waste Management",
+        value: formData.waste_management_score || 0,
+        weight:
+          environmentalWeights.waste_management_score *
+          categoryWeights.environmental,
+        category: "environmental",
+        isPositive: (formData.waste_management_score || 0) > 0.6,
+      },
+      {
+        name: "Pollution Control",
+        value: formData.pollution_control || 0,
+        weight:
+          environmentalWeights.pollution_control *
+          categoryWeights.environmental,
+        category: "environmental",
+        isPositive: (formData.pollution_control || 0) > 0.6,
+      },
+      {
+        name: "Renewable Energy",
+        value: normalizedRenewableEnergy,
+        weight:
+          environmentalWeights.renewable_energy_percent *
+          categoryWeights.environmental,
+        category: "environmental",
+        isPositive: normalizedRenewableEnergy > 0.6,
+      },
+      {
+        name: "Wage Fairness",
+        value: formData.wage_fairness || 0,
+        weight: socialWeights.wage_fairness * categoryWeights.social,
+        category: "social",
+        isPositive: (formData.wage_fairness || 0) > 0.6,
+      },
+      {
+        name: "Human Rights Index",
+        value: formData.human_rights_index || 0,
+        weight: socialWeights.human_rights_index * categoryWeights.social,
+        category: "social",
+        isPositive: (formData.human_rights_index || 0) > 0.6,
+      },
+      {
+        name: "Diversity & Inclusion",
+        value: formData.diversity_inclusion_score || 0,
+        weight:
+          socialWeights.diversity_inclusion_score * categoryWeights.social,
+        category: "social",
+        isPositive: (formData.diversity_inclusion_score || 0) > 0.6,
+      },
+      {
+        name: "Community Engagement",
+        value: formData.community_engagement || 0,
+        weight: socialWeights.community_engagement * categoryWeights.social,
+        category: "social",
+        isPositive: (formData.community_engagement || 0) > 0.6,
+      },
+      {
+        name: "Worker Safety",
+        value: formData.worker_safety || 0,
+        weight: socialWeights.worker_safety * categoryWeights.social,
+        category: "social",
+        isPositive: (formData.worker_safety || 0) > 0.6,
+      },
+      {
+        name: "Transparency",
+        value: formData.transparency_score || 0,
+        weight:
+          governanceWeights.transparency_score * categoryWeights.governance,
+        category: "governance",
+        isPositive: (formData.transparency_score || 0) > 0.6,
+      },
+      {
+        name: "Corruption Risk",
+        value: invertedCorruptionRisk,
+        weight: governanceWeights.corruption_risk * categoryWeights.governance,
+        category: "governance",
+        isRisk: true,
+        isPositive: invertedCorruptionRisk > 0.6,
+      },
+      {
+        name: "Board Diversity",
+        value: formData.board_diversity || 0,
+        weight: governanceWeights.board_diversity * categoryWeights.governance,
+        category: "governance",
+        isPositive: (formData.board_diversity || 0) > 0.6,
+      },
+      {
+        name: "Ethics Program",
+        value: formData.ethics_program || 0,
+        weight: governanceWeights.ethics_program * categoryWeights.governance,
+        category: "governance",
+        isPositive: (formData.ethics_program || 0) > 0.6,
+      },
+      {
+        name: "Compliance Systems",
+        value: formData.compliance_systems || 0,
+        weight:
+          governanceWeights.compliance_systems * categoryWeights.governance,
+        category: "governance",
+        isPositive: (formData.compliance_systems || 0) > 0.6,
+      },
+    ];
+
+    // Calculate impact score (value × weight)
+    metrics.forEach((metric) => {
+      metric.impact = metric.value * metric.weight;
+    });
+
+    // Get top 3 positive contributors (highest value * weight)
+    const positiveContributors = [...metrics]
+      .filter((m) => m.isPositive)
+      .sort((a, b) => b.impact - a.impact)
+      .slice(0, 3);
+
+    // Get top 3 negative contributors (lowest value * weight)
+    const negativeContributors = [...metrics]
+      .filter((m) => !m.isPositive)
+      .sort((a, b) => a.impact - b.impact)
+      .slice(0, 3);
+
+    return { positive: positiveContributors, negative: negativeContributors };
+  }, [formData, normalizedRenewableEnergy, invertedCorruptionRisk]);
+
+  // Generate explainability text based on top contributors
+  const explainabilityText = useMemo(() => {
+    // No meaningful explanation if all values are default
+    if (overallScore === 0.5) {
+      return "This is a preliminary score based on default values. Adjust metric values to see a more accurate assessment.";
+    }
+
+    const positiveFactors = topContributors.positive
+      .map((factor) => `${factor.name} (${Math.round(factor.value * 100)}%)`)
+      .join(", ");
+
+    const negativeFactors = topContributors.negative
+      .map((factor) => `${factor.name} (${Math.round(factor.value * 100)}%)`)
+      .join(", ");
+
+    let text = `This supplier has an overall ESG score of ${Math.round(
+      overallScore * 100
+    )}%, placing it in the ${riskLevel.toLowerCase()} risk category. `;
+
+    if (topContributors.positive.length > 0) {
+      text += `The score benefits most from strong performance in ${positiveFactors}. `;
+    }
+
+    if (topContributors.negative.length > 0) {
+      text += `Areas with opportunity for improvement include ${negativeFactors}. `;
+    }
+
+    if (
+      environmentalScore > socialScore &&
+      environmentalScore > governanceScore
+    ) {
+      text += `The supplier shows particular strength in environmental practices. `;
+    } else if (
+      socialScore > environmentalScore &&
+      socialScore > governanceScore
+    ) {
+      text += `The supplier demonstrates strong performance in social responsibility. `;
+    } else if (
+      governanceScore > environmentalScore &&
+      governanceScore > socialScore
+    ) {
+      text += `The supplier excels in governance practices. `;
+    }
+
+    return text;
+  }, [
+    overallScore,
+    riskLevel,
+    topContributors,
+    environmentalScore,
+    socialScore,
+    governanceScore,
+  ]);
 
   return (
     <motion.div
@@ -483,12 +787,19 @@ const ESGScorePreview = ({ formData }) => {
           value={environmentalScore}
           label="Environmental"
           color={colors.success}
+          impactWeight={categoryWeights.environmental}
         />
-        <ScoreGauge value={socialScore} label="Social" color={colors.primary} />
+        <ScoreGauge
+          value={socialScore}
+          label="Social"
+          color={colors.primary}
+          impactWeight={categoryWeights.social}
+        />
         <ScoreGauge
           value={governanceScore}
           label="Governance"
           color={colors.secondary}
+          impactWeight={categoryWeights.governance}
         />
         <div
           className="h-12 w-px mx-2 opacity-30"
@@ -522,7 +833,98 @@ const ESGScorePreview = ({ formData }) => {
         <RiskBadge riskLevel={riskLevel} />
       </div>
 
-      <div className="text-xs text-center" style={{ color: colors.textMuted }}>
+      {/* Score Explainability Section */}
+      <div
+        className="mt-6 border-t pt-4"
+        style={{ borderColor: colors.accent + "20" }}
+      >
+        <div className="flex items-center mb-3">
+          <InformationCircleIcon
+            className="h-5 w-5 mr-2"
+            style={{ color: colors.primary }}
+          />
+          <h4 className="font-medium" style={{ color: colors.primary }}>
+            Score Explanation
+          </h4>
+        </div>
+        <p className="text-sm mb-4" style={{ color: colors.text }}>
+          {explainabilityText}
+        </p>
+
+        {/* Key Impact Factors */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 mt-4">
+          {/* Left column: Top positive contributors */}
+          <div>
+            <h5
+              className="text-xs uppercase font-medium mb-2"
+              style={{ color: colors.success }}
+            >
+              Top Positive Contributors
+            </h5>
+            <div className="bg-black bg-opacity-20 rounded p-2">
+              {topContributors.positive.length > 0 ? (
+                topContributors.positive.map((factor, index) => (
+                  <MetricImpactRow
+                    key={index}
+                    label={factor.name}
+                    value={factor.value}
+                    weight={factor.weight}
+                    category={factor.category}
+                    isRisk={factor.isRisk}
+                  />
+                ))
+              ) : (
+                <div
+                  className="text-xs italic text-center py-2"
+                  style={{ color: colors.textMuted }}
+                >
+                  Adjust values to see positive contributors
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right column: Areas for improvement */}
+          <div>
+            <h5
+              className="text-xs uppercase font-medium mb-2"
+              style={{ color: colors.error }}
+            >
+              Areas for Improvement
+            </h5>
+            <div className="bg-black bg-opacity-20 rounded p-2">
+              {topContributors.negative.length > 0 ? (
+                topContributors.negative.map((factor, index) => (
+                  <MetricImpactRow
+                    key={index}
+                    label={factor.name}
+                    value={factor.value}
+                    weight={factor.weight}
+                    category={factor.category}
+                    isRisk={factor.isRisk}
+                  />
+                ))
+              ) : (
+                <div
+                  className="text-xs italic text-center py-2"
+                  style={{ color: colors.textMuted }}
+                >
+                  Adjust values to see areas for improvement
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="text-xs text-center mt-6"
+        style={{ color: colors.textMuted }}
+      >
+        <span className="block mb-1">
+          Hover over each category score to see its impact weight on the overall
+          score.
+        </span>
         This assessment is calculated in real-time as you input data. Scores
         range from 0-100.
       </div>
