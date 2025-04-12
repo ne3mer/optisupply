@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { addSupplier } from "../services/api";
 import { motion } from "framer-motion";
@@ -14,7 +14,10 @@ import {
   DocumentChartBarIcon,
   TruckIcon,
   PlusCircleIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 
 // --- Reusing Theme Colors from SupplierEditForm ---
 const colors = {
@@ -290,11 +293,245 @@ const SliderField = ({
   );
 };
 
+// --- Helper Components for Real-time ESG Scoring ---
+const ScoreGauge = ({ value, label, color }) => {
+  const normalizedValue = value > 0 && value <= 1 ? value * 100 : value;
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="w-20 h-20 mb-2">
+        <CircularProgressbar
+          value={normalizedValue || 0}
+          maxValue={100}
+          text={`${Math.round(normalizedValue || 0)}`}
+          styles={buildStyles({
+            textSize: "28px",
+            pathColor: color,
+            textColor: color,
+            trailColor: color + "20",
+          })}
+        />
+      </div>
+      <span className="text-xs font-medium" style={{ color: colors.textMuted }}>
+        {label}
+      </span>
+    </div>
+  );
+};
+
+const RiskBadge = ({ riskLevel }) => {
+  const getRiskColor = (level) => {
+    switch (level.toLowerCase()) {
+      case "low":
+        return colors.success;
+      case "medium":
+        return colors.warning;
+      case "high":
+        return colors.error;
+      case "critical":
+        return colors.secondary;
+      default:
+        return colors.textMuted;
+    }
+  };
+
+  const color = getRiskColor(riskLevel);
+
+  return (
+    <div className="flex flex-col items-center">
+      <span
+        className="px-4 py-1 rounded-full text-sm font-semibold uppercase tracking-wider"
+        style={{
+          backgroundColor: color + "20",
+          color: color,
+          border: `1px solid ${color}40`,
+        }}
+      >
+        {riskLevel}
+      </span>
+      <span className="text-xs mt-1" style={{ color: colors.textMuted }}>
+        Risk Level
+      </span>
+    </div>
+  );
+};
+
+const ESGScorePreview = ({ formData }) => {
+  // Calculate environmental score - weighted average of environmental metrics
+  const environmentalScore = useMemo(() => {
+    const weights = {
+      energy_efficiency: 0.25,
+      waste_management_score: 0.25,
+      pollution_control: 0.2,
+      renewable_energy_percent: 0.3, // Normalize from 0-100 to 0-1
+    };
+
+    // Calculate normalized renewable energy percentage (0-1 scale)
+    const normalizedRenewableEnergy =
+      (formData.renewable_energy_percent || 0) / 100;
+
+    // Weighted average calculation
+    const weightedSum =
+      (formData.energy_efficiency || 0) * weights.energy_efficiency +
+      (formData.waste_management_score || 0) * weights.waste_management_score +
+      (formData.pollution_control || 0) * weights.pollution_control +
+      normalizedRenewableEnergy * weights.renewable_energy_percent;
+
+    // Return the score rounded to 2 decimal places
+    return Math.round(weightedSum * 100) / 100;
+  }, [formData]);
+
+  // Calculate social score - weighted average of social metrics
+  const socialScore = useMemo(() => {
+    const weights = {
+      wage_fairness: 0.25,
+      human_rights_index: 0.3,
+      diversity_inclusion_score: 0.15,
+      community_engagement: 0.15,
+      worker_safety: 0.15,
+    };
+
+    // Weighted average calculation
+    const weightedSum =
+      (formData.wage_fairness || 0) * weights.wage_fairness +
+      (formData.human_rights_index || 0) * weights.human_rights_index +
+      (formData.diversity_inclusion_score || 0) *
+        weights.diversity_inclusion_score +
+      (formData.community_engagement || 0) * weights.community_engagement +
+      (formData.worker_safety || 0) * weights.worker_safety;
+
+    // Return the score rounded to 2 decimal places
+    return Math.round(weightedSum * 100) / 100;
+  }, [formData]);
+
+  // Calculate governance score - weighted average of governance metrics
+  const governanceScore = useMemo(() => {
+    const weights = {
+      transparency_score: 0.25,
+      corruption_risk: 0.25, // Lower is better, so we'll invert this
+      board_diversity: 0.15,
+      ethics_program: 0.2,
+      compliance_systems: 0.15,
+    };
+
+    // Invert corruption risk (1 - value) since lower corruption risk is better
+    const invertedCorruptionRisk = 1 - (formData.corruption_risk || 0);
+
+    // Weighted average calculation
+    const weightedSum =
+      (formData.transparency_score || 0) * weights.transparency_score +
+      invertedCorruptionRisk * weights.corruption_risk +
+      (formData.board_diversity || 0) * weights.board_diversity +
+      (formData.ethics_program || 0) * weights.ethics_program +
+      (formData.compliance_systems || 0) * weights.compliance_systems;
+
+    // Return the score rounded to 2 decimal places
+    return Math.round(weightedSum * 100) / 100;
+  }, [formData]);
+
+  // Calculate overall ESG score
+  const overallScore = useMemo(() => {
+    // Weight for each category
+    const weights = {
+      environmental: 0.33,
+      social: 0.33,
+      governance: 0.34,
+    };
+
+    // Weighted average of the three component scores
+    const weightedSum =
+      environmentalScore * weights.environmental +
+      socialScore * weights.social +
+      governanceScore * weights.governance;
+
+    // Return the score rounded to 2 decimal places
+    return Math.round(weightedSum * 100) / 100;
+  }, [environmentalScore, socialScore, governanceScore]);
+
+  // Determine risk level based on overall score
+  const riskLevel = useMemo(() => {
+    if (overallScore >= 0.75) return "Low";
+    if (overallScore >= 0.5) return "Medium";
+    if (overallScore >= 0.25) return "High";
+    return "Critical";
+  }, [overallScore]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="bg-white bg-opacity-10 backdrop-blur-md p-5 rounded-xl border shadow-lg"
+      style={{ borderColor: colors.accent + "40" }}
+    >
+      <h3
+        className="text-lg font-semibold mb-4 text-center"
+        style={{ color: colors.primary }}
+      >
+        Real-Time ESG Assessment
+      </h3>
+
+      <div className="flex flex-wrap items-center justify-center gap-6 mb-6">
+        <ScoreGauge
+          value={environmentalScore}
+          label="Environmental"
+          color={colors.success}
+        />
+        <ScoreGauge value={socialScore} label="Social" color={colors.primary} />
+        <ScoreGauge
+          value={governanceScore}
+          label="Governance"
+          color={colors.secondary}
+        />
+        <div
+          className="h-12 w-px mx-2 opacity-30"
+          style={{ backgroundColor: colors.accent }}
+        ></div>
+        <div className="flex flex-col items-center">
+          <div className="w-28 h-28">
+            <CircularProgressbar
+              value={overallScore * 100}
+              maxValue={100}
+              text={`${Math.round(overallScore * 100)}`}
+              styles={buildStyles({
+                textSize: "32px",
+                pathColor: colors.accent,
+                textColor: colors.text,
+                trailColor: colors.accent + "20",
+              })}
+            />
+          </div>
+          <span
+            className="text-sm font-medium mt-1"
+            style={{ color: colors.accent }}
+          >
+            Overall ESG Score
+          </span>
+        </div>
+        <div
+          className="h-12 w-px mx-2 opacity-30"
+          style={{ backgroundColor: colors.accent }}
+        ></div>
+        <RiskBadge riskLevel={riskLevel} />
+      </div>
+
+      <div className="text-xs text-center" style={{ color: colors.textMuted }}>
+        This assessment is calculated in real-time as you input data. Scores
+        range from 0-100.
+      </div>
+    </motion.div>
+  );
+};
+
 const AddSupplier = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+  const [lookupSuccess, setLookupSuccess] = useState(false);
+  const [registrationNumber, setRegistrationNumber] = useState("");
 
   // Form sections initial state
   const [formData, setFormData] = useState({
@@ -499,6 +736,9 @@ const AddSupplier = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Check if the form is in a loading state
+  const isLoading = isSubmitting || lookupLoading;
 
   // --- Render Logic ---
   if (isSubmitting) {
@@ -744,6 +984,11 @@ const AddSupplier = () => {
           </div>
         </motion.div>
       )}
+
+      {/* Real-Time ESG Score Preview - Add this right before the Form Layout */}
+      <div className="mb-8">
+        <ESGScorePreview formData={formData} />
+      </div>
 
       {/* Form Layout with Side Navigation */}
       <div className="flex flex-col md:flex-row gap-6">
@@ -1274,7 +1519,7 @@ const AddSupplier = () => {
 
                   <motion.button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isLoading}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.98 }}
                     className="px-7 py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center disabled:opacity-60 relative overflow-hidden group"
@@ -1294,7 +1539,7 @@ const AddSupplier = () => {
                       }}
                     />
 
-                    {isSubmitting ? (
+                    {isLoading ? (
                       <>
                         <ArrowPathIcon className="animate-spin h-5 w-5 mr-2" />
                         <span className="relative">Processing...</span>
