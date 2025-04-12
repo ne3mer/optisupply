@@ -436,8 +436,12 @@ const HomePage = () => {
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-500 text-sm mb-4 md:mb-0">
-              © 2023 OptiSupply. Budapest Metropolitan University. All rights
-              reserved.
+              © {new Date().getFullYear()} OptiSupply. Budapest Metropolitan
+              University. All rights reserved.
+              <br />
+              <span className="italic">
+                Developed and idea by Nima Afsharfar
+              </span>
             </p>
             <div className="flex space-x-4">
               <a
