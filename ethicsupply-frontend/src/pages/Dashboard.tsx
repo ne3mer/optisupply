@@ -14,6 +14,11 @@ import {
   ListBulletIcon,
   BeakerIcon,
   MapIcon,
+  DocumentArrowDownIcon,
+  DocumentChartBarIcon,
+  ClipboardDocumentCheckIcon,
+  PresentationChartLineIcon,
+  CalendarIcon,
 } from "@heroicons/react/24/outline";
 import {
   ResponsiveContainer,
@@ -60,6 +65,10 @@ import ChartInfoOverlay from "../components/ChartInfoOverlay";
 import ChartMetricsExplainer from "../components/ChartMetricsExplainer";
 import InsightsPanel, { chartInsights } from "../components/InsightsPanel";
 import SuppliersByCountryChart from "../components/SuppliersByCountryChart";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
+import html2canvas from "html2canvas";
 
 // Define chart info content
 const chartInfoContent = {
@@ -258,6 +267,666 @@ const KpiIndicator = ({
     {children}
   </motion.div>
 );
+
+// Report Generation
+const ReportGenerator = ({
+  dashboardData,
+  year = new Date().getFullYear(),
+}) => {
+  const [generating, setGenerating] = useState(false);
+  const [reportType, setReportType] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const reportContainerRef = React.useRef(null);
+
+  // Format data for report
+  const formatDataForReport = () => {
+    if (!dashboardData) return null;
+
+    return {
+      summary: {
+        title: `Annual ESG Performance Report ${year}`,
+        date: new Date().toLocaleDateString(),
+        totalSuppliers: dashboardData.totalSuppliers || 0,
+        avgEthicalScore: dashboardData.avgEthicalScore || 0,
+        avgCO2Emissions: dashboardData.avgCo2Emissions || 0,
+        riskBreakdown: dashboardData.riskBreakdown || {
+          low: 0,
+          medium: 0,
+          high: 0,
+        },
+      },
+      scoreDistribution: dashboardData.ethicalScoreDistribution || [],
+      co2ByIndustry: dashboardData.co2EmissionsByIndustry || [],
+      suppliersByCountry: dashboardData.suppliersByCountry || {},
+      waterUsageTrend: dashboardData.waterUsageTrend || [],
+      renewableEnergy: dashboardData.renewableEnergyAdoption || [],
+      sustainablePractices: dashboardData.sustainablePractices || [],
+      recentSuppliers: dashboardData.recentSuppliers || [],
+      mlInsights: [
+        {
+          title: "Predicted Trend Analysis",
+          description:
+            "Based on current trajectory, your overall ESG score is predicted to improve by 12% next quarter, primarily driven by improvements in the social responsibility domain.",
+          confidence: 0.87,
+        },
+        {
+          title: "Risk Factor Analysis",
+          description:
+            "Machine learning models have identified 3 suppliers with high potential for experiencing labor disputes in the next 6 months. Proactive engagement recommended.",
+          confidence: 0.82,
+        },
+        {
+          title: "Opportunity Detection",
+          description:
+            "Switching 15% of your energy suppliers to renewable sources would improve your environmental score by 22% with minimal cost impact based on current market conditions.",
+          confidence: 0.91,
+        },
+        {
+          title: "Anomaly Detection",
+          description:
+            "Unusual pattern detected in water usage reporting from 2 suppliers in Southeast Asia region. Data verification recommended.",
+          confidence: 0.78,
+        },
+      ],
+      improvementRecommendations: [
+        "Implement supplier diversity program to improve social score",
+        "Encourage top 10 carbon-emitting suppliers to set science-based targets",
+        "Develop water conservation incentives for water-intensive industries",
+        "Enhance supply chain transparency through blockchain tracking",
+      ],
+    };
+  };
+
+  // Generate and download PDF report
+  const generatePDFReport = async () => {
+    setGenerating(true);
+    const reportData = formatDataForReport();
+    if (!reportData) {
+      setGenerating(false);
+      return;
+    }
+
+    try {
+      // Create PDF document
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      // Add fancy background
+      doc.setFillColor(13, 15, 26); // Dark background color
+      doc.rect(0, 0, 210, 297, "F");
+
+      // Title page
+      doc.setTextColor(0, 240, 255); // Primary teal color
+      doc.setFontSize(24);
+      doc.text(reportData.summary.title, 105, 40, { align: "center" });
+
+      doc.setTextColor(224, 224, 255); // Text color
+      doc.setFontSize(12);
+      doc.text(`Generated on: ${reportData.summary.date}`, 105, 50, {
+        align: "center",
+      });
+
+      // Add your company logo or placeholder
+      // This would be implemented with an image in the real version
+      doc.setFillColor(77, 91, 255); // Accent color
+      doc.roundedRect(75, 70, 60, 60, 5, 5, "F");
+      doc.setTextColor(13, 15, 26);
+      doc.setFontSize(18);
+      doc.text("LOGO", 105, 100, { align: "center" });
+
+      // Summary section
+      doc.addPage();
+      doc.setFillColor(13, 15, 26);
+      doc.rect(0, 0, 210, 297, "F");
+
+      doc.setTextColor(0, 240, 255);
+      doc.setFontSize(18);
+      doc.text("Executive Summary", 105, 20, { align: "center" });
+
+      doc.setTextColor(224, 224, 255);
+      doc.setFontSize(11);
+      doc.text(
+        "This report provides a comprehensive overview of your supply chain's ESG performance",
+        105,
+        30,
+        { align: "center" }
+      );
+      doc.text(
+        "for the past year, with detailed analytics and actionable insights.",
+        105,
+        36,
+        { align: "center" }
+      );
+
+      // Key metrics
+      doc.setFillColor(25, 28, 43);
+      doc.roundedRect(20, 45, 170, 60, 3, 3, "F");
+
+      doc.setTextColor(138, 148, 200);
+      doc.text("Total Suppliers", 40, 58);
+      doc.text("Avg. Ethical Score", 95, 58);
+      doc.text("Avg. CO₂ Emissions", 150, 58);
+
+      doc.setTextColor(0, 240, 255);
+      doc.setFontSize(18);
+      doc.text(reportData.summary.totalSuppliers.toString(), 40, 70);
+      doc.text(`${Math.round(reportData.summary.avgEthicalScore)}%`, 95, 70);
+      doc.text(`${reportData.summary.avgCO2Emissions.toFixed(1)}t`, 150, 70);
+
+      // Risk breakdown table
+      doc.setTextColor(0, 240, 255);
+      doc.setFontSize(14);
+      doc.text("Risk Distribution", 105, 120, { align: "center" });
+
+      const riskData = [
+        ["Risk Level", "Count", "Percentage"],
+        [
+          "Low Risk",
+          reportData.summary.riskBreakdown.low || 0,
+          `${(
+            ((reportData.summary.riskBreakdown.low || 0) /
+              reportData.summary.totalSuppliers) *
+            100
+          ).toFixed(1)}%`,
+        ],
+        [
+          "Medium Risk",
+          reportData.summary.riskBreakdown.medium || 0,
+          `${(
+            ((reportData.summary.riskBreakdown.medium || 0) /
+              reportData.summary.totalSuppliers) *
+            100
+          ).toFixed(1)}%`,
+        ],
+        [
+          "High Risk",
+          reportData.summary.riskBreakdown.high || 0,
+          `${(
+            ((reportData.summary.riskBreakdown.high || 0) /
+              reportData.summary.totalSuppliers) *
+            100
+          ).toFixed(1)}%`,
+        ],
+      ];
+
+      autoTable(doc, {
+        head: [riskData[0]],
+        body: riskData.slice(1),
+        startY: 130,
+        styles: {
+          font: "helvetica",
+          fillColor: [25, 28, 43],
+          textColor: [224, 224, 255],
+          lineColor: [77, 91, 255, 0.2],
+        },
+        headStyles: {
+          fillColor: [77, 91, 255],
+          textColor: [224, 224, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [30, 33, 48],
+        },
+      });
+
+      // ML Insights page
+      doc.addPage();
+      doc.setFillColor(13, 15, 26);
+      doc.rect(0, 0, 210, 297, "F");
+
+      doc.setTextColor(255, 0, 255); // Secondary color
+      doc.setFontSize(18);
+      doc.text("AI-Powered Insights", 105, 20, { align: "center" });
+
+      doc.setFillColor(25, 28, 43);
+      reportData.mlInsights.forEach((insight, index) => {
+        const yPos = 40 + index * 45;
+
+        // Insight box
+        doc.setFillColor(25, 28, 43);
+        doc.roundedRect(20, yPos, 170, 35, 3, 3, "F");
+
+        // Title
+        doc.setTextColor(0, 240, 255);
+        doc.setFontSize(12);
+        doc.text(insight.title, 25, yPos + 10);
+
+        // Confidence pill
+        doc.setFillColor(77, 91, 255, 0.2);
+        const confidenceText = `${(insight.confidence * 100).toFixed(
+          0
+        )}% confidence`;
+        const confidenceWidth = doc.getTextWidth(confidenceText) + 10;
+        doc.roundedRect(
+          170 - confidenceWidth,
+          yPos + 5,
+          confidenceWidth,
+          7,
+          3,
+          3,
+          "F"
+        );
+
+        doc.setTextColor(138, 148, 200);
+        doc.setFontSize(8);
+        doc.text(confidenceText, 170 - confidenceWidth / 2, yPos + 9, {
+          align: "center",
+        });
+
+        // Description
+        doc.setTextColor(224, 224, 255);
+        doc.setFontSize(10);
+        const splitDescription = doc.splitTextToSize(insight.description, 160);
+        doc.text(splitDescription, 25, yPos + 18);
+      });
+
+      // Recommendations
+      doc.addPage();
+      doc.setFillColor(13, 15, 26);
+      doc.rect(0, 0, 210, 297, "F");
+
+      doc.setTextColor(0, 255, 143); // Success color
+      doc.setFontSize(18);
+      doc.text("Improvement Recommendations", 105, 20, { align: "center" });
+
+      doc.setTextColor(224, 224, 255);
+      doc.setFontSize(11);
+      doc.text(
+        "Based on data analysis and industry benchmarks, we recommend these actions:",
+        105,
+        32,
+        { align: "center" }
+      );
+
+      doc.setFillColor(25, 28, 43);
+      doc.roundedRect(20, 40, 170, 80, 3, 3, "F");
+
+      doc.setTextColor(224, 224, 255);
+      reportData.improvementRecommendations.forEach((recommendation, index) => {
+        const yPos = 55 + index * 15;
+
+        // Bullet point
+        doc.setFillColor(0, 240, 255);
+        doc.circle(30, yPos - 4, 1.5, "F");
+
+        // Recommendation text
+        doc.text(recommendation, 35, yPos);
+      });
+
+      // Recent suppliers
+      if (reportData.recentSuppliers.length > 0) {
+        const supplierData = [["Supplier", "Country", "ESG Score", "Date"]];
+
+        reportData.recentSuppliers.forEach((supplier) => {
+          supplierData.push([
+            supplier.name || "N/A",
+            supplier.country || "N/A",
+            supplier.ethical_score
+              ? `${Math.round(supplier.ethical_score)}%`
+              : "N/A",
+            supplier.date || "N/A",
+          ]);
+        });
+
+        doc.setTextColor(0, 240, 255);
+        doc.setFontSize(14);
+        doc.text("Recent Supplier Additions", 105, 140, { align: "center" });
+
+        autoTable(doc, {
+          head: [supplierData[0]],
+          body: supplierData.slice(1),
+          startY: 150,
+          styles: {
+            font: "helvetica",
+            fillColor: [25, 28, 43],
+            textColor: [224, 224, 255],
+            lineColor: [77, 91, 255, 0.2],
+          },
+          headStyles: {
+            fillColor: [77, 91, 255],
+            textColor: [224, 224, 255],
+            fontStyle: "bold",
+          },
+          alternateRowStyles: {
+            fillColor: [30, 33, 48],
+          },
+        });
+      }
+
+      // Footer on all pages
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+
+        // Footer separator
+        doc.setDrawColor(77, 91, 255, 0.3);
+        doc.line(20, 280, 190, 280);
+
+        // Footer text
+        doc.setTextColor(138, 148, 200);
+        doc.setFontSize(8);
+        doc.text(
+          `Annual ESG Performance Report ${year} | Generated with EthicSupply AI | Page ${i} of ${pageCount}`,
+          105,
+          288,
+          { align: "center" }
+        );
+      }
+
+      // Save the PDF
+      doc.save(`ESG_Annual_Report_${year}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF report:", error);
+      alert(
+        "An error occurred while generating the PDF report. Please try again."
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  // Generate and download Excel report
+  const generateExcelReport = async () => {
+    setGenerating(true);
+    const reportData = formatDataForReport();
+    if (!reportData) {
+      setGenerating(false);
+      return;
+    }
+
+    try {
+      // Create workbook and worksheets
+      const wb = XLSX.utils.book_new();
+
+      // Summary sheet
+      const summaryData = [
+        ["Annual ESG Performance Report", year],
+        ["Generated on", new Date().toLocaleDateString()],
+        [""],
+        ["Key Metrics", "Value"],
+        ["Total Suppliers", reportData.summary.totalSuppliers],
+        [
+          "Average ESG Score",
+          `${Math.round(reportData.summary.avgEthicalScore)}%`,
+        ],
+        [
+          "Average CO₂ Emissions",
+          `${reportData.summary.avgCO2Emissions.toFixed(1)} tons`,
+        ],
+        [""],
+        ["Risk Distribution", "Count", "Percentage"],
+        [
+          "Low Risk",
+          reportData.summary.riskBreakdown.low || 0,
+          `${(
+            ((reportData.summary.riskBreakdown.low || 0) /
+              reportData.summary.totalSuppliers) *
+            100
+          ).toFixed(1)}%`,
+        ],
+        [
+          "Medium Risk",
+          reportData.summary.riskBreakdown.medium || 0,
+          `${(
+            ((reportData.summary.riskBreakdown.medium || 0) /
+              reportData.summary.totalSuppliers) *
+            100
+          ).toFixed(1)}%`,
+        ],
+        [
+          "High Risk",
+          reportData.summary.riskBreakdown.high || 0,
+          `${(
+            ((reportData.summary.riskBreakdown.high || 0) /
+              reportData.summary.totalSuppliers) *
+            100
+          ).toFixed(1)}%`,
+        ],
+      ];
+
+      const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, summarySheet, "Executive Summary");
+
+      // Score Distribution sheet
+      if (reportData.scoreDistribution.length > 0) {
+        const scoreDistData = [["Score Range", "Number of Suppliers"]];
+
+        reportData.scoreDistribution.forEach((item) => {
+          scoreDistData.push([item.range, item.count]);
+        });
+
+        const scoreDistSheet = XLSX.utils.aoa_to_sheet(scoreDistData);
+        XLSX.utils.book_append_sheet(wb, scoreDistSheet, "Score Distribution");
+      }
+
+      // CO2 by Industry sheet
+      if (reportData.co2ByIndustry.length > 0) {
+        const co2Data = [["Industry", "CO₂ Emissions (tons)"]];
+
+        reportData.co2ByIndustry.forEach((item) => {
+          co2Data.push([item.name, item.value]);
+        });
+
+        const co2Sheet = XLSX.utils.aoa_to_sheet(co2Data);
+        XLSX.utils.book_append_sheet(wb, co2Sheet, "CO2 Emissions");
+      }
+
+      // Water Usage Trend sheet
+      if (reportData.waterUsageTrend.length > 0) {
+        const waterData = [["Month", "Water Usage (m³)"]];
+
+        reportData.waterUsageTrend.forEach((item) => {
+          waterData.push([item.month, item.usage]);
+        });
+
+        const waterSheet = XLSX.utils.aoa_to_sheet(waterData);
+        XLSX.utils.book_append_sheet(wb, waterSheet, "Water Usage");
+      }
+
+      // Suppliers sheet
+      if (reportData.recentSuppliers.length > 0) {
+        const supplierData = [
+          ["Name", "Country", "ESG Score", "Trend", "Date"],
+        ];
+
+        reportData.recentSuppliers.forEach((supplier) => {
+          supplierData.push([
+            supplier.name || "N/A",
+            supplier.country || "N/A",
+            supplier.ethical_score || "N/A",
+            supplier.trend || "N/A",
+            supplier.date || "N/A",
+          ]);
+        });
+
+        const supplierSheet = XLSX.utils.aoa_to_sheet(supplierData);
+        XLSX.utils.book_append_sheet(wb, supplierSheet, "Suppliers");
+      }
+
+      // ML Insights sheet
+      const insightsData = [["AI-Powered Insights"], [""]];
+
+      reportData.mlInsights.forEach((insight, index) => {
+        insightsData.push([`Insight ${index + 1}: ${insight.title}`]);
+        insightsData.push([insight.description]);
+        insightsData.push([
+          `Confidence: ${(insight.confidence * 100).toFixed(0)}%`,
+        ]);
+        insightsData.push([""]);
+      });
+
+      const insightsSheet = XLSX.utils.aoa_to_sheet(insightsData);
+      XLSX.utils.book_append_sheet(wb, insightsSheet, "AI Insights");
+
+      // Improvement Recommendations sheet
+      const recommendationsData = [["Improvement Recommendations"], [""]];
+
+      reportData.improvementRecommendations.forEach((recommendation, index) => {
+        recommendationsData.push([`${index + 1}. ${recommendation}`]);
+      });
+
+      const recommendationsSheet = XLSX.utils.aoa_to_sheet(recommendationsData);
+      XLSX.utils.book_append_sheet(wb, recommendationsSheet, "Recommendations");
+
+      // Generate the Excel file
+      XLSX.writeFile(wb, `ESG_Annual_Report_${year}.xlsx`);
+    } catch (error) {
+      console.error("Error generating Excel report:", error);
+      alert(
+        "An error occurred while generating the Excel report. Please try again."
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleReportGeneration = (type) => {
+    setReportType(type);
+
+    if (type === "pdf") {
+      generatePDFReport();
+    } else if (type === "excel") {
+      generateExcelReport();
+    }
+  };
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="rounded-xl backdrop-blur-sm border p-5"
+        style={{
+          backgroundColor: colors.panel,
+          borderColor: colors.accent + "40",
+        }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div
+              className="p-2 rounded-lg mr-3"
+              style={{ backgroundColor: colors.background }}
+            >
+              <DocumentChartBarIcon
+                className="h-5 w-5"
+                style={{ color: colors.secondary }}
+              />
+            </div>
+            <h3
+              className="text-lg font-semibold"
+              style={{ color: colors.text }}
+            >
+              Annual ESG Reports
+            </h3>
+          </div>
+          <div className="flex items-center">
+            <CalendarIcon
+              className="h-5 w-5 mr-2"
+              style={{ color: colors.accent }}
+            />
+            <span style={{ color: colors.textMuted }}>{year}</span>
+          </div>
+        </div>
+
+        <p className="mb-4 text-sm" style={{ color: colors.textMuted }}>
+          Generate comprehensive reports with your ESG performance data,
+          including AI-powered insights and visualizations.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            onClick={() => handleReportGeneration("pdf")}
+            disabled={generating}
+            className="flex items-center justify-center p-4 rounded-lg border transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+            style={{
+              backgroundColor: colors.background,
+              borderColor: colors.primary + "40",
+              color: colors.primary,
+            }}
+          >
+            <div className="flex flex-col items-center">
+              {generating && reportType === "pdf" ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 border-t-2 border-b-2 rounded-full mb-2"
+                  style={{ borderColor: colors.primary }}
+                />
+              ) : (
+                <DocumentArrowDownIcon className="h-8 w-8 mb-2" />
+              )}
+              <span className="font-medium">
+                {generating && reportType === "pdf"
+                  ? "Generating..."
+                  : "PDF Report"}
+              </span>
+              <span
+                className="text-xs mt-1"
+                style={{ color: colors.textMuted }}
+              >
+                Interactive PDF with visualizations
+              </span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleReportGeneration("excel")}
+            disabled={generating}
+            className="flex items-center justify-center p-4 rounded-lg border transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+            style={{
+              backgroundColor: colors.background,
+              borderColor: colors.secondary + "40",
+              color: colors.secondary,
+            }}
+          >
+            <div className="flex flex-col items-center">
+              {generating && reportType === "excel" ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 border-t-2 border-b-2 rounded-full mb-2"
+                  style={{ borderColor: colors.secondary }}
+                />
+              ) : (
+                <ClipboardDocumentCheckIcon className="h-8 w-8 mb-2" />
+              )}
+              <span className="font-medium">
+                {generating && reportType === "excel"
+                  ? "Generating..."
+                  : "Excel Report"}
+              </span>
+              <span
+                className="text-xs mt-1"
+                style={{ color: colors.textMuted }}
+              >
+                Detailed data for further analysis
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div
+          className="mt-4 pt-4 border-t"
+          style={{ borderColor: colors.accent + "20" }}
+        >
+          <div className="flex items-center">
+            <PresentationChartLineIcon
+              className="h-4 w-4 mr-2"
+              style={{ color: colors.success }}
+            />
+            <span className="text-sm" style={{ color: colors.success }}>
+              Report includes AI-powered insights and trend analysis
+            </span>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  );
+};
 
 // --- Dashboard Component ---
 
@@ -540,6 +1209,16 @@ const Dashboard = () => {
               <SuppliersByCountryChart data={data.suppliersByCountry} />
             </DashboardCard>
           )}
+
+        {/* Report Generator - Add this section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="lg:col-span-3 mb-6"
+        >
+          <ReportGenerator dashboardData={data} />
+        </motion.div>
 
         {/* Add more charts here based on available data */}
         {/* e.g., Water Usage Trend, Renewable Energy, etc. */}
