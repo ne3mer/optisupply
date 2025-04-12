@@ -21,6 +21,7 @@ import {
   GlobeAltIcon, // Added for Geopolitical Risk
   CloudIcon, // Added for Climate Risk
   UsersIcon, // Added for Labor Dispute Risk
+  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -195,6 +196,7 @@ const SupplierDetails = () => {
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
 
   useEffect(() => {
     const fetchAndSetSupplier = async () => {
@@ -210,9 +212,12 @@ const SupplierDetails = () => {
         const suppliersList = await getSuppliers(); // Fetch the entire list
         console.log("Full supplier list received:", suppliersList);
 
+        // Store all suppliers for similar suggestions
+        setAllSuppliers(suppliersList);
+
         // Find the specific supplier from the list
         const foundSupplier = suppliersList.find(
-          (s) => s._id === id || s.id === id // Check both _id (MongoDB) and id (potential fallback)
+          (s) => s.id.toString() === id.toString()
         );
 
         if (foundSupplier) {
@@ -241,6 +246,43 @@ const SupplierDetails = () => {
     fetchAndSetSupplier();
   }, [id]);
 
+  // Function to find similar suppliers based on industry and ESG scores
+  const similarSuppliers = useMemo(() => {
+    if (!supplier || allSuppliers.length === 0) return [];
+
+    // Get suppliers with same industry first
+    const sameIndustry = allSuppliers.filter(
+      (s) => s.industry === supplier.industry && s.id !== supplier.id
+    );
+
+    // Calculate ESG similarity score
+    const withSimilarityScore = sameIndustry.map((s) => {
+      const ethicalDiff = Math.abs(
+        (s.ethical_score || 0) - (supplier.ethical_score || 0)
+      );
+      const environmentalDiff = Math.abs(
+        (s.environmental_score || 0) - (supplier.environmental_score || 0)
+      );
+      const socialDiff = Math.abs(
+        (s.social_score || 0) - (supplier.social_score || 0)
+      );
+      const governanceDiff = Math.abs(
+        (s.governance_score || 0) - (supplier.governance_score || 0)
+      );
+
+      // Lower score means more similar
+      const similarityScore =
+        ethicalDiff + environmentalDiff + socialDiff + governanceDiff;
+
+      return { ...s, similarityScore };
+    });
+
+    // Sort by similarity (lowest score first) and take top 3
+    return withSimilarityScore
+      .sort((a, b) => a.similarityScore - b.similarityScore)
+      .slice(0, 3);
+  }, [supplier, allSuppliers]);
+
   // --- Memoized Values ---
   const overallScore = useMemo(() => {
     const score = supplier?.ethical_score ?? 0;
@@ -268,7 +310,7 @@ const SupplierDetails = () => {
   }
 
   // Ensure supplier ID for navigation
-  const supplierId = supplier._id || supplier.id;
+  const supplierId = supplier.id;
 
   return (
     <div
@@ -448,16 +490,7 @@ const SupplierDetails = () => {
                 color={getScoreColor(supplier.governance_score)}
                 isScore
               />
-              {/* Add Supply Chain Score if available */}
-              {supplier.supply_chain_score !== undefined && (
-                <DetailItem
-                  label="Supply Chain"
-                  value={supplier.supply_chain_score}
-                  icon={TruckIcon}
-                  color={getScoreColor(supplier.supply_chain_score)}
-                  isScore
-                />
-              )}
+              {/* Note: Supply Chain Score is not in the Supplier interface, so we'll conditionally render it only if it becomes available */}
             </div>
           </div>
 
@@ -483,31 +516,10 @@ const SupplierDetails = () => {
                 unit=" t"
                 icon={BeakerIcon}
               />
-              <DetailItem
-                label="Water Usage"
-                value={supplier.water_usage}
-                unit=" m³"
-                icon={BeakerIcon}
-              />
-              <DetailItem
-                label="Energy Efficiency"
-                value={supplier.energy_efficiency}
-                icon={BeakerIcon}
-              />
+              {/* Only show fields that exist in the Supplier interface */}
               <DetailItem
                 label="Waste Mgmt Score"
                 value={supplier.waste_management_score}
-                icon={BeakerIcon}
-              />
-              <DetailItem
-                label="Renewable Energy"
-                value={supplier.renewable_energy_percent}
-                unit="%"
-                icon={BeakerIcon}
-              />
-              <DetailItem
-                label="Pollution Control"
-                value={supplier.pollution_control}
                 icon={BeakerIcon}
               />
               {/* Social */}
@@ -521,76 +533,12 @@ const SupplierDetails = () => {
                 value={supplier.human_rights_index}
                 icon={UserGroupIcon}
               />
+              {/* Delivery Efficiency is in the Supplier interface */}
               <DetailItem
-                label="Diversity & Inclusion"
-                value={supplier.diversity_inclusion_score}
-                icon={UserGroupIcon}
+                label="Delivery Efficiency"
+                value={supplier.delivery_efficiency}
+                icon={TruckIcon}
               />
-              <DetailItem
-                label="Community Engagement"
-                value={supplier.community_engagement}
-                icon={UserGroupIcon}
-              />
-              <DetailItem
-                label="Worker Safety"
-                value={supplier.worker_safety}
-                icon={UserGroupIcon}
-              />
-              {/* Governance */}
-              <DetailItem
-                label="Transparency Score"
-                value={supplier.transparency_score}
-                icon={ShieldCheckIcon}
-              />
-              <DetailItem
-                label="Corruption Risk"
-                value={supplier.corruption_risk}
-                icon={ShieldCheckIcon}
-              />
-              <DetailItem
-                label="Board Diversity"
-                value={supplier.board_diversity}
-                icon={ShieldCheckIcon}
-              />
-              <DetailItem
-                label="Ethics Program"
-                value={supplier.ethics_program}
-                icon={ShieldCheckIcon}
-              />
-              <DetailItem
-                label="Compliance Systems"
-                value={supplier.compliance_systems}
-                icon={ShieldCheckIcon}
-              />
-              {/* Supply Chain */}
-              {supplier.delivery_efficiency !== undefined && (
-                <DetailItem
-                  label="Delivery Efficiency"
-                  value={supplier.delivery_efficiency}
-                  icon={TruckIcon}
-                />
-              )}
-              {supplier.quality_control_score !== undefined && (
-                <DetailItem
-                  label="Quality Control"
-                  value={supplier.quality_control_score}
-                  icon={TruckIcon}
-                />
-              )}
-              {supplier.supplier_diversity !== undefined && (
-                <DetailItem
-                  label="Supplier Diversity"
-                  value={supplier.supplier_diversity}
-                  icon={TruckIcon}
-                />
-              )}
-              {supplier.traceability !== undefined && (
-                <DetailItem
-                  label="Traceability"
-                  value={supplier.traceability}
-                  icon={TruckIcon}
-                />
-              )}
             </div>
           </div>
 
@@ -617,17 +565,6 @@ const SupplierDetails = () => {
                 value={supplier.human_rights_index}
                 icon={UserGroupIcon}
               />
-              <DetailItem
-                label="Compliance Systems"
-                value={supplier.compliance_systems}
-                icon={ShieldCheckIcon}
-              />
-              <DetailItem
-                label="Ethics Program Strength"
-                value={supplier.ethics_program}
-                icon={ShieldCheckIcon}
-              />
-              {/* Add more compliance-related fields if available in Supplier model */}
 
               {/* Risk related */}
               <DetailItem
@@ -636,49 +573,99 @@ const SupplierDetails = () => {
                 icon={ShieldExclamationIcon}
                 color={getRiskColor(supplier.risk_level)} // Use color helper
               />
-              <DetailItem
-                label="Corruption Risk"
-                value={supplier.corruption_risk}
-                icon={ShieldExclamationIcon}
-                color={getScoreColor(supplier.corruption_risk)} // Color based on score (lower is better)
-              />
-              <DetailItem
-                label="Geopolitical Risk"
-                value={supplier.geopolitical_risk}
-                icon={GlobeAltIcon} // Example icon
-                color={getScoreColor(supplier.geopolitical_risk)}
-              />
-              <DetailItem
-                label="Climate Risk"
-                value={supplier.climate_risk}
-                icon={CloudIcon} // Example icon
-                color={getScoreColor(supplier.climate_risk)}
-              />
-              <DetailItem
-                label="Labor Dispute Risk"
-                value={supplier.labor_dispute_risk}
-                icon={UsersIcon} // Example icon
-                color={getScoreColor(supplier.labor_dispute_risk)}
-              />
+              {/* Other risk metrics are not in the Supplier interface, so we'll exclude them */}
             </div>
           </div>
 
-          {/* Add ESG Reports, Media Sentiment, Controversies Sections Here Later */}
-          {/* Placeholder for future sections */}
-          {/* 
-          <div className="p-4 rounded-lg border backdrop-blur-sm" style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>ESG Reports</h3>
-            <p className="text-sm italic" style={{ color: colors.textMuted }}>(ESG report listing to be implemented)</p>
+          {/* Similar Suppliers Card */}
+          <div
+            className="p-4 rounded-lg border backdrop-blur-sm"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "40",
+            }}
+          >
+            <h3
+              className="text-lg font-semibold mb-3 flex items-center"
+              style={{ color: colors.text }}
+            >
+              <UsersIcon
+                className="h-5 w-5 mr-2"
+                style={{ color: colors.primary }}
+              />
+              Similar Suppliers
+              <span
+                className="ml-2 text-sm font-normal"
+                style={{ color: colors.textMuted }}
+              >
+                (Same industry, similar ESG profile)
+              </span>
+            </h3>
+
+            {similarSuppliers.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {similarSuppliers.map((similar) => {
+                  const similarId = similar.id;
+                  const similarScore =
+                    similar.ethical_score > 0 && similar.ethical_score <= 1
+                      ? (similar.ethical_score * 100).toFixed(1)
+                      : similar.ethical_score?.toFixed(1) || "N/A";
+
+                  return (
+                    <div
+                      key={similarId}
+                      className="rounded-md p-3 border transition-all hover:shadow-md"
+                      style={{
+                        backgroundColor: colors.panel + "80",
+                        borderColor: colors.accent + "30",
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4
+                          className="font-medium text-base truncate max-w-[70%]"
+                          style={{ color: colors.text }}
+                        >
+                          {similar.name}
+                        </h4>
+                        <span
+                          className="text-sm font-mono font-semibold"
+                          style={{
+                            color: getScoreColor(similar.ethical_score),
+                          }}
+                        >
+                          {similarScore}
+                        </span>
+                      </div>
+                      <div
+                        className="flex items-center text-xs mb-2"
+                        style={{ color: colors.textMuted }}
+                      >
+                        <MapPinIcon className="h-3 w-3 mr-1" />
+                        {similar.country || "N/A"}
+                        <span className="mx-2">•</span>
+                        <BuildingOfficeIcon className="h-3 w-3 mr-1" />
+                        {similar.industry || "N/A"}
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          onClick={() => navigate(`/suppliers/${similarId}`)}
+                          className="text-xs flex items-center"
+                          style={{ color: colors.primary }}
+                        >
+                          View Supplier{" "}
+                          <ArrowRightIcon className="h-3 w-3 ml-1" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: colors.textMuted }}>
+                No similar suppliers found in the same industry.
+              </p>
+            )}
           </div>
-          <div className="p-4 rounded-lg border backdrop-blur-sm" style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>Media Sentiment</h3>
-            <p className="text-sm italic" style={{ color: colors.textMuted }}>(Media sentiment analysis to be implemented)</p>
-          </div>
-          <div className="p-4 rounded-lg border backdrop-blur-sm" style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>Controversies</h3>
-            <p className="text-sm italic" style={{ color: colors.textMuted }}>(Controversy tracking to be implemented)</p>
-          </div>
-          */}
         </motion.div>
       </div>
     </div>
