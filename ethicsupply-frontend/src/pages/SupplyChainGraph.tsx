@@ -396,10 +396,12 @@ const SupplyChainGraph = () => {
     }));
 
     const initialEdges: Edge[] = filteredGraphData.links.map((link) => ({
-      id: `e-${link.source}-${link.target}-${Math.random()}`, // Add random suffix to help debug ID issues
+      id: `e-${
+        typeof link.source === "string" ? link.source : link.source.id
+      }-${typeof link.target === "string" ? link.target : link.target.id}`,
       source: typeof link.source === "string" ? link.source : link.source.id,
       target: typeof link.target === "string" ? link.target : link.target.id,
-      type: "smoothstep", // Use smooth step edges
+      type: "default", // Change from 'smoothstep' to 'default' for better arrow visibility
       animated: !link.ethical,
       style: {
         stroke: link.ethical ? colors.success : colors.error,
@@ -408,8 +410,8 @@ const SupplyChainGraph = () => {
       markerEnd: {
         type: MarkerType.ArrowClosed,
         color: link.ethical ? colors.success : colors.error,
-        width: 20, // Explicitly set size
-        height: 20, // Explicitly set size
+        width: 25, // Increased size for better visibility
+        height: 25, // Increased size for better visibility
       },
       data: { apiData: link },
     }));
@@ -451,7 +453,7 @@ const SupplyChainGraph = () => {
       setTimeout(() => {
         // Check if fitView is available before calling
         if (fitView) {
-          fitView({ padding: 0.1 });
+          fitView({ padding: 0.2 });
         } else {
           console.warn(
             "[SupplyChainGraph] fitView function not available from useReactFlow."
@@ -686,7 +688,16 @@ const SupplyChainGraph = () => {
             onEdgeClick={onEdgeClick}
             nodeTypes={nodeTypes}
             edgeTypes={defaultEdgeTypes}
+            defaultEdgeOptions={{
+              type: "default",
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+              },
+            }}
             fitView
+            fitViewOptions={{ padding: 0.2 }}
+            minZoom={0.1}
+            maxZoom={2}
             attributionPosition="bottom-left"
             className="dark-flow"
           >
