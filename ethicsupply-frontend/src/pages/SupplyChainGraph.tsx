@@ -33,6 +33,9 @@ import {
   ChevronRight,
   Link as LinkIcon,
   ExternalLink,
+  Plus,
+  CheckSquare,
+  X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ReactFlow, {
@@ -266,6 +269,14 @@ const SupplyChainGraph = () => {
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState([]);
   const { fitView } = useReactFlow();
 
+  // Add these new state variables inside the SupplyChainGraph component near other state variables:
+  const [isCreatingConnection, setIsCreatingConnection] =
+    useState<boolean>(false);
+  const [connectionSource, setConnectionSource] = useState<string | null>(null);
+  const [connectionTarget, setConnectionTarget] = useState<string | null>(null);
+  const [connectionType, setConnectionType] = useState<string>("supplier");
+  const [connectionEthical, setConnectionEthical] = useState<boolean>(true);
+
   // Load data
   useEffect(() => {
     const fetchData = async () => {
@@ -477,14 +488,81 @@ const SupplyChainGraph = () => {
     }
   }, [filteredGraphData, setRfNodes, setRfEdges, fitView, colors]); // Add colors dependency
 
+  // Start connection creation mode
+  const startConnectionCreation = () => {
+    setIsCreatingConnection(true);
+    setConnectionSource(null);
+    setConnectionTarget(null);
+  };
+
+  // Cancel connection creation
+  const cancelConnectionCreation = () => {
+    setIsCreatingConnection(false);
+    setConnectionSource(null);
+    setConnectionTarget(null);
+  };
+
+  // Create new connection
+  const createConnection = () => {
+    if (!connectionSource || !connectionTarget) {
+      alert("Please select both source and target suppliers");
+      return;
+    }
+
+    // Create new connection
+    const newLink: LinkObject = {
+      id: `e-${connectionSource}-${connectionTarget}-${Date.now()}`,
+      source: connectionSource,
+      target: connectionTarget,
+      relationship: connectionType,
+      ethical: connectionEthical,
+    };
+
+    // Add to graph data
+    setGraphData((prev) => ({
+      ...prev,
+      links: [...prev.links, newLink],
+    }));
+
+    // Reset connection creation state
+    setIsCreatingConnection(false);
+    setConnectionSource(null);
+    setConnectionTarget(null);
+
+    // Alert user
+    alert("Connection created successfully!");
+  };
+
+  // Handle node selection during connection creation
+  const handleNodeSelectionForConnection = (nodeId: string) => {
+    if (!connectionSource) {
+      setConnectionSource(nodeId);
+    } else if (nodeId !== connectionSource) {
+      setConnectionTarget(nodeId);
+    }
+  };
+
   // Handle node click in React Flow
   const onNodeClick = useCallback(
     (event, node: Node) => {
       console.log("Node clicked:", node);
-      setSelectedNodeApiData(node.data.apiData); // Update panel with API data
-      setSelectedConnection(null); // Clear edge selection
+
+      // If in connection creation mode, handle node selection
+      if (isCreatingConnection) {
+        handleNodeSelectionForConnection(node.id);
+        return;
+      }
+
+      // Otherwise proceed with normal behavior
+      setSelectedNodeApiData(node.data.apiData);
+      setSelectedConnection(null);
     },
-    [setSelectedNodeApiData, setSelectedConnection]
+    [
+      setSelectedNodeApiData,
+      setSelectedConnection,
+      isCreatingConnection,
+      handleNodeSelectionForConnection,
+    ]
   );
 
   // Handle edge click in React Flow
@@ -622,6 +700,18 @@ const SupplyChainGraph = () => {
           </h1>
           {/* Basic Controls Placeholder - Can be enhanced */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={startConnectionCreation}
+              className="p-2 rounded border hover:bg-gray-700/50 transition"
+              title="Create Connection"
+              style={{
+                backgroundColor: colors.panel,
+                borderColor: colors.accent + "50",
+                color: colors.primary,
+              }}
+            >
+              <Plus size={18} />
+            </button>
             <button
               onClick={() => {
                 /* Add refresh logic */
@@ -1116,6 +1206,151 @@ const SupplyChainGraph = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Connection Creator Panel */}
+      {isCreatingConnection && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="absolute top-20 right-8 z-10 p-4 rounded-lg shadow-lg border"
+          style={{
+            backgroundColor: colors.panel,
+            borderColor: colors.accent + "50",
+          }}
+        >
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="font-semibold" style={{ color: colors.primary }}>
+              Create New Connection
+            </h3>
+            <button
+              onClick={cancelConnectionCreation}
+              className="p-1 rounded hover:bg-black/20"
+            >
+              <X size={16} style={{ color: colors.textMuted }} />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label
+                className="block text-sm mb-1"
+                style={{ color: colors.textMuted }}
+              >
+                Source Supplier:
+              </label>
+              <div
+                className="p-2 rounded border text-sm"
+                style={{
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.accent + "30",
+                  color: connectionSource ? colors.text : colors.textMuted,
+                }}
+              >
+                {connectionSource
+                  ? graphData.nodes.find((n) => n.id === connectionSource)
+                      ?.name || connectionSource
+                  : "Click a supplier on the graph to select"}
+              </div>
+            </div>
+
+            <div>
+              <label
+                className="block text-sm mb-1"
+                style={{ color: colors.textMuted }}
+              >
+                Target Supplier:
+              </label>
+              <div
+                className="p-2 rounded border text-sm"
+                style={{
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.accent + "30",
+                  color: connectionTarget ? colors.text : colors.textMuted,
+                }}
+              >
+                {connectionTarget
+                  ? graphData.nodes.find((n) => n.id === connectionTarget)
+                      ?.name || connectionTarget
+                  : "Click another supplier on the graph to select"}
+              </div>
+            </div>
+
+            <div>
+              <label
+                className="block text-sm mb-1"
+                style={{ color: colors.textMuted }}
+              >
+                Relationship Type:
+              </label>
+              <select
+                value={connectionType}
+                onChange={(e) => setConnectionType(e.target.value)}
+                className="w-full p-2 rounded border text-sm"
+                style={{
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.accent + "30",
+                  color: colors.text,
+                }}
+              >
+                <option value="supplier">Supplier</option>
+                <option value="manufacturer">Manufacturer</option>
+                <option value="distributor">Distributor</option>
+                <option value="partner">Partner</option>
+                <option value="subsidiary">Subsidiary</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="ethical-connection"
+                checked={connectionEthical}
+                onChange={(e) => setConnectionEthical(e.target.checked)}
+                className="rounded"
+                style={{ accentColor: colors.success }}
+              />
+              <label
+                htmlFor="ethical-connection"
+                className="text-sm cursor-pointer"
+                style={{ color: colors.text }}
+              >
+                Ethical Connection
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={cancelConnectionCreation}
+                className="px-3 py-1.5 rounded text-sm"
+                style={{
+                  backgroundColor: "transparent",
+                  color: colors.textMuted,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={createConnection}
+                disabled={!connectionSource || !connectionTarget}
+                className="px-3 py-1.5 rounded text-sm flex items-center gap-1.5"
+                style={{
+                  backgroundColor:
+                    connectionSource && connectionTarget
+                      ? colors.primary
+                      : colors.primary + "50",
+                  color:
+                    connectionSource && connectionTarget
+                      ? colors.background
+                      : colors.background + "80",
+                }}
+              >
+                <CheckSquare size={14} />
+                Create Connection
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Styling (Remove jsx and global props) */}
       <style>{`
