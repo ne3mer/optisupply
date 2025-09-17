@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence, useSpring } from "framer-motion";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { getRecommendations, Recommendation } from "../services/api";
 import {
   AlertTriangle,
@@ -33,6 +33,7 @@ import {
   Search,
   Tags,
   Sliders,
+  X,
 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 
@@ -200,6 +201,151 @@ const statusConfig = {
   },
 };
 
+type EnhancedRecommendation = Recommendation & {
+  action_started_at?: string;
+  action_owner?: string;
+  action_notes?: string[];
+  action_completed_at?: string;
+};
+
+const actionOwners = [
+  "Sustainability Office",
+  "Operations",
+  "Procurement",
+  "Compliance",
+  "ESG Taskforce",
+];
+
+const ACTION_STATE_KEY = "ethicsupply-recommendation-actions";
+
+const loadActionState = (): Record<string, Partial<EnhancedRecommendation>> => {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(ACTION_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed;
+  } catch (error) {
+    console.warn("Failed to load recommendation action state", error);
+    return {};
+  }
+};
+
+const persistActionState = (
+  state: Record<string, Partial<EnhancedRecommendation>>
+) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ACTION_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn("Failed to persist recommendation action state", error);
+  }
+};
+
+const applyStoredActionState = (
+  recommendations: EnhancedRecommendation[]
+): EnhancedRecommendation[] => {
+  const storedState = loadActionState();
+  if (!storedState || Object.keys(storedState).length === 0) {
+    return recommendations;
+  }
+
+  return recommendations.map((rec) => {
+    const stored = storedState[rec._id];
+    if (!stored) return rec;
+
+    return {
+      ...rec,
+      ...stored,
+      action_notes: stored.action_notes ?? rec.action_notes,
+    };
+  });
+};
+
+const persistActionStateFromArray = (
+  recommendations: EnhancedRecommendation[]
+) => {
+  const stateIndex: Record<string, Partial<EnhancedRecommendation>> = {};
+
+  recommendations.forEach((rec) => {
+    const entry: Partial<EnhancedRecommendation> = {};
+
+    if (rec.action_owner) entry.action_owner = rec.action_owner;
+    if (rec.action_started_at) entry.action_started_at = rec.action_started_at;
+    if (rec.action_completed_at)
+      entry.action_completed_at = rec.action_completed_at;
+    if (rec.action_notes && rec.action_notes.length > 0)
+      entry.action_notes = rec.action_notes;
+    if (rec.status === "in_progress" || rec.status === "completed")
+      entry.status = rec.status;
+
+    if (Object.keys(entry).length > 0) {
+      stateIndex[rec._id] = entry;
+    }
+  });
+
+  persistActionState(stateIndex);
+};
+
+const getRelativeTime = (dateString?: string | null) => {
+  if (!dateString) return null;
+  const timestamp = new Date(dateString).getTime();
+  if (Number.isNaN(timestamp)) return null;
+
+  const diffMs = Date.now() - timestamp;
+  if (diffMs < 0) return "just now";
+
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffMonths = Math.floor(diffDays / 30);
+
+  if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? "s" : ""} ago`;
+  if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+  if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  if (diffMins > 0) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+  return "just now";
+};
+
+const buildActionSteps = (recommendation: Recommendation) => {
+  const steps: string[] = [];
+
+  if (recommendation.details) {
+    steps.push(`Scope focus: ${recommendation.details}`);
+  }
+
+  if (recommendation.timeframe) {
+    steps.push(`Timeline commitment: ${recommendation.timeframe}`);
+  }
+
+  if (recommendation.estimated_impact) {
+    if (typeof recommendation.estimated_impact === "string") {
+      steps.push(`Expected impact: ${recommendation.estimated_impact}`);
+    } else if (typeof recommendation.estimated_impact === "object") {
+      const impactEntries = Object.entries(recommendation.estimated_impact)
+        .map(([key, value]) => `${key.replace(/_/g, " ")}: ${value}`)
+        .join(", ");
+      steps.push(`Projected benefits: ${impactEntries}`);
+    }
+  }
+
+  if (!steps.length && recommendation.description) {
+    steps.push(recommendation.description);
+  }
+
+  if (!steps.length) {
+    steps.push("Review supplier baseline metrics with your ESG analyst.");
+    steps.push("Align on milestones with the supplier relationship owner.");
+    steps.push("Schedule progress check-ins and define success KPIs.");
+  }
+
+  return steps;
+};
+
 // Animated Badge Component
 const AnimatedBadge = ({ children, className = "", style = {} }) => {
   return (
@@ -222,7 +368,7 @@ const RecommendationCard = ({
   onActionClick,
   index,
 }: {
-  recommendation: Recommendation;
+  recommendation: EnhancedRecommendation;
   isExpanded: boolean;
   onToggleExpand: () => void;
   onActionClick: () => void;
@@ -250,6 +396,31 @@ const RecommendationCard = ({
         day: "numeric",
       })
     : "Date unknown";
+
+  const actionStartedAgo = getRelativeTime(recommendation.action_started_at);
+  const actionCompletedAgo = getRelativeTime(recommendation.action_completed_at);
+  const isCompleted = currentStatus === "completed";
+  const hasActivePlan = Boolean(recommendation.action_started_at) && !isCompleted;
+
+  const actionButtonLabel = isCompleted
+    ? "View Action Record"
+    : hasActivePlan
+    ? "Update Plan"
+    : "Launch Action Plan";
+
+  const actionButtonColor = isCompleted
+    ? colors.success
+    : hasActivePlan
+    ? colors.primary
+    : colors.accent;
+
+  const actionButtonIcon = isCompleted ? (
+    <ThumbsUp className="h-4 w-4" />
+  ) : hasActivePlan ? (
+    <TrendingUp className="h-4 w-4" />
+  ) : (
+    <ArrowRightCircle className="h-4 w-4" />
+  );
 
   return (
     <motion.div
@@ -327,6 +498,52 @@ const RecommendationCard = ({
               <span>{statusInfo.label}</span>
             </AnimatedBadge>
           </div>
+
+          {(recommendation.action_owner || hasActivePlan || actionCompletedAgo) && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {recommendation.action_owner && (
+                <AnimatedBadge
+                  className="px-2.5 py-0.5 border"
+                  style={{
+                    color: colors.accent,
+                    backgroundColor: colors.accent + "15",
+                    borderColor: colors.accent + "40",
+                  }}
+                >
+                  <Users className="h-4 w-4" />
+                  Owner: {recommendation.action_owner}
+                </AnimatedBadge>
+              )}
+
+              {hasActivePlan && actionStartedAgo && (
+                <AnimatedBadge
+                  className="px-2.5 py-0.5 border"
+                  style={{
+                    color: colors.primary,
+                    backgroundColor: colors.primary + "15",
+                    borderColor: colors.primary + "35",
+                  }}
+                >
+                  <Clock className="h-4 w-4" />
+                  Started {actionStartedAgo}
+                </AnimatedBadge>
+              )}
+
+              {actionCompletedAgo && (
+                <AnimatedBadge
+                  className="px-2.5 py-0.5 border"
+                  style={{
+                    color: colors.success,
+                    backgroundColor: colors.success + "15",
+                    borderColor: colors.success + "35",
+                  }}
+                >
+                  <Award className="h-4 w-4" />
+                  Completed {actionCompletedAgo}
+                </AnimatedBadge>
+              )}
+            </div>
+          )}
 
           <h3
             className="text-xl font-semibold group-hover:text-blue-400 transition-colors mb-2"
@@ -475,15 +692,18 @@ const RecommendationCard = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onActionClick}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border ${categoryInfo.border}`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border transition-colors"
                   style={{
-                    color: categoryInfo.color,
-                    backgroundColor: categoryInfo.bgLight,
-                    borderColor: categoryInfo.border,
+                    color: colors.background,
+                    backgroundColor: actionButtonColor,
+                    borderColor: actionButtonColor,
+                    boxShadow: hasActivePlan
+                      ? `0 0 0 2px ${colors.primary}30`
+                      : "none",
                   }}
                 >
-                  <span>Take Action</span>
-                  <ArrowRightCircle className="h-4 w-4" />
+                  <span>{actionButtonLabel}</span>
+                  {actionButtonIcon}
                 </motion.button>
               </div>
             </div>
@@ -494,9 +714,210 @@ const RecommendationCard = ({
   );
 };
 
+const ActionPlanModal = ({
+  recommendation,
+  onClose,
+  onConfirm,
+}: {
+  recommendation: EnhancedRecommendation;
+  onClose: () => void;
+  onConfirm: (options: {
+    mode: "start" | "complete";
+    owner: string;
+    notes?: string;
+  }) => void;
+}) => {
+  const [owner, setOwner] = useState(
+    recommendation.action_owner || actionOwners[0]
+  );
+  const [notes, setNotes] = useState("");
+
+  const steps = useMemo(() => buildActionSteps(recommendation), [recommendation]);
+  const hasActivePlan = Boolean(recommendation.action_started_at);
+  const isCompleted = recommendation.status === "completed";
+
+  const handleConfirm = (mode: "start" | "complete") => {
+    onConfirm({ mode, owner, notes: notes.trim() || undefined });
+    setNotes("");
+  };
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="w-full max-w-3xl rounded-2xl overflow-hidden"
+        style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}40` }}
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="flex items-start justify-between px-6 py-4 border-b"
+          style={{ borderColor: colors.accent + "30" }}
+        >
+          <div>
+            <p className="text-xs uppercase tracking-wide" style={{ color: colors.textMuted }}>
+              Action plan for
+            </p>
+            <h2 className="text-2xl font-semibold" style={{ color: colors.text }}>
+              {recommendation.title || "Recommendation"}
+            </h2>
+            <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
+              {typeof recommendation.supplier === "object"
+                ? recommendation.supplier?.name
+                : "Unnamed supplier"}
+              {recommendation.timeframe && ` • Target: ${recommendation.timeframe}`}
+            </p>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-full hover:bg-white/10 transition"
+            style={{ color: colors.textMuted }}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-wide" style={{ color: colors.textMuted }}>
+                Assign owner
+              </p>
+              <div className="relative">
+                <select
+                  value={owner}
+                  onChange={(e) => setOwner(e.target.value)}
+                  className="w-full appearance-none px-3 py-2 rounded-lg pr-10 text-sm"
+                  style={{
+                    backgroundColor: colors.background,
+                    color: colors.text,
+                    border: `1px solid ${colors.accent}40`,
+                  }}
+                >
+                  {actionOwners.map((team) => (
+                    <option key={team} value={team} style={{ color: "#000" }}>
+                      {team}
+                    </option>
+                  ))}
+                </select>
+                <Users
+                  className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: colors.textMuted }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-wide" style={{ color: colors.textMuted }}>
+                Add a kickoff note (optional)
+              </p>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={3}
+                placeholder="Capture next steps, stakeholders, or quick reminders..."
+                className="w-full resize-none px-3 py-2 rounded-lg text-sm"
+                style={{
+                  backgroundColor: colors.background,
+                  color: colors.text,
+                  border: `1px solid ${colors.accent}30`,
+                }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs uppercase tracking-wide mb-2" style={{ color: colors.textMuted }}>
+              Recommended playbook
+            </p>
+            <div
+              className="rounded-xl border p-4 space-y-3"
+              style={{ borderColor: colors.accent + "25", backgroundColor: colors.background }}
+            >
+              {steps.map((step, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <span
+                    className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold"
+                    style={{
+                      backgroundColor: colors.primary + "20",
+                      color: colors.primary,
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                  <p className="text-sm" style={{ color: colors.text }}>
+                    {step}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="px-6 py-4 flex flex-wrap gap-3 justify-end border-t"
+          style={{ borderColor: colors.accent + "30" }}
+        >
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-full text-sm font-medium"
+            style={{
+              backgroundColor: colors.background,
+              color: colors.textMuted,
+              border: `1px solid ${colors.accent}30`,
+            }}
+          >
+            Cancel
+          </button>
+
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => handleConfirm("start")}
+            className="px-4 py-2 rounded-full text-sm font-medium"
+            style={{
+              backgroundColor: hasActivePlan ? colors.primary : colors.accent,
+              color: colors.background,
+              border: "none",
+            }}
+          >
+            {hasActivePlan ? "Update & Continue" : "Launch Action Plan"}
+          </motion.button>
+
+          {(!isCompleted && hasActivePlan) && (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleConfirm("complete")}
+              className="px-4 py-2 rounded-full text-sm font-medium"
+              style={{
+                backgroundColor: colors.success,
+                color: colors.background,
+                border: "none",
+              }}
+            >
+              Mark as Complete
+            </motion.button>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 // Main Page Component (Dark Theme Adjustments)
 const RecommendationsPage = () => {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recommendations, setRecommendations] = useState<
+    EnhancedRecommendation[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
@@ -507,62 +928,71 @@ const RecommendationsPage = () => {
   const [sortBy, setSortBy] = useState<string>("createdAt_desc");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [activeActionPlan, setActiveActionPlan] =
+    useState<EnhancedRecommendation | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+
+  const fetchRecommendations = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setUsingMockData(false);
+
+    try {
+      console.log("Fetching recommendations from API...");
+      const response = await getRecommendations();
+      console.log("Recommendations API raw response:", response);
+
+      let fetchedData: Recommendation[];
+      let isMock = false;
+
+      if (Array.isArray(response)) {
+        fetchedData = response;
+        console.log("API returned an array directly.");
+      } else if (
+        response &&
+        typeof response === "object" &&
+        Array.isArray(response.data)
+      ) {
+        fetchedData = response.data;
+        isMock =
+          typeof response.isMockData === "boolean" ? response.isMockData : false;
+        console.log(`API returned object. isMockData: ${isMock}`);
+      } else {
+        console.warn(
+          "Unexpected API response structure. Using fallback mock data."
+        );
+        fetchedData = generateMockRecommendationsFallback();
+        isMock = true;
+      }
+
+      const normalized: EnhancedRecommendation[] = fetchedData.map((r) => ({
+        ...r,
+        _id: r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
+      }));
+
+      const merged = applyStoredActionState(normalized);
+      setRecommendations(merged);
+      persistActionStateFromArray(merged);
+      setUsingMockData(isMock);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+      setError("Failed to fetch recommendations. Using mock data instead.");
+      const fallback = generateMockRecommendationsFallback().map((r) => ({
+        ...r,
+        _id: r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
+      }));
+      const mergedFallback = applyStoredActionState(fallback);
+      setRecommendations(mergedFallback);
+      persistActionStateFromArray(mergedFallback);
+      setUsingMockData(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
-      setIsLoading(true);
-      setError(null);
-      setUsingMockData(false);
-      try {
-        console.log("Fetching recommendations from API...");
-        const response = await getRecommendations();
-        console.log("Recommendations API raw response:", response);
-
-        let fetchedData: Recommendation[];
-        let isMock = false;
-
-        if (Array.isArray(response)) {
-          fetchedData = response;
-          console.log("API returned an array directly.");
-        } else if (
-          response &&
-          typeof response === "object" &&
-          Array.isArray(response.data)
-        ) {
-          fetchedData = response.data;
-          isMock =
-            typeof response.isMockData === "boolean"
-              ? response.isMockData
-              : false;
-          console.log(`API returned object. isMockData: ${isMock}`);
-        } else {
-          console.warn(
-            "Unexpected API response structure. Using fallback mock data."
-          );
-          fetchedData = generateMockRecommendationsFallback();
-          isMock = true;
-        }
-
-        setRecommendations(
-          fetchedData.map((r) => ({
-            ...r,
-            _id:
-              r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
-          }))
-        );
-        setUsingMockData(isMock);
-      } catch (error) {
-        console.error("Error fetching recommendations:", error);
-        setError("Failed to fetch recommendations. Using mock data instead.");
-        setRecommendations(generateMockRecommendationsFallback());
-        setUsingMockData(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchRecommendations();
-  }, []);
+  }, [fetchRecommendations]);
 
   const handleToggleExpand = (id: string | undefined) => {
     if (!id) return;
@@ -572,16 +1002,80 @@ const RecommendationsPage = () => {
   // NEW: Function to handle "Take Action" click
   const handleTakeAction = (id: string | undefined) => {
     if (!id) return;
-    setRecommendations((prevRecs) =>
-      prevRecs.map((rec) =>
-        rec._id === id ? { ...rec, status: "in_progress" } : rec
-      )
-    );
-    console.log(`Action planned for recommendation ID: ${id}`);
-    // In a real application, you would also make an API call here
-    // to update the status on the backend, e.g.:
-    // updateRecommendationStatus(id, 'in_progress');
+    const target = recommendations.find((rec) => rec._id === id);
+    if (target) {
+      setActiveActionPlan(target);
+    }
   };
+
+  const handleActionPlanCommit = ({
+    mode,
+    owner,
+    notes,
+  }: {
+    mode: "start" | "complete";
+    owner: string;
+    notes?: string;
+  }) => {
+    if (!activeActionPlan) return;
+
+    const ownerName = owner || activeActionPlan.action_owner || actionOwners[0];
+
+    setRecommendations((prev) => {
+      const now = new Date().toISOString();
+      const updated = prev.map((rec) => {
+        if (rec._id !== activeActionPlan._id) return rec;
+
+        let updatedRec: EnhancedRecommendation = {
+          ...rec,
+          action_owner: ownerName,
+        };
+
+        if (mode === "start") {
+          if (!updatedRec.action_started_at) {
+            updatedRec = { ...updatedRec, action_started_at: now };
+          }
+          if (updatedRec.status !== "completed") {
+            updatedRec = { ...updatedRec, status: "in_progress" };
+          }
+        }
+
+        if (mode === "complete") {
+          updatedRec = {
+            ...updatedRec,
+            action_completed_at: now,
+            status: "completed",
+            action_started_at: updatedRec.action_started_at || now,
+          };
+        }
+
+        if (notes) {
+          updatedRec = {
+            ...updatedRec,
+            action_notes: [...(updatedRec.action_notes || []), notes],
+          };
+        }
+
+        return updatedRec;
+      });
+
+      persistActionStateFromArray(updated);
+      return updated;
+    });
+
+    setActiveActionPlan(null);
+    setActionFeedback(
+      mode === "complete"
+        ? "Action plan marked as completed."
+        : "Action plan launched and assigned."
+    );
+  };
+
+  useEffect(() => {
+    if (!actionFeedback) return;
+    const timeout = setTimeout(() => setActionFeedback(null), 3500);
+    return () => clearTimeout(timeout);
+  }, [actionFeedback]);
 
   // Filtering and Sorting Logic
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -701,13 +1195,7 @@ const RecommendationsPage = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setIsLoading(true);
-                setTimeout(() => {
-                  setRecommendations(generateMockRecommendationsFallback());
-                  setIsLoading(false);
-                }, 800);
-              }}
+              onClick={fetchRecommendations}
               className="flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors"
               style={{
                 backgroundColor: colors.accent,
@@ -1243,6 +1731,34 @@ const RecommendationsPage = () => {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {activeActionPlan && (
+          <ActionPlanModal
+            recommendation={activeActionPlan}
+            onClose={() => setActiveActionPlan(null)}
+            onConfirm={handleActionPlanCommit}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {actionFeedback && (
+          <motion.div
+            className="fixed top-6 right-6 z-50 px-4 py-3 rounded-xl border shadow-lg"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            style={{
+              backgroundColor: colors.background,
+              borderColor: colors.primary + "40",
+              color: colors.text,
+            }}
+          >
+            {actionFeedback}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

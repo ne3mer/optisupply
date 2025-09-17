@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Stars, useTexture, Html } from "@react-three/drei";
+import React, { useState, useEffect, useRef, Suspense } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Stars, Html, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -93,6 +93,7 @@ const countryCoordinates = {
   India: [28.61389, 77.209],
   Germany: [52.52437, 13.41053],
   "United Kingdom": [51.50853, -0.12574],
+  UK: [51.50853, -0.12574], // Alias for UK
   France: [48.85661, 2.35222],
   Brazil: [-15.77972, -47.92972],
   Italy: [41.89193, 12.51133],
@@ -133,38 +134,75 @@ const countryCoordinates = {
   Argentina: [-34.60368, -58.38157],
   Russia: [55.75045, 37.61742],
   Ukraine: [50.4501, 30.5234],
+  Taiwan: [23.5, 121], // Added Taiwan coordinates
   Other: [0, 0],
 };
 
-// Convert lat/lng to 3D coordinates
+// Convert lat/lng to 3D coordinates on a sphere
 const latLngToVector3 = (lat: number, lng: number, radius: number) => {
+  // Convert latitude and longitude to radians
+  const latRad = lat * (Math.PI / 180);
+  const lngRad = lng * (Math.PI / 180);
+
+  // Calculate 3D coordinates on sphere using standard spherical coordinates
+  // phi = 90° - latitude (angle from z-axis)
+  // theta = longitude (angle from x-axis)
   const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lng + 180) * (Math.PI / 180);
-  const x = -(radius * Math.sin(phi) * Math.cos(theta));
-  const z = radius * Math.sin(phi) * Math.sin(theta);
+  const theta = lng * (Math.PI / 180);
+
+  const x = radius * Math.sin(phi) * Math.cos(theta);
   const y = radius * Math.cos(phi);
+  const z = radius * Math.sin(phi) * Math.sin(theta);
+
   return new THREE.Vector3(x, y, z);
 };
 
-// Globe component
+// Loading component for 3D content
+const LoadingSpinner = () => (
+  <Html center>
+    <div className="flex flex-col items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+      <p className="text-white text-lg">Loading Earth Globe...</p>
+    </div>
+  </Html>
+);
+
+// Earth component with proper texture
+const Earth = ({ children }: { children?: React.ReactNode }) => {
+  const earthRef = useRef<THREE.Group>(null);
+
+  // Load Earth texture from a reliable source
+  const earthTexture = useTexture(
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_atmos_2048.jpg"
+  );
+
+  // Smooth rotation
+  useFrame(() => {
+    if (earthRef.current) {
+      earthRef.current.rotation.y += 0.002;
+    }
+  });
+
+  return (
+    <group ref={earthRef}>
+      <mesh>
+        <sphereGeometry args={[5, 64, 64]} />
+        <meshStandardMaterial
+          map={earthTexture}
+          metalness={0.1}
+          roughness={0.8}
+        />
+      </mesh>
+      {children}
+    </group>
+  );
+};
+
+// Simple stable globe component
 const Globe = ({ suppliers, activeRiskTypes, onCountryClick }: any) => {
   const globeRef = useRef<THREE.Group>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-
-  // Load Earth textures
-  const [earthTexture, bumpMap, specularMap] = useTexture([
-    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg",
-    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_normal_2048.jpg",
-    "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg",
-  ]);
-
-  // Animation loop
-  useFrame((state) => {
-    if (globeRef.current) {
-      globeRef.current.rotation.y += 0.001;
-    }
-  });
 
   // Create risk indicators
   const createRiskIndicators = () => {
@@ -192,11 +230,11 @@ const Globe = ({ suppliers, activeRiskTypes, onCountryClick }: any) => {
                 onCountryClick(country);
               }}
             >
-              <sphereGeometry args={[0.1 + index * 0.05, 16, 16]} />
+              <sphereGeometry args={[0.15 + index * 0.05, 16, 16]} />
               <meshBasicMaterial
                 color={riskTypes[risk].color}
                 transparent
-                opacity={0.6}
+                opacity={0.8}
               />
             </mesh>
           ))}
@@ -211,63 +249,50 @@ const Globe = ({ suppliers, activeRiskTypes, onCountryClick }: any) => {
       const coordinates = countryCoordinates[supplier.country];
       if (!coordinates) return null;
 
-      const position = latLngToVector3(coordinates[0], coordinates[1], 5.1);
+      const position = latLngToVector3(coordinates[0], coordinates[1], 5.05);
+      const score = supplier.ethical_score || 0.5;
 
       return (
-        <mesh
-          key={`supplier-${supplier.id}`}
-          position={position}
-          onPointerOver={() => setHoveredCountry(supplier.country)}
-          onPointerOut={() => setHoveredCountry(null)}
-          onClick={() => {
-            setSelectedCountry(supplier.country);
-            onCountryClick(supplier.country);
-          }}
-        >
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshBasicMaterial
-            color={supplier.ethical_score > 70 ? "#10b981" : "#ef4444"}
-            transparent
-            opacity={0.8}
-          />
-        </mesh>
+        <group key={supplier.id} position={position}>
+          <mesh
+            onPointerOver={() => setHoveredCountry(supplier.country)}
+            onPointerOut={() => setHoveredCountry(null)}
+            onClick={() => {
+              setSelectedCountry(supplier.country);
+              onCountryClick(supplier.country);
+            }}
+          >
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshBasicMaterial
+              color={
+                score > 0.7 ? "#10b981" : score > 0.4 ? "#f59e0b" : "#ef4444"
+              }
+              transparent
+              opacity={0.9}
+            />
+          </mesh>
+        </group>
       );
     });
   };
 
   return (
     <group ref={globeRef}>
-      {/* Earth */}
-      <mesh>
-        <sphereGeometry args={[5, 64, 64]} />
-        <meshPhongMaterial
-          map={earthTexture}
-          bumpMap={bumpMap}
-          bumpScale={0.5}
-          specularMap={specularMap}
-          specular={new THREE.Color("grey")}
-          shininess={5}
-        />
-      </mesh>
+      {/* Earth with proper texture and rotating indicators */}
+      <Earth>
+        {/* Risk and supplier indicators */}
+        {createRiskIndicators()}
+        {createSupplierIndicators()}
+      </Earth>
 
-      {/* Risk Indicators */}
-      {createRiskIndicators()}
-
-      {/* Supplier Indicators */}
-      {createSupplierIndicators()}
-
-      {/* Hover Info */}
+      {/* Hover tooltip */}
       {hoveredCountry && (
-        <Html
-          position={latLngToVector3(
-            countryCoordinates[hoveredCountry][0],
-            countryCoordinates[hoveredCountry][1],
-            5.2
-          )}
-        >
-          <div className="bg-black/80 p-2 rounded text-white text-sm">
-            <p className="font-bold">{hoveredCountry}</p>
-            <p>Risks: {countryRiskData[hoveredCountry].join(", ")}</p>
+        <Html position={[0, 6, 0]}>
+          <div className="bg-black/90 text-white p-3 rounded-lg shadow-lg border border-gray-600">
+            <p className="font-semibold">{hoveredCountry}</p>
+            <p className="text-sm text-gray-300">
+              Risks: {countryRiskData[hoveredCountry]?.join(", ") || "None"}
+            </p>
           </div>
         </Html>
       )}
@@ -321,6 +346,37 @@ const GeoRiskMapping = () => {
     setSelectedCountry(country);
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="relative w-full h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading Geo Risk Mapping...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="relative w-full h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <ExclamationTriangleIcon className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <p className="text-white text-lg mb-2">Error Loading Data</p>
+          <p className="text-gray-300">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden">
       {/* Header */}
@@ -361,30 +417,44 @@ const GeoRiskMapping = () => {
         {/* 3D Globe */}
         {viewMode === "globe" && (
           <div className="w-full h-full">
-            <Canvas camera={{ position: [0, 0, 15], fov: 45 }}>
-              <ambientLight intensity={0.5} />
-              <pointLight position={[10, 10, 10]} intensity={1} />
-              <Stars
-                radius={100}
-                depth={50}
-                count={5000}
-                factor={4}
-                saturation={0}
-                fade
-              />
-              <Globe
-                suppliers={suppliers}
-                activeRiskTypes={activeRiskTypes}
-                onCountryClick={handleCountryClick}
-              />
-              <OrbitControls
-                enableZoom={true}
-                enablePan={true}
-                enableRotate={true}
-                zoomSpeed={0.6}
-                panSpeed={0.5}
-                rotateSpeed={0.4}
-              />
+            <Canvas
+              camera={{ position: [0, 0, 15], fov: 45 }}
+              gl={{ antialias: true, alpha: false }}
+            >
+              <Suspense fallback={<LoadingSpinner />}>
+                <ambientLight intensity={0.6} />
+                <pointLight position={[10, 10, 10]} intensity={1.2} />
+                <pointLight position={[-10, -10, -10]} intensity={0.8} />
+
+                {/* Stars background */}
+                <Stars
+                  radius={100}
+                  depth={50}
+                  count={3000}
+                  factor={4}
+                  saturation={0}
+                  fade
+                />
+
+                {/* Main globe */}
+                <Globe
+                  suppliers={suppliers}
+                  activeRiskTypes={activeRiskTypes}
+                  onCountryClick={handleCountryClick}
+                />
+
+                {/* Camera controls */}
+                <OrbitControls
+                  enableZoom={true}
+                  enablePan={true}
+                  enableRotate={true}
+                  zoomSpeed={0.6}
+                  panSpeed={0.5}
+                  rotateSpeed={0.4}
+                  minDistance={8}
+                  maxDistance={25}
+                />
+              </Suspense>
             </Canvas>
           </div>
         )}
@@ -397,7 +467,7 @@ const GeoRiskMapping = () => {
               <button
                 key={type}
                 onClick={() => toggleRiskType(type)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded ${
+                className={`flex items-center space-x-2 px-3 py-2 rounded transition-colors ${
                   activeRiskTypes.includes(type)
                     ? "bg-opacity-20"
                     : "bg-opacity-10"

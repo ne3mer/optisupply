@@ -998,6 +998,14 @@ const Dashboard = () => {
     };
   }, [data]);
 
+  const suppliersByCountry = useMemo(
+    () =>
+      (data?.suppliersByCountry ||
+        data?.suppliers_by_country ||
+        {}) as Record<string, number>,
+    [data?.suppliersByCountry, data?.suppliers_by_country]
+  );
+
   // Risk breakdown data for Pie Chart
   const riskPieData = useMemo(() => {
     if (!data?.riskBreakdown) return [];
@@ -1198,15 +1206,15 @@ const Dashboard = () => {
         </DashboardCard>
 
         {/* Suppliers by Country (Example of another chart) */}
-        {data.suppliersByCountry &&
-          Object.keys(data.suppliersByCountry).length > 0 && (
+        {suppliersByCountry &&
+          Object.keys(suppliersByCountry).length > 0 && (
             <DashboardCard
               title="Suppliers by Country"
               icon={MapIcon}
               gridSpan="lg:col-span-3"
               className="h-[400px]"
             >
-              <SuppliersByCountryChart data={data.suppliersByCountry} />
+              <SuppliersByCountryChart data={suppliersByCountry} />
             </DashboardCard>
           )}
 
@@ -1217,7 +1225,12 @@ const Dashboard = () => {
           transition={{ delay: 0.4 }}
           className="lg:col-span-3 mb-6"
         >
-          <ReportGenerator dashboardData={data} />
+          <ReportGenerator
+            dashboardData={{
+              ...data,
+              suppliersByCountry,
+            }}
+          />
         </motion.div>
 
         {/* Add more charts here based on available data */}

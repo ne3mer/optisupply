@@ -34,10 +34,10 @@ import {
   CheckCircleIcon,
   InformationCircleIcon,
   QuestionMarkCircleIcon,
-  CalendarIcon,
   CheckBadgeIcon,
   ExclamationCircleIcon,
   NoSymbolIcon,
+  SparklesIcon,
   ClockIcon as ClockIconSolid,
 } from "@heroicons/react/24/outline";
 import { CheckBadgeIcon as CheckBadgeSolid } from "@heroicons/react/24/solid";
@@ -138,6 +138,28 @@ const getScoreColor = (score: number | null | undefined) => {
   return "#ef4444"; // red-500
 };
 
+const normalizeScoreTo100 = (score: number | null | undefined) => {
+  if (score === null || score === undefined || Number.isNaN(score)) {
+    return null;
+  }
+  return score > 0 && score <= 1 ? score * 100 : score;
+};
+
+const formatScoreValue = (score: number | null | undefined, digits = 1) => {
+  const normalized = normalizeScoreTo100(score);
+  return normalized === null ? "N/A" : normalized.toFixed(digits);
+};
+
+const formatNumericValue = (
+  value: number | null | undefined,
+  digits = 2
+) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "N/A";
+  }
+  return value.toFixed(digits);
+};
+
 // Score explanation descriptions
 const scoreExplanations = {
   ethical_score:
@@ -231,7 +253,7 @@ const getRecommendation = (supplier: Supplier) => {
 
 // Format date for display
 const formatDate = (dateString: string | undefined) => {
-  if (!dateString) return "N/A";
+  if (!dateString) return "Not yet recorded";
 
   try {
     const date = new Date(dateString);
@@ -274,6 +296,39 @@ const getTimeElapsed = (dateString: string | undefined) => {
   } catch (e) {
     return "N/A";
   }
+};
+
+const getLastUpdatedBadge = (dateString: string | undefined) => {
+  if (!dateString) {
+    return {
+      label: "Awaiting first sync",
+      tooltip:
+        "This supplier hasn’t reported any timeline updates yet. Initiate a refresh to activate live tracking.",
+      icon: <SparklesIcon className="h-3.5 w-3.5 mr-1" />,
+      style: {
+        color: colors.secondary,
+        backgroundColor: colors.secondary + "15",
+        border: `1px dashed ${colors.secondary}50`,
+        boxShadow: `0 0 18px -12px ${colors.secondary}`,
+      },
+    };
+  }
+
+  const relative = getTimeElapsed(dateString);
+  const absolute = formatDate(dateString);
+  const hasReadableRelative = relative !== "N/A" && relative !== "";
+
+  return {
+    label: hasReadableRelative ? `Updated ${relative}` : "Update captured",
+    tooltip: `Last confirmed sync: ${absolute}`,
+    icon: <ClockIconSolid className="h-3.5 w-3.5 mr-1" />,
+    style: {
+      color: colors.primary,
+      backgroundColor: colors.primary + "12",
+      border: `1px solid ${colors.primary}30`,
+      boxShadow: `0 0 0 1px ${colors.primary}10`,
+    },
+  };
 };
 
 // Tooltip component
@@ -1024,6 +1079,193 @@ const SuppliersList = () => {
     }
   };
 
+  const exportComparison = () => {
+    if (selectedSuppliers.length < 2) {
+      alert("Select at least two suppliers before exporting a comparison.");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF("landscape");
+      doc.setFontSize(18);
+      doc.text("Supplier Comparison", 14, 22);
+
+      const tableData = [
+        ["Metric", ...selectedSuppliers.map((s) => s.name || "Unnamed Supplier")],
+        [
+          "Country",
+          ...selectedSuppliers.map((s) => s.country || "N/A"),
+        ],
+        [
+          "Industry",
+          ...selectedSuppliers.map((s) => s.industry || "N/A"),
+        ],
+        [
+          "Ethical Score",
+          ...selectedSuppliers.map((s) => formatScoreValue(s.ethical_score)),
+        ],
+        [
+          "Environmental Score",
+          ...selectedSuppliers.map((s) =>
+            formatScoreValue(s.environmental_score)
+          ),
+        ],
+        [
+          "Social Score",
+          ...selectedSuppliers.map((s) => formatScoreValue(s.social_score)),
+        ],
+        [
+          "Governance Score",
+          ...selectedSuppliers.map((s) => formatScoreValue(s.governance_score)),
+        ],
+        [
+          "Delivery Efficiency",
+          ...selectedSuppliers.map((s) => formatScoreValue(s.delivery_efficiency)),
+        ],
+        [
+          "Wage Fairness",
+          ...selectedSuppliers.map((s) => formatScoreValue(s.wage_fairness)),
+        ],
+        [
+          "Human Rights Index",
+          ...selectedSuppliers.map((s) => formatScoreValue(s.human_rights_index)),
+        ],
+        [
+          "Waste Management",
+          ...selectedSuppliers.map((s) => formatScoreValue(s.waste_management_score)),
+        ],
+        [
+          "CO₂ Emissions (t)",
+          ...selectedSuppliers.map((s) => formatNumericValue(s.co2_emissions)),
+        ],
+        [
+          "Risk Level",
+          ...selectedSuppliers.map((s) => s.risk_level || "N/A"),
+        ],
+      ];
+
+      doc.autoTable({
+        body: tableData,
+        startY: 35,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 5 },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: [255, 255, 255],
+        },
+      });
+
+      doc.save(
+        `supplier_comparison_${new Date().toISOString().split("T")[0]}.pdf`
+      );
+    } catch (error) {
+      console.error("Error exporting comparison:", error);
+      alert("Failed to export the comparison. Please try again.");
+    }
+  };
+
+  const comparisonMetrics = useMemo(
+    () =>
+      [
+        {
+          key: "ethical_score",
+          label: "Ethical Score",
+          getValue: (s: Supplier) => s.ethical_score,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "environmental_score",
+          label: "Environmental Score",
+          getValue: (s: Supplier) => s.environmental_score,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "social_score",
+          label: "Social Score",
+          getValue: (s: Supplier) => s.social_score,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "governance_score",
+          label: "Governance Score",
+          getValue: (s: Supplier) => s.governance_score,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "delivery_efficiency",
+          label: "Delivery Efficiency",
+          getValue: (s: Supplier) => s.delivery_efficiency,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "wage_fairness",
+          label: "Wage Fairness",
+          getValue: (s: Supplier) => s.wage_fairness,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "human_rights_index",
+          label: "Human Rights Index",
+          getValue: (s: Supplier) => s.human_rights_index,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "waste_management_score",
+          label: "Waste Management",
+          getValue: (s: Supplier) => s.waste_management_score,
+          format: formatScoreValue,
+          normalize: normalizeScoreTo100,
+          higherIsBetter: true,
+        },
+        {
+          key: "co2_emissions",
+          label: "CO₂ Emissions (t)",
+          getValue: (s: Supplier) => s.co2_emissions,
+          format: (value: number | null | undefined) =>
+            formatNumericValue(value, 2),
+          normalize: (value: number | null | undefined) =>
+            value === null || value === undefined || Number.isNaN(value)
+              ? null
+              : value,
+          higherIsBetter: false,
+        },
+      ],
+    []
+  );
+
+  const topPerformer = useMemo(() => {
+    const ranked = selectedSuppliers
+      .map((supplier) => ({
+        supplier,
+        score: normalizeScoreTo100(supplier.ethical_score),
+      }))
+      .filter((entry) => entry.score !== null) as Array<{
+      supplier: Supplier;
+      score: number;
+    }>;
+
+    if (ranked.length === 0) {
+      return null;
+    }
+
+    ranked.sort((a, b) => b.score - a.score);
+    return ranked[0];
+  }, [selectedSuppliers]);
+
   // Add/remove supplier from comparison
   const toggleSupplierSelection = (supplier: Supplier) => {
     setSelectedSuppliers((prev) => {
@@ -1474,6 +1716,9 @@ const SuppliersList = () => {
                 const isSelected = isSupplierSelected(supplier);
                 const statusStyles = getStatusStyles(supplier.status);
                 const recommendation = getRecommendation(supplier);
+                const lastUpdatedBadge = getLastUpdatedBadge(
+                  supplier.last_updated
+                );
 
                 return (
                   <motion.div
@@ -1719,20 +1964,14 @@ const SuppliersList = () => {
                         style={{ borderColor: colors.accent + "20" }}
                       >
                         <Tooltip
-                          content={
-                            supplier.last_updated
-                              ? formatDate(supplier.last_updated)
-                              : "Update date not available"
-                          }
+                          content={lastUpdatedBadge.tooltip}
                         >
                           <span
-                            className="text-xs flex items-center"
-                            style={{ color: colors.textMuted }}
+                            className="text-xs flex items-center px-2 py-1 rounded-full"
+                            style={lastUpdatedBadge.style}
                           >
-                            <CalendarIcon className="h-3 w-3 mr-1" />
-                            {supplier.last_updated
-                              ? getTimeElapsed(supplier.last_updated)
-                              : "N/A"}
+                            {lastUpdatedBadge.icon}
+                            {lastUpdatedBadge.label}
                           </span>
                         </Tooltip>
                       </div>
@@ -1929,6 +2168,298 @@ const SuppliersList = () => {
             )}
           </AnimatePresence>
 
+          {/* Comparison Modal */}
+          <AnimatePresence>
+            {showComparisonModal && selectedSuppliers.length >= 2 && (
+              <motion.div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowComparisonModal(false)}
+              >
+                <motion.div
+                  className="relative w-full max-w-6xl rounded-xl overflow-hidden"
+                  style={{
+                    backgroundColor: colors.background,
+                    border: `1px solid ${colors.accent}30`,
+                  }}
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="p-5 border-b flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+                    style={{ borderColor: colors.accent + "30" }}
+                  >
+                    <div>
+                      <h2
+                        className="text-2xl font-bold"
+                        style={{ color: colors.text }}
+                      >
+                        Supplier Comparison
+                      </h2>
+                      <p
+                        className="text-sm mt-1"
+                        style={{ color: colors.textMuted }}
+                      >
+                        Comparing {selectedSuppliers.length} suppliers across
+                        key ESG and operational metrics.
+                      </p>
+                      {topPerformer && (
+                        <p className="text-xs" style={{ color: colors.primary }}>
+                          Top performer: {topPerformer.supplier.name} (
+                          {topPerformer.score.toFixed(1)})
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 self-end md:self-auto">
+                      <button
+                        onClick={exportComparison}
+                        className="px-3 py-2 rounded text-sm font-medium flex items-center"
+                        style={{
+                          backgroundColor: colors.accent,
+                          color: colors.background,
+                        }}
+                      >
+                        <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+                        Export
+                      </button>
+                      <button
+                        onClick={() => setShowComparisonModal(false)}
+                        className="p-2 rounded-full hover:bg-white/10"
+                        style={{ color: colors.textMuted }}
+                        aria-label="Close comparison"
+                      >
+                        <XMarkIcon className="h-6 w-6" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-5 space-y-6 max-h-[75vh] overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                      {selectedSuppliers.map((supplier) => {
+                        const supplierId = supplier._id || supplier.id || supplier.name;
+                        const statusStyles = getStatusStyles(supplier.status);
+                        return (
+                          <div
+                            key={`summary-${supplierId}`}
+                            className="p-4 rounded-lg border"
+                            style={{
+                              backgroundColor: colors.panel,
+                              borderColor: colors.accent + "30",
+                            }}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <h3
+                                  className="text-lg font-semibold"
+                                  style={{ color: colors.text }}
+                                >
+                                  {supplier.name}
+                                </h3>
+                                <div
+                                  className="text-xs flex flex-wrap gap-2 mt-2"
+                                  style={{ color: colors.textMuted }}
+                                >
+                                  {supplier.country && (
+                                    <span className="flex items-center gap-1">
+                                      <MapPinIcon className="h-3.5 w-3.5" />
+                                      {supplier.country}
+                                    </span>
+                                  )}
+                                  {supplier.industry && (
+                                    <span className="flex items-center gap-1">
+                                      <BuildingOfficeIcon className="h-3.5 w-3.5" />
+                                      {supplier.industry}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <span
+                                className="text-sm font-semibold"
+                                style={{ color: colors.primary }}
+                              >
+                                {formatScoreValue(supplier.ethical_score)}
+                              </span>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                              <span
+                                className="px-2 py-1 rounded-full flex items-center"
+                                style={{
+                                  backgroundColor:
+                                    getRiskColor(supplier.risk_level) + "20",
+                                  color: getRiskColor(supplier.risk_level),
+                                  border: `1px solid ${getRiskColor(
+                                    supplier.risk_level
+                                  )}40`,
+                                }}
+                              >
+                                <span className="mr-1">
+                                  {getRiskIcon(supplier.risk_level)}
+                                </span>
+                                {supplier.risk_level || "Risk N/A"}
+                              </span>
+                              <span
+                                className="px-2 py-1 rounded-full flex items-center"
+                                style={{
+                                  color: statusStyles.color,
+                                  backgroundColor: statusStyles.bgColor,
+                                  border: statusStyles.border,
+                                }}
+                              >
+                                {statusStyles.icon}
+                                {supplier.status || "Status Unknown"}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div
+                      className="overflow-x-auto rounded-lg border"
+                      style={{ borderColor: colors.accent + "30" }}
+                    >
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr>
+                            <th
+                              className="px-4 py-3 text-left font-semibold"
+                              style={{
+                                color: colors.textMuted,
+                                backgroundColor: colors.panel,
+                              }}
+                            >
+                              Metric
+                            </th>
+                            {selectedSuppliers.map((supplier) => (
+                              <th
+                                key={`metric-header-${
+                                  supplier._id || supplier.id || supplier.name
+                                }`}
+                                className="px-4 py-3 text-left font-semibold"
+                                style={{
+                                  color: colors.textMuted,
+                                  backgroundColor: colors.panel,
+                                }}
+                              >
+                                {supplier.name}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {comparisonMetrics.map((metric) => {
+                            const normalizedValues = selectedSuppliers.map((supplier) =>
+                              metric.normalize(metric.getValue(supplier))
+                            );
+
+                            const numericEntries = normalizedValues
+                              .map((value, index) =>
+                                typeof value === "number" && !Number.isNaN(value)
+                                  ? { value, index }
+                                  : null
+                              )
+                              .filter(Boolean) as Array<{ value: number; index: number }>;
+
+                            let highlightIndex = -1;
+                            if (numericEntries.length > 0) {
+                              highlightIndex = metric.higherIsBetter
+                                ? numericEntries.reduce((best, current) =>
+                                    current.value > best.value ? current : best
+                                  ).index
+                                : numericEntries.reduce((best, current) =>
+                                    current.value < best.value ? current : best
+                                  ).index;
+                            }
+
+                            return (
+                              <tr
+                                key={metric.key}
+                                className="border-t"
+                                style={{ borderColor: colors.accent + "20" }}
+                              >
+                                <td
+                                  className="px-4 py-3 font-medium"
+                                  style={{ color: colors.text }}
+                                >
+                                  {metric.label}
+                                </td>
+                                {selectedSuppliers.map((supplier, index) => {
+                                  const value = metric.getValue(supplier);
+                                  const isHighlighted = index === highlightIndex;
+                                  return (
+                                    <td
+                                      key={`${metric.key}-${
+                                        supplier._id || supplier.id || supplier.name
+                                      }`}
+                                      className="px-4 py-3"
+                                      style={{
+                                        color: isHighlighted
+                                          ? colors.primary
+                                          : colors.textMuted,
+                                      }}
+                                    >
+                                      {metric.format(value)}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-2">
+                        {selectedSuppliers.map((supplier) => (
+                          <span
+                            key={`tag-${supplier._id || supplier.id || supplier.name}`}
+                            className="px-3 py-1 rounded-full text-xs"
+                            style={{
+                              backgroundColor: colors.panel,
+                              color: colors.textMuted,
+                              border: `1px solid ${colors.accent}30`,
+                            }}
+                          >
+                            {supplier.name}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={clearSelections}
+                          className="px-4 py-2 rounded text-sm"
+                          style={{
+                            backgroundColor: colors.panel,
+                            color: colors.textMuted,
+                            border: `1px solid ${colors.accent}30`,
+                          }}
+                        >
+                          Clear Selection
+                        </button>
+                        <button
+                          onClick={() => setShowComparisonModal(false)}
+                          className="px-4 py-2 rounded text-sm font-medium"
+                          style={{
+                            backgroundColor: colors.primary,
+                            color: colors.background,
+                          }}
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Detailed View Modal */}
           <AnimatePresence>
             {showModal && selectedSupplier && (
@@ -2011,25 +2542,22 @@ const SuppliersList = () => {
                         </span>
 
                         {/* Last Updated in Modal */}
-                        <Tooltip
-                          content={
+                        {(() => {
+                          const badge = getLastUpdatedBadge(
                             selectedSupplier.last_updated
-                              ? formatDate(selectedSupplier.last_updated)
-                              : "Update date not available"
-                          }
-                        >
-                          <span
-                            className="text-xs flex items-center"
-                            style={{ color: colors.textMuted }}
-                          >
-                            <ClockIconSolid className="h-3.5 w-3.5 mr-1" />
-                            {selectedSupplier.last_updated
-                              ? `Updated ${getTimeElapsed(
-                                  selectedSupplier.last_updated
-                                )}`
-                              : "Update date N/A"}
-                          </span>
-                        </Tooltip>
+                          );
+                          return (
+                            <Tooltip content={badge.tooltip}>
+                              <span
+                                className="text-xs flex items-center px-2 py-1 rounded-full"
+                                style={badge.style}
+                              >
+                                {badge.icon}
+                                {badge.label}
+                              </span>
+                            </Tooltip>
+                          );
+                        })()}
                       </div>
                     </div>
                     <button
@@ -2547,7 +3075,7 @@ const SuppliersList = () => {
                     }}
                   >
                     <button
-                      onClick={() => setShowComparisonModal(false)}
+                      onClick={closeModal}
                       className="px-4 py-2 rounded"
                       style={{
                         backgroundColor: colors.panel,
@@ -2555,109 +3083,6 @@ const SuppliersList = () => {
                       }}
                     >
                       Close
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Export comparison
-                        const doc = new jsPDF("landscape");
-
-                        // Add title
-                        doc.setFontSize(18);
-                        doc.text("Supplier Comparison", 14, 22);
-
-                        // Create a simple table
-                        const tableData = [
-                          ["Metric", ...selectedSuppliers.map((s) => s.name)],
-                          [
-                            "Country",
-                            ...selectedSuppliers.map((s) => s.country || "N/A"),
-                          ],
-                          [
-                            "Industry",
-                            ...selectedSuppliers.map(
-                              (s) => s.industry || "N/A"
-                            ),
-                          ],
-                          [
-                            "Ethical Score",
-                            ...selectedSuppliers.map((s) =>
-                              s.ethical_score !== null &&
-                              s.ethical_score !== undefined
-                                ? s.ethical_score > 0 && s.ethical_score <= 1
-                                  ? (s.ethical_score * 100).toFixed(1)
-                                  : s.ethical_score.toFixed(1)
-                                : "N/A"
-                            ),
-                          ],
-                          [
-                            "Environmental",
-                            ...selectedSuppliers.map((s) =>
-                              s.environmental_score !== null &&
-                              s.environmental_score !== undefined
-                                ? s.environmental_score > 0 &&
-                                  s.environmental_score <= 1
-                                  ? (s.environmental_score * 100).toFixed(1)
-                                  : s.environmental_score.toFixed(1)
-                                : "N/A"
-                            ),
-                          ],
-                          [
-                            "Social",
-                            ...selectedSuppliers.map((s) =>
-                              s.social_score !== null &&
-                              s.social_score !== undefined
-                                ? s.social_score > 0 && s.social_score <= 1
-                                  ? (s.social_score * 100).toFixed(1)
-                                  : s.social_score.toFixed(1)
-                                : "N/A"
-                            ),
-                          ],
-                          [
-                            "Governance",
-                            ...selectedSuppliers.map((s) =>
-                              s.governance_score !== null &&
-                              s.governance_score !== undefined
-                                ? s.governance_score > 0 &&
-                                  s.governance_score <= 1
-                                  ? (s.governance_score * 100).toFixed(1)
-                                  : s.governance_score.toFixed(1)
-                                : "N/A"
-                            ),
-                          ],
-                          [
-                            "Risk Level",
-                            ...selectedSuppliers.map(
-                              (s) => s.risk_level || "N/A"
-                            ),
-                          ],
-                        ];
-
-                        doc.autoTable({
-                          body: tableData,
-                          startY: 35,
-                          theme: "grid",
-                          styles: { fontSize: 10, cellPadding: 5 },
-                          headStyles: {
-                            fillColor: [41, 128, 185],
-                            textColor: [255, 255, 255],
-                          },
-                        });
-
-                        // Save the PDF
-                        doc.save(
-                          `supplier_comparison_${
-                            new Date().toISOString().split("T")[0]
-                          }.pdf`
-                        );
-                      }}
-                      className="px-4 py-2 rounded flex items-center"
-                      style={{
-                        backgroundColor: colors.accent,
-                        color: colors.background,
-                      }}
-                    >
-                      <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-                      Export Comparison
                     </button>
                   </div>
                 </motion.div>
