@@ -31,6 +31,13 @@ export interface DashboardData {
   isMockData?: boolean;
 }
 
+export interface DatasetMeta {
+  version: string;
+  seed: string | null;
+  generatedAt: string | null;
+  bandsVersion: string | null;
+}
+
 /**
  * Helper function to convert 0-1 values to 0-100 scale
  * @param data The dashboard data object
@@ -124,6 +131,26 @@ export const getDashboardData = async (): Promise<DashboardData> => {
     console.error("Error fetching dashboard data:", error);
     // Return mock data in case of error
     return getMockDashboardData();
+  }
+};
+
+/**
+ * Fetch dataset metadata for display (version/seed/timestamps)
+ */
+export const getDatasetMeta = async (): Promise<DatasetMeta | null> => {
+  try {
+    const resp = await fetch(`${API_BASE_URL}/dataset/meta`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return {
+      version: String(data.version ?? "synthetic-v1"),
+      seed: data.seed ?? null,
+      generatedAt: data.generatedAt ?? null,
+      bandsVersion: data.bandsVersion ?? null,
+    } as DatasetMeta;
+  } catch (e) {
+    console.warn("Failed to fetch dataset meta:", e);
+    return null;
   }
 };
 

@@ -18,6 +18,7 @@ import {
   GlobeEuropeAfricaIcon,
   UsersIcon,
   BuildingLibraryIcon,
+  ChartBarIcon,
   TruckIcon,
   ShieldExclamationIcon,
   ChevronDownIcon,
@@ -55,6 +56,16 @@ const getRiskColor = (riskLevel?: string) => {
   return colors.textMuted;
 };
 
+const formatPercent = (
+  value: number | null | undefined,
+  digits = 0
+) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "N/A";
+  }
+  return `${(value * 100).toFixed(digits)}%`;
+};
+
 const LoadingIndicator = ({ message = "Loading Data..." }) => (
   <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
     <motion.div
@@ -86,6 +97,22 @@ const InputField = ({
   onChange,
   placeholder = "",
   disabled = false,
+  min,
+  max,
+  step,
+  helper,
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  value: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+  step?: number;
+  helper?: string;
 }) => (
   <div className="mb-4">
     <label
@@ -103,6 +130,9 @@ const InputField = ({
       onChange={onChange}
       placeholder={placeholder}
       disabled={disabled}
+      min={min}
+      max={max}
+      step={step}
       className={`w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 ${
         disabled ? "opacity-60 cursor-not-allowed" : ""
       }`}
@@ -112,7 +142,13 @@ const InputField = ({
         color: colors.text,
         "--tw-ring-color": colors.primary,
       }}
+      data-type={type === "number" ? "number" : undefined}
     />
+    {helper && (
+      <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+        {helper}
+      </p>
+    )}
   </div>
 );
 
@@ -288,8 +324,9 @@ const SliderField = ({
           {unit}
         </span>
       </div>
-    </div>
-  );
+  </div>
+);
+
 };
 
 // --- Main Edit Form Component ---
@@ -439,6 +476,12 @@ const SupplierEditForm = () => {
       const { name, value, type } = e.target;
       let processedValue: string | number | null = value;
 
+      if (type === "checkbox" && e.target instanceof HTMLInputElement) {
+        const checked = e.target.checked;
+        setFormData((prev) => ({ ...prev, [name]: checked }));
+        return;
+      }
+
       // Handle numeric types (range sliders or explicit number inputs)
       if (
         type === "range" ||
@@ -485,22 +528,65 @@ const SupplierEditForm = () => {
     setSuccessMessage(null);
 
     // Prepare data for submission - ensure proper types
-    const dataToSubmit = {
+    const dataToSubmit: any = {
       ...formData,
-      // Convert string numeric values to actual numbers if needed
-      co2_emissions:
-        typeof formData.co2_emissions === "string"
-          ? parseFloat(formData.co2_emissions)
-          : formData.co2_emissions,
-      water_usage:
-        typeof formData.water_usage === "string"
-          ? parseFloat(formData.water_usage)
-          : formData.water_usage,
-      renewable_energy_percent:
-        typeof formData.renewable_energy_percent === "string"
-          ? parseFloat(formData.renewable_energy_percent)
-          : formData.renewable_energy_percent,
     };
+
+    const numericKeys = [
+      "revenue",
+      "employee_count",
+      "total_emissions",
+      "co2_emissions",
+      "water_usage",
+      "waste_generated",
+      "renewable_energy_percent",
+      "pollution_control",
+      "energy_efficiency",
+      "waste_management_score",
+      "injury_rate",
+      "training_hours",
+      "living_wage_ratio",
+      "gender_diversity_percent",
+      "diversity_inclusion_score",
+      "community_engagement",
+      "worker_safety",
+      "board_diversity",
+      "board_independence",
+      "transparency_score",
+      "ethics_program",
+      "compliance_systems",
+      "delivery_efficiency",
+      "quality_control_score",
+      "supplier_diversity",
+      "traceability",
+      "geopolitical_risk",
+      "climate_risk",
+      "labor_dispute_risk",
+    ];
+
+    numericKeys.forEach((key) => {
+      const raw = dataToSubmit[key];
+      if (raw === undefined || raw === "" || raw === null) {
+        dataToSubmit[key] = undefined;
+        return;
+      }
+      const parsed = Number(raw);
+      dataToSubmit[key] = Number.isNaN(parsed) ? undefined : parsed;
+    });
+
+    if (typeof dataToSubmit.renewable_energy_percent === "number") {
+      dataToSubmit.renewable_energy_percent = Math.min(
+        100,
+        Math.max(0, dataToSubmit.renewable_energy_percent)
+      );
+    }
+
+    if (typeof dataToSubmit.living_wage_ratio === "number") {
+      dataToSubmit.living_wage_ratio = Math.max(
+        0,
+        dataToSubmit.living_wage_ratio
+      );
+    }
 
     console.log("Updating Supplier Data:", dataToSubmit);
 
@@ -792,6 +878,18 @@ const SupplierEditForm = () => {
             </a>
 
             <a
+              href="#scale-finance"
+              className="flex items-center p-2 rounded-md transition-colors hover:bg-accent/10"
+              style={{ color: colors.text }}
+            >
+              <ChartBarIcon
+                className="h-4 w-4 mr-2"
+                style={{ color: colors.secondary }}
+              />
+              Scale & Financials
+            </a>
+
+            <a
               href="#environmental"
               className="flex items-center p-2 rounded-md transition-colors hover:bg-accent/10"
               style={{ color: colors.text }}
@@ -993,6 +1091,67 @@ const SupplierEditForm = () => {
                 </div>
               </div>
 
+              <h2
+                className="text-xl font-bold mb-6 pb-2 relative"
+                id="scale-finance"
+                style={{
+                  borderBottom: `2px solid ${colors.secondary}40`,
+                  display: "inline-block",
+                  paddingRight: "50px",
+                }}
+              >
+                <div className="flex items-center">
+                  <ChartBarIcon
+                    className="w-5 h-5 mr-2"
+                    style={{ color: colors.secondary }}
+                  />
+                  <span>Scale & Financials</span>
+                  <div
+                    className="absolute bottom-0 left-0 h-[2px] w-20"
+                    style={{
+                      background: `linear-gradient(90deg, ${colors.secondary}, transparent)`,
+                    }}
+                  />
+                </div>
+              </h2>
+              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+                  <InputField
+                    name="revenue"
+                    label="Annual Revenue (USD millions)"
+                    type="number"
+                    value={formData.revenue ?? ""}
+                    onChange={handleChange}
+                    placeholder="e.g., 1250"
+                    min={0}
+                    step={0.01}
+                    helper="Used to normalize emission and resource intensities."
+                  />
+                  <InputField
+                    name="employee_count"
+                    label="Employee Count"
+                    type="number"
+                    value={formData.employee_count ?? ""}
+                    onChange={handleChange}
+                    placeholder="e.g., 5400"
+                    min={0}
+                    step={1}
+                    helper="Total number of direct employees."
+                  />
+                  <InputField
+                    name="total_emissions"
+                    label="Total Emissions (Scope 1+2, tCO₂e)"
+                    type="number"
+                    value={formData.total_emissions ?? ""}
+                    onChange={handleChange}
+                    placeholder="e.g., 185000"
+                    min={0}
+                    step={0.01}
+                    helper="Used to compute emission intensity."
+                  />
+                </div>
+              </div>
+
               {/* Add other editable fields using InputField/SelectField/SliderField */}
               {/* Example: Environmental Section (Make sliders if desired) */}
               <h2
@@ -1022,11 +1181,14 @@ const SupplierEditForm = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                   <InputField
                     name="co2_emissions"
-                    label="CO₂ Emissions (Tons)"
+                    label="Scope-Specific Emissions (tCO₂e)"
                     type="number"
                     value={formData.co2_emissions ?? ""}
                     onChange={handleChange}
                     placeholder="e.g., 1500.5"
+                    min={0}
+                    step={0.01}
+                    helper="If left blank, total emissions figure will be used."
                   />
                   <InputField
                     name="water_usage"
@@ -1035,34 +1197,28 @@ const SupplierEditForm = () => {
                     value={formData.water_usage ?? ""}
                     onChange={handleChange}
                     placeholder="e.g., 50000"
-                  />
-                  <SliderField
-                    name="waste_management_score"
-                    label="Waste Management Score"
-                    value={formData.waste_management_score ?? 0.5}
-                    onChange={handleChange}
-                  />
-                  <SliderField
-                    name="energy_efficiency"
-                    label="Energy Efficiency Score"
-                    value={formData.energy_efficiency ?? 0.5}
-                    onChange={handleChange}
+                    min={0}
+                    step={0.01}
                   />
                   <InputField
-                    name="renewable_energy_percent"
-                    label="Renewable Energy (%)"
+                    name="waste_generated"
+                    label="Waste Generated (Tonnes)"
                     type="number"
-                    min={0}
-                    max={100}
-                    value={formData.renewable_energy_percent ?? ""}
+                    value={formData.waste_generated ?? ""}
                     onChange={handleChange}
-                    placeholder="0-100"
+                    placeholder="e.g., 1200"
+                    min={0}
+                    step={0.01}
                   />
                   <SliderField
-                    name="pollution_control"
-                    label="Pollution Control Score"
-                    value={formData.pollution_control ?? 0.5}
+                    name="renewable_energy_percent"
+                    label="Renewable Energy Share"
+                    value={formData.renewable_energy_percent ?? 0}
                     onChange={handleChange}
+                    min={0}
+                    max={100}
+                    step={1}
+                    unit="%"
                   />
                 </div>
               </div>
@@ -1093,16 +1249,42 @@ const SupplierEditForm = () => {
               <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                   <SliderField
-                    name="wage_fairness"
-                    label="Wage Fairness Score"
-                    value={formData.wage_fairness ?? 0.5}
+                    name="injury_rate"
+                    label="Injury Rate (per 200k hrs)"
+                    value={formData.injury_rate ?? 0}
                     onChange={handleChange}
+                    min={0}
+                    max={10}
+                    step={0.01}
                   />
                   <SliderField
-                    name="human_rights_index"
-                    label="Human Rights Index"
-                    value={formData.human_rights_index ?? 0.5}
+                    name="training_hours"
+                    label="Training Hours per Employee"
+                    value={formData.training_hours ?? 0}
                     onChange={handleChange}
+                    min={0}
+                    max={200}
+                    step={1}
+                    unit="hrs"
+                  />
+                  <SliderField
+                    name="living_wage_ratio"
+                    label="Living Wage Ratio"
+                    value={formData.living_wage_ratio ?? 1}
+                    onChange={handleChange}
+                    min={0.6}
+                    max={1.5}
+                    step={0.01}
+                  />
+                  <SliderField
+                    name="gender_diversity_percent"
+                    label="Gender Diversity (% Women)"
+                    value={formData.gender_diversity_percent ?? 0}
+                    onChange={handleChange}
+                    min={0}
+                    max={100}
+                    step={1}
+                    unit="%"
                   />
                   <SliderField
                     name="diversity_inclusion_score"
@@ -1111,15 +1293,15 @@ const SupplierEditForm = () => {
                     onChange={handleChange}
                   />
                   <SliderField
-                    name="community_engagement"
-                    label="Community Engagement"
-                    value={formData.community_engagement ?? 0.5}
-                    onChange={handleChange}
-                  />
-                  <SliderField
                     name="worker_safety"
                     label="Worker Safety Score"
                     value={formData.worker_safety ?? 0.5}
+                    onChange={handleChange}
+                  />
+                  <SliderField
+                    name="community_engagement"
+                    label="Community Engagement"
+                    value={formData.community_engagement ?? 0.5}
                     onChange={handleChange}
                   />
                 </div>
@@ -1150,22 +1332,34 @@ const SupplierEditForm = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                 <SliderField
+                  name="board_diversity"
+                  label="Board Diversity (% Women/Minority)"
+                  value={formData.board_diversity ?? 0}
+                  onChange={handleChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                  unit="%"
+                />
+                <SliderField
+                  name="board_independence"
+                  label="Board Independence"
+                  value={formData.board_independence ?? 0}
+                  onChange={handleChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                  unit="%"
+                />
+                <SliderField
                   name="transparency_score"
                   label="Transparency Score"
-                  value={formData.transparency_score ?? 0.5}
+                  value={formData.transparency_score ?? 0}
                   onChange={handleChange}
-                />
-                <SliderField
-                  name="corruption_risk"
-                  label="Corruption Risk"
-                  value={formData.corruption_risk ?? 0.5}
-                  onChange={handleChange}
-                />
-                <SliderField
-                  name="board_diversity"
-                  label="Board Diversity Score"
-                  value={formData.board_diversity ?? 0.5}
-                  onChange={handleChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                  unit="%"
                 />
                 <SliderField
                   name="ethics_program"
@@ -1179,6 +1373,26 @@ const SupplierEditForm = () => {
                   value={formData.compliance_systems ?? 0.5}
                   onChange={handleChange}
                 />
+                <label
+                  htmlFor="anti_corruption_policy"
+                  className="flex items-center gap-3 cursor-pointer select-none"
+                  style={{ color: colors.text }}
+                >
+                  <input
+                    id="anti_corruption_policy"
+                    name="anti_corruption_policy"
+                    type="checkbox"
+                    checked={!!formData.anti_corruption_policy}
+                    onChange={handleChange as any}
+                    className="h-4 w-4 rounded border focus:ring-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.accent + "60",
+                      "--tw-ring-color": colors.primary,
+                    }}
+                  />
+                  <span className="text-sm">Anti-Corruption Policy in Place</span>
+                </label>
               </div>
 
               <h2
@@ -1260,18 +1474,27 @@ const SupplierEditForm = () => {
                   label="Geopolitical Risk"
                   value={formData.geopolitical_risk ?? 0.5}
                   onChange={handleChange}
+                  min={0}
+                  max={1}
+                  step={0.01}
                 />
                 <SliderField
                   name="climate_risk"
                   label="Climate Risk"
                   value={formData.climate_risk ?? 0.5}
                   onChange={handleChange}
+                  min={0}
+                  max={1}
+                  step={0.01}
                 />
                 <SliderField
                   name="labor_dispute_risk"
                   label="Labor Dispute Risk"
                   value={formData.labor_dispute_risk ?? 0.5}
                   onChange={handleChange}
+                  min={0}
+                  max={1}
+                  step={0.01}
                 />
               </div>
 
@@ -1301,39 +1524,75 @@ const SupplierEditForm = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                 <InputField
                   name="ethical_score"
-                  label="Ethical Score"
+                  label="ESG Score (Risk Adjusted)"
                   type="number"
                   value={formData.ethical_score ?? ""}
                   onChange={handleChange}
                   placeholder="Overall score (0-100)"
-                  disabled={true}
+                  disabled
+                />
+                <InputField
+                  name="composite_score"
+                  label="Composite ESG Score"
+                  type="number"
+                  value={formData.composite_score ?? ""}
+                  onChange={handleChange}
+                  placeholder="Pre-risk score"
+                  disabled
+                />
+                <InputField
+                  name="risk_factor"
+                  label="Risk Factor (Penalty)"
+                  type="text"
+                  value={
+                    formData.risk_factor !== undefined &&
+                    formData.risk_factor !== null
+                      ? formatPercent(formData.risk_factor, 1)
+                      : "N/A"
+                  }
+                  onChange={handleChange}
+                  disabled
                 />
                 <InputField
                   name="environmental_score"
-                  label="Environmental Score"
+                  label="Environmental Pillar" 
                   type="number"
                   value={formData.environmental_score ?? ""}
                   onChange={handleChange}
-                  placeholder="Environmental score (0-100)"
-                  disabled={true}
+                  placeholder="0-100"
+                  disabled
                 />
                 <InputField
                   name="social_score"
-                  label="Social Score"
+                  label="Social Pillar"
                   type="number"
                   value={formData.social_score ?? ""}
                   onChange={handleChange}
-                  placeholder="Social score (0-100)"
-                  disabled={true}
+                  placeholder="0-100"
+                  disabled
                 />
                 <InputField
                   name="governance_score"
-                  label="Governance Score"
+                  label="Governance Pillar"
                   type="number"
                   value={formData.governance_score ?? ""}
                   onChange={handleChange}
-                  placeholder="Governance score (0-100)"
-                  disabled={true}
+                  placeholder="0-100"
+                  disabled
+                />
+                <InputField
+                  name="completeness_ratio"
+                  label="Data Completeness"
+                  type="number"
+                  value={
+                    formData.completeness_ratio !== undefined &&
+                    formData.completeness_ratio !== null
+                      ? (formData.completeness_ratio * 100).toFixed(1)
+                      : ""
+                  }
+                  onChange={handleChange}
+                  placeholder="0-100"
+                  disabled
                 />
                 <SelectField
                   name="risk_level"
@@ -1341,7 +1600,7 @@ const SupplierEditForm = () => {
                   value={formData.risk_level || ""}
                   onChange={handleChange}
                   options={["Low", "Medium", "High", "Critical"]}
-                  disabled={true}
+                  disabled
                 />
               </div>
 

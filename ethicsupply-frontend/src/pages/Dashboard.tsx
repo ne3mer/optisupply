@@ -19,6 +19,7 @@ import {
   ClipboardDocumentCheckIcon,
   PresentationChartLineIcon,
   CalendarIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import {
   ResponsiveContainer,
@@ -48,6 +49,7 @@ import {
   getDashboardData,
   checkApiConnection,
   getMockDashboardData,
+  getDatasetMeta,
 } from "../services/dashboardService";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -161,6 +163,16 @@ const getRiskColor = (level: string | undefined) => {
     default:
       return colors.textMuted;
   }
+};
+
+const formatPercent = (
+  value: number | null | undefined,
+  digits = 0
+) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "N/A";
+  }
+  return `${(value * 100).toFixed(digits)}%`;
 };
 
 // --- Reusable Styled Components ---
@@ -286,22 +298,60 @@ const ReportGenerator = ({
       summary: {
         title: `Annual ESG Performance Report ${year}`,
         date: new Date().toLocaleDateString(),
-        totalSuppliers: dashboardData.totalSuppliers || 0,
-        avgEthicalScore: dashboardData.avgEthicalScore || 0,
-        avgCO2Emissions: dashboardData.avgCo2Emissions || 0,
-        riskBreakdown: dashboardData.riskBreakdown || {
-          low: 0,
-          medium: 0,
-          high: 0,
-        },
+        totalSuppliers:
+          dashboardData.totalSuppliers ?? dashboardData.total_suppliers ?? 0,
+        avgEthicalScore:
+          dashboardData.avgEthicalScore ?? dashboardData.avg_ethical_score ?? 0,
+        avgCompositeScore:
+          dashboardData.avgCompositeScore ??
+          dashboardData.avg_composite_score ??
+          dashboardData.avgEthicalScore ??
+          0,
+        avgRiskFactor:
+          dashboardData.avgRiskFactor ?? dashboardData.avg_risk_factor ?? 0,
+        avgCompletenessRatio:
+          dashboardData.avgCompletenessRatio ??
+          dashboardData.avg_completeness_ratio ??
+          1,
+        avgCO2Emissions:
+          dashboardData.avgCo2Emissions ?? dashboardData.avg_co2_emissions ?? 0,
+        riskBreakdown:
+          dashboardData.riskBreakdown ?? dashboardData.risk_breakdown ?? {
+            low: 0,
+            medium: 0,
+            high: 0,
+            critical: 0,
+          },
       },
-      scoreDistribution: dashboardData.ethicalScoreDistribution || [],
-      co2ByIndustry: dashboardData.co2EmissionsByIndustry || [],
-      suppliersByCountry: dashboardData.suppliersByCountry || {},
-      waterUsageTrend: dashboardData.waterUsageTrend || [],
-      renewableEnergy: dashboardData.renewableEnergyAdoption || [],
-      sustainablePractices: dashboardData.sustainablePractices || [],
-      recentSuppliers: dashboardData.recentSuppliers || [],
+      scoreDistribution:
+        dashboardData.ethicalScoreDistribution ||
+        dashboardData.ethical_score_distribution ||
+        [],
+      co2ByIndustry:
+        dashboardData.co2EmissionsByIndustry ||
+        dashboardData.co2_emissions_by_industry ||
+        [],
+      suppliersByCountry:
+        dashboardData.suppliersByCountry ||
+        dashboardData.suppliers_by_country ||
+        {},
+      waterUsageTrend:
+        dashboardData.waterUsageTrend ||
+        dashboardData.water_usage_trend ||
+        [],
+      renewableEnergy:
+        dashboardData.renewableEnergyMix ||
+        dashboardData.renewableEnergyAdoption ||
+        dashboardData.renewable_energy_adoption ||
+        [],
+      sustainablePractices:
+        dashboardData.sustainablePractices ||
+        dashboardData.sustainable_practices ||
+        [],
+      recentSuppliers:
+        dashboardData.recentSuppliers ||
+        dashboardData.recent_suppliers ||
+        [],
       mlInsights: [
         {
           title: "Predicted Trend Analysis",
@@ -558,16 +608,33 @@ const ReportGenerator = ({
 
       // Recent suppliers
       if (reportData.recentSuppliers.length > 0) {
-        const supplierData = [["Supplier", "Country", "ESG Score", "Date"]];
+        const supplierData = [
+          [
+            "Supplier",
+            "Country",
+            "ESG (Risk)",
+            "Composite",
+            "Risk",
+            "Disclosure",
+          ],
+        ];
 
         reportData.recentSuppliers.forEach((supplier) => {
           supplierData.push([
             supplier.name || "N/A",
             supplier.country || "N/A",
-            supplier.ethical_score
+            supplier.ethical_score !== undefined && supplier.ethical_score !== null
               ? `${Math.round(supplier.ethical_score)}%`
               : "N/A",
-            supplier.date || "N/A",
+            supplier.composite_score !== undefined &&
+            supplier.composite_score !== null
+              ? `${Math.round(supplier.composite_score)}%`
+              : "N/A",
+            (supplier.risk_level || "N/A").toString(),
+            supplier.completeness_ratio !== undefined &&
+            supplier.completeness_ratio !== null
+              ? formatPercent(supplier.completeness_ratio, 0)
+              : "N/A",
           ]);
         });
 
@@ -729,16 +796,31 @@ const ReportGenerator = ({
       // Suppliers sheet
       if (reportData.recentSuppliers.length > 0) {
         const supplierData = [
-          ["Name", "Country", "ESG Score", "Trend", "Date"],
+          [
+            "Name",
+            "Country",
+            "ESG (Risk)",
+            "Composite",
+            "Risk Level",
+            "Disclosure",
+            "Updated",
+          ],
         ];
 
         reportData.recentSuppliers.forEach((supplier) => {
           supplierData.push([
             supplier.name || "N/A",
             supplier.country || "N/A",
-            supplier.ethical_score || "N/A",
-            supplier.trend || "N/A",
-            supplier.date || "N/A",
+            supplier.ethical_score ?? "N/A",
+            supplier.composite_score ?? "N/A",
+            (supplier.risk_level || "N/A").toString(),
+            supplier.completeness_ratio !== undefined &&
+            supplier.completeness_ratio !== null
+              ? formatPercent(supplier.completeness_ratio, 0)
+              : "N/A",
+            supplier.updated_at
+              ? new Date(supplier.updated_at).toLocaleDateString()
+              : "N/A",
           ]);
         });
 
@@ -924,6 +1006,7 @@ const ReportGenerator = ({
           </div>
         </div>
       </motion.div>
+
     </>
   );
 };
@@ -937,6 +1020,13 @@ const Dashboard = () => {
   const [data, setData] = useState<any | null>(null);
   const [usingMockData, setUsingMockData] = useState<boolean>(false);
   const [apiConnected, setApiConnected] = useState<boolean | null>(null);
+  const [datasetMeta, setDatasetMeta] = useState<{
+    version: string;
+    seed: string | null;
+    generatedAt: string | null;
+    bandsVersion: string | null;
+  } | null>(null);
+  const [showMethodology, setShowMethodology] = useState<boolean>(false);
 
   // Check API connection status
   const checkConnection = async () => {
@@ -961,6 +1051,14 @@ const Dashboard = () => {
           setUsingMockData(true);
           setLoading(false);
           return;
+        }
+
+        // Pull dataset meta for badge (non-blocking)
+        try {
+          const meta = await getDatasetMeta();
+          setDatasetMeta(meta);
+        } catch (e) {
+          // ignore
         }
 
         const dashboardData = await getDashboardData();
@@ -989,12 +1087,32 @@ const Dashboard = () => {
   // --- Derived Data for KPIs and Charts ---
   const kpiData = useMemo(() => {
     if (!data) return null;
-    const avgScore = parseFloat(data.avgEthicalScore || "0");
+    const totalSuppliers = Number(
+      data.totalSuppliers ?? data.total_suppliers ?? 0
+    );
+    const avgEthicalScore = Number(
+      data.avgEthicalScore ?? data.avg_ethical_score ?? 0
+    );
+    const avgCompositeScore = Number(
+      data.avgCompositeScore ?? data.avg_composite_score ?? avgEthicalScore
+    );
+    const avgRiskFactor = Number(
+      data.avgRiskFactor ?? data.avg_risk_factor ?? 0
+    );
+    const avgCompletenessRatio = Number(
+      data.avgCompletenessRatio ?? data.avg_completeness_ratio ?? 1
+    );
+    const riskBreakdown = (data.riskBreakdown ?? data.risk_breakdown) || {};
+    const highRiskCount =
+      (riskBreakdown.high ?? 0) + (riskBreakdown.critical ?? 0);
+
     return {
-      totalSuppliers: data.totalSuppliers || 0,
-      avgEthicalScore: avgScore,
-      avgCo2Emissions: data.avgCo2Emissions ?? 0, // Use CORRECT camelCase key
-      highRiskCount: data.riskBreakdown?.high ?? 0,
+      totalSuppliers,
+      avgEthicalScore,
+      avgCompositeScore,
+      avgRiskFactor,
+      avgCompletenessRatio,
+      highRiskCount,
     };
   }, [data]);
 
@@ -1006,26 +1124,51 @@ const Dashboard = () => {
     [data?.suppliersByCountry, data?.suppliers_by_country]
   );
 
-  // Risk breakdown data for Pie Chart
-  const riskPieData = useMemo(() => {
-    if (!data?.riskBreakdown) return [];
+  const pillarAverages = data?.pillarAverages || data?.pillar_averages;
+  const pillarCards = useMemo(() => {
+    if (!pillarAverages) return [];
     return [
       {
-        name: "Low Risk",
-        value: data.riskBreakdown.low ?? 0,
-        fill: colors.success,
+        key: "environmental",
+        label: "Environmental Pillar",
+        value: pillarAverages.environmental ?? 0,
+        icon: CloudIcon,
+        color: colors.primary,
       },
       {
-        name: "Medium Risk",
-        value: data.riskBreakdown.medium ?? 0,
-        fill: colors.warning,
+        key: "social",
+        label: "Social Pillar",
+        value: pillarAverages.social ?? 0,
+        icon: UsersIcon,
+        color: colors.secondary,
       },
       {
-        name: "High Risk",
-        value: data.riskBreakdown.high ?? 0,
-        fill: colors.error,
+        key: "governance",
+        label: "Governance Pillar",
+        value: pillarAverages.governance ?? 0,
+        icon: PresentationChartLineIcon,
+        color: colors.accent,
       },
-    ].filter((item) => item.value > 0); // Remove slices with 0 value
+    ];
+  }, [pillarAverages]);
+
+  // Risk breakdown data for Pie Chart
+  const riskPieData = useMemo(() => {
+    const breakdown = data?.riskBreakdown || {};
+    const palette: Record<string, string> = {
+      low: colors.success,
+      medium: colors.warning,
+      high: colors.error,
+      critical: colors.secondary,
+    };
+
+    return Object.entries(breakdown)
+      .filter(([, count]) => Number(count) > 0)
+      .map(([level, count]) => ({
+        name: `${level.charAt(0).toUpperCase()}${level.slice(1)} Risk`,
+        value: Number(count),
+        fill: palette[level] ?? colors.textMuted,
+      }));
   }, [data?.riskBreakdown]);
 
   // Loading and Error Handling
@@ -1034,9 +1177,25 @@ const Dashboard = () => {
   if (!data) return <ErrorDisplay message="No dashboard data available." />; // Handle case where data is null
 
   // Use kpiData for rendering
-  const { totalSuppliers, avgEthicalScore, avgCo2Emissions, highRiskCount } =
-    kpiData || {};
+  const {
+    totalSuppliers,
+    avgEthicalScore,
+    avgCompositeScore,
+    avgRiskFactor,
+    avgCompletenessRatio,
+    highRiskCount,
+  } = kpiData || {};
   const scoreColor = getScoreColor(avgEthicalScore);
+
+  const formatVersionLabel = (version?: string) => {
+    if (!version) return "Synthetic v1";
+    // Convert "synthetic-v1" -> "Synthetic v1"
+    if (version.toLowerCase().startsWith("synthetic-")) {
+      const suffix = version.slice("synthetic-".length);
+      return `Synthetic ${suffix}`;
+    }
+    return version;
+  };
 
   return (
     <div
@@ -1063,6 +1222,30 @@ const Dashboard = () => {
             Overview of your supply chain's ethical and sustainability
             performance.
           </p>
+          {datasetMeta && (
+            <div className="mt-2 flex items-center gap-3">
+              <span
+                className="px-2.5 py-1 rounded-full text-xs border"
+                style={{
+                  backgroundColor: colors.panel,
+                  color: colors.text,
+                  borderColor: colors.accent + "40",
+                }}
+                title={`Generated: ${datasetMeta.generatedAt || "n/a"} | Bands: ${datasetMeta.bandsVersion || "v1"}`}
+              >
+                Data Source: {formatVersionLabel(datasetMeta.version)}
+                {datasetMeta.seed ? ` (seed: ${datasetMeta.seed})` : ""}
+              </span>
+              <button
+                onClick={() => setShowMethodology(true)}
+                className="text-xs underline flex items-center gap-1"
+                style={{ color: colors.textMuted }}
+                title="View dataset generation methodology"
+              >
+                <InformationCircleIcon className="h-4 w-4" /> Methodology
+              </button>
+            </div>
+          )}
         </div>
         {usingMockData && (
           <div
@@ -1078,13 +1261,64 @@ const Dashboard = () => {
           </div>
         )}
       </motion.div>
+      {showMethodology && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+            onClick={() => setShowMethodology(false)}
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative max-w-2xl w-[95%] rounded-lg border p-6"
+            style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold" style={{ color: colors.text }}>
+                Synthetic Dataset Methodology
+              </h3>
+              <button
+                className="text-sm"
+                style={{ color: colors.textMuted }}
+                onClick={() => setShowMethodology(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-3 text-sm" style={{ color: colors.textMuted }}>
+              <p>
+                This dashboard uses a synthetic ESG dataset for development and thesis purposes.
+                Data points are generated across four industries with per-industry ranges and
+                enforced correlations (e.g., higher renewable share lowers emission intensity;
+                higher training hours lowers injury rate). Approximately 15% missingness is
+                introduced across non-critical fields to simulate real-world disclosure.
+              </p>
+              <p>
+                The generator derives intensity metrics (emissions/revenue, water/revenue, waste/revenue),
+                and can apply external bands to constrain ranges. Optional anchors nudge means toward
+                public-like reference values with a small blending factor (alpha = 0.2).
+              </p>
+              <p>
+                Scoring normalizes metrics by industry bands, computes pillar scores (E/S/G),
+                applies a risk adjustment, and caps scores when data completeness is below 70%.
+              </p>
+              <p>
+                Source meta: {formatVersionLabel(datasetMeta?.version || "synthetic-v1")} {datasetMeta?.seed ? `(seed: ${datasetMeta.seed})` : ""}
+                {datasetMeta?.generatedAt ? ` • Generated: ${new Date(datasetMeta.generatedAt).toLocaleString()}` : ""}
+                {datasetMeta?.bandsVersion ? ` • Bands: ${datasetMeta.bandsVersion}` : ""}
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* KPI Section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
       >
         <KpiIndicator
           label="Total Suppliers"
@@ -1093,25 +1327,75 @@ const Dashboard = () => {
           color={colors.accent}
         />
         <KpiIndicator
-          label="Avg. Ethical Score"
-          value={avgEthicalScore}
+          label="Avg. ESG Score (Risk Adjusted)"
+          value={avgEthicalScore ? avgEthicalScore.toFixed(1) : "N/A"}
           icon={ScaleIcon}
           color={scoreColor}
-          isPercentage
+          unit="%"
         />
         <KpiIndicator
-          label="Avg. CO₂ Emissions"
-          value={avgCo2Emissions ? avgCo2Emissions.toFixed(1) + " t" : "N/A"}
-          icon={CloudIcon}
+          label="Avg. Composite Score"
+          value={avgCompositeScore ? avgCompositeScore.toFixed(1) : "N/A"}
+          icon={ChartBarIcon}
           color={colors.secondary}
+          unit="%"
         />
         <KpiIndicator
-          label="High Risk Suppliers"
-          value={highRiskCount}
+          label="Avg. Risk Penalty"
+          value={formatPercent(avgRiskFactor ?? 0, 0)}
           icon={ShieldExclamationIcon}
-          color={colors.error}
-        />
+          color={colors.warning}
+        >
+          <div className="mt-2 text-xs" style={{ color: colors.textMuted }}>
+            High & Critical suppliers: {highRiskCount ?? 0}
+          </div>
+        </KpiIndicator>
+        <KpiIndicator
+          label="Avg. Data Completeness"
+          value={formatPercent(avgCompletenessRatio ?? 1, 0)}
+          icon={SparklesIcon}
+          color={colors.primary}
+        >
+          <div className="mt-2 text-xs" style={{ color: colors.textMuted }}>
+            Scores capped at 50 when disclosure &lt; 70%
+          </div>
+        </KpiIndicator>
       </motion.div>
+
+      {pillarCards.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
+        >
+          {pillarCards.map(({ key, label, value, icon: Icon, color }) => (
+            <div
+              key={key}
+              className="rounded-lg border p-4 flex flex-col"
+              style={{
+                borderColor: color + "40",
+                backgroundColor: color + "10",
+              }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Icon className="h-5 w-5" style={{ color }} />
+                  <span className="text-sm font-medium" style={{ color: colors.text }}>
+                    {label}
+                  </span>
+                </div>
+                <span className="text-2xl font-semibold" style={{ color: colors.text }}>
+                  {Number.isFinite(value) ? value.toFixed(1) : "N/A"}%
+                </span>
+              </div>
+              <p className="text-xs" style={{ color: colors.textMuted }}>
+                Normalized average across suppliers (0 – 100).
+              </p>
+            </div>
+          ))}
+        </motion.div>
+      )}
 
       {/* Main Grid: Charts & Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

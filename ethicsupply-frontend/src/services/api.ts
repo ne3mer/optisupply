@@ -22,7 +22,10 @@ export interface Supplier {
   name: string;
   country: string;
   industry?: string;
+  revenue?: number;
+  employee_count?: number;
   co2_emissions: number;
+  total_emissions?: number;
   delivery_efficiency: number;
   wage_fairness: number;
   human_rights_index: number;
@@ -34,6 +37,23 @@ export interface Supplier {
   social_score?: number;
   governance_score?: number;
   risk_level?: string;
+  risk_factor?: number;
+  composite_score?: number;
+  completeness_ratio?: number;
+  renewable_energy_percent?: number;
+  water_usage?: number;
+  waste_generated?: number;
+  injury_rate?: number;
+  training_hours?: number;
+  living_wage_ratio?: number;
+  gender_diversity_percent?: number;
+  board_independence?: number;
+  board_diversity?: number;
+  anti_corruption_policy?: boolean;
+  transparency_score?: number;
+  geopolitical_risk?: number;
+  climate_risk?: number;
+  labor_dispute_risk?: number;
 
   created_at: string;
   updated_at: string;
@@ -155,13 +175,34 @@ export interface DashboardData {
     id: number;
     name: string;
     country: string;
-    ethical_score: number;
-    trend: string;
-    date: string;
+    ethical_score?: number;
+    composite_score?: number;
+    risk_level?: string;
+    risk_factor?: number;
+    completeness_ratio?: number;
+    updated_at?: string;
   }>;
   industry_distribution: Record<string, number>;
   compliance_rate_trend: Array<{ month: string; rate: number }>;
   isMockData?: boolean;
+  avg_composite_score?: number;
+  avgCompositeScore?: number;
+  avg_risk_factor?: number;
+  avgRiskFactor?: number;
+  avg_completeness_ratio?: number;
+  avgCompletenessRatio?: number;
+  pillar_averages?: {
+    environmental: number;
+    social: number;
+    governance: number;
+  };
+  pillarAverages?: {
+    environmental: number;
+    social: number;
+    governance: number;
+  };
+  completeness_distribution?: Record<string, number>;
+  completenessDistribution?: Record<string, number>;
 }
 
 export interface Recommendation {
@@ -1381,9 +1422,10 @@ export const getDashboardData = async (): Promise<DashboardData> => {
 
     const data = await response.json();
     console.log("Dashboard API response:", data);
+    const normalized = normalizeDashboardPayload(data);
 
     return {
-      ...data,
+      ...normalized,
       isMockData: false,
     };
   } catch (error) {
@@ -1393,12 +1435,70 @@ export const getDashboardData = async (): Promise<DashboardData> => {
   }
 };
 
+const normalizeDashboardPayload = (payload: any): any => {
+  if (!payload || typeof payload !== "object") return payload;
+
+  const normalised = { ...payload };
+
+  normalised.totalSuppliers ??= normalised.total_suppliers;
+  normalised.avgEthicalScore ??= normalised.avg_ethical_score;
+  normalised.avgCo2Emissions ??= normalised.avg_co2_emissions;
+  normalised.avgCompositeScore ??=
+    normalised.avg_composite_score ?? normalised.avgEthicalScore;
+  normalised.avgRiskFactor ??= normalised.avg_risk_factor;
+  normalised.avgCompletenessRatio ??= normalised.avg_completeness_ratio;
+  normalised.suppliersByCountry ??= normalised.suppliers_by_country;
+  normalised.ethicalScoreDistribution ??=
+    normalised.ethical_score_distribution;
+  normalised.co2EmissionsByIndustry ??=
+    normalised.co2_emissions_by_industry;
+  normalised.waterUsageTrend ??= normalised.water_usage_trend;
+  normalised.renewableEnergyMix ??=
+    normalised.renewable_energy_mix ?? normalised.renewable_energy_adoption;
+  normalised.sustainablePractices ??= normalised.sustainable_practices;
+  normalised.sustainabilityPerformance ??=
+    normalised.sustainability_performance;
+  normalised.recentSuppliers ??= normalised.recent_suppliers;
+  normalised.industryDistribution ??= normalised.industry_distribution;
+  normalised.complianceRateTrend ??= normalised.compliance_rate_trend;
+  normalised.pillarAverages ??= normalised.pillar_averages;
+  normalised.completenessDistribution ??=
+    normalised.completeness_distribution;
+
+  if (normalised.recentSuppliers) {
+    normalised.recentSuppliers = normalised.recentSuppliers.map((item: any) => ({
+      ...item,
+      updated_at: item.updated_at ?? item.date,
+    }));
+  }
+
+  const rawRiskBreakdown =
+    normalised.riskBreakdown ?? normalised.risk_breakdown ?? {};
+  const riskBreakdown: Record<string, number> = {};
+  Object.entries(rawRiskBreakdown).forEach(([key, value]) => {
+    const normalKey = key.toLowerCase().replace(/\s+/g, "");
+    if (normalKey.includes("low")) riskBreakdown.low = Number(value);
+    else if (normalKey.includes("medium"))
+      riskBreakdown.medium = Number(value);
+    else if (normalKey.includes("high") && !normalKey.includes("critical"))
+      riskBreakdown.high = Number(value);
+    else if (normalKey.includes("critical"))
+      riskBreakdown.critical = Number(value);
+  });
+  normalised.riskBreakdown = riskBreakdown;
+
+  return normalised;
+};
+
 // Mock dashboard data
 const getMockDashboardData = (): DashboardData => {
   console.log("Using mock dashboard data");
   return {
     total_suppliers: 12,
     avg_ethical_score: 75.3,
+    avg_composite_score: 82.4,
+    avg_risk_factor: 0.22,
+    avg_completeness_ratio: 0.84,
     avg_co2_emissions: 23.9,
     suppliers_by_country: {
       "United States": 4,
@@ -1425,10 +1525,20 @@ const getMockDashboardData = (): DashboardData => {
       { name: "Home Appliances", value: 18.5 },
     ],
     risk_breakdown: {
-      "Low Risk": 5,
-      "Medium Risk": 4,
-      "High Risk": 2,
-      "Critical Risk": 1,
+      low: 5,
+      medium: 4,
+      high: 2,
+      critical: 1,
+    },
+    completeness_distribution: {
+      high: 7,
+      medium: 3,
+      low: 2,
+    },
+    pillar_averages: {
+      environmental: 78,
+      social: 73,
+      governance: 80,
     },
     water_usage_trend: [
       { month: "Jan", usage: 135 },
@@ -1471,40 +1581,55 @@ const getMockDashboardData = (): DashboardData => {
         name: "TechGlobal Inc.",
         country: "United States",
         ethical_score: 82,
-        trend: "+2.4%",
-        date: "2025-04-01",
+        composite_score: 88,
+        risk_level: "low",
+        risk_factor: 0.18,
+        completeness_ratio: 0.9,
+        updated_at: "2025-04-01T08:30:00Z",
       },
       {
         id: 2,
         name: "EcoFabrics Ltd.",
         country: "United Kingdom",
         ethical_score: 78,
-        trend: "+1.5%",
-        date: "2025-03-28",
+        composite_score: 84,
+        risk_level: "medium",
+        risk_factor: 0.25,
+        completeness_ratio: 0.82,
+        updated_at: "2025-03-28T10:15:00Z",
       },
       {
         id: 3,
         name: "GreenSource Materials",
         country: "Germany",
         ethical_score: 91,
-        trend: "+4.2%",
-        date: "2025-03-25",
+        composite_score: 95,
+        risk_level: "low",
+        risk_factor: 0.12,
+        completeness_ratio: 0.95,
+        updated_at: "2025-03-25T14:45:00Z",
       },
       {
         id: 4,
         name: "Pacific Components",
         country: "Taiwan",
         ethical_score: 65,
-        trend: "-1.3%",
-        date: "2025-03-22",
+        composite_score: 72,
+        risk_level: "high",
+        risk_factor: 0.36,
+        completeness_ratio: 0.68,
+        updated_at: "2025-03-22T09:20:00Z",
       },
       {
         id: 5,
         name: "Global Foods Co.",
         country: "France",
         ethical_score: 73,
-        trend: "+0.8%",
-        date: "2025-03-20",
+        composite_score: 79,
+        risk_level: "medium",
+        risk_factor: 0.28,
+        completeness_ratio: 0.88,
+        updated_at: "2025-03-20T11:05:00Z",
       },
     ],
     industry_distribution: {
@@ -1530,7 +1655,7 @@ const getMockDashboardData = (): DashboardData => {
     ],
     isMockData: true,
   };
-};
+}; 
 
 export const getDetailedAnalysis = async (
   supplierId: number

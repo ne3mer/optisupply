@@ -160,6 +160,16 @@ const formatNumericValue = (
   return value.toFixed(digits);
 };
 
+const formatPercent = (
+  value: number | null | undefined,
+  digits = 0
+) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "N/A";
+  }
+  return `${(value * 100).toFixed(digits)}%`;
+};
+
 // Score explanation descriptions
 const scoreExplanations = {
   ethical_score:
@@ -1712,6 +1722,19 @@ const SuppliersList = () => {
                 const riskColor = getRiskColor(supplier.risk_level);
                 const riskIcon = getRiskIcon(supplier.risk_level);
                 const scoreColor = getScoreColor(supplier.ethical_score);
+                const riskAdjustedScore =
+                  supplier.ethical_score !== null &&
+                  supplier.ethical_score !== undefined
+                    ? supplier.ethical_score
+                    : null;
+                const compositeScore =
+                  supplier.composite_score !== undefined
+                    ? supplier.composite_score
+                    : null;
+                const completenessRatio =
+                  supplier.completeness_ratio !== undefined
+                    ? supplier.completeness_ratio
+                    : null;
                 const supplierId = supplier._id || supplier.id; // Handle both ID types
                 const isSelected = isSupplierSelected(supplier);
                 const statusStyles = getStatusStyles(supplier.status);
@@ -1783,18 +1806,48 @@ const SuppliersList = () => {
 
                       {/* Status and Recommendation Row */}
                       <div className="flex items-center justify-between mt-2 gap-2">
-                        {/* Status Indicator */}
-                        <span
-                          className="px-2 py-0.5 rounded-full flex items-center text-xs"
-                          style={{
-                            color: statusStyles.color,
-                            backgroundColor: statusStyles.bgColor,
-                            border: statusStyles.border,
-                          }}
-                        >
-                          {statusStyles.icon}
-                          {supplier.status || "Status Unknown"}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Status Indicator */}
+                          <span
+                            className="px-2 py-0.5 rounded-full flex items-center text-xs"
+                            style={{
+                              color: statusStyles.color,
+                              backgroundColor: statusStyles.bgColor,
+                              border: statusStyles.border,
+                            }}
+                          >
+                            {statusStyles.icon}
+                            {supplier.status || "Status Unknown"}
+                          </span>
+
+                          {typeof supplier.risk_factor === "number" && (
+                            <span
+                              className="px-2 py-0.5 rounded-full flex items-center text-xs"
+                              style={{
+                                color: riskColor,
+                                backgroundColor: riskColor + "20",
+                                border: `1px solid ${riskColor}40`,
+                              }}
+                            >
+                              {riskIcon}
+                              Risk Penalty {formatPercent(supplier.risk_factor, 0)}
+                            </span>
+                          )}
+
+                          {typeof supplier.completeness_ratio === "number" && (
+                            <span
+                              className="px-2 py-0.5 rounded-full flex items-center text-xs"
+                              style={{
+                                color: colors.primary,
+                                backgroundColor: colors.primary + "20",
+                                border: `1px solid ${colors.primary}40`,
+                              }}
+                            >
+                              <SparklesIcon className="h-3.5 w-3.5 mr-1" />
+                              Data Complete {formatPercent(supplier.completeness_ratio, 0)}
+                            </span>
+                          )}
+                        </div>
 
                         {/* AI Recommendation Tag (if applicable) */}
                         {recommendation && (
@@ -1822,8 +1875,8 @@ const SuppliersList = () => {
                           className="text-sm flex items-center"
                           style={{ color: colors.textMuted }}
                         >
-                          <ScaleIcon className="h-4 w-4 mr-2" /> Ethical Score
-                          <Tooltip content={scoreExplanations.ethical_score}>
+                          <ScaleIcon className="h-4 w-4 mr-2" /> ESG Score (Risk-Adjusted)
+                          <Tooltip content="Final ESG score after applying risk penalties. Based on environmental, social, governance pillars and the average risk factor.">
                             <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
                           </Tooltip>
                         </span>
@@ -1831,12 +1884,32 @@ const SuppliersList = () => {
                           className="text-lg font-bold font-mono"
                           style={{ color: scoreColor }}
                         >
-                          {supplier.ethical_score !== null &&
-                          supplier.ethical_score !== undefined
-                            ? supplier.ethical_score > 0 &&
-                              supplier.ethical_score <= 1
-                              ? (supplier.ethical_score * 100).toFixed(1)
-                              : supplier.ethical_score.toFixed(1)
+                          {riskAdjustedScore !== null
+                            ? riskAdjustedScore.toFixed(1)
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs" style={{ color: colors.textMuted }}>
+                        <span>Composite ESG Score (pre-risk)</span>
+                        <span style={{ color: colors.text }}>
+                          {compositeScore !== null
+                            ? compositeScore.toFixed(1)
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs" style={{ color: colors.textMuted }}>
+                        <span>Risk Penalty Applied</span>
+                        <span style={{ color: colors.text }}>
+                          {typeof supplier.risk_factor === "number"
+                            ? formatPercent(supplier.risk_factor, 0)
+                            : "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs" style={{ color: colors.textMuted }}>
+                        <span>Disclosure Completeness</span>
+                        <span style={{ color: colors.text }}>
+                          {completenessRatio !== null
+                            ? formatPercent(completenessRatio, 0)
                             : "N/A"}
                         </span>
                       </div>
@@ -2571,6 +2644,59 @@ const SuppliersList = () => {
 
                   {/* Modal Body */}
                   <div className="p-4 max-h-[70vh] overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                      <div
+                        className="rounded-lg p-3"
+                        style={{
+                          backgroundColor: colors.panel,
+                          border: `1px solid ${colors.primary}30`,
+                        }}
+                      >
+                        <p className="text-xs uppercase" style={{ color: colors.textMuted }}>
+                          ESG Score (Risk-Adjusted)
+                        </p>
+                        <p className="text-2xl font-semibold" style={{ color: colors.text }}>
+                          {formatScoreValue(selectedSupplier.ethical_score)}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+                          Includes average risk penalty.
+                        </p>
+                      </div>
+                      <div
+                        className="rounded-lg p-3"
+                        style={{
+                          backgroundColor: colors.panel,
+                          border: `1px solid ${colors.accent}30`,
+                        }}
+                      >
+                        <p className="text-xs uppercase" style={{ color: colors.textMuted }}>
+                          Composite ESG Score (Pre-Risk)
+                        </p>
+                        <p className="text-2xl font-semibold" style={{ color: colors.text }}>
+                          {formatScoreValue(selectedSupplier.composite_score)}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+                          Weighted blend of Environmental, Social, Governance pillars.
+                        </p>
+                      </div>
+                      <div
+                        className="rounded-lg p-3"
+                        style={{
+                          backgroundColor: colors.panel,
+                          border: `1px solid ${colors.secondary}30`,
+                        }}
+                      >
+                        <p className="text-xs uppercase" style={{ color: colors.textMuted }}>
+                          Data Completeness
+                        </p>
+                        <p className="text-2xl font-semibold" style={{ color: colors.text }}>
+                          {formatPercent(selectedSupplier.completeness_ratio, 0)}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+                          Scores capped at 50 when disclosure &lt; 70%.
+                        </p>
+                      </div>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* ESG Breakdown */}
                       <div

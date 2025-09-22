@@ -17,7 +17,20 @@ const SupplierSchema = new Schema(
       type: String,
       trim: true,
     },
+    revenue: {
+      type: Number,
+      default: 0,
+      description: "Revenue in millions of dollars",
+    },
+    employee_count: {
+      type: Number,
+      default: 0,
+    },
     co2_emissions: {
+      type: Number,
+      default: 0,
+    },
+    total_emissions: {
       type: Number,
       default: 0,
     },
@@ -57,9 +70,29 @@ const SupplierSchema = new Schema(
       type: Number,
       default: 0.5,
     },
+    waste_generated: {
+      type: Number,
+      default: 0,
+    },
+    injury_rate: {
+      type: Number,
+      default: 0,
+    },
+    training_hours: {
+      type: Number,
+      default: 0,
+    },
+    living_wage_ratio: {
+      type: Number,
+      default: 1,
+    },
     diversity_inclusion_score: {
       type: Number,
       default: 0.5,
+    },
+    gender_diversity_percent: {
+      type: Number,
+      default: 0,
     },
     worker_safety: {
       type: Number,
@@ -74,6 +107,10 @@ const SupplierSchema = new Schema(
       default: 0.5,
     },
     board_diversity: {
+      type: Number,
+      default: 0.5,
+    },
+    board_independence: {
       type: Number,
       default: 0.5,
     },
@@ -109,6 +146,10 @@ const SupplierSchema = new Schema(
       type: Number,
       default: 0.5,
     },
+    anti_corruption_policy: {
+      type: Boolean,
+      default: false,
+    },
     ethical_score: {
       type: Number,
     },
@@ -124,6 +165,17 @@ const SupplierSchema = new Schema(
     risk_level: {
       type: String,
       enum: ["low", "medium", "high", "critical"],
+    },
+    risk_factor: {
+      type: Number,
+      default: 0.5,
+    },
+    composite_score: {
+      type: Number,
+    },
+    completeness_ratio: {
+      type: Number,
+      default: 1,
     },
   },
   {

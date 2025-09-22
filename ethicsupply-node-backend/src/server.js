@@ -7,6 +7,7 @@ const requestLogger = require("./middleware/requestLogger");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 const config = require("./config/app");
 const EthicalScoringModel = require("./ml/EthicalScoringModel");
+const esgScoring = require("./utils/esgScoring");
 const mlController = require("./controllers/mlController");
 const { runSeeders } = require("./utils/seeder");
 
@@ -110,6 +111,16 @@ async function startServer() {
     const scoringModel = new EthicalScoringModel();
     await scoringModel.initialize();
     console.log("ML model initialized successfully");
+
+    // Force-load ESG dataset/bands and log meta
+    try {
+      const meta = esgScoring.getDatasetMeta();
+      console.log(
+        `ESG dataset initialized: version=${meta.version || 'synthetic-v1'}, seed=${meta.seed || 'n/a'}, generatedAt=${meta.generatedAt || 'n/a'}, bandsVersion=${meta.bandsVersion || 'v1'}`
+      );
+    } catch (e) {
+      console.warn("ESG dataset meta unavailable:", e.message);
+    }
 
     return app;
   } catch (error) {

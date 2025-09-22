@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const supplierController = require("../controllers/supplierController");
+const datasetController = require("../controllers/datasetController");
 const controversyController = require("../controllers/controversyController");
 const mlController = require("../controllers/mlController");
 const geoRiskController = require("../controllers/geoRiskController");
@@ -19,6 +20,7 @@ router.get("/", (req, res) => {
     endpoints: {
       suppliers: "/api/suppliers",
       dashboard: "/api/dashboard",
+      datasetMeta: "/api/dataset/meta",
       supplyChainGraph: "/api/supply-chain-graph",
       evaluateSupplier: "/api/suppliers/:id/evaluate",
       analytics: "/api/suppliers/:id/analytics",
@@ -70,6 +72,9 @@ router.delete("/suppliers/:id", supplierController.deleteSupplier);
 
 // Dashboard route (uses supplierController)
 router.get("/dashboard", supplierController.getDashboard);
+
+// Dataset metadata route
+router.get("/dataset/meta", datasetController.getDatasetMeta);
 
 // Supply chain graph route (uses supplierController)
 router.get("/supply-chain-graph", supplierController.getSupplyChainGraph);

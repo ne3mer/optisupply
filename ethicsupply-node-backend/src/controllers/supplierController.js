@@ -1,6 +1,7 @@
 const Supplier = require("../models/Supplier");
 const { generateRecommendations } = require("./recommendationController");
 const db = require("../models");
+const { scoreSupplier } = require("../utils/esgScoring");
 
 // Get all suppliers (with potential filtering/pagination in the future)
 exports.getSuppliers = async (req, res) => {
@@ -84,6 +85,9 @@ exports.createSupplier = async (req, res) => {
       social_score: scores.social_score,
       governance_score: scores.governance_score,
       risk_level: scores.risk_level,
+      risk_factor: scores.risk_factor,
+      completeness_ratio: scores.completeness_ratio,
+      composite_score: scores.composite_score,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -119,6 +123,9 @@ exports.updateSupplier = async (req, res) => {
     updatedData.social_score = scores.social_score;
     updatedData.governance_score = scores.governance_score;
     updatedData.risk_level = scores.risk_level;
+    updatedData.risk_factor = scores.risk_factor;
+    updatedData.completeness_ratio = scores.completeness_ratio;
+    updatedData.composite_score = scores.composite_score;
     updatedData.updatedAt = new Date();
 
     const updatedSupplier = await db.Supplier.findByIdAndUpdate(
@@ -151,29 +158,78 @@ exports.deleteSupplier = async (req, res) => {
 // Get dashboard data
 exports.getDashboard = async (req, res) => {
   try {
-    const suppliers = await db.Supplier.find({});
-    const supplierCount = suppliers.length;
+    const supplierDocs = await db.Supplier.find({});
+    const supplierCount = supplierDocs.length;
 
-    // --- Calculate Average Ethical Score ---
-    // Use 'ethical_score' field from the model (or calculate if needed)
-    const totalScore = suppliers.reduce(
-      (sum, s) => sum + (s.ethical_score || 0),
-      0
+    const suppliers = supplierDocs.map((doc) => {
+      const supplier = doc.toObject ? doc.toObject() : doc;
+      const hasCompleteScores =
+        typeof supplier.composite_score === "number" &&
+        typeof supplier.risk_factor === "number" &&
+        typeof supplier.completeness_ratio === "number";
+
+      if (hasCompleteScores) {
+        return supplier;
+      }
+
+      const computed = scoreSupplier(supplier);
+      return {
+        ...supplier,
+        environmental_score:
+          supplier.environmental_score ?? computed.environmental_score,
+        social_score: supplier.social_score ?? computed.social_score,
+        governance_score: supplier.governance_score ?? computed.governance_score,
+        ethical_score: supplier.ethical_score ?? computed.ethical_score,
+        risk_level: supplier.risk_level ?? computed.risk_level,
+        risk_factor: supplier.risk_factor ?? computed.risk_factor,
+        completeness_ratio:
+          supplier.completeness_ratio ?? computed.completeness_ratio,
+        composite_score: supplier.composite_score ?? computed.composite_score,
+      };
+    });
+
+    const sumBy = (arr, getter) =>
+      arr.reduce((sum, item) => {
+        const value = getter(item);
+        return Number.isFinite(value) ? sum + value : sum;
+      }, 0);
+
+    const averageBy = (arr, getter) => {
+      if (!arr.length) return 0;
+      const validValues = arr
+        .map(getter)
+        .filter((value) => Number.isFinite(value));
+      if (!validValues.length) return 0;
+      return (
+        validValues.reduce((sum, value) => sum + value, 0) /
+        validValues.length
+      );
+    };
+
+    const avgEthicalScore = averageBy(suppliers, (s) => s.ethical_score || 0);
+    const avgCompositeScore = averageBy(
+      suppliers,
+      (s) => s.composite_score ?? s.ethical_score ?? 0
     );
-    const avgEthicalScore = supplierCount > 0 ? totalScore / supplierCount : 0;
+    const avgRiskFactor = averageBy(
+      suppliers,
+      (s) => s.risk_factor !== undefined ? s.risk_factor : 0
+    );
+    const avgCompletenessRatio = averageBy(
+      suppliers,
+      (s) =>
+        typeof s.completeness_ratio === "number" ? s.completeness_ratio : 1
+    );
 
-    // --- Generate sample ethical scores if none exist ---
-    // This ensures the ethical score chart has data to display
-    if (avgEthicalScore === 0) {
-      // Generate random scores for demonstration
-      suppliers.forEach((supplier, index) => {
-        // Create a deterministic but varied set of scores
-        const baseScore = 50 + ((index * 7) % 40); // Scores between 50-90
-        supplier.ethical_score = baseScore;
-      });
-    }
+    const pillarAverages = {
+      environmental: averageBy(
+        suppliers,
+        (s) => s.environmental_score ?? 0
+      ),
+      social: averageBy(suppliers, (s) => s.social_score ?? 0),
+      governance: averageBy(suppliers, (s) => s.governance_score ?? 0),
+    };
 
-    // --- Calculate Ethical Score Distribution ---
     const distribution = {
       "0-20": 0,
       "21-40": 0,
@@ -183,7 +239,6 @@ exports.getDashboard = async (req, res) => {
     };
 
     suppliers.forEach((supplier) => {
-      // Use 'ethical_score' field from the model
       const score = supplier.ethical_score || 0;
       if (score >= 0 && score <= 20) distribution["0-20"]++;
       else if (score >= 21 && score <= 40) distribution["21-40"]++;
@@ -198,16 +253,30 @@ exports.getDashboard = async (req, res) => {
 
     // --- Calculate Risk Breakdown ---
     const riskBreakdown = {
-      high: suppliers.filter((s) => s.risk_level === "high").length,
-      medium: suppliers.filter((s) => s.risk_level === "medium").length,
       low: suppliers.filter((s) => s.risk_level === "low").length,
+      medium: suppliers.filter((s) => s.risk_level === "medium").length,
+      high: suppliers.filter((s) => s.risk_level === "high").length,
+      critical: suppliers.filter((s) => s.risk_level === "critical").length,
+    };
+
+    const completenessDistribution = {
+      high: suppliers.filter(
+        (s) => (s.completeness_ratio ?? 1) >= 0.85
+      ).length,
+      medium: suppliers.filter((s) => {
+        const ratio = s.completeness_ratio ?? 1;
+        return ratio >= 0.7 && ratio < 0.85;
+      }).length,
+      low: suppliers.filter(
+        (s) => (s.completeness_ratio ?? 1) < 0.7
+      ).length,
     };
 
     // --- Calculate Available Metrics ---
 
     // Average CO2 Emissions (using 'co2_emissions' field)
     const totalCo2 = suppliers.reduce(
-      (sum, s) => sum + (s.co2_emissions || 0),
+      (sum, s) => sum + (s.total_emissions || s.co2_emissions || 0),
       0
     );
     const avgCo2Emissions = supplierCount > 0 ? totalCo2 / supplierCount : 0;
@@ -215,26 +284,15 @@ exports.getDashboard = async (req, res) => {
     // CO2 Emissions by Industry (using 'industry' and 'co2_emissions' fields)
     const co2ByIndustry = suppliers.reduce((acc, s) => {
       const industry = s.industry || "Unknown";
-      acc[industry] = (acc[industry] || 0) + (s.co2_emissions || 0);
+      const emissions = s.total_emissions || s.co2_emissions || 0;
+      const revenue = s.revenue || 0;
+      const intensity = revenue > 0 ? emissions / revenue : emissions;
+      acc[industry] = (acc[industry] || 0) + intensity;
       return acc;
     }, {});
 
-    // Ensure we have industry data even if the db is sparse
-    const sampleIndustries = [
-      "Electronics",
-      "Apparel",
-      "Food & Beverage",
-      "Consumer Goods",
-      "Pharmaceuticals",
-    ];
-    sampleIndustries.forEach((industry) => {
-      if (!co2ByIndustry[industry]) {
-        co2ByIndustry[industry] = Math.floor(Math.random() * 50) + 10;
-      }
-    });
-
     const co2EmissionsByIndustry = Object.entries(co2ByIndustry).map(
-      ([name, value]) => ({ name, value })
+      ([name, value]) => ({ name, value: Number(value.toFixed(2)) })
     );
 
     // Suppliers by Country (using 'country' field)
@@ -243,21 +301,6 @@ exports.getDashboard = async (req, res) => {
       acc[country] = (acc[country] || 0) + 1;
       return acc;
     }, {});
-
-    // Sample countries if we're missing data
-    const sampleCountries = [
-      "United States",
-      "China",
-      "Germany",
-      "Japan",
-      "India",
-      "Brazil",
-    ];
-    sampleCountries.forEach((country) => {
-      if (!suppliersByCountry[country] && Math.random() > 0.5) {
-        suppliersByCountry[country] = Math.floor(Math.random() * 3) + 1;
-      }
-    });
 
     // --- Generate Synthetic Data For Missing Charts ---
 
@@ -305,23 +348,44 @@ exports.getDashboard = async (req, res) => {
     ];
 
     // --- Return consolidated dashboard data ---
+    const recentSuppliers = suppliers
+      .slice()
+      .sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at || Date.now());
+        const dateB = new Date(b.updated_at || b.created_at || Date.now());
+        return dateB.getTime() - dateA.getTime();
+      })
+      .slice(0, 6)
+      .map((s) => ({
+        id: s._id,
+        name: s.name,
+        country: s.country,
+        ethical_score: s.ethical_score ?? null,
+        composite_score: s.composite_score ?? null,
+        risk_level: s.risk_level ?? "unknown",
+        risk_factor: s.risk_factor ?? null,
+        completeness_ratio: s.completeness_ratio ?? null,
+        updated_at: s.updated_at,
+      }));
+
     res.status(200).json({
-      // Core metrics
       totalSuppliers: supplierCount,
-      avgEthicalScore: avgEthicalScore,
-      riskBreakdown: riskBreakdown,
-      ethicalScoreDistribution: ethicalScoreDistribution,
-
-      // Implemented metrics from available model fields
-      avgCo2Emissions: avgCo2Emissions,
-      co2EmissionsByIndustry: co2EmissionsByIndustry,
-      suppliersByCountry: suppliersByCountry,
-
-      // Synthetic data for comprehensive charts
-      waterUsageTrend: waterUsageTrend,
-      renewableEnergyMix: renewableEnergyMix,
-      sustainablePractices: sustainablePractices,
-      sustainabilityPerformance: sustainabilityPerformance,
+      avgEthicalScore,
+      avgCompositeScore,
+      avgRiskFactor,
+      avgCompletenessRatio,
+      pillarAverages,
+      riskBreakdown,
+      ethicalScoreDistribution,
+      completenessDistribution,
+      avgCo2Emissions,
+      co2EmissionsByIndustry,
+      suppliersByCountry,
+      recentSuppliers,
+      waterUsageTrend,
+      renewableEnergyMix,
+      sustainablePractices,
+      sustainabilityPerformance,
     });
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
@@ -1170,45 +1234,28 @@ function calculateConfidenceScores(mlScores) {
 // Helper function to calculate supplier scores
 async function calculateSupplierScores(supplier) {
   try {
-    // Basic environmental score calculation (on a 0-1 scale)
-    const environmentalScore = calculateEnvironmentalScore(supplier);
+    const scores = scoreSupplier(supplier);
 
-    // Basic social score calculation (on a 0-1 scale)
-    const socialScore = calculateSocialScore(supplier);
+    const roundToTwo = (value) =>
+      Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
 
-    // Basic governance score calculation (on a 0-1 scale)
-    const governanceScore = calculateGovernanceScore(supplier);
-
-    // Calculate supply chain score
-    const supplyChainScore = calculateSupplyChainScore(supplier);
-
-    // Calculate risk score
-    const riskScore = calculateRiskScore(supplier);
-
-    // Calculate overall ethical score (weighted average, on a 0-1 scale)
-    const ethicalScore =
-      environmentalScore * 0.25 +
-      socialScore * 0.25 +
-      governanceScore * 0.25 +
-      supplyChainScore * 0.15 +
-      (1 - riskScore) * 0.1;
-
-    // Determine risk level based on the ethical score
-    let riskLevel = "high";
-    if (ethicalScore >= 0.7) {
-      riskLevel = "low";
-    } else if (ethicalScore >= 0.4) {
-      riskLevel = "medium";
-    }
-
-    // Multiply all scores by 100 to convert from 0-1.0 scale to 0-100 scale
-    return {
-      ethical_score: ethicalScore * 100,
-      environmental_score: environmentalScore * 100,
-      social_score: socialScore * 100,
-      governance_score: governanceScore * 100,
-      risk_level: riskLevel,
+    const result = {
+      ethical_score: roundToTwo(scores.ethical_score),
+      environmental_score: roundToTwo(scores.environmental_score),
+      social_score: roundToTwo(scores.social_score),
+      governance_score: roundToTwo(scores.governance_score),
+      risk_level: scores.risk_level,
+      risk_factor: roundToTwo(scores.risk_factor),
+      completeness_ratio: roundToTwo(scores.completeness_ratio),
+      composite_score: roundToTwo(scores.composite_score),
     };
+
+    try {
+      const name = supplier?.name || supplier?._id || 'unknown-supplier';
+      console.log(`[scoring] completeness_ratio for ${name}: ${result.completeness_ratio}`);
+    } catch {}
+
+    return result;
   } catch (error) {
     console.error("Error calculating supplier scores:", error);
     return {
@@ -1217,6 +1264,9 @@ async function calculateSupplierScores(supplier) {
       social_score: 50,
       governance_score: 50,
       risk_level: "medium",
+      risk_factor: 0.5,
+      completeness_ratio: 0,
+      composite_score: 50,
     };
   }
 }

@@ -34,6 +34,34 @@ function createDevelopmentServer() {
     res.status(200).json({ status: "ok", mode: "local-dev" });
   });
 
+  // Dataset meta endpoint (local dev mock)
+  app.get("/api/dataset/meta", (req, res) => {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const bandsPath = path.join(__dirname, 'data', 'bands_v1.json');
+      let seed = null;
+      let generatedAt = null;
+      if (fs.existsSync(bandsPath)) {
+        const raw = fs.readFileSync(bandsPath, 'utf-8');
+        const json = JSON.parse(raw);
+        seed = json.seed || null;
+        try {
+          const st = fs.statSync(bandsPath);
+          generatedAt = st.mtime.toISOString();
+        } catch (_) {}
+      }
+      return res.status(200).json({
+        version: 'synthetic-v1',
+        seed,
+        generatedAt,
+        bandsVersion: 'v1',
+      });
+    } catch (e) {
+      return res.status(200).json({ version: 'synthetic-v1', seed: null, generatedAt: null, bandsVersion: 'v1' });
+    }
+  });
+
   // Mock API endpoints
   app.get("/api/suppliers", (req, res) => {
     res.json([
