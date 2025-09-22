@@ -255,6 +255,7 @@ const SupplyChainGraph = () => {
   // UI state
   const [filterPanelOpen, setFilterPanelOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [layoutDirection, setLayoutDirection] = useState<'TB' | 'LR'>("TB");
 
   // Create a ref for the root container
   const containerRef = useRef<HTMLDivElement>(null);
@@ -447,7 +448,7 @@ const SupplyChainGraph = () => {
         getLayoutedElements(
           initialNodes,
           initialEdges,
-          "TB" // Layout direction: Top-to-Bottom ('LR' for Left-to-Right)
+          layoutDirection // Layout direction: Top-to-Bottom ('LR' for Left-to-Right)
         );
 
       console.log("[SupplyChainGraph] Layouted Nodes:", layoutedNodes.length);
@@ -486,7 +487,42 @@ const SupplyChainGraph = () => {
       setRfEdges(initialEdges);
       setError("Failed to calculate graph layout.");
     }
-  }, [filteredGraphData, setRfNodes, setRfEdges, fitView, colors]); // Add colors dependency
+  }, [filteredGraphData, setRfNodes, setRfEdges, fitView, colors, layoutDirection]); // include layoutDirection
+
+  // Neighbor highlighting when a node is selected
+  useEffect(() => {
+    if (!selectedNodeApiData) {
+      // reset opacity
+      setRfNodes((nodes) => nodes.map((n) => ({ ...n, style: { ...(n.style || {}), opacity: 1 } })));
+      setRfEdges((edges) => edges.map((e) => ({ ...e, style: { ...(e.style || {}), opacity: 1 } })));
+      return;
+    }
+
+    const selectedId = selectedNodeApiData.id;
+    const neighborIds = new Set<string>();
+    filteredGraphData.links.forEach((l) => {
+      const s = typeof l.source === 'string' ? l.source : l.source.id;
+      const t = typeof l.target === 'string' ? l.target : l.target.id;
+      if (s === selectedId) neighborIds.add(t);
+      if (t === selectedId) neighborIds.add(s);
+    });
+
+    setRfNodes((nodes) =>
+      nodes.map((n) => ({
+        ...n,
+        style: {
+          ...(n.style || {}),
+          opacity: n.id === selectedId || neighborIds.has(n.id) ? 1 : 0.25,
+        },
+      }))
+    );
+    setRfEdges((edges) =>
+      edges.map((e) => {
+        const isConnected = e.source === selectedId || e.target === selectedId || neighborIds.has(e.source) || neighborIds.has(e.target);
+        return { ...e, style: { ...(e.style || {}), opacity: isConnected ? 1 : 0.2 } };
+      })
+    );
+  }, [selectedNodeApiData, filteredGraphData.links, setRfNodes, setRfEdges]);
 
   // Start connection creation mode
   const startConnectionCreation = () => {
@@ -698,7 +734,7 @@ const SupplyChainGraph = () => {
             Supply Chain{" "}
             <span style={{ color: colors.primary }}>Flowchart</span>
           </h1>
-          {/* Basic Controls Placeholder - Can be enhanced */}
+          {/* Controls */}
           <div className="flex items-center gap-2">
             <button
               onClick={startConnectionCreation}
@@ -713,6 +749,32 @@ const SupplyChainGraph = () => {
               <Plus size={18} />
             </button>
             <button
+              onClick={() => setLayoutDirection((d) => (d === 'TB' ? 'LR' : 'TB'))}
+              className="px-2 py-1 rounded border text-xs"
+              title="Toggle Layout Direction"
+              style={{
+                backgroundColor: colors.panel,
+                borderColor: colors.accent + '50',
+                color: colors.text,
+              }}
+            >
+              {layoutDirection === 'TB' ? 'Top-Bottom' : 'Left-Right'}
+            </button>
+            <button
+              onClick={() => {
+                try { fitView && fitView({ padding: 0.2 }); } catch {}
+              }}
+              className="px-2 py-1 rounded border text-xs"
+              title="Fit to View"
+              style={{
+                backgroundColor: colors.panel,
+                borderColor: colors.accent + '50',
+                color: colors.text,
+              }}
+            >
+              Fit
+            </button>
+            <button
               onClick={() => {
                 /* Add refresh logic */
               }}
@@ -722,8 +784,58 @@ const SupplyChainGraph = () => {
             >
               <RefreshCw size={18} />
             </button>
+            <button
+              onClick={() => {
+                if (!containerRef.current) return;
+                if (!document.fullscreenElement) {
+                  containerRef.current.requestFullscreen?.();
+                  setIsFullscreen(true);
+                } else {
+                  document.exitFullscreen?.();
+                  setIsFullscreen(false);
+                }
+              }}
+              className="p-2 rounded border hover:bg-gray-700/50 transition"
+              title="Toggle Fullscreen"
+              style={{
+                backgroundColor: colors.panel,
+                borderColor: colors.accent + '50',
+                color: colors.text,
+              }}
+            >
+              {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+            </button>
             {/* Add other controls like fullscreen toggle */}
           </div>
+        </div>
+        {/* KPI strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          {(() => {
+            const nodeCount = filteredGraphData.nodes.length;
+            const linkCount = filteredGraphData.links.length;
+            const ethicalLinks = filteredGraphData.links.filter((l) => l.ethical).length;
+            const ethicalPct = linkCount ? Math.round((ethicalLinks / linkCount) * 100) : 0;
+            const avgScore = nodeCount
+              ? (
+                  filteredGraphData.nodes.reduce((sum, n) => sum + (n.ethical_score ?? 0), 0) /
+                  nodeCount
+                ).toFixed(1)
+              : '0.0';
+            const kpiBox = (label: string, value: string, color: string) => (
+              <div className="p-3 rounded border text-center" style={{ borderColor: color + '40', backgroundColor: color + '10' }}>
+                <div className="text-xs" style={{ color: colors.textMuted }}>{label}</div>
+                <div className="text-xl font-bold" style={{ color: colors.text }}>{value}</div>
+              </div>
+            );
+            return (
+              <>
+                {kpiBox('Suppliers', String(nodeCount), colors.accent)}
+                {kpiBox('Connections', String(linkCount), colors.primary)}
+                {kpiBox('Ethical Paths', `${ethicalPct}%`, colors.success)}
+                {kpiBox('Avg. Score', `${avgScore}`, colors.warning)}
+              </>
+            );
+          })()}
         </div>
         {error && (
           <div
@@ -761,6 +873,8 @@ const SupplyChainGraph = () => {
           backgroundColor: colors.panelSolid,
         }}
       >
+        {/* container for fullscreen */}
+        <div ref={containerRef} className="w-full h-full">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader
@@ -807,7 +921,41 @@ const SupplyChainGraph = () => {
             />
           </ReactFlow>
         )}
+        </div>
       </motion.div>
+
+      {/* Legend */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="p-3 rounded border" style={{ borderColor: colors.accent + '30', backgroundColor: colors.panel }}>
+          <div className="text-sm font-medium mb-2" style={{ color: colors.text }}>Legend</div>
+          <div className="flex flex-wrap gap-4 text-xs" style={{ color: colors.textMuted }}>
+            <span className="inline-flex items-center gap-2">
+              <span className="w-4 h-1 inline-block" style={{ backgroundColor: colors.success }} /> Ethical connection
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="w-4 h-1 inline-block" style={{ backgroundColor: colors.error }} /> Risky connection
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: colors.success + '40', border: `1px solid ${colors.success}` }} /> High score node
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: colors.warning + '40', border: `1px solid ${colors.warning}` }} /> Medium score node
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: colors.error + '40', border: `1px solid ${colors.error}` }} /> Low score node
+            </span>
+          </div>
+        </div>
+        <div className="p-3 rounded border" style={{ borderColor: colors.accent + '30', backgroundColor: colors.panel }}>
+          <div className="text-sm font-medium mb-2" style={{ color: colors.text }}>Tips</div>
+          <ul className="text-xs list-disc pl-5" style={{ color: colors.textMuted }}>
+            <li>Click a node to focus and dim unrelated nodes.</li>
+            <li>Use the layout toggle to switch between top-to-bottom and left-to-right.</li>
+            <li>Adjust the minimum score or enable Ethical Only to filter paths.</li>
+            <li>Use Fit to refocus after filtering or panning.</li>
+          </ul>
+        </div>
+      </div>
 
       {/* === Flow Details Section (Left/Right Panels remain) === */}
       <motion.div
