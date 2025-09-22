@@ -250,8 +250,12 @@ const SupplierAssessment = () => {
     name: "",
     country: "",
     industry: "",
+    revenue: 0,
+    employee_count: 0,
+    total_emissions: 0,
     co2_emissions: 50,
     water_usage: 50,
+    waste_generated: 0,
     energy_efficiency: 0.5,
     waste_management_score: 0.5,
     renewable_energy_percent: 20,
@@ -261,9 +265,15 @@ const SupplierAssessment = () => {
     diversity_inclusion_score: 0.5,
     community_engagement: 0.5,
     worker_safety: 0.5,
+    injury_rate: 0,
+    training_hours: 0,
+    living_wage_ratio: 1,
+    gender_diversity_percent: 0,
     transparency_score: 0.5,
     corruption_risk: 0.5,
     board_diversity: 0.5,
+    board_independence: 0,
+    anti_corruption_policy: false,
     ethics_program: 0.5,
     compliance_systems: 0.5,
     delivery_efficiency: 0.5,
@@ -282,6 +292,31 @@ const SupplierAssessment = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("basic"); // Changed from activeSection
   const [usingMockData, setUsingMockData] = useState(false); // Keep this for demo mode indication
+
+  const estimatedCompleteness = useMemo(() => {
+    const has = (v: any) => v !== undefined && v !== null && v !== '';
+    const f: any = formData || {};
+    let present = 0, total = 0;
+    const add = (cond: boolean) => { total++; if (cond) present++; };
+    const revenue = Number((f as any).revenue) || 0;
+    const emissions = Number((f as any).total_emissions ?? (f as any).co2_emissions);
+    const water = Number((f as any).water_usage);
+    const waste = Number((f as any).waste_generated);
+    add(revenue > 0 && (emissions || emissions === 0));
+    add(has((f as any).renewable_energy_percent));
+    add(revenue > 0 && (water || water === 0));
+    add(revenue > 0 && (waste || waste === 0));
+    add(has((f as any).injury_rate));
+    add(has((f as any).training_hours));
+    add(has((f as any).living_wage_ratio));
+    add(has((f as any).gender_diversity_percent) || has((f as any).diversity_inclusion_score));
+    add(has((f as any).board_diversity));
+    add(has((f as any).board_independence));
+    add(has((f as any).transparency_score));
+    add(typeof (f as any).anti_corruption_policy === 'boolean');
+    const ratio = total ? present / total : 1;
+    return { ratio, present, total };
+  }, [formData]);
 
   // --- Fetch Initial Data ---
   useEffect(() => {
@@ -737,6 +772,25 @@ const SupplierAssessment = () => {
 
       {/* Main Form Area */}
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Completeness */}
+        <div className="p-3 rounded border flex items-center justify-between" style={{ borderColor: colors.accent + '40', backgroundColor: colors.panel }}>
+          <div>
+            <div className="text-sm font-medium" style={{ color: colors.text }}>Estimated Data Completeness</div>
+            <div className="text-xs" style={{ color: colors.textMuted }}>
+              {estimatedCompleteness.present}/{estimatedCompleteness.total} key metrics provided
+              {estimatedCompleteness.ratio < 0.7 && (
+                <span className="ml-2" style={{ color: colors.warning }}>• Scores may be capped at 50 if below 70%</span>
+              )}
+            </div>
+          </div>
+          <span className="px-2 py-1 rounded text-sm font-mono" style={{
+            color: estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error,
+            backgroundColor: (estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error) + '20',
+            border: `1px solid ${(estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error)}40`,
+          }}>
+            {(estimatedCompleteness.ratio * 100).toFixed(0)}%
+          </span>
+        </div>
         {/* Tabs/Progress Indicator */}
         <div className="mb-6 border-b border-gray-700">
           <nav
@@ -811,7 +865,22 @@ const SupplierAssessment = () => {
                   onChange={handleChange}
                   options={industries}
                 />
-                {/* Add other basic fields if needed */}
+                <InputField
+                  name="revenue"
+                  label="Revenue (millions USD)"
+                  type="number"
+                  value={(formData as any).revenue as any}
+                  onChange={handleChange}
+                  placeholder="e.g., 120.5"
+                />
+                <InputField
+                  name="employee_count"
+                  label="Employee Count"
+                  type="number"
+                  value={(formData as any).employee_count as any}
+                  onChange={handleChange}
+                  placeholder="e.g., 2500"
+                />
               </div>
             )}
             {activeTab === "environmental" && (
@@ -862,6 +931,23 @@ const SupplierAssessment = () => {
                   value={formData.pollution_control}
                   onChange={handleChange}
                 />
+                <SliderField
+                  name="waste_generated"
+                  label="Waste Generated (tons)"
+                  value={(formData as any).waste_generated as any}
+                  onChange={handleChange}
+                  min={0}
+                  max={100000}
+                  step={100}
+                />
+                <InputField
+                  name="total_emissions"
+                  label="Total Emissions (tons CO₂e)"
+                  type="number"
+                  value={(formData as any).total_emissions as any}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                />
               </div>
             )}
             {activeTab === "social" && (
@@ -895,6 +981,42 @@ const SupplierAssessment = () => {
                   label="Worker Safety Score"
                   value={formData.worker_safety}
                   onChange={handleChange}
+                />
+                <SliderField
+                  name="injury_rate"
+                  label="Injury Rate (per 200k hrs)"
+                  value={(formData as any).injury_rate as any}
+                  onChange={handleChange}
+                  min={0}
+                  max={10}
+                  step={0.1}
+                />
+                <SliderField
+                  name="training_hours"
+                  label="Training Hours per Employee"
+                  value={(formData as any).training_hours as any}
+                  onChange={handleChange}
+                  min={0}
+                  max={200}
+                  step={1}
+                />
+                <SliderField
+                  name="living_wage_ratio"
+                  label="Living Wage Ratio"
+                  value={(formData as any).living_wage_ratio as any}
+                  onChange={handleChange}
+                  min={0.5}
+                  max={2}
+                  step={0.01}
+                />
+                <SliderField
+                  name="gender_diversity_percent"
+                  label="Gender Diversity (% Women)"
+                  value={(formData as any).gender_diversity_percent as any}
+                  onChange={handleChange}
+                  min={0}
+                  max={100}
+                  step={1}
                 />
               </div>
             )}
@@ -930,6 +1052,25 @@ const SupplierAssessment = () => {
                   value={formData.compliance_systems}
                   onChange={handleChange}
                 />
+                <SliderField
+                  name="board_independence"
+                  label="Board Independence (%)"
+                  value={(formData as any).board_independence as any}
+                  onChange={handleChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                />
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="anti_corruption_policy"
+                    checked={!!(formData as any).anti_corruption_policy}
+                    onChange={handleChange}
+                    className="h-4 w-4 rounded border focus:ring-2"
+                  />
+                  <span className="text-sm">Anti-Corruption Policy in Place</span>
+                </label>
               </div>
             )}
             {activeTab === "supply_chain" && (

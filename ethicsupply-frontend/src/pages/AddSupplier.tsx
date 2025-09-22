@@ -79,6 +79,19 @@ const InputField = ({
   disabled = false,
   min = undefined,
   max = undefined,
+  helper,
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  value: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+  helper?: string;
 }) => (
   <div className="mb-4">
     <label
@@ -107,7 +120,13 @@ const InputField = ({
         borderColor: colors.accent + "50",
         color: colors.text,
       }}
+      data-type={type === "number" ? "number" : undefined}
     />
+    {helper && (
+      <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+        {helper}
+      </p>
+    )}
   </div>
 );
 
@@ -1531,10 +1550,14 @@ const AddSupplier = () => {
     industry: "Manufacturing",
     description: "",
     website: "",
+    revenue: 0, // millions USD
+    employee_count: 0,
 
     // Environmental metrics
     co2_emissions: 50,
     water_usage: 50,
+    waste_generated: 0,
+    total_emissions: 0,
     energy_efficiency: 0.5,
     waste_management_score: 0.5,
     renewable_energy_percent: 30,
@@ -1546,13 +1569,19 @@ const AddSupplier = () => {
     diversity_inclusion_score: 0.5,
     community_engagement: 0.5,
     worker_safety: 0.5,
+    injury_rate: 0,
+    training_hours: 0,
+    living_wage_ratio: 1,
+    gender_diversity_percent: 0,
 
     // Governance metrics
     transparency_score: 0.5,
     corruption_risk: 0.5,
     board_diversity: 0.5,
+    board_independence: 0,
     ethics_program: 0.5,
     compliance_systems: 0.5,
+    anti_corruption_policy: false,
 
     // Supply chain metrics
     delivery_efficiency: 0.5,
@@ -1565,6 +1594,33 @@ const AddSupplier = () => {
     climate_risk: 0.5,
     labor_dispute_risk: 0.5,
   });
+
+  // Estimate data completeness similar to backend (key metrics presence)
+  const estimatedCompleteness = useMemo(() => {
+    const has = (v: any) => v !== undefined && v !== null && v !== '';
+    let present = 0;
+    let total = 0;
+    // Intensities require revenue + numerator
+    const rev = Number(formData.revenue) || 0;
+    const em = Number(formData.total_emissions ?? formData.co2_emissions);
+    const water = Number(formData.water_usage);
+    const waste = Number(formData.waste_generated);
+    const addMetric = (cond: boolean) => { total++; if (cond) present++; };
+    addMetric(rev > 0 && (em || em === 0)); // emission_intensity
+    addMetric(has(formData.renewable_energy_percent)); // renewable_pct
+    addMetric(rev > 0 && (water || water === 0)); // water_intensity
+    addMetric(rev > 0 && (waste || waste === 0)); // waste_intensity
+    addMetric(has(formData.injury_rate));
+    addMetric(has(formData.training_hours));
+    addMetric(has(formData.living_wage_ratio)); // wage_ratio
+    addMetric(has(formData.gender_diversity_percent) || has(formData.diversity_inclusion_score));
+    addMetric(has(formData.board_diversity));
+    addMetric(has(formData.board_independence));
+    addMetric(has(formData.transparency_score));
+    addMetric(typeof formData.anti_corruption_policy === 'boolean');
+    const ratio = total > 0 ? present / total : 1;
+    return { ratio, present, total };
+  }, [formData]);
 
   // Form field options
   const countries = [
@@ -1646,6 +1702,11 @@ const AddSupplier = () => {
       >
     ) => {
       const { name, value, type } = e.target;
+      if (type === "checkbox") {
+        const checked = (e.target as HTMLInputElement).checked;
+        setFormData((prev) => ({ ...prev, [name]: checked }));
+        return;
+      }
       let processedValue: string | number | null = value;
 
       // Handle numeric types (range sliders or explicit number inputs)
@@ -1665,8 +1726,11 @@ const AddSupplier = () => {
         ) {
           processedValue = Math.max(0, Math.min(1, processedValue as number));
         }
-        if (name === "renewable_energy_percent") {
+        if (name === "renewable_energy_percent" || name === "gender_diversity_percent" || name === "board_independence") {
           processedValue = Math.max(0, Math.min(100, processedValue as number));
+        }
+        if (name === "living_wage_ratio") {
+          processedValue = Math.max(0.5, Math.min(2, processedValue as number));
         }
       }
 
@@ -2016,6 +2080,30 @@ const AddSupplier = () => {
         </div>
       </div>
 
+      {/* Data Quality Indicator */}
+      {uploadMode === "single" && (
+        <div className="mb-6 p-4 rounded-lg border flex items-center justify-between" style={{ borderColor: colors.accent + '40', backgroundColor: colors.panel }}>
+          <div>
+            <div className="text-sm font-medium" style={{ color: colors.text }}>Estimated Data Completeness</div>
+            <div className="text-xs" style={{ color: colors.textMuted }}>
+              {estimatedCompleteness.present}/{estimatedCompleteness.total} key metrics provided
+              {estimatedCompleteness.ratio < 0.7 && (
+                <span className="ml-2" style={{ color: colors.warning }}>
+                  • Scores may be capped at 50 if below 70%
+                </span>
+              )}
+            </div>
+          </div>
+          <span className="px-2 py-1 rounded text-sm font-mono" style={{
+            color: estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error,
+            backgroundColor: (estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error) + '20',
+            border: `1px solid ${(estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error)}40`,
+          }}>
+            {(estimatedCompleteness.ratio * 100).toFixed(0)}%
+          </span>
+        </div>
+      )}
+
       {/* Display either Real-Time ESG Preview or Batch Upload UI based on mode */}
       {uploadMode === "single" ? (
         <>
@@ -2182,6 +2270,25 @@ const AddSupplier = () => {
                         required={true}
                       />
 
+                      <InputField
+                        name="revenue"
+                        label="Revenue (millions USD)"
+                        type="number"
+                        value={formData.revenue ?? 0}
+                        onChange={handleChange}
+                        placeholder="e.g., 120.5"
+                        helper="Used to compute intensities (emissions, water, waste per revenue)."
+                      />
+                      <InputField
+                        name="employee_count"
+                        label="Employee Count"
+                        type="number"
+                        value={formData.employee_count ?? 0}
+                        onChange={handleChange}
+                        placeholder="e.g., 2500"
+                        helper="Total number of employees across operations."
+                      />
+
                       <div className="md:col-span-3">
                         <InputField
                           name="website"
@@ -2249,7 +2356,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                    <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                       <InputField
                         name="co2_emissions"
@@ -2266,6 +2373,24 @@ const AddSupplier = () => {
                         value={formData.water_usage ?? ""}
                         onChange={handleChange}
                         placeholder="e.g., 50000"
+                      />
+                      <InputField
+                        name="waste_generated"
+                        label="Waste Generated (tons)"
+                        type="number"
+                        value={formData.waste_generated ?? 0}
+                        onChange={handleChange}
+                        placeholder="e.g., 1200"
+                        helper="Annual hazardous + non-hazardous waste generated."
+                      />
+                      <InputField
+                        name="total_emissions"
+                        label="Total Emissions (tons CO₂e)"
+                        type="number"
+                        value={formData.total_emissions ?? 0}
+                        onChange={handleChange}
+                        placeholder="Optional"
+                        helper="If provided, used to compute emission intensity."
                       />
                       <SliderField
                         name="energy_efficiency"
@@ -2320,7 +2445,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                    <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
                       <SliderField
                         name="wage_fairness"
@@ -2352,6 +2477,42 @@ const AddSupplier = () => {
                         value={formData.worker_safety ?? 0.5}
                         onChange={handleChange}
                       />
+                      <InputField
+                        name="injury_rate"
+                        label="Injury Rate (per 200k hrs)"
+                        type="number"
+                        value={formData.injury_rate ?? 0}
+                        onChange={handleChange}
+                        placeholder="0-10"
+                        helper="OSHA-like recordable incident rate. Lower is better."
+                      />
+                      <InputField
+                        name="training_hours"
+                        label="Training Hours per Employee"
+                        type="number"
+                        value={formData.training_hours ?? 0}
+                        onChange={handleChange}
+                        placeholder="e.g., 40"
+                        helper="Average annual hours per employee."
+                      />
+                      <InputField
+                        name="living_wage_ratio"
+                        label="Living Wage Ratio"
+                        type="number"
+                        value={formData.living_wage_ratio ?? 1}
+                        onChange={handleChange}
+                        placeholder="e.g., 1.0"
+                        helper="1.0 = wages meet local living wage benchmark."
+                      />
+                      <InputField
+                        name="gender_diversity_percent"
+                        label="Gender Diversity (% Women)"
+                        type="number"
+                        value={formData.gender_diversity_percent ?? 0}
+                        onChange={handleChange}
+                        placeholder="0-100"
+                        helper="Percentage of women across workforce."
+                      />
                     </div>
                   </div>
 
@@ -2379,7 +2540,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                    <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
                       <SliderField
                         name="transparency_score"
@@ -2399,6 +2560,15 @@ const AddSupplier = () => {
                         value={formData.board_diversity ?? 0.5}
                         onChange={handleChange}
                       />
+                      <InputField
+                        name="board_independence"
+                        label="Board Independence (%)"
+                        type="number"
+                        value={formData.board_independence ?? 0}
+                        onChange={handleChange}
+                        placeholder="0-100"
+                        helper="Share of independent directors."
+                      />
                       <SliderField
                         name="ethics_program"
                         label="Ethics Program Strength"
@@ -2411,6 +2581,25 @@ const AddSupplier = () => {
                         value={formData.compliance_systems ?? 0.5}
                         onChange={handleChange}
                       />
+                      <label
+                        htmlFor="anti_corruption_policy"
+                        className="flex items-center gap-3 cursor-pointer select-none mt-2"
+                        style={{ color: colors.text }}
+                      >
+                        <input
+                          id="anti_corruption_policy"
+                          name="anti_corruption_policy"
+                          type="checkbox"
+                          checked={!!formData.anti_corruption_policy}
+                          onChange={handleChange as any}
+                          className="h-4 w-4 rounded border focus:ring-2"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.accent + "60",
+                          }}
+                        />
+                        <span className="text-sm">Anti-Corruption Policy in Place</span>
+                      </label>
                     </div>
                   </div>
 

@@ -51,6 +51,8 @@ import {
   getMockDashboardData,
   getDatasetMeta,
 } from "../services/dashboardService";
+import { getSuppliers, Supplier } from "../services/api";
+import { getSupplyChainGraphData, GraphData } from "../services/api";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import MachineLearningStatus from "../components/MachineLearningStatus";
@@ -71,6 +73,12 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
+
+// Centralized targets for KPIs
+const TARGETS = {
+  renewablePct: 60, // % of energy from renewables
+  injuryRate: 2.0,  // OSHA-like recordable incident rate per 200k hrs
+};
 
 // Define chart info content
 const chartInfoContent = {
@@ -331,6 +339,10 @@ const ReportGenerator = ({
         dashboardData.co2EmissionsByIndustry ||
         dashboardData.co2_emissions_by_industry ||
         [],
+      pillarAverages:
+        (dashboardData.pillarAverages || dashboardData.pillar_averages || null) as
+          | { environmental: number; social: number; governance: number }
+          | null,
       suppliersByCountry:
         dashboardData.suppliersByCountry ||
         dashboardData.suppliers_by_country ||
@@ -466,6 +478,15 @@ const ReportGenerator = ({
       doc.text(`${Math.round(reportData.summary.avgEthicalScore)}%`, 95, 70);
       doc.text(`${reportData.summary.avgCO2Emissions.toFixed(1)}t`, 150, 70);
 
+      // Additional KPIs
+      doc.setTextColor(138, 148, 200);
+      doc.text("Avg. Risk Penalty", 40, 88);
+      doc.text("Avg. Data Completeness", 120, 88);
+      doc.setTextColor(0, 240, 255);
+      doc.setFontSize(14);
+      doc.text(`${Math.round((reportData.summary.avgRiskFactor || 0) * 100)}%`, 40, 98);
+      doc.text(`${Math.round((reportData.summary.avgCompletenessRatio || 1) * 100)}%`, 120, 98);
+
       // Risk breakdown table
       doc.setTextColor(0, 240, 255);
       doc.setFontSize(14);
@@ -502,10 +523,57 @@ const ReportGenerator = ({
         ],
       ];
 
+      // Stacked bar visualization (100% width)
+      const barX = 30;
+      const barY = 126;
+      const barW = 150;
+      const barH = 8;
+      const total = Math.max(1, reportData.summary.totalSuppliers || 1);
+      const low = reportData.summary.riskBreakdown.low || 0;
+      const med = reportData.summary.riskBreakdown.medium || 0;
+      const high = reportData.summary.riskBreakdown.high || 0;
+      const critical = reportData.summary.riskBreakdown.critical || 0;
+      const lowW = (low / total) * barW;
+      const medW = (med / total) * barW;
+      const highW = (high / total) * barW;
+      const critW = (critical / total) * barW;
+      // Track
+      doc.setFillColor(40, 44, 66);
+      doc.roundedRect(barX, barY, barW, barH, 2, 2, 'F');
+      // Segments
+      let offsetX = barX;
+      const segs: [number, number, number, number][] = [
+        [10, 185, 129, lowW],
+        [245, 158, 11, medW],
+        [239, 68, 68, highW],
+        [139, 92, 246, critW],
+      ];
+      segs.forEach(([r, g, b, w]) => {
+        if (w <= 0.1) return;
+        doc.setFillColor(r, g, b);
+        doc.roundedRect(offsetX, barY, w, barH, 2, 2, 'F');
+        offsetX += w;
+      });
+      // Legend
+      const legendY = barY + 15;
+      const legendItems: [string, [number, number, number], number][] = [
+        [`Low (${low})`, [10,185,129], 35],
+        [`Medium (${med})`, [245,158,11], 85],
+        [`High (${high})`, [239,68,68], 150],
+        [`Critical (${critical})`, [139,92,246], 190],
+      ];
+      legendItems.forEach(([label, color, x]) => {
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.rect(x, legendY - 4, 6, 6, 'F');
+        doc.setTextColor(224, 224, 255);
+        doc.setFontSize(10);
+        doc.text(label, x + 9, legendY + 1);
+      });
+
       autoTable(doc, {
         head: [riskData[0]],
         body: riskData.slice(1),
-        startY: 130,
+        startY: 155,
         styles: {
           font: "helvetica",
           fillColor: [25, 28, 43],
@@ -521,6 +589,62 @@ const ReportGenerator = ({
           fillColor: [30, 33, 48],
         },
       });
+
+      // Pillars & Top Countries page
+      doc.addPage();
+      doc.setFillColor(13, 15, 26);
+      doc.rect(0, 0, 210, 297, "F");
+
+      doc.setTextColor(0, 240, 255);
+      doc.setFontSize(18);
+      doc.text("Pillars & Top Countries", 105, 20, { align: "center" });
+
+      doc.setTextColor(138, 148, 200);
+      doc.text("Pillar Scores", 30, 40);
+
+      const p = reportData.pillarAverages;
+      const pillarLabels = ["Environmental", "Social", "Governance"];
+      const pillarVals: number[] = p ? [p.environmental, p.social, p.governance] : [0, 0, 0];
+      const pillarColors: [number, number, number][] = [
+        [16, 185, 129],
+        [59, 130, 246],
+        [139, 92, 246],
+      ];
+      let yPos = 50;
+      for (let i = 0; i < 3; i++) {
+        doc.setTextColor(224, 224, 255);
+        doc.text(`${pillarLabels[i]}: ${pillarVals[i].toFixed(1)}`, 30, yPos);
+        doc.setFillColor(40, 44, 66);
+        doc.roundedRect(30, yPos + 4, 110, 6, 2, 2, 'F');
+        const w = Math.max(2, Math.min(110, pillarVals[i] * 1.1));
+        const c = pillarColors[i];
+        doc.setFillColor(c[0], c[1], c[2]);
+        doc.roundedRect(30, yPos + 4, w, 6, 2, 2, 'F');
+        yPos += 18;
+      }
+
+      // Top countries list
+      const countryEntries = Object.entries(reportData.suppliersByCountry || {})
+        .filter(([_, v]) => (v as number) > 0)
+        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .slice(0, 10);
+      if (countryEntries.length) {
+        doc.setTextColor(138, 148, 200);
+        doc.text("Top Countries", 150, 40, { align: 'center' });
+        let cy = 50;
+        countryEntries.forEach(([name, val], idx) => {
+          const color: [number, number, number] = idx < 4 ? [77,91,255] : idx < 7 ? [0,240,255] : [16,185,129];
+          doc.setFillColor(...color);
+          doc.circle(120, cy - 3, 2, 'F');
+          doc.setTextColor(224,224,255);
+          // wrap long names if needed
+          const display = String(name).length > 18 ? String(name).slice(0, 17) + '…' : String(name);
+          doc.text(display, 125, cy);
+          doc.setTextColor(138,148,200);
+          doc.text(String(val), 195, cy, { align: 'right' });
+          cy += 10;
+        });
+      }
 
       // ML Insights page
       doc.addPage();
@@ -1027,6 +1151,14 @@ const Dashboard = () => {
     bandsVersion: string | null;
   } | null>(null);
   const [showMethodology, setShowMethodology] = useState<boolean>(false);
+  // Extra datasets for creative analytics
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
+  // Local snapshot for movers (persisted across sessions)
+  const [topMovers, setTopMovers] = useState<{
+    increases: Array<{ id: string | number; name: string; delta: number }>;
+    decreases: Array<{ id: string | number; name: string; delta: number }>;
+  }>({ increases: [], decreases: [] });
 
   // Check API connection status
   const checkConnection = async () => {
@@ -1082,6 +1214,65 @@ const Dashboard = () => {
     };
 
     fetchData();
+    // Load suppliers and graph for additional analytics
+    (async () => {
+      try {
+        const suppliers = await getSuppliers();
+        setAllSuppliers(suppliers || []);
+
+        // Compute movers using localStorage snapshot of risk_factor
+        try {
+          const prevRaw = localStorage.getItem("dashboardSnapshot:v1");
+          const prev: Record<string, { rf?: number; esg?: number }> = prevRaw
+            ? JSON.parse(prevRaw)
+            : {};
+          const curr: Record<string, { rf?: number; esg?: number; name: string }> = {};
+          const diffs: Array<{ id: string | number; name: string; delta: number }> = [];
+          (suppliers || []).forEach((s) => {
+            const id = (s as any)._id || s.id;
+            curr[id] = {
+              rf: typeof s.risk_factor === "number" ? s.risk_factor : undefined,
+              esg: typeof s.ethical_score === "number" ? s.ethical_score : undefined,
+              name: s.name || String(id),
+            };
+            const prevRf = prev[id]?.rf;
+            const currRf = curr[id].rf;
+            if (typeof prevRf === "number" && typeof currRf === "number") {
+              const delta = currRf - prevRf;
+              diffs.push({ id, name: curr[id].name, delta });
+            }
+          });
+          diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+          const increases = diffs
+            .filter((d) => d.delta > 0)
+            .sort((a, b) => b.delta - a.delta)
+            .slice(0, 5);
+          const decreases = diffs
+            .filter((d) => d.delta < 0)
+            .sort((a, b) => a.delta - b.delta)
+            .slice(0, 5);
+          setTopMovers({ increases, decreases });
+          // Save current snapshot
+          const toSave: Record<string, { rf?: number; esg?: number }> = {};
+          Object.entries(curr).forEach(([id, v]) => {
+            toSave[id] = { rf: v.rf, esg: v.esg };
+          });
+          localStorage.setItem("dashboardSnapshot:v1", JSON.stringify(toSave));
+        } catch (e) {
+          console.warn("Top movers snapshot failed:", e);
+        }
+      } catch (e) {
+        console.warn("Suppliers fetch failed for dashboard extras:", e);
+        setAllSuppliers([]);
+      }
+      try {
+        const g = await getSupplyChainGraphData();
+        setGraphData(g);
+      } catch (e) {
+        console.warn("Graph fetch failed for dashboard extras:", e);
+        setGraphData(null);
+      }
+    })();
   }, []);
 
   // --- Derived Data for KPIs and Charts ---
@@ -1170,6 +1361,62 @@ const Dashboard = () => {
         fill: palette[level] ?? colors.textMuted,
       }));
   }, [data?.riskBreakdown]);
+
+  // --- Creative analytics derived from suppliers and graph ---
+  const extraAnalytics = useMemo(() => {
+    const suppliers = allSuppliers || [];
+    const byNumber = (v: any) => (typeof v === 'number' && !Number.isNaN(v)) ? v : null;
+    const avg = (arr: number[]) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+    // Averages
+    const avgRenewable = avg(
+      suppliers.map(s => byNumber((s as any).renewable_energy_percent)).filter((v): v is number => v !== null)
+    );
+    const avgInjury = avg(
+      suppliers.map(s => byNumber((s as any).injury_rate)).filter((v): v is number => v !== null)
+    );
+    // Targets (could be made configurable)
+    const targets = TARGETS;
+    // Watchlist: high risk or low disclosure
+    const watchHighRisk = suppliers
+      .filter(s => (s.risk_level || '').toString().toLowerCase() === 'high' || (s.risk_level || '').toString().toLowerCase() === 'critical')
+      .slice(0, 5);
+    const watchLowDisclosure = suppliers
+      .filter(s => typeof s.completeness_ratio === 'number' && (s.completeness_ratio as number) < 0.7)
+      .slice(0, 5);
+    // Largest risk penalties
+    const riskLeaders = suppliers
+      .filter(s => typeof s.risk_factor === 'number')
+      .sort((a,b) => (b.risk_factor as number) - (a.risk_factor as number))
+      .slice(0,5);
+    // Data quality: missingness by metric (presence across a small key set)
+    const keys: Array<keyof Supplier | string> = [
+      'revenue','total_emissions','co2_emissions','water_usage','waste_generated','renewable_energy_percent',
+      'injury_rate','training_hours','living_wage_ratio','gender_diversity_percent',
+      'board_diversity','board_independence','transparency_score','anti_corruption_policy'
+    ];
+    const missingCounts: Record<string, number> = {};
+    const totalSup = suppliers.length || 1;
+    keys.forEach(k => { missingCounts[k as string] = 0; });
+    suppliers.forEach(s => {
+      keys.forEach(k => {
+        const v = (s as any)[k];
+        const present = !(v === undefined || v === null || v === '');
+        if (!present) missingCounts[k as string] += 1;
+      });
+    });
+    const topMissing = Object.entries(missingCounts)
+      .sort((a,b) => b[1]-a[1])
+      .slice(0,6)
+      .map(([k, c]) => ({ metric: k, missing: c, pct: Math.round((c/totalSup)*100) }));
+    // Ethical path ratio from graph
+    let ethicalRatio = null;
+    if (graphData?.links && graphData.links.length) {
+      const total = graphData.links.length;
+      const ethical = graphData.links.filter(l => (l as any).ethical !== false).length;
+      ethicalRatio = Math.round((ethical/total)*100);
+    }
+    return { avgRenewable, avgInjury, targets, watchHighRisk, watchLowDisclosure, riskLeaders, topMissing, ethicalRatio };
+  }, [allSuppliers, graphData]);
 
   // Loading and Error Handling
   if (loading) return <LoadingIndicator />;
@@ -1362,6 +1609,45 @@ const Dashboard = () => {
         </KpiIndicator>
       </motion.div>
 
+      {/* Extra KPI strip: ethical paths and targets */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.25, duration: 0.5 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+      >
+        {/** Determine pass/fail colors for KPI tiles **/}
+        {(() => {
+          const renewableOk = Math.round(extraAnalytics.avgRenewable) >= TARGETS.renewablePct;
+          const injuryOk = Number.isFinite(extraAnalytics.avgInjury) && extraAnalytics.avgInjury <= TARGETS.injuryRate;
+          const renewableColor = renewableOk ? colors.success : colors.error;
+          const injuryColor = injuryOk ? colors.success : colors.error;
+          return (
+            <>
+        <KpiIndicator
+          label="Ethical Paths (Supply Graph)"
+          value={extraAnalytics.ethicalRatio !== null ? extraAnalytics.ethicalRatio.toString() : 'N/A'}
+          unit="%"
+          icon={GlobeAltIcon}
+          color={colors.accent}
+        />
+        <KpiIndicator
+          label="Renewable Energy (Avg vs Target)"
+          value={`${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`}
+          icon={SparklesIcon}
+          color={renewableColor}
+        />
+        <KpiIndicator
+          label="Injury Rate (Avg vs Target)"
+          value={`${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`}
+          icon={ShieldExclamationIcon}
+          color={injuryColor}
+        />
+            </>
+          );
+        })()}
+      </motion.div>
+
       {pillarCards.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -1489,7 +1775,7 @@ const Dashboard = () => {
           )}
         </DashboardCard>
 
-        {/* Suppliers by Country (Example of another chart) */}
+      {/* Suppliers by Country (Example of another chart) */}
         {suppliersByCountry &&
           Object.keys(suppliersByCountry).length > 0 && (
             <DashboardCard
@@ -1515,8 +1801,135 @@ const Dashboard = () => {
               suppliersByCountry,
             }}
           />
-        </motion.div>
+      </motion.div>
 
+      {/* Watchlist & Alerts */}
+      <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DashboardCard title="Watchlist: High Risk" icon={ShieldExclamationIcon} gridSpan="col-span-1">
+          {extraAnalytics.watchHighRisk.length ? (
+            <div className="space-y-2">
+              {extraAnalytics.watchHighRisk.map((s) => (
+                <div key={(s as any)._id || s.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                  <span style={{ color: colors.text }}>{s.name}</span>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium capitalize" style={{ color: colors.error, backgroundColor: colors.error + '15', border: `1px solid ${colors.error}40` }}>{s.risk_level}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: colors.textMuted }}>No high‑risk suppliers found.</p>
+          )}
+        </DashboardCard>
+
+        <DashboardCard title="Watchlist: Low Disclosure" icon={InformationCircleIcon} gridSpan="col-span-1">
+          {extraAnalytics.watchLowDisclosure.length ? (
+            <div className="space-y-2">
+              {extraAnalytics.watchLowDisclosure.map((s) => (
+                <div key={(s as any)._id || s.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                  <span style={{ color: colors.text }}>{s.name}</span>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ color: colors.warning, backgroundColor: colors.warning + '15', border: `1px solid ${colors.warning}40` }}>{Math.round((s.completeness_ratio || 0) * 100)}%</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: colors.textMuted }}>All suppliers have adequate disclosure.</p>
+          )}
+        </DashboardCard>
+        </div>
+      </div>
+
+      {/* Data Quality Panel & Risk Penalties */}
+      <div className="lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <DashboardCard title="Data Quality: Top Missing Metrics" icon={ListBulletIcon} gridSpan="col-span-1">
+          {extraAnalytics.topMissing.length ? (
+            <div className="text-sm">
+              {extraAnalytics.topMissing.map((m) => (
+                <div key={m.metric} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                  <span style={{ color: colors.text }}>{m.metric}</span>
+                  <span className="font-mono" style={{ color: colors.textMuted }}>{m.missing} ({m.pct}%)</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: colors.textMuted }}>No significant missingness detected.</p>
+          )}
+        </DashboardCard>
+
+        <DashboardCard title="Largest Risk Penalties" icon={ExclamationTriangleIcon} gridSpan="col-span-1">
+          {extraAnalytics.riskLeaders.length ? (
+            <div className="text-sm">
+              {extraAnalytics.riskLeaders.map((s) => (
+                <div key={(s as any)._id || s.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                  <span style={{ color: colors.text }}>{s.name}</span>
+                  <span className="font-mono" style={{ color: colors.textMuted }}>{Math.round((s.risk_factor || 0) * 100)}%</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: colors.textMuted }}>No risk penalty data.</p>
+          )}
+        </DashboardCard>
+        </div>
+      </div>
+
+      {/* Recent Activity & Top Movers */}
+      <div className="lg:col-span-3 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <DashboardCard title="Recent Activity" icon={CalendarIcon} gridSpan="col-span-1">
+            {allSuppliers.length ? (
+              <div className="text-sm">
+                {allSuppliers
+                  .slice()
+                  .sort((a, b) => {
+                    const ta = new Date(a.updated_at || a.created_at || 0).getTime();
+                    const tb = new Date(b.updated_at || b.created_at || 0).getTime();
+                    return tb - ta;
+                  })
+                  .slice(0, 8)
+                  .map((s) => {
+                    const t = new Date(s.updated_at || s.created_at || 0);
+                    return (
+                      <div key={(s as any)._id || s.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                        <span style={{ color: colors.text }}>{s.name}</span>
+                        <span className="text-xs" style={{ color: colors.textMuted }}>{t.toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: colors.textMuted }}>No recent activity.</p>
+            )}
+          </DashboardCard>
+
+          <DashboardCard title="Top Movers (Risk Penalty Δ)" icon={ArrowTrendingUpIcon} gridSpan="col-span-1">
+            {(topMovers.increases.length || topMovers.decreases.length) ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-xs mb-1" style={{ color: colors.textMuted }}>Increases</div>
+                  {topMovers.increases.map((m) => (
+                    <div key={m.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                      <span style={{ color: colors.text }}>{m.name}</span>
+                      <span className="font-mono" style={{ color: colors.error }}>+{Math.round(m.delta * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="text-xs mb-1" style={{ color: colors.textMuted }}>Decreases</div>
+                  {topMovers.decreases.map((m) => (
+                    <div key={m.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                      <span style={{ color: colors.text }}>{m.name}</span>
+                      <span className="font-mono" style={{ color: colors.success }}>{Math.round(m.delta * -100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: colors.textMuted }}>No mover data yet. Metrics build after first and next load.</p>
+            )}
+          </DashboardCard>
+        </div>
+      </div>
         {/* Add more charts here based on available data */}
         {/* e.g., Water Usage Trend, Renewable Energy, etc. */}
       </div>

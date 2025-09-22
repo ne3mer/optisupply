@@ -295,6 +295,14 @@ const SupplierDetails = () => {
     () => getRiskColor(supplier?.risk_level),
     [supplier?.risk_level]
   );
+  const completenessPct = useMemo(() => {
+    const r = supplier?.completeness_ratio;
+    return typeof r === 'number' ? Math.round(r * 100) : null;
+  }, [supplier?.completeness_ratio]);
+  const riskPenaltyPct = useMemo(() => {
+    const rf = supplier?.risk_factor;
+    return typeof rf === 'number' ? Math.round(rf * 100) : null;
+  }, [supplier?.risk_factor]);
 
   // --- Render Logic ---
   if (loading) {
@@ -399,6 +407,26 @@ const SupplierDetails = () => {
                 {supplier.risk_level || "Unknown"}
               </span>
             </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm" style={{ color: colors.textMuted }}>Risk Penalty</span>
+              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{
+                color: riskColor,
+                backgroundColor: riskColor + '15',
+                border: `1px solid ${riskColor}40`,
+              }}>
+                {riskPenaltyPct !== null ? `${riskPenaltyPct}%` : 'N/A'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm" style={{ color: colors.textMuted }}>Disclosure</span>
+              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{
+                color: (completenessPct ?? 100) >= 85 ? colors.success : (completenessPct ?? 100) >= 70 ? colors.warning : colors.error,
+                backgroundColor: ((completenessPct ?? 100) >= 85 ? colors.success : (completenessPct ?? 100) >= 70 ? colors.warning : colors.error) + '15',
+                border: `1px solid ${((completenessPct ?? 100) >= 85 ? colors.success : (completenessPct ?? 100) >= 70 ? colors.warning : colors.error)}40`,
+              }}>
+                {completenessPct !== null ? `${completenessPct}%` : 'N/A'}
+              </span>
+            </div>
           </div>
 
           {/* Actions Card */}
@@ -454,6 +482,39 @@ const SupplierDetails = () => {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="lg:col-span-2 space-y-6"
         >
+          {/* Pillar Breakdown */}
+          <div
+            className="p-4 rounded-lg border backdrop-blur-sm"
+            style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}
+          >
+            <h3 className="text-lg font-semibold mb-3" style={{ color: colors.text }}>
+              Pillar Breakdown
+            </h3>
+            <div className="space-y-3">
+              {([
+                { label: "Environmental", value: supplier.environmental_score, color: "#10b981" },
+                { label: "Social", value: supplier.social_score, color: "#3b82f6" },
+                { label: "Governance", value: supplier.governance_score, color: "#8b5cf6" },
+              ] as { label: string; value: number | undefined | null; color: string }[]).map((p) => {
+                const val = p.value ?? null;
+                const shown = val !== null ? (val > 0 && val <= 1 ? val * 100 : val) : null;
+                const width = Math.max(0, Math.min(100, shown || 0));
+                return (
+                  <div key={p.label}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span style={{ color: colors.textMuted }}>{p.label}</span>
+                      <span className="font-mono" style={{ color: colors.text }}>
+                        {shown !== null ? shown.toFixed(1) : "N/A"}
+                      </span>
+                    </div>
+                    <div className="h-2 rounded bg-black/30 overflow-hidden">
+                      <div className="h-2 rounded" style={{ width: `${width}%`, backgroundColor: p.color }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
           {/* Scores Breakdown Card */}
           <div
             className="p-4 rounded-lg border backdrop-blur-sm"

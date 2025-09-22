@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   getSuppliers,
@@ -430,6 +430,36 @@ const SupplierEditForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Estimated data completeness (aligns with backend key metrics used in scoring)
+  const estimatedCompleteness = useMemo(() => {
+    const has = (v: any) => v !== undefined && v !== null && v !== "";
+    const f: any = formData || {};
+    let present = 0;
+    let total = 0;
+    const addMetric = (cond: boolean) => {
+      total += 1;
+      if (cond) present += 1;
+    };
+    const revenue = Number(f.revenue) || 0;
+    const emissions = Number(f.total_emissions ?? f.co2_emissions);
+    const water = Number(f.water_usage);
+    const waste = Number(f.waste_generated);
+    addMetric(revenue > 0 && (emissions || emissions === 0)); // emission_intensity
+    addMetric(has(f.renewable_energy_percent)); // renewable_pct
+    addMetric(revenue > 0 && (water || water === 0)); // water_intensity
+    addMetric(revenue > 0 && (waste || waste === 0)); // waste_intensity
+    addMetric(has(f.injury_rate));
+    addMetric(has(f.training_hours));
+    addMetric(has(f.living_wage_ratio));
+    addMetric(has(f.gender_diversity_percent) || has(f.diversity_inclusion_score));
+    addMetric(has(f.board_diversity));
+    addMetric(has(f.board_independence));
+    addMetric(has(f.transparency_score));
+    addMetric(typeof f.anti_corruption_policy === "boolean");
+    const ratio = total > 0 ? present / total : 1;
+    return { ratio, present, total };
+  }, [formData]);
 
   // Fetch existing supplier data by ID
   useEffect(() => {
@@ -1059,6 +1089,46 @@ const SupplierEditForm = () => {
                   </div>
                 </motion.div>
               )}
+
+              {/* Data Completeness Indicator */}
+              <div className="mb-4 p-3 rounded-lg border flex items-center justify-between" style={{ borderColor: colors.accent + '40', backgroundColor: colors.panel }}>
+                <div>
+                  <div className="text-sm font-medium" style={{ color: colors.text }}>Estimated Data Completeness</div>
+                  <div className="text-xs" style={{ color: colors.textMuted }}>
+                    {estimatedCompleteness.present}/{estimatedCompleteness.total} key metrics provided
+                    {estimatedCompleteness.ratio < 0.7 && (
+                      <span className="ml-2" style={{ color: colors.warning }}>• Scores may be capped at 50 if below 70%</span>
+                    )}
+                  </div>
+                </div>
+                <span className="px-2 py-1 rounded text-sm font-mono" style={{
+                  color: estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error,
+                  backgroundColor: (estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error) + '20',
+                  border: `1px solid ${(estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error)}40`,
+                }}>
+                  {(estimatedCompleteness.ratio * 100).toFixed(0)}%
+                </span>
+              </div>
+
+              {/* Data Completeness Indicator */}
+              <div className="mb-4 p-3 rounded-lg border flex items-center justify-between" style={{ borderColor: colors.accent + '40', backgroundColor: colors.panel }}>
+                <div>
+                  <div className="text-sm font-medium" style={{ color: colors.text }}>Estimated Data Completeness</div>
+                  <div className="text-xs" style={{ color: colors.textMuted }}>
+                    {estimatedCompleteness.present}/{estimatedCompleteness.total} key metrics provided
+                    {estimatedCompleteness.ratio < 0.7 && (
+                      <span className="ml-2" style={{ color: colors.warning }}>• Scores may be capped at 50 if below 70%</span>
+                    )}
+                  </div>
+                </div>
+                <span className="px-2 py-1 rounded text-sm font-mono" style={{
+                  color: estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error,
+                  backgroundColor: (estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error) + '20',
+                  border: `1px solid ${(estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error)}40`,
+                }}>
+                  {(estimatedCompleteness.ratio * 100).toFixed(0)}%
+                </span>
+              </div>
 
               {/* Form Sections (Simplified for Editing - adjust as needed) */}
               <h2

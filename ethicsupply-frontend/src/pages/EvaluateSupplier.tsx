@@ -331,7 +331,12 @@ const EvaluateSupplier = () => {
     >
   ) => {
     const { name, value, type } = e.target;
-    let processedValue = value;
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData((prev: any) => ({ ...prev, [name]: checked }));
+      return;
+    }
+    let processedValue: any = value;
 
     // Handle range inputs for specific types of metrics
     if (type === "range") {
@@ -349,7 +354,7 @@ const EvaluateSupplier = () => {
       }
     }
 
-    setFormData((prev) => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: processedValue,
     }));
@@ -367,8 +372,12 @@ const EvaluateSupplier = () => {
         // Basic info remains as strings
 
         // Convert environmental metrics
+      revenue: parseFloat((formData as any).revenue) || 0,
+      employee_count: parseFloat((formData as any).employee_count) || 0,
+      total_emissions: parseFloat((formData as any).total_emissions) || 0,
+      waste_generated: parseFloat((formData as any).waste_generated) || 0,
       co2_emissions: parseFloat(formData.co2_emissions) || 0,
-        water_usage: parseFloat(formData.water_usage) || 0,
+      water_usage: parseFloat(formData.water_usage) || 0,
         energy_efficiency: parseFloat(formData.energy_efficiency) || 0,
         waste_management_score:
           parseFloat(formData.waste_management_score) || 0,
@@ -382,20 +391,26 @@ const EvaluateSupplier = () => {
         diversity_inclusion_score:
           parseFloat(formData.diversity_inclusion_score) || 0,
         community_engagement: parseFloat(formData.community_engagement) || 0,
-        worker_safety: parseFloat(formData.worker_safety) || 0,
+      worker_safety: parseFloat(formData.worker_safety) || 0,
+      injury_rate: parseFloat((formData as any).injury_rate) || 0,
+      training_hours: parseFloat((formData as any).training_hours) || 0,
+      living_wage_ratio: parseFloat((formData as any).living_wage_ratio) || 0,
+      gender_diversity_percent: parseFloat((formData as any).gender_diversity_percent) || 0,
 
         // Convert governance metrics
         transparency_score: parseFloat(formData.transparency_score) || 0,
         corruption_risk: parseFloat(formData.corruption_risk) || 0,
-        board_diversity: parseFloat(formData.board_diversity) || 0,
-        ethics_program: parseFloat(formData.ethics_program) || 0,
-        compliance_systems: parseFloat(formData.compliance_systems) || 0,
+      board_diversity: parseFloat(formData.board_diversity) || 0,
+      board_independence: parseFloat((formData as any).board_independence) || 0,
+      ethics_program: parseFloat(formData.ethics_program) || 0,
+      compliance_systems: parseFloat(formData.compliance_systems) || 0,
+      anti_corruption_policy: !!(formData as any).anti_corruption_policy,
 
         // Convert supply chain metrics
         delivery_efficiency: parseFloat(formData.delivery_efficiency) || 0,
         quality_control_score: parseFloat(formData.quality_control_score) || 0,
-        supplier_diversity: parseFloat(formData.supplier_diversity) || 0,
-        traceability: parseFloat(formData.traceability) || 0,
+      supplier_diversity: parseFloat(formData.supplier_diversity) || 0,
+      traceability: parseFloat(formData.traceability) || 0,
 
         // Convert risk factors
         geopolitical_risk: parseFloat(formData.geopolitical_risk) || 0,
@@ -447,6 +462,31 @@ const EvaluateSupplier = () => {
       return colors.error;
     }
   };
+
+  // Estimated completeness for assessment
+  const estimatedCompleteness = React.useMemo(() => {
+    const has = (v: any) => v !== undefined && v !== null && v !== '';
+    const f: any = formData || {};
+    let present = 0, total = 0;
+    const add = (cond: boolean) => { total++; if (cond) present++; };
+    const revenue = parseFloat(f.revenue) || 0;
+    const emissions = parseFloat(f.total_emissions ?? f.co2_emissions);
+    const water = parseFloat(f.water_usage);
+    const waste = parseFloat(f.waste_generated);
+    add(revenue > 0 && (emissions || emissions === 0));
+    add(has(f.renewable_energy_percent));
+    add(revenue > 0 && (water || water === 0));
+    add(revenue > 0 && (waste || waste === 0));
+    add(has(f.injury_rate));
+    add(has(f.training_hours));
+    add(has(f.living_wage_ratio));
+    add(has(f.gender_diversity_percent) || has(f.diversity_inclusion_score));
+    add(has(f.board_diversity));
+    add(has(f.board_independence));
+    add(has(f.transparency_score));
+    add(typeof f.anti_corruption_policy === 'boolean');
+    return { ratio: total ? present / total : 1, present, total };
+  }, [formData]);
 
   // Define interfaces for field types
   interface Field {
@@ -503,6 +543,30 @@ const EvaluateSupplier = () => {
       options: industries,
       section: "basic",
       required: true,
+    },
+    {
+      id: "revenue",
+      name: "revenue",
+      label: "Revenue (millions USD)",
+      icon: DocumentChartBarIcon,
+      type: "text",
+      section: "basic",
+    },
+    {
+      id: "employee_count",
+      name: "employee_count",
+      label: "Employee Count",
+      icon: DocumentChartBarIcon,
+      type: "text",
+      section: "basic",
+    },
+    {
+      id: "total_emissions",
+      name: "total_emissions",
+      label: "Total Emissions (tons CO₂e)",
+      icon: DocumentChartBarIcon,
+      type: "text",
+      section: "environmental",
     },
   ];
 
@@ -583,6 +647,19 @@ const EvaluateSupplier = () => {
       section: "environmental",
       description: "Effectiveness of pollution control measures",
     },
+    {
+      id: "waste_generated",
+      name: "waste_generated",
+      label: "Waste Generated (tons)",
+      icon: CloudIcon,
+      type: "range",
+      min: 0,
+      max: 100,
+      step: 1,
+      section: "environmental",
+      description: "Annual hazardous + non-hazardous waste",
+      isRiskMetric: true,
+    },
 
     // Social metrics
     {
@@ -645,6 +722,55 @@ const EvaluateSupplier = () => {
       section: "social",
       description: "Safety standards for workers",
     },
+    {
+      id: "injury_rate",
+      name: "injury_rate",
+      label: "Injury Rate (per 200k hrs)",
+      icon: UserGroupIcon,
+      type: "range",
+      min: 0,
+      max: 10,
+      step: 0.1,
+      section: "social",
+      description: "OSHA-like recordable incident rate (lower is better)",
+      isRiskMetric: true,
+    },
+    {
+      id: "training_hours",
+      name: "training_hours",
+      label: "Training Hours per Employee",
+      icon: UserGroupIcon,
+      type: "range",
+      min: 0,
+      max: 200,
+      step: 1,
+      section: "social",
+      description: "Average annual hours",
+    },
+    {
+      id: "living_wage_ratio",
+      name: "living_wage_ratio",
+      label: "Living Wage Ratio",
+      icon: UserGroupIcon,
+      type: "range",
+      min: 0.5,
+      max: 2,
+      step: 0.01,
+      section: "social",
+      description: "1.0 = meets local living wage",
+    },
+    {
+      id: "gender_diversity_percent",
+      name: "gender_diversity_percent",
+      label: "Gender Diversity (% Women)",
+      icon: UserGroupIcon,
+      type: "range",
+      min: 0,
+      max: 100,
+      step: 1,
+      section: "social",
+      description: "Workforce percentage",
+    },
 
     // Governance metrics
     {
@@ -683,6 +809,18 @@ const EvaluateSupplier = () => {
       step: 0.1,
       section: "governance",
       description: "Diversity in board composition",
+    },
+    {
+      id: "board_independence",
+      name: "board_independence",
+      label: "Board Independence (%)",
+      icon: DocumentChartBarIcon,
+      type: "range",
+      min: 0,
+      max: 100,
+      step: 1,
+      section: "governance",
+      description: "Share of independent directors",
     },
     {
       id: "ethics_program",
@@ -1053,8 +1191,27 @@ const EvaluateSupplier = () => {
                 </div>
                   </motion.div>
 
-                  <div className="flex-1" ref={formRef}>
-                    <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex-1" ref={formRef}>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Completeness indicator */}
+              <div className="p-3 rounded border flex items-center justify-between" style={{ borderColor: colors.accent + '40', backgroundColor: colors.panel }}>
+                <div>
+                  <div className="text-sm font-medium" style={{ color: colors.text }}>Estimated Data Completeness</div>
+                  <div className="text-xs" style={{ color: colors.textMuted }}>
+                    {estimatedCompleteness.present}/{estimatedCompleteness.total} key metrics provided
+                    {estimatedCompleteness.ratio < 0.7 && (
+                      <span className="ml-2" style={{ color: colors.warning }}>• Scores may be capped at 50 if below 70%</span>
+                    )}
+                  </div>
+                </div>
+                <span className="px-2 py-1 rounded text-sm font-mono" style={{
+                  color: estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error,
+                  backgroundColor: (estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error) + '20',
+                  border: `1px solid ${(estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error)}40`,
+                }}>
+                  {(estimatedCompleteness.ratio * 100).toFixed(0)}%
+                </span>
+              </div>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1317,10 +1474,25 @@ const EvaluateSupplier = () => {
                                   </p>
                   </div>
                 ))}
-              </div>
-                          </motion.div>
-                        );
-                      })}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+
+                      {/* Governance extras: anti-corruption boolean */}
+                      <div className="p-6 rounded-lg border backdrop-blur-sm space-y-4 mb-6" id="governance-extra" style={{ backgroundColor: `${colors.secondary}10`, borderColor: `${colors.secondary}40` }}>
+                        <label className="flex items-center gap-3 cursor-pointer select-none" style={{ color: colors.text }}>
+                          <input
+                            type="checkbox"
+                            name="anti_corruption_policy"
+                            checked={!!(formData as any).anti_corruption_policy}
+                            onChange={handleChange}
+                            className="h-4 w-4 rounded border focus:ring-2"
+                            style={{ backgroundColor: colors.inputBg, borderColor: colors.accent + '60' }}
+                          />
+                          <span className="text-sm">Anti-Corruption Policy in Place</span>
+                        </label>
+                      </div>
 
                       {/* Submit Buttons */}
                       <div
