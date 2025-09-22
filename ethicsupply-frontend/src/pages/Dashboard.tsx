@@ -1498,7 +1498,7 @@ const Dashboard = () => {
               gridSpan="lg:col-span-3"
               className="h-[400px]"
             >
-              <SuppliersByCountryChart data={suppliersByCountry} />
+              <SuppliersByCountryChart suppliersByCountry={suppliersByCountry} />
             </DashboardCard>
           )}
 

@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   TooltipProps,
+  Cell,
 } from "recharts";
 import {
   NameType,
@@ -32,12 +33,12 @@ const CustomTooltip = ({
     return (
       <div
         style={{
-          backgroundColor: "#333",
-          color: "#fff",
+          backgroundColor: "rgba(20,20,30,0.95)",
+          color: "#E0E0FF",
           padding: "10px",
-          border: "1px solid #666",
+          border: "1px solid rgba(120,120,200,0.5)",
           borderRadius: "4px",
-        }}
+          }}
       >
         <p style={{ margin: 0 }}>
           <strong>{payload[0].payload.name}</strong>
@@ -70,34 +71,46 @@ const SuppliersByCountryChart: React.FC<SuppliersByCountryChartProps> = ({
       .slice(0, 15); // Limit to top 15 countries
   }, [suppliersByCountry]);
 
-  // Set of colors for the chart
-  const chartColors = [
-    "#8884d8",
-    "#83a6ed",
-    "#8dd1e1",
-    "#82ca9d",
-    "#a4de6c",
-    "#d0ed57",
-    "#ffc658",
-    "#ff8042",
-    "#ff5252",
-    "#ff758f",
-    "#d3b5ff",
-    "#84d2ff",
-    "#8be3a0",
-    "#ffeca0",
-    "#ff9a9a",
-  ];
+  // Dynamic color scale from red -> yellow -> green based on relative value
+  const maxVal = useMemo(() => (data.length ? Math.max(...data.map((d) => d.value)) : 0), [data]);
+  const getColor = (value: number, index: number) => {
+    if (!maxVal) {
+      // fallback multi-color palette
+      const palette = [
+        "#4D5BFF",
+        "#00F0FF",
+        "#10b981",
+        "#f59e0b",
+        "#ef4444",
+        "#a78bfa",
+        "#38bdf8",
+        "#f472b6",
+        "#22c55e",
+        "#f97316",
+      ];
+      return palette[index % palette.length];
+    }
+    const t = Math.max(0, Math.min(1, value / maxVal));
+    // 0 -> red(0deg), 0.5 -> yellow(60deg), 1 -> green(120deg)
+    const hue = 120 * t; // 0..120
+    return `hsl(${hue.toFixed(0)}, 70%, 50%)`;
+  };
+
+  // Compute Y axis width based on longest label (approx 7px per char)
+  const yAxisWidth = useMemo(() => {
+    const longest = data.reduce((m, d) => Math.max(m, (d.name || "").length), 0);
+    return Math.max(70, Math.min(180, longest * 7));
+  }, [data]);
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
+    <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={data}
         margin={{
-          top: 20,
-          right: 30,
-          left: 80, // Increased for longer country names
-          bottom: 5,
+          top: 16,
+          right: 20,
+          left: 10,
+          bottom: 8,
         }}
         layout="vertical"
       >
@@ -106,20 +119,28 @@ const SuppliersByCountryChart: React.FC<SuppliersByCountryChartProps> = ({
           horizontal={true}
           vertical={false}
         />
-        <XAxis type="number" />
+        <XAxis type="number" tick={{ fill: "#8A94C8", fontSize: 12 }} />
         <YAxis
           dataKey="name"
           type="category"
-          width={70}
+          width={yAxisWidth}
+          tick={{ fill: "#8A94C8", fontSize: 12 }}
+          tickLine={false}
+          axisLine={false}
           interval={0} // Show all labels
         />
         <Tooltip content={<CustomTooltip />} />
         <Bar
           dataKey="value"
           name="Suppliers"
-          fill={chartColors[0]}
-          barSize={20}
-        />
+          barSize={18}
+          radius={[4, 4, 4, 4]}
+          background={{ fill: "rgba(100, 100, 150, 0.15)" }}
+        >
+          {data.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={getColor(entry.value, index)} />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );
