@@ -47,9 +47,10 @@ const convertToPercentage = (data: Partial<DashboardData>): DashboardData => {
   // Create a copy of the data to avoid mutating the original
   const result = { ...data };
 
-  // Convert avgEthicalScore from 0-1 to 0-100 if it's numeric
+  // Convert avgEthicalScore from 0-1 to 0-100 only when needed
   if (typeof result.avgEthicalScore === "number") {
-    result.avgEthicalScore = (result.avgEthicalScore * 100).toFixed(1);
+    const v = result.avgEthicalScore;
+    result.avgEthicalScore = ((v >= 0 && v <= 1 ? v * 100 : v)).toFixed(1);
   } else if (
     typeof result.avgEthicalScore === "string" &&
     !isNaN(parseFloat(result.avgEthicalScore))

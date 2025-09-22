@@ -210,6 +210,18 @@ const SliderField = ({
   onChange,
   unit = "",
   disabled = false,
+  helper,
+}: {
+  name: string;
+  label: string;
+  value: number | undefined | null;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  unit?: string;
+  disabled?: boolean;
+  helper?: string;
 }) => {
   // Calculate the percentage for visual elements
   const percentage =
@@ -324,6 +336,12 @@ const SliderField = ({
           {unit}
         </span>
       </div>
+
+      {helper && (
+        <p className="text-xs mt-2" style={{ color: colors.textMuted }}>
+          {helper}
+        </p>
+      )}
   </div>
 );
 
@@ -1199,6 +1217,7 @@ const SupplierEditForm = () => {
                     placeholder="e.g., 50000"
                     min={0}
                     step={0.01}
+                    helper="Total annual water withdrawal or consumption across operations."
                   />
                   <InputField
                     name="waste_generated"
@@ -1209,6 +1228,7 @@ const SupplierEditForm = () => {
                     placeholder="e.g., 1200"
                     min={0}
                     step={0.01}
+                    helper="Annual hazardous and non-hazardous waste generated (tonnes)."
                   />
                   <SliderField
                     name="renewable_energy_percent"
@@ -1219,6 +1239,7 @@ const SupplierEditForm = () => {
                     max={100}
                     step={1}
                     unit="%"
+                    helper="Share of total energy consumption from renewable sources."
                   />
                 </div>
               </div>
@@ -1256,6 +1277,7 @@ const SupplierEditForm = () => {
                     min={0}
                     max={10}
                     step={0.01}
+                    helper="Recordable incidents per 200,000 hours worked. Lower is better."
                   />
                   <SliderField
                     name="training_hours"
@@ -1266,6 +1288,7 @@ const SupplierEditForm = () => {
                     max={200}
                     step={1}
                     unit="hrs"
+                    helper="Average annual training hours per employee."
                   />
                   <SliderField
                     name="living_wage_ratio"
@@ -1275,6 +1298,7 @@ const SupplierEditForm = () => {
                     min={0.6}
                     max={1.5}
                     step={0.01}
+                    helper="1.0 means wages meet the local living wage benchmark."
                   />
                   <SliderField
                     name="gender_diversity_percent"
@@ -1285,24 +1309,28 @@ const SupplierEditForm = () => {
                     max={100}
                     step={1}
                     unit="%"
+                    helper="Percentage of women across the workforce."
                   />
                   <SliderField
                     name="diversity_inclusion_score"
                     label="Diversity & Inclusion Score"
                     value={formData.diversity_inclusion_score ?? 0.5}
                     onChange={handleChange}
+                    helper="Composite 0–1 score reflecting DEI policies and outcomes."
                   />
                   <SliderField
                     name="worker_safety"
                     label="Worker Safety Score"
                     value={formData.worker_safety ?? 0.5}
                     onChange={handleChange}
+                    helper="Composite 0–1 score from incidents, controls and safety culture."
                   />
                   <SliderField
                     name="community_engagement"
                     label="Community Engagement"
                     value={formData.community_engagement ?? 0.5}
                     onChange={handleChange}
+                    helper="Composite 0–1 score for local community programs and impact."
                   />
                 </div>
               </div>
@@ -1340,6 +1368,7 @@ const SupplierEditForm = () => {
                   max={100}
                   step={1}
                   unit="%"
+                  helper="Percentage of board seats held by women and/or minority members."
                 />
                 <SliderField
                   name="board_independence"
@@ -1350,6 +1379,7 @@ const SupplierEditForm = () => {
                   max={100}
                   step={1}
                   unit="%"
+                  helper="Percentage of independent directors on the board."
                 />
                 <SliderField
                   name="transparency_score"
@@ -1360,18 +1390,21 @@ const SupplierEditForm = () => {
                   max={100}
                   step={1}
                   unit="%"
+                  helper="Disclosure and reporting quality; higher implies greater transparency."
                 />
                 <SliderField
                   name="ethics_program"
                   label="Ethics Program Strength"
                   value={formData.ethics_program ?? 0.5}
                   onChange={handleChange}
+                  helper="0–1 composite of ethics training, policies, and enforcement."
                 />
                 <SliderField
                   name="compliance_systems"
                   label="Compliance Systems Score"
                   value={formData.compliance_systems ?? 0.5}
                   onChange={handleChange}
+                  helper="0–1 composite of internal controls, audits, and certifications."
                 />
                 <label
                   htmlFor="anti_corruption_policy"
