@@ -717,7 +717,7 @@ const SupplierEditForm = () => {
 
         {/* Header Content */}
         <div
-          className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-xl backdrop-blur-sm border"
+          className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between p-4 md:p-6 rounded-xl backdrop-blur-sm border"
           style={{
             borderColor: colors.accent + "40",
             backgroundColor: colors.panel + "80",
@@ -790,7 +790,7 @@ const SupplierEditForm = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mb-8 p-6 rounded-xl border relative overflow-hidden"
+        className="mb-8 p-4 md:p-6 rounded-xl border relative overflow-hidden"
         style={{
           backgroundColor: colors.panel + "90",
           borderColor: colors.accent + "40",
@@ -890,6 +890,41 @@ const SupplierEditForm = () => {
         </div>
       </motion.div>
 
+      {/* Mobile quick links (collapsible) */}
+      <div className="lg:hidden -mx-4 mb-4">
+        <div className="px-4 overflow-x-auto">
+          <div className="flex items-center space-x-3 py-2">
+            <a href="#core-info" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.accent + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Core
+            </a>
+            <a href="#scale-finance" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.secondary + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Scale & Finance
+            </a>
+            <a href="#environmental" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.success + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Environmental
+            </a>
+            <a href="#social" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.primary + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Social
+            </a>
+            <a href="#governance" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.primary + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Governance
+            </a>
+            <a href="#supply-chain" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.primary + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Supply Chain
+            </a>
+            <a href="#risk-factors" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.error + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Risks
+            </a>
+            <a href="#calculated-scores" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.success + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Scores
+            </a>
+            <a href="#metadata" className="whitespace-nowrap px-3 py-1.5 rounded-full text-xs border hover:opacity-90" style={{ borderColor: colors.accent + "40", color: colors.text, backgroundColor: colors.panel }}>
+              Metadata
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content - Two Column Layout with Navigation */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Navigation Sidebar */}
@@ -897,7 +932,7 @@ const SupplierEditForm = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="lg:w-64 shrink-0"
+          className="hidden lg:block lg:w-64 shrink-0"
         >
           <div
             className="sticky top-4 p-4 rounded-lg border backdrop-blur-sm space-y-1"
@@ -1030,7 +1065,7 @@ const SupplierEditForm = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-6 rounded-lg border backdrop-blur-sm space-y-6"
+              className="p-4 md:p-6 rounded-lg border backdrop-blur-sm space-y-6"
               style={{
                 backgroundColor: colors.panel,
                 borderColor: colors.accent + "40",
@@ -1154,8 +1189,8 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
                     name="name"
                     label="Supplier Name *"
@@ -1202,8 +1237,8 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
                     name="revenue"
                     label="Annual Revenue (USD millions)"
@@ -1265,8 +1300,8 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
                     name="co2_emissions"
                     label="Scope-Specific Emissions (tCO₂e)"
@@ -1337,8 +1372,8 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <SliderField
                     name="injury_rate"
                     label="Injury Rate (per 200k hrs)"
@@ -1428,7 +1463,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SliderField
                   name="board_diversity"
                   label="Board Diversity (% Women/Minority)"
@@ -1521,7 +1556,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SliderField
                   name="delivery_efficiency"
                   label="Delivery Efficiency"
@@ -1571,7 +1606,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <SliderField
                   name="geopolitical_risk"
                   label="Geopolitical Risk"
@@ -1624,7 +1659,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <InputField
                   name="ethical_score"
                   label="ESG Score (Risk Adjusted)"
