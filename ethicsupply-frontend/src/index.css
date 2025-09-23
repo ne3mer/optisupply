@@ -4,6 +4,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* A11y: Skip link styles */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: #0d0f1a;
+  color: #e0e0ff;
+  padding: 8px 12px;
+  z-index: 10000;
+  border: 2px solid #4D5BFF;
+  border-radius: 6px;
+}
+.skip-link:focus {
+  left: 12px;
+  top: 12px;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

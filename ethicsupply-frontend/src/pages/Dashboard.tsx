@@ -45,13 +45,8 @@ import {
   ReferenceLine,
   DonutChart,
 } from "recharts";
-import {
-  getDashboardData,
-  checkApiConnection,
-  getMockDashboardData,
-  getDatasetMeta,
-} from "../services/dashboardService";
-import { getSuppliers, Supplier } from "../services/api";
+import { getDashboardData, checkApiConnection, getMockDashboardData } from "../services/dashboardService";
+import { getDatasetMeta, getBands, getSuppliers, Supplier, BandsMap } from "../services/api";
 import { getSupplyChainGraphData, GraphData } from "../services/api";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -73,12 +68,27 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import html2canvas from "html2canvas";
+import MethodologyModal from "../components/MethodologyModal";
+import DataQualityCard from "../components/DataQualityCard";
+import MetricCard from "../components/MetricCard";
+import EditTargetsModal from "../components/EditTargetsModal";
+import { defaultTargets, Targets } from "../config/targets";
+import logger from "../utils/log";
 
-// Centralized targets for KPIs
-const TARGETS = {
-  renewablePct: 60, // % of energy from renewables
-  injuryRate: 2.0,  // OSHA-like recordable incident rate per 200k hrs
-};
+// Load persisted target overrides
+function loadTargets(): Targets {
+  try {
+    const raw = localStorage.getItem("targetsOverride");
+    if (!raw) return defaultTargets;
+    const parsed = JSON.parse(raw);
+    return {
+      renewablePct: Number.isFinite(Number(parsed.renewablePct)) ? Number(parsed.renewablePct) : defaultTargets.renewablePct,
+      injuryRate: Number.isFinite(Number(parsed.injuryRate)) ? Number(parsed.injuryRate) : defaultTargets.injuryRate,
+    };
+  } catch {
+    return defaultTargets;
+  }
+}
 
 // Define chart info content
 const chartInfoContent = {
@@ -1151,6 +1161,9 @@ const Dashboard = () => {
     bandsVersion: string | null;
   } | null>(null);
   const [showMethodology, setShowMethodology] = useState<boolean>(false);
+  const [targets, setTargets] = useState<Targets>(loadTargets());
+  const [showEditTargets, setShowEditTargets] = useState<boolean>(false);
+  const [dqBands, setDqBands] = useState<BandsMap | null>(null);
   // Extra datasets for creative analytics
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [graphData, setGraphData] = useState<GraphData | null>(null);
@@ -1194,7 +1207,7 @@ const Dashboard = () => {
         }
 
         const dashboardData = await getDashboardData();
-        console.log("Dashboard data received:", dashboardData);
+        logger.log("Dashboard data received:", dashboardData);
         setData(dashboardData);
         setUsingMockData(!!dashboardData.isMockData);
 
@@ -1202,7 +1215,7 @@ const Dashboard = () => {
           setError("API returned an error or no data. Displaying mock data.");
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        logger.error("Error fetching dashboard data:", error);
         setError(
           "Failed to fetch data from API. Displaying mock data. Check backend."
         );
@@ -1214,6 +1227,15 @@ const Dashboard = () => {
     };
 
     fetchData();
+    // Fetch bands for Data Quality card
+    (async () => {
+      try {
+        const bands = await getBands();
+        setDqBands(bands || null);
+      } catch (e) {
+        setDqBands(null);
+      }
+    })();
     // Load suppliers and graph for additional analytics
     (async () => {
       try {
@@ -1259,17 +1281,17 @@ const Dashboard = () => {
           });
           localStorage.setItem("dashboardSnapshot:v1", JSON.stringify(toSave));
         } catch (e) {
-          console.warn("Top movers snapshot failed:", e);
+          logger.warn("Top movers snapshot failed:", e);
         }
       } catch (e) {
-        console.warn("Suppliers fetch failed for dashboard extras:", e);
+        logger.warn("Suppliers fetch failed for dashboard extras:", e);
         setAllSuppliers([]);
       }
       try {
         const g = await getSupplyChainGraphData();
         setGraphData(g);
       } catch (e) {
-        console.warn("Graph fetch failed for dashboard extras:", e);
+        logger.warn("Graph fetch failed for dashboard extras:", e);
         setGraphData(null);
       }
     })();
@@ -1374,8 +1396,8 @@ const Dashboard = () => {
     const avgInjury = avg(
       suppliers.map(s => byNumber((s as any).injury_rate)).filter((v): v is number => v !== null)
     );
-    // Targets (could be made configurable)
-    const targets = TARGETS;
+    // Targets (configurable)
+    const targetsCfg = targets;
     // Watchlist: high risk or low disclosure
     const watchHighRisk = suppliers
       .filter(s => (s.risk_level || '').toString().toLowerCase() === 'high' || (s.risk_level || '').toString().toLowerCase() === 'critical')
@@ -1415,8 +1437,8 @@ const Dashboard = () => {
       const ethical = graphData.links.filter(l => (l as any).ethical !== false).length;
       ethicalRatio = Math.round((ethical/total)*100);
     }
-    return { avgRenewable, avgInjury, targets, watchHighRisk, watchLowDisclosure, riskLeaders, topMissing, ethicalRatio };
-  }, [allSuppliers, graphData]);
+    return { avgRenewable, avgInjury, targets: targetsCfg, watchHighRisk, watchLowDisclosure, riskLeaders, topMissing, ethicalRatio };
+  }, [allSuppliers, graphData, targets]);
 
   // Loading and Error Handling
   if (loading) return <LoadingIndicator />;
@@ -1485,11 +1507,19 @@ const Dashboard = () => {
               </span>
               <button
                 onClick={() => setShowMethodology(true)}
-                className="text-xs underline flex items-center gap-1"
+                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded"
                 style={{ color: colors.textMuted }}
                 title="View dataset generation methodology"
               >
                 <InformationCircleIcon className="h-4 w-4" /> Methodology
+              </button>
+              <button
+                onClick={() => setShowEditTargets(true)}
+                className="text-xs underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded"
+                style={{ color: colors.textMuted }}
+                title="Edit KPI/threshold targets (local only)"
+              >
+                Edit Targets
               </button>
             </div>
           )}
@@ -1508,57 +1538,20 @@ const Dashboard = () => {
           </div>
         )}
       </motion.div>
-      {showMethodology && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-            onClick={() => setShowMethodology(false)}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative max-w-2xl w-[95%] rounded-lg border p-6"
-            style={{ backgroundColor: colors.panel, borderColor: colors.accent + "40" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-semibold" style={{ color: colors.text }}>
-                Synthetic Dataset Methodology
-              </h3>
-              <button
-                className="text-sm"
-                style={{ color: colors.textMuted }}
-                onClick={() => setShowMethodology(false)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="space-y-3 text-sm" style={{ color: colors.textMuted }}>
-              <p>
-                This dashboard uses a synthetic ESG dataset for development and thesis purposes.
-                Data points are generated across four industries with per-industry ranges and
-                enforced correlations (e.g., higher renewable share lowers emission intensity;
-                higher training hours lowers injury rate). Approximately 15% missingness is
-                introduced across non-critical fields to simulate real-world disclosure.
-              </p>
-              <p>
-                The generator derives intensity metrics (emissions/revenue, water/revenue, waste/revenue),
-                and can apply external bands to constrain ranges. Optional anchors nudge means toward
-                public-like reference values with a small blending factor (alpha = 0.2).
-              </p>
-              <p>
-                Scoring normalizes metrics by industry bands, computes pillar scores (E/S/G),
-                applies a risk adjustment, and caps scores when data completeness is below 70%.
-              </p>
-              <p>
-                Source meta: {formatVersionLabel(datasetMeta?.version || "synthetic-v1")} {datasetMeta?.seed ? `(seed: ${datasetMeta.seed})` : ""}
-                {datasetMeta?.generatedAt ? ` • Generated: ${new Date(datasetMeta.generatedAt).toLocaleString()}` : ""}
-                {datasetMeta?.bandsVersion ? ` • Bands: ${datasetMeta.bandsVersion}` : ""}
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <MethodologyModal
+        open={showMethodology}
+        onClose={() => setShowMethodology(false)}
+        meta={datasetMeta}
+        colors={{ panel: colors.panel, accent: colors.accent, text: colors.text, textMuted: colors.textMuted }}
+      />
+      <EditTargetsModal
+        open={showEditTargets}
+        onClose={() => setShowEditTargets(false)}
+        value={targets}
+        onSave={(t)=> setTargets(t)}
+        onReset={()=> setTargets(defaultTargets)}
+        colors={{ panel: colors.panel, accent: colors.accent, text: colors.text, textMuted: colors.textMuted, primary: colors.primary }}
+      />
 
       {/* KPI Section */}
       <motion.div
@@ -1618,8 +1611,8 @@ const Dashboard = () => {
       >
         {/** Determine pass/fail colors for KPI tiles **/}
         {(() => {
-          const renewableOk = Math.round(extraAnalytics.avgRenewable) >= TARGETS.renewablePct;
-          const injuryOk = Number.isFinite(extraAnalytics.avgInjury) && extraAnalytics.avgInjury <= TARGETS.injuryRate;
+          const renewableOk = Math.round(extraAnalytics.avgRenewable) >= targets.renewablePct;
+          const injuryOk = Number.isFinite(extraAnalytics.avgInjury) && extraAnalytics.avgInjury <= targets.injuryRate;
           const renewableColor = renewableOk ? colors.success : colors.error;
           const injuryColor = injuryOk ? colors.success : colors.error;
           return (
@@ -1647,6 +1640,23 @@ const Dashboard = () => {
           );
         })()}
       </motion.div>
+
+      {/* Data Quality Card */}
+      <div className="grid grid-cols-1 gap-6 mb-8">
+        <DataQualityCard
+          suppliers={allSuppliers}
+          bands={dqBands}
+          colors={{
+            panel: colors.card,
+            accent: colors.accent,
+            text: colors.text,
+            textMuted: colors.textMuted,
+            success: colors.success,
+            warning: colors.warning,
+            error: colors.error,
+          }}
+        />
+      </div>
 
       {pillarCards.length > 0 && (
         <motion.div
@@ -1684,108 +1694,77 @@ const Dashboard = () => {
       )}
 
       {/* Main Grid: Charts & Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-4">
         {/* Ethical Score Distribution */}
-        <DashboardCard
+        <MetricCard
           title="Ethical Score Distribution"
           icon={ScaleIcon}
-          gridSpan="lg:col-span-2"
-          className="h-[400px]"
+          minHeight={400}
+          className="lg:col-span-2"
+          style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
+          empty={!data.ethicalScoreDistribution || !data.ethicalScoreDistribution.length}
+          emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No score distribution data. <a href="/suppliers/add" className="underline">Add Supplier</a></p>}
         >
-          {data.ethicalScoreDistribution &&
-          data.ethicalScoreDistribution.length > 0 ? (
-            <EthicalScoreDistributionChart
-              data={data.ethicalScoreDistribution}
-            />
-          ) : (
-            <p
-              className="text-center flex-grow flex items-center justify-center"
-              style={{ color: colors.textMuted }}
-            >
-              No score distribution data available.
-            </p>
-          )}
-        </DashboardCard>
+          <div role="img" aria-label="Histogram of ethical score distribution across suppliers" className="w-full h-full" style={{ height: '100%' }}>
+            <EthicalScoreDistributionChart data={data.ethicalScoreDistribution} />
+          </div>
+        </MetricCard>
 
         {/* Risk Breakdown */}
-        <DashboardCard
+        <MetricCard
           title="Risk Breakdown"
           icon={ShieldExclamationIcon}
-          className="h-[400px]"
+          minHeight={400}
+          style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
+          empty={!riskPieData.length}
+          emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No risk data. Add suppliers or set risk fields.</p>}
         >
-          {riskPieData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={riskPieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {riskPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: colors.tooltipBg,
-                    borderColor: colors.accent + "40",
-                    color: colors.text,
-                  }}
-                  itemStyle={{ color: colors.textMuted }}
-                />
-                <Legend
-                  formatter={(value, entry) => (
-                    <span style={{ color: colors.textMuted }}>{value}</span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <p
-              className="text-center flex-grow flex items-center justify-center"
-              style={{ color: colors.textMuted }}
-            >
-              No risk breakdown data available.
-            </p>
-          )}
-        </DashboardCard>
+          <div role="img" aria-label="Pie chart of supplier risk levels" className="w-full h-full" style={{ height: '100%' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={riskPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
+                {riskPieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ backgroundColor: colors.tooltipBg, borderColor: colors.accent + "40", color: colors.text }} itemStyle={{ color: colors.textMuted }} />
+              <Legend formatter={(value) => (<span style={{ color: colors.textMuted }}>{value}</span>)} />
+            </PieChart>
+          </ResponsiveContainer>
+          </div>
+        </MetricCard>
 
         {/* CO2 Emissions by Industry */}
-        <DashboardCard
+        <MetricCard
           title="CO₂ Emissions by Industry"
           icon={BeakerIcon}
-          gridSpan="lg:col-span-3" // Make it full width
-          className="h-[450px]"
+          minHeight={450}
+          className="lg:col-span-3"
+          style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
+          empty={!data.co2EmissionsByIndustry || !data.co2EmissionsByIndustry.length}
+          emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No emission data by industry. Ensure suppliers have emissions and industry.</p>}
         >
-          {data.co2EmissionsByIndustry &&
-          data.co2EmissionsByIndustry.length > 0 ? (
+          <div role="img" aria-label="Bar chart of CO2 emissions by industry" className="w-full h-full" style={{ height: '100%' }}>
             <CO2EmissionsChart data={data.co2EmissionsByIndustry} />
-          ) : (
-            <p
-              className="text-center flex-grow flex items-center justify-center"
-              style={{ color: colors.textMuted }}
-            >
-              No CO₂ emission data by industry available.
-            </p>
-          )}
-        </DashboardCard>
+          </div>
+        </MetricCard>
 
       {/* Suppliers by Country (Example of another chart) */}
         {suppliersByCountry &&
           Object.keys(suppliersByCountry).length > 0 && (
-            <DashboardCard
+            <MetricCard
               title="Suppliers by Country"
               icon={MapIcon}
-              gridSpan="lg:col-span-3"
-              className="h-[400px]"
+              minHeight={400}
+              className="lg:col-span-3"
+              style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
+              empty={!suppliersByCountry || !Object.keys(suppliersByCountry).length}
+              emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No suppliers yet. <a href="/suppliers/add" className="underline">Add Supplier</a></p>}
             >
-              <SuppliersByCountryChart suppliersByCountry={suppliersByCountry} />
-            </DashboardCard>
+              <div role="img" aria-label="Horizontal bar chart of supplier counts by country" className="w-full h-full" style={{ height: '100%' }}>
+                <SuppliersByCountryChart suppliersByCountry={suppliersByCountry} />
+              </div>
+            </MetricCard>
           )}
 
         {/* Report Generator - Add this section */}

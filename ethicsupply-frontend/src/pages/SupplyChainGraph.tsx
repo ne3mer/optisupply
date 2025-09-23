@@ -59,6 +59,7 @@ import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import Globe from "react-globe.gl";
 import { useTheme } from "../contexts/ThemeContext";
+import logger from "../utils/log";
 
 // --- Define default edgeTypes OUTSIDE component ---
 // We are not using custom edges, but defining this might help silence the warning
@@ -278,6 +279,28 @@ const SupplyChainGraph = () => {
   const [connectionType, setConnectionType] = useState<string>("supplier");
   const [connectionEthical, setConnectionEthical] = useState<boolean>(true);
 
+  // --- Persistence helpers for user-created links ---
+  const USER_LINKS_KEY = "supplyChain:userLinks";
+  const loadUserLinks = (): LinkObject[] => {
+    try {
+      const raw = localStorage.getItem(USER_LINKS_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed as LinkObject[];
+    } catch (e) {
+      logger.warn("Failed to load user links", e);
+      return [];
+    }
+  };
+  const saveUserLinks = (links: LinkObject[]) => {
+    try {
+      localStorage.setItem(USER_LINKS_KEY, JSON.stringify(links));
+    } catch (e) {
+      logger.warn("Failed to save user links", e);
+    }
+  };
+
   // Load data
   useEffect(() => {
     const fetchData = async () => {
@@ -311,9 +334,30 @@ const SupplyChainGraph = () => {
           return sourceExists && targetExists;
         }) as LinkObject[];
 
+        // Merge user-saved links
+        const userLinks = loadUserLinks().filter((l) => {
+          const s = typeof l.source === 'string' ? l.source : l.source.id;
+          const t = typeof l.target === 'string' ? l.target : l.target.id;
+          const sourceExists = nodesWithCoords.some((n) => n.id === s);
+          const targetExists = nodesWithCoords.some((n) => n.id === t);
+          return sourceExists && targetExists;
+        });
+        // Deduplicate by source-target pair
+        const seen = new Set(validLinks.map(l => `${l.source}->${l.target}`));
+        const mergedLinks: LinkObject[] = [...validLinks];
+        userLinks.forEach(l => {
+          const s = typeof l.source === 'string' ? l.source : l.source.id;
+          const t = typeof l.target === 'string' ? l.target : l.target.id;
+          const key = `${s}->${t}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            mergedLinks.push({ ...l, source: s, target: t });
+          }
+        });
+
         setGraphData({
           nodes: nodesWithCoords,
-          links: validLinks,
+          links: mergedLinks,
           isMockData: data.isMockData ?? false, // Handle potential mock flag
         });
         setUsingMockData(data.isMockData ?? false);
@@ -560,6 +604,10 @@ const SupplyChainGraph = () => {
       links: [...prev.links, newLink],
     }));
 
+    // Persist to localStorage
+    const current = loadUserLinks();
+    saveUserLinks([...current, newLink]);
+
     // Reset connection creation state
     setIsCreatingConnection(false);
     setConnectionSource(null);
@@ -581,7 +629,7 @@ const SupplyChainGraph = () => {
   // Handle node click in React Flow
   const onNodeClick = useCallback(
     (event, node: Node) => {
-      console.log("Node clicked:", node);
+      logger.log("Node clicked:", node);
 
       // If in connection creation mode, handle node selection
       if (isCreatingConnection) {
@@ -604,7 +652,7 @@ const SupplyChainGraph = () => {
   // Handle edge click in React Flow
   const onEdgeClick = useCallback(
     (event, edge: Edge) => {
-      console.log("Edge clicked:", edge);
+      logger.log("Edge clicked:", edge);
       setSelectedConnection(edge.data.apiData); // Update panel with API data
       setSelectedNodeApiData(null); // Clear node selection
     },
@@ -1269,6 +1317,36 @@ const SupplyChainGraph = () => {
                         </span>
                       )}
                     </p>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <button
+                      className="text-xs underline"
+                      style={{ color: colors.textMuted }}
+                      onClick={() => setSelectedConnection(null)}
+                    >
+                      Close
+                    </button>
+                    <button
+                      className="px-2 py-1 rounded text-xs border"
+                      style={{ color: colors.error, borderColor: colors.error + '60', backgroundColor: colors.error + '15' }}
+                      onClick={() => {
+                        // remove from graphData and storage
+                        setGraphData((prev) => ({
+                          ...prev,
+                          links: prev.links.filter((l) => !(l.source === selectedConnection.source && l.target === selectedConnection.target)),
+                        }));
+                        try {
+                          const key = "supplyChain:userLinks";
+                          const raw = localStorage.getItem(key);
+                          const arr = raw ? JSON.parse(raw) : [];
+                          const filtered = Array.isArray(arr) ? arr.filter((l:any) => !(l.source === selectedConnection.source && l.target === selectedConnection.target)) : [];
+                          localStorage.setItem(key, JSON.stringify(filtered));
+                        } catch {}
+                        setSelectedConnection(null);
+                      }}
+                    >
+                      Delete Connection
+                    </button>
                   </div>
                 </motion.div>
               ) : selectedNodeApiData ? (

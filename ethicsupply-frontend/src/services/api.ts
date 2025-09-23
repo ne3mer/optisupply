@@ -1,4 +1,5 @@
 // API URL and service functions for the application
+import logger from "../utils/log";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "https://optisupply.onrender.com/api";
 
@@ -274,6 +275,55 @@ export interface DetailedAnalysis {
   isMockData?: boolean;
 }
 
+// Dataset meta
+export interface DatasetMeta {
+  version: string;
+  seed: string | null;
+  generatedAt: string | null;
+  bandsVersion: string | null;
+}
+
+export const getDatasetMeta = async (): Promise<DatasetMeta | null> => {
+  try {
+    const resp = await fetch(getEndpoint("dataset/meta"), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return {
+      version: String(data.version ?? "synthetic-v1"),
+      seed: data.seed ?? null,
+      generatedAt: data.generatedAt ?? null,
+      bandsVersion: data.bandsVersion ?? null,
+    };
+  } catch (e) {
+    console.warn("Failed to fetch dataset meta:", e);
+    return null;
+  }
+};
+
+// Bands types and API
+export type BandsEntry = { min: number; avg?: number; max: number };
+export type BandsMap = Record<string, Record<string, BandsEntry>>; // industry -> metric -> entry
+
+export const getBands = async (): Promise<BandsMap | null> => {
+  try {
+    const resp = await fetch(getEndpoint("bands"), {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    // Accept {bands: {...}} or direct mapping
+    const root = data && data.bands ? data.bands : data;
+    return root as BandsMap;
+  } catch (e) {
+    console.warn("Failed to fetch bands:", e);
+    return null;
+  }
+};
+
 // Mock data for suppliers
 const mockSuppliers: Supplier[] = [
   {
@@ -509,7 +559,7 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error fetching suppliers:", error);
+    logger.error("Error fetching suppliers:", error);
     // Return mock data as fallback
     return mockSuppliers.map((supplier) => ({ ...supplier, isMockData: true }));
   }
@@ -537,19 +587,19 @@ export const getSupplier = async (id: number | string): Promise<Supplier> => {
     }
 
     const data = await response.json();
-    console.log("API response data for single supplier:", data);
+    logger.log("API response data for single supplier:", data);
 
     return {
       ...data,
       isMockData: false,
     };
   } catch (error) {
-    console.error(`Error fetching supplier with ID ${id}:`, error);
+    logger.error(`Error fetching supplier with ID ${id}:`, error);
 
     // Try to find the supplier in mock data as a fallback
     const mockSupplier = mockSuppliers.find((s) => s.id === Number(id));
     if (mockSupplier) {
-      console.log(`Using mock data for supplier ${id}`);
+      logger.log(`Using mock data for supplier ${id}`);
       return { ...mockSupplier, isMockData: true };
     }
 
@@ -570,11 +620,11 @@ export const evaluateSupplier = async (
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("API error:", response.status, errorText);
+      logger.error("API error:", response.status, errorText);
 
       // Return mock result if API is not available
       if (response.status === 404) {
-        console.warn("Evaluation API endpoint not available. Using mock data.");
+        logger.warn("Evaluation API endpoint not available. Using mock data.");
         return createMockEvaluationResult(supplierData);
       }
 
@@ -585,10 +635,10 @@ export const evaluateSupplier = async (
 
     // Process the real API response
     const data = await response.json();
-    console.log("Evaluation API response:", data);
+    logger.log("Evaluation API response:", data);
     return data;
   } catch (error) {
-    console.error("Error in evaluateSupplier:", error);
+    logger.error("Error in evaluateSupplier:", error);
 
     // If the error is related to the API not being available, return mock data
     if (
@@ -599,7 +649,7 @@ export const evaluateSupplier = async (
       (error.message.includes("Failed to fetch") ||
         error.message.includes("NetworkError"))
     ) {
-      console.warn("Evaluation API endpoint not available. Using mock data.");
+      logger.warn("Evaluation API endpoint not available. Using mock data.");
       return createMockEvaluationResult(supplierData);
     }
 
@@ -2796,7 +2846,7 @@ export const updateSupplier = async (
     console.log("Supplier updated successfully:", updatedSupplier);
     return updatedSupplier;
   } catch (error) {
-    console.error("Error in updateSupplier API call:", error);
+    logger.error("Error in updateSupplier API call:", error);
     // Re-throw the error so the component can catch it
     throw error instanceof Error
       ? error

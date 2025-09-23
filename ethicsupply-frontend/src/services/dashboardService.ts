@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../config";
+import logger from "../utils/log";
 
 // Update the dashboard data interface to match API response
 export interface DashboardData {
@@ -105,23 +106,23 @@ const convertToPercentage = (data: Partial<DashboardData>): DashboardData => {
  */
 export const getDashboardData = async (): Promise<DashboardData> => {
   try {
-    console.log("Fetching dashboard data from API...");
+    logger.log("Fetching dashboard data from API...");
     const response = await fetch(`${API_BASE_URL}/dashboard/`);
 
     if (!response.ok) {
-      console.warn(
+      logger.warn(
         `Dashboard API returned status ${response.status}. Using mock data.`
       );
       return getMockDashboardData();
     }
 
     const data = await response.json();
-    console.log("Dashboard API response:", data);
-    console.log("Raw API Data Received:", JSON.stringify(data));
+    logger.log("Dashboard API response:", data);
+    logger.log("Raw API Data Received:", JSON.stringify(data));
 
     // Convert any 0-1 values to 0-100 scale
     const convertedData = convertToPercentage(data);
-    console.log("Converted dashboard data (0-100 scale):", convertedData);
+    logger.log("Converted dashboard data (0-100 scale):", convertedData);
 
     // Ensure the returned data conforms to the interface
     return {
@@ -129,7 +130,7 @@ export const getDashboardData = async (): Promise<DashboardData> => {
       isMockData: false,
     };
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
+    logger.error("Error fetching dashboard data:", error);
     // Return mock data in case of error
     return getMockDashboardData();
   }
@@ -160,7 +161,7 @@ export const getDatasetMeta = async (): Promise<DatasetMeta | null> => {
  */
 export const checkApiConnection = async (): Promise<boolean> => {
   try {
-    console.log("Checking API connection...");
+    logger.log("Checking API connection...");
     const response = await fetch(`${API_BASE_URL}/health-check/`, {
       method: "GET",
       headers: {
@@ -169,14 +170,14 @@ export const checkApiConnection = async (): Promise<boolean> => {
     });
     return response.ok;
   } catch (error) {
-    console.error("API connection check failed:", error);
+    logger.error("API connection check failed:", error);
     return false;
   }
 };
 
 // Mock dashboard data - ADJUST to new interface or handle in component
 export const getMockDashboardData = (): DashboardData => {
-  console.log("Using mock dashboard data");
+  logger.log("Using mock dashboard data");
 
   // Create mock data
   const mockData = {

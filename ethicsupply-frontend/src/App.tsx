@@ -19,7 +19,7 @@ import SupplierAnalytics from "./pages/SupplierAnalytics";
 import SupplierAssessment from "./pages/enhanced/SupplierAssessment";
 import GeoRiskMapping from "./pages/GeoRiskMapping";
 import SupplyChainGraph from "./pages/SupplyChainGraph";
-import OptiSupplyAboutPage from "./pages/AboutPage";
+import AboutMethodology from "./pages/AboutMethodology";
 import SupplierEditForm from "./pages/SupplierEditForm";
 import { useEffect } from "react";
 import { RecoilRoot } from "recoil";
@@ -72,7 +72,7 @@ function App() {
                 element={
                   <>
                     <NavigationBar />
-                    <main className="pt-16">
+                    <main id="main-content" className="pt-16">
                       <Routes>
                         <Route path="/" element={<Layout />}>
                           <Route index element={<Dashboard />} />
@@ -126,10 +126,7 @@ function App() {
                             path="geo-risk-mapping"
                             element={<GeoRiskMapping />}
                           />
-                          <Route
-                            path="about"
-                            element={<OptiSupplyAboutPage />}
-                          />
+                          <Route path="about" element={<AboutMethodology />} />
                           <Route
                             path="3d-visualization"
                             element={<Redirect3D />}
