@@ -90,6 +90,9 @@ function loadTargets(): Targets {
   }
 }
 
+// LocalStorage key shared with SupplyChainGraph for user-created links
+const USER_LINKS_KEY = "supplyChain:userLinks";
+
 // Define chart info content
 const chartInfoContent = {
   ethicalScore: {
@@ -1432,10 +1435,19 @@ const Dashboard = () => {
       .map(([k, c]) => ({ metric: k, missing: c, pct: Math.round((c/totalSup)*100) }));
     // Ethical path ratio from graph
     let ethicalRatio = null;
-    if (graphData?.links && graphData.links.length) {
-      const total = graphData.links.length;
-      const ethical = graphData.links.filter(l => (l as any).ethical !== false).length;
-      ethicalRatio = Math.round((ethical/total)*100);
+    // Prefer links from API, otherwise fall back to locally saved user links
+    let links: any[] = Array.isArray((graphData as any)?.links) ? (graphData as any).links : [];
+    if (!links.length) {
+      try {
+        const raw = localStorage.getItem(USER_LINKS_KEY);
+        const saved = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(saved)) links = saved;
+      } catch {}
+    }
+    if (links.length) {
+      const total = links.length;
+      const ethical = links.filter((l: any) => l && l.ethical !== false).length;
+      ethicalRatio = Math.round((ethical / total) * 100);
     }
     return { avgRenewable, avgInjury, targets: targetsCfg, watchHighRisk, watchLowDisclosure, riskLeaders, topMissing, ethicalRatio };
   }, [allSuppliers, graphData, targets]);
