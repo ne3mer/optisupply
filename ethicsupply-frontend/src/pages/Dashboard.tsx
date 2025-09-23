@@ -74,6 +74,7 @@ import MetricCard from "../components/MetricCard";
 import EditTargetsModal from "../components/EditTargetsModal";
 import { defaultTargets, Targets } from "../config/targets";
 import logger from "../utils/log";
+import useIsMobile from "../hooks/useIsMobile";
 
 // Load persisted target overrides
 function loadTargets(): Targets {
@@ -1478,6 +1479,8 @@ const Dashboard = () => {
     return version;
   };
 
+  const isMobile = useIsMobile();
+
   return (
     <div
       className="min-h-screen p-4 md:p-8"
@@ -1570,7 +1573,7 @@ const Dashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8"
       >
         <KpiIndicator
           label="Total Suppliers"
@@ -1619,9 +1622,9 @@ const Dashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.25, duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+        className="mb-8"
       >
-        {/** Determine pass/fail colors for KPI tiles **/}
+        <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto snap-x -mx-1 px-1">
         {(() => {
           const renewableOk = Math.round(extraAnalytics.avgRenewable) >= targets.renewablePct;
           const injuryOk = Number.isFinite(extraAnalytics.avgInjury) && extraAnalytics.avgInjury <= targets.injuryRate;
@@ -1629,6 +1632,7 @@ const Dashboard = () => {
           const injuryColor = injuryOk ? colors.success : colors.error;
           return (
             <>
+        <div className="min-w-[220px] md:min-w-0 snap-start">
         <KpiIndicator
           label="Ethical Paths (Supply Graph)"
           value={extraAnalytics.ethicalRatio !== null ? extraAnalytics.ethicalRatio.toString() : 'N/A'}
@@ -1636,21 +1640,27 @@ const Dashboard = () => {
           icon={GlobeAltIcon}
           color={colors.accent}
         />
+        </div>
+        <div className="min-w-[220px] md:min-w-0 snap-start">
         <KpiIndicator
           label="Renewable Energy (Avg vs Target)"
           value={`${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`}
           icon={SparklesIcon}
           color={renewableColor}
         />
+        </div>
+        <div className="min-w-[220px] md:min-w-0 snap-start">
         <KpiIndicator
           label="Injury Rate (Avg vs Target)"
           value={`${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`}
           icon={ShieldExclamationIcon}
           color={injuryColor}
         />
+        </div>
             </>
           );
         })()}
+        </div>
       </motion.div>
 
       {/* Data Quality Card */}
@@ -1706,12 +1716,12 @@ const Dashboard = () => {
       )}
 
       {/* Main Grid: Charts & Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Ethical Score Distribution */}
         <MetricCard
           title="Ethical Score Distribution"
           icon={ScaleIcon}
-          minHeight={400}
+          minHeight={isMobile ? 280 : 400}
           className="lg:col-span-2"
           style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
           empty={!data.ethicalScoreDistribution || !data.ethicalScoreDistribution.length}
@@ -1726,7 +1736,7 @@ const Dashboard = () => {
         <MetricCard
           title="Risk Breakdown"
           icon={ShieldExclamationIcon}
-          minHeight={400}
+          minHeight={isMobile ? 260 : 400}
           style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
           empty={!riskPieData.length}
           emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No risk data. Add suppliers or set risk fields.</p>}
@@ -1734,13 +1744,13 @@ const Dashboard = () => {
           <div role="img" aria-label="Pie chart of supplier risk levels" className="w-full h-full" style={{ height: '100%' }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={riskPieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
+              <Pie data={riskPieData} cx="50%" cy="50%" innerRadius={isMobile ? 48 : 60} outerRadius={isMobile ? 80 : 100} paddingAngle={5} dataKey="value">
                 {riskPieData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
               <Tooltip contentStyle={{ backgroundColor: colors.tooltipBg, borderColor: colors.accent + "40", color: colors.text }} itemStyle={{ color: colors.textMuted }} />
-              <Legend formatter={(value) => (<span style={{ color: colors.textMuted }}>{value}</span>)} />
+              {!isMobile && <Legend formatter={(value) => (<span style={{ color: colors.textMuted }}>{value}</span>)} />}
             </PieChart>
           </ResponsiveContainer>
           </div>
@@ -1750,7 +1760,7 @@ const Dashboard = () => {
         <MetricCard
           title="CO₂ Emissions by Industry"
           icon={BeakerIcon}
-          minHeight={450}
+          minHeight={isMobile ? 360 : 450}
           className="lg:col-span-3"
           style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
           empty={!data.co2EmissionsByIndustry || !data.co2EmissionsByIndustry.length}
@@ -1767,7 +1777,7 @@ const Dashboard = () => {
             <MetricCard
               title="Suppliers by Country"
               icon={MapIcon}
-              minHeight={400}
+              minHeight={isMobile ? 360 : 400}
               className="lg:col-span-3"
               style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
               empty={!suppliersByCountry || !Object.keys(suppliersByCountry).length}

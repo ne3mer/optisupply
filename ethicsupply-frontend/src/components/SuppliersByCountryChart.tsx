@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import useIsMobile from "../hooks/useIsMobile";
 import {
   BarChart,
   Bar,
@@ -54,6 +55,8 @@ const CustomTooltip = ({
 const SuppliersByCountryChart: React.FC<SuppliersByCountryChartProps> = ({
   suppliersByCountry,
 }) => {
+  const isMobile = useIsMobile();
+
   // Transform data and sort by count in descending order
   const data = useMemo(() => {
     // Convert the object to an array of { name, value } objects
@@ -99,8 +102,9 @@ const SuppliersByCountryChart: React.FC<SuppliersByCountryChartProps> = ({
   // Compute Y axis width based on longest label (approx 7px per char)
   const yAxisWidth = useMemo(() => {
     const longest = data.reduce((m, d) => Math.max(m, (d.name || "").length), 0);
-    return Math.max(70, Math.min(180, longest * 7));
-  }, [data]);
+    const base = Math.max(70, Math.min(180, longest * 7));
+    return isMobile ? Math.min(base, 110) : base;
+  }, [data, isMobile]);
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -119,12 +123,12 @@ const SuppliersByCountryChart: React.FC<SuppliersByCountryChartProps> = ({
           horizontal={true}
           vertical={false}
         />
-        <XAxis type="number" tick={{ fill: "#8A94C8", fontSize: 12 }} />
+        <XAxis type="number" tick={{ fill: "#8A94C8", fontSize: isMobile ? 10 : 12 }} />
         <YAxis
           dataKey="name"
           type="category"
           width={yAxisWidth}
-          tick={{ fill: "#8A94C8", fontSize: 12 }}
+          tick={{ fill: "#8A94C8", fontSize: isMobile ? 10 : 12 }}
           tickLine={false}
           axisLine={false}
           interval={0} // Show all labels
@@ -133,7 +137,7 @@ const SuppliersByCountryChart: React.FC<SuppliersByCountryChartProps> = ({
         <Bar
           dataKey="value"
           name="Suppliers"
-          barSize={18}
+          barSize={isMobile ? 12 : 18}
           radius={[4, 4, 4, 4]}
           background={{ fill: "rgba(100, 100, 150, 0.15)" }}
         >

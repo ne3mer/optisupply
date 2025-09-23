@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import useIsMobile from "../hooks/useIsMobile";
 import {
   BarChart,
   Bar,
@@ -57,6 +58,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
+  const isMobile = useIsMobile();
+
   // Sort data descending by value and prepare for chart
   const sortedData = useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -74,20 +77,20 @@ const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
       <BarChart
         data={sortedData}
         layout="vertical"
-        margin={{ top: 5, right: 30, left: 50, bottom: 5 }} // Adjust margins for labels
+        margin={{ top: isMobile ? 4 : 5, right: isMobile ? 10 : 30, left: isMobile ? 32 : 50, bottom: isMobile ? 0 : 5 }}
       >
         <CartesianGrid
           strokeDasharray="3 3"
           stroke="rgba(77, 91, 255, 0.1)"
           horizontal={false}
         />
-        <XAxis type="number" stroke="#8A94C8" fontSize={12} />
+        <XAxis type="number" stroke="#8A94C8" fontSize={isMobile ? 10 : 12} />
         <YAxis
           dataKey="name"
           type="category"
           stroke="#8A94C8"
-          fontSize={12}
-          width={120} // Increase width for longer labels
+          fontSize={isMobile ? 10 : 12}
+          width={isMobile ? 90 : 120}
           tick={{ fill: "#E0E0FF" }}
           interval={0} // Ensure all labels are shown
         />
@@ -95,8 +98,8 @@ const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
           content={<CustomTooltip />}
           cursor={{ fill: "rgba(77, 91, 255, 0.1)" }}
         />
-        <Legend />
-        <Bar dataKey="value" name="CO₂ Emissions (tons)" radius={[0, 4, 4, 0]}>
+        {!isMobile && <Legend />}
+        <Bar dataKey="value" name="CO₂ Emissions (tons)" radius={[0, 4, 4, 0]} barSize={isMobile ? 12 : undefined}>
           {sortedData.map((entry, index) => (
             <Cell
               key={`cell-${index}`}

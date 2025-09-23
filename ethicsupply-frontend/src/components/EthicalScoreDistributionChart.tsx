@@ -1,4 +1,5 @@
 import React from "react";
+import useIsMobile from "../hooks/useIsMobile";
 import {
   BarChart,
   Bar,
@@ -63,17 +64,19 @@ const EthicalScoreDistributionChart: React.FC<
     }
   };
 
+  const isMobile = useIsMobile();
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={chartData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        margin={{ top: isMobile ? 8 : 20, right: isMobile ? 10 : 30, left: 10, bottom: isMobile ? 0 : 5 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-        <XAxis dataKey="range" />
-        <YAxis />
+        <XAxis dataKey="range" tick={{ fontSize: isMobile ? 10 : 12 }} interval={0} />
+        <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} allowDecimals={false} />
         <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+        <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={isMobile ? 20 : undefined}>
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={getBarColor(entry.range)} />
           ))}
