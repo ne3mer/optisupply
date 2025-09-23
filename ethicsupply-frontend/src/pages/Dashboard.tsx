@@ -1453,6 +1453,9 @@ const Dashboard = () => {
     return { avgRenewable, avgInjury, targets: targetsCfg, watchHighRisk, watchLowDisclosure, riskLeaders, topMissing, ethicalRatio };
   }, [allSuppliers, graphData, targets]);
 
+  // Responsive flag must be declared before any early returns to keep hooks order stable
+  const isMobile = useIsMobile();
+
   // Loading and Error Handling
   if (loading) return <LoadingIndicator />;
   if (error && !data) return <ErrorDisplay message={error} />; // Show error only if no data at all
@@ -1478,8 +1481,6 @@ const Dashboard = () => {
     }
     return version;
   };
-
-  const isMobile = useIsMobile();
 
   return (
     <div
