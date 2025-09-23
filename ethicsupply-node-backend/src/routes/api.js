@@ -6,6 +6,7 @@ const controversyController = require("../controllers/controversyController");
 const mlController = require("../controllers/mlController");
 const geoRiskController = require("../controllers/geoRiskController");
 const recommendationController = require("../controllers/recommendationController");
+const bandsController = require("../controllers/bandsController");
 
 // Health check route
 router.get("/health-check", (req, res) => {
@@ -20,6 +21,7 @@ router.get("/", (req, res) => {
     endpoints: {
       suppliers: "/api/suppliers",
       dashboard: "/api/dashboard",
+      bands: "/api/bands",
       datasetMeta: "/api/dataset/meta",
       supplyChainGraph: "/api/supply-chain-graph",
       evaluateSupplier: "/api/suppliers/:id/evaluate",
@@ -72,6 +74,9 @@ router.delete("/suppliers/:id", supplierController.deleteSupplier);
 
 // Dashboard route (uses supplierController)
 router.get("/dashboard", supplierController.getDashboard);
+
+// Bands route
+router.get("/bands", bandsController.getBands);
 
 // Dataset metadata route
 router.get("/dataset/meta", datasetController.getDatasetMeta);

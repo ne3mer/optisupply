@@ -510,9 +510,9 @@ const GeoRiskMapping = () => {
                 </button>
               </div>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {alerts.map((alert) => (
+                {alerts.map((alert, idx) => (
                   <motion.div
-                    key={alert.id}
+                    key={(alert as any)._id || (alert as any).id || idx}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-gray-800/50 rounded p-3"
@@ -593,7 +593,7 @@ const GeoRiskMapping = () => {
                       .filter((s) => s.country === selectedCountry)
                       .map((supplier) => (
                         <div
-                          key={supplier.id}
+                          key={(supplier as any)._id || (supplier as any).id}
                           className="bg-gray-800/50 rounded p-2"
                         >
                           <p className="text-white">{supplier.name}</p>
