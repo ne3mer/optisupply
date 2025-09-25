@@ -18,6 +18,7 @@ import {
   LogOut, // Assuming a logout function exists
   Activity, // Logo icon
   Info, // <-- Import the Info icon
+  Beaker as BeakerIcon,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -72,6 +73,7 @@ const Navbar = () => {
     },
     { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={20} /> },
     { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={20} /> },
+    { name: "Methodology", path: "/methodology", icon: <BeakerIcon size={20} /> },
     { name: "About", path: "/about", icon: <Info size={20} /> },
   ];
 

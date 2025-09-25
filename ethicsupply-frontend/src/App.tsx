@@ -21,6 +21,7 @@ import GeoRiskMapping from "./pages/GeoRiskMapping";
 import SupplyChainGraph from "./pages/SupplyChainGraph";
 import AboutMethodology from "./pages/AboutMethodology";
 import SupplierEditForm from "./pages/SupplierEditForm";
+import Methodology from "./pages/Methodology";
 import { useEffect } from "react";
 import { RecoilRoot } from "recoil";
 import { ReactFlowProvider } from "reactflow";
@@ -127,6 +128,7 @@ function App() {
                             element={<GeoRiskMapping />}
                           />
                           <Route path="about" element={<AboutMethodology />} />
+                          <Route path="methodology" element={<Methodology />} />
                           <Route
                             path="3d-visualization"
                             element={<Redirect3D />}
