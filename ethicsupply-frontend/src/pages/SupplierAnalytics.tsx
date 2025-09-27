@@ -230,6 +230,7 @@ const SupplierAnalytics = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -369,6 +370,28 @@ const SupplierAnalytics = () => {
               <ArrowLeftIcon className="h-4 w-4 mr-2" />
               Back to Details
             </button>
+
+            {/* View Methodology CTA */}
+            <Link
+              to="/methodology"
+              className="flex items-center px-4 py-2 rounded-lg border transition-all hover:scale-105"
+              style={{ borderColor: colors.primary + "40", color: colors.primary }}
+            >
+              <InformationCircleIcon className="h-4 w-4 mr-2" />
+              View Methodology
+            </Link>
+
+            {/* Score Breakdown trigger */}
+            {data?.breakdown && (
+              <button
+                onClick={() => setShowBreakdown(true)}
+                className="flex items-center px-4 py-2 rounded-lg border transition-all hover:scale-105"
+                style={{ borderColor: colors.secondary + "40", color: colors.secondary }}
+              >
+                <DocumentTextIcon className="h-4 w-4 mr-2" />
+                Score Breakdown
+              </button>
+            )}
           </div>
         </div>
 
@@ -846,6 +869,95 @@ const SupplierAnalytics = () => {
           )}
         </div>
       </div>
+
+      {/* Breakdown Modal */}
+      {showBreakdown && data?.breakdown && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowBreakdown(false)} />
+          <div className="relative max-w-5xl w-[95%] rounded-xl border p-6 overflow-auto max-h-[90vh]"
+               style={{ backgroundColor: colors.panel, borderColor: colors.accent+"40" }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-semibold">Transparent Score Breakdown</h3>
+              <button onClick={() => setShowBreakdown(false)} className="text-sm" style={{ color: colors.textMuted }}>Close</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="rounded-lg border p-4" style={{ borderColor: colors.accent+"30" }}>
+                <h4 className="font-semibold mb-2">Pillar Scores</h4>
+                <ul style={{ color: colors.textMuted }}>
+                  <li>Environmental: {Math.round(data.breakdown.pillarScores.environmental)}</li>
+                  <li>Social: {Math.round(data.breakdown.pillarScores.social)}</li>
+                  <li>Governance: {Math.round(data.breakdown.pillarScores.governance)}</li>
+                  <li>Composite: {Math.round(data.breakdown.composite)}</li>
+                  <li>Risk factor: {(data.breakdown.risk?.factor ?? 0).toFixed(2)} ({data.breakdown.risk?.level})</li>
+                  <li>Completeness: {((data.breakdown.completeness_ratio ?? 1)*100).toFixed(0)}%</li>
+                  <li>Ethical score: {Math.round(data.breakdown.ethical_score)}</li>
+                </ul>
+              </div>
+              <div className="rounded-lg border p-4" style={{ borderColor: colors.accent+"30" }}>
+                <h4 className="font-semibold mb-2">Weights</h4>
+                <div className="grid grid-cols-2 gap-3" style={{ color: colors.textMuted }}>
+                  <div>
+                    <div className="font-medium" style={{ color: colors.text }}>Environmental</div>
+                    <div>emission_intensity 0.4</div>
+                    <div>renewable_pct 0.2</div>
+                    <div>water_intensity 0.2</div>
+                    <div>waste_intensity 0.2</div>
+                  </div>
+                  <div>
+                    <div className="font-medium" style={{ color: colors.text }}>Social</div>
+                    <div>injury_rate 0.3</div>
+                    <div>training_hours 0.2</div>
+                    <div>wage_ratio 0.2</div>
+                    <div>diversity_pct 0.3</div>
+                  </div>
+                  <div>
+                    <div className="font-medium" style={{ color: colors.text }}>Governance</div>
+                    <div>board_diversity 0.25</div>
+                    <div>board_independence 0.25</div>
+                    <div>anti_corruption 0.2</div>
+                    <div>transparency 0.3</div>
+                  </div>
+                  <div>
+                    <div className="font-medium" style={{ color: colors.text }}>Composite</div>
+                    <div>E 0.4; S 0.3; G 0.3</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 rounded-lg border p-4" style={{ borderColor: colors.accent+"30" }}>
+              <h4 className="font-semibold mb-3">Normalized Metrics</h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-xs">
+                  <thead style={{ color: colors.textMuted }}>
+                    <tr>
+                      <th className="px-2 py-1">Metric</th>
+                      <th className="px-2 py-1">Raw</th>
+                      <th className="px-2 py-1">Normalized</th>
+                      <th className="px-2 py-1">Imputed</th>
+                      <th className="px-2 py-1">Band min</th>
+                      <th className="px-2 py-1">Band avg</th>
+                      <th className="px-2 py-1">Band max</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries<any>(data.breakdown.normalizedMetrics || {}).map(([k, v]: any) => (
+                      <tr key={k} className="border-t" style={{ borderColor: colors.accent+"20" }}>
+                        <td className="px-2 py-1" style={{ color: colors.text }}>{k}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.value ?? "—"}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{typeof v?.normalized === 'number' ? v.normalized.toFixed(2) : "—"}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.imputed ? "yes" : "no"}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.band?.min ?? "—"}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.band?.avg ?? "—"}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.band?.max ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

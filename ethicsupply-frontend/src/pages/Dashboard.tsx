@@ -1529,6 +1529,14 @@ const Dashboard = () => {
               >
                 <InformationCircleIcon className="h-4 w-4" /> Methodology
               </button>
+              <Link
+                to="/methodology"
+                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded"
+                style={{ color: colors.textMuted }}
+                title="View scoring formulas and weights"
+              >
+                <BeakerIcon className="h-4 w-4" /> Scoring Methodology
+              </Link>
               <button
                 onClick={() => setShowEditTargets(true)}
                 className="text-xs underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded"

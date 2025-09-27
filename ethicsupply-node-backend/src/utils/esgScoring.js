@@ -536,6 +536,58 @@ function scoreSupplier(supplier) {
 
 module.exports = {
   scoreSupplier,
+  // Expose a richer breakdown for UI explanations
+  scoreSupplierWithBreakdown: (supplier) => {
+    const { normalized, antiCorruptionScore, completenessRatio } =
+      scoreSupplierAgainstBenchmarks(supplier);
+
+    const pillarScores = computePillarScores({
+      normalized,
+      antiCorruptionScore,
+    });
+
+    const composite =
+      pillarScores.environmental * 0.4 +
+      pillarScores.social * 0.3 +
+      pillarScores.governance * 0.3;
+
+    const riskFactor = computeRiskFactor(supplier);
+    const riskLevel = determineRiskLevel(riskFactor);
+    const ethical = (composite || 0) * (1 - riskFactor);
+    const finalEthical = completenessRatio < 0.7 ? Math.min(ethical, 50) : ethical;
+
+    const weights = {
+      environmental: {
+        emission_intensity: 0.4,
+        renewable_pct: 0.2,
+        water_intensity: 0.2,
+        waste_intensity: 0.2,
+      },
+      social: {
+        injury_rate: 0.3,
+        training_hours: 0.2,
+        wage_ratio: 0.2,
+        diversity_pct: 0.3,
+      },
+      governance: {
+        board_diversity: 0.25,
+        board_independence: 0.25,
+        anti_corruption: 0.2,
+        transparency_score: 0.3,
+      },
+      composite: { environmental: 0.4, social: 0.3, governance: 0.3 },
+    };
+
+    return {
+      normalizedMetrics: normalized, // map: metric -> { value, normalized, band, imputed }
+      pillarScores, // { environmental, social, governance }
+      weights,
+      composite,
+      risk: { factor: riskFactor, level: riskLevel },
+      completeness_ratio: completenessRatio,
+      ethical_score: finalEthical,
+    };
+  },
   getDatasetMeta: () => ({ ...DATASET_META }),
   loadDatasetForTesting: () => ({
     INDUSTRY_STATS,

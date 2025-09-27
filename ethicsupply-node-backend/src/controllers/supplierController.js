@@ -1,7 +1,7 @@
 const Supplier = require("../models/Supplier");
 const { generateRecommendations } = require("./recommendationController");
 const db = require("../models");
-const { scoreSupplier } = require("../utils/esgScoring");
+const { scoreSupplier, scoreSupplierWithBreakdown } = require("../utils/esgScoring");
 
 // Get all suppliers (with potential filtering/pagination in the future)
 exports.getSuppliers = async (req, res) => {
@@ -886,6 +886,14 @@ exports.getSupplierAnalytics = async (req, res) => {
       ml_confidence: calculateConfidenceScores(mlScores),
       isMockData: false,
     };
+
+    // Attach transparent scoring breakdown for UI (formulas, weights, normalized values)
+    try {
+      const breakdown = scoreSupplierWithBreakdown(supplier.toObject ? supplier.toObject() : supplier);
+      analytics.breakdown = breakdown;
+    } catch (e) {
+      console.warn("Failed to attach scoring breakdown:", e?.message || e);
+    }
 
     res.status(200).json(analytics);
   } catch (error) {

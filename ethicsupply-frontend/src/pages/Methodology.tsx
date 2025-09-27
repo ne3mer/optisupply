@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -10,6 +10,7 @@ import {
   AdjustmentsHorizontalIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { getBands, getDatasetMeta, BandsMap, DatasetMeta } from "../services/api";
 
 const colors = {
   background: "#0D0F1A",
@@ -29,8 +30,8 @@ const fadeUp = {
   show: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: 0.06 * i, duration: 0.45 } }),
 };
 
-const Block = ({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) => (
-  <motion.div variants={fadeUp} initial="hidden" animate="show" className="rounded-xl border p-5 md:p-6" style={{ backgroundColor: colors.panel, borderColor: colors.accent+"40" }}>
+const Block = ({ id, title, icon: Icon, children }: { id?: string; title: string; icon: any; children: React.ReactNode }) => (
+  <motion.div id={id} variants={fadeUp} initial="hidden" animate="show" className="rounded-xl border p-5 md:p-6 scroll-mt-24" style={{ backgroundColor: colors.panel, borderColor: colors.accent+"40" }}>
     <div className="flex items-center mb-3">
       <Icon className="h-5 w-5 mr-2" style={{ color: colors.primary }} />
       <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
@@ -42,6 +43,37 @@ const Block = ({ title, icon: Icon, children }: { title: string; icon: any; chil
 );
 
 const Methodology: React.FC = () => {
+  const [bands, setBands] = useState<BandsMap | null>(null);
+  const [datasetMeta, setDatasetMeta] = useState<DatasetMeta | null>(null);
+  const industries = useMemo(() => (bands ? Object.keys(bands) : []), [bands]);
+  const [selectedIndustry, setSelectedIndustry] = useState<string>("");
+
+  useEffect(() => {
+    (async () => {
+      const [b, m] = await Promise.all([getBands(), getDatasetMeta()]);
+      if (b) setBands(b);
+      if (m) setDatasetMeta(m);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (industries.length && !selectedIndustry) setSelectedIndustry(industries[0]);
+  }, [industries, selectedIndustry]);
+
+  const direction: Record<string, "lower" | "higher" | "special" | "bool"> = {
+    emission_intensity: "lower",
+    renewable_pct: "higher",
+    water_intensity: "lower",
+    waste_intensity: "lower",
+    injury_rate: "lower",
+    training_hours: "higher",
+    wage_ratio: "special",
+    diversity_pct: "higher",
+    board_diversity: "higher",
+    board_independence: "higher",
+    transparency_score: "higher",
+  };
+
   return (
     <div
       className="min-h-screen p-4 md:p-8"
@@ -66,13 +98,28 @@ const Methodology: React.FC = () => {
           <p className="mt-2 text-base md:text-lg" style={{ color: colors.textMuted }}>
             This page documents the exact formulas, weights, and safeguards used to compute Environmental, Social, Governance, and final Ethical scores.
           </p>
+          {datasetMeta && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="text-xs px-2 py-1 rounded-full border" style={{ color: colors.textMuted, borderColor: colors.accent+"40" }}>
+                Version: {String(datasetMeta.version || "synthetic-v1")} {datasetMeta.seed ? `(seed ${datasetMeta.seed})` : ""}
+              </span>
+              <span className="text-xs px-2 py-1 rounded-full border" style={{ color: colors.textMuted, borderColor: colors.accent+"40" }}>
+                Bands: {datasetMeta.bandsVersion || "v1"}
+              </span>
+              {datasetMeta.generatedAt && (
+                <span className="text-xs px-2 py-1 rounded-full border" style={{ color: colors.textMuted, borderColor: colors.accent+"40" }}>
+                  Generated: {new Date(datasetMeta.generatedAt).toLocaleString()}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Left (main) column */}
         <div className="space-y-4 md:space-y-6 lg:col-span-2">
-          <Block title="Metric Normalization" icon={AdjustmentsHorizontalIcon}>
+          <Block id="normalization" title="Metric Normalization" icon={AdjustmentsHorizontalIcon}>
             <ul className="list-disc list-inside space-y-1">
               <li>Per-industry bands define ranges: min, avg, max (see <code>bands_v1.json</code>).</li>
               <li>Lower-is-better metrics: emissions, water, waste intensities; injury rate.</li>
@@ -91,7 +138,7 @@ const Methodology: React.FC = () => {
             </div>
           </Block>
 
-          <Block title="Pillar Scores (0–100)" icon={ChartBarIcon}>
+          <Block id="pillars" title="Pillar Scores (0–100)" icon={ChartBarIcon}>
             <p className="mb-2" style={{ color: colors.textMuted }}>Weights inside each pillar sum to 1.0.</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Environmental = 100 × (0.4·emission_intensity + 0.2·renewable_pct + 0.2·water_intensity + 0.2·waste_intensity)</li>
@@ -103,7 +150,7 @@ const Methodology: React.FC = () => {
             </div>
           </Block>
 
-          <Block title="Composite & Ethical Score" icon={ScaleIcon}>
+          <Block id="composite" title="Composite & Ethical Score" icon={ScaleIcon}>
             <ul className="list-disc list-inside space-y-1">
               <li>Composite = 0.4·Environmental + 0.3·Social + 0.3·Governance</li>
               <li>Risk factor = average of present risks (climate_risk, geopolitical_risk, labor_dispute_risk), default 0.2 when missing</li>
@@ -112,14 +159,66 @@ const Methodology: React.FC = () => {
             </ul>
           </Block>
 
-          <Block title="Data Completeness Safeguard" icon={ShieldExclamationIcon}>
+          <Block id="completeness" title="Data Completeness Safeguard" icon={ShieldExclamationIcon}>
             <ul className="list-disc list-inside space-y-1">
               <li>Completeness ratio = (#present metrics) / (total considered metrics). Anti‑corruption counts as present only if true.</li>
               <li>If completeness &lt; 70%, Ethical Score is capped at 50.</li>
             </ul>
           </Block>
 
-          <Block title="References (Code)" icon={InformationCircleIcon}>
+          {/* Bands Viewer */}
+          <Block id="bands" title="Industry Bands Viewer" icon={InformationCircleIcon}>
+            <p className="mb-3" style={{ color: colors.textMuted }}>
+              Inspect per‑industry bands that drive normalization. These define expected ranges (min/avg/max) per metric.
+            </p>
+            <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+              <label className="text-sm" style={{ color: colors.textMuted }}>Industry</label>
+              <select
+                value={selectedIndustry}
+                onChange={(e) => setSelectedIndustry(e.target.value)}
+                className="px-3 py-2 rounded-md border bg-transparent"
+                style={{ borderColor: colors.accent+"40", color: colors.text }}
+              >
+                {industries.map((ind) => (
+                  <option key={ind} value={ind} style={{ color: "#000" }}>
+                    {ind}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {!bands || !selectedIndustry ? (
+              <div className="text-sm" style={{ color: colors.textMuted }}>Loading bands…</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-xs md:text-sm">
+                  <thead style={{ color: colors.textMuted }}>
+                    <tr>
+                      <th className="px-2 py-1">Metric</th>
+                      <th className="px-2 py-1">Direction</th>
+                      <th className="px-2 py-1">Min</th>
+                      <th className="px-2 py-1">Avg</th>
+                      <th className="px-2 py-1">Max</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(bands[selectedIndustry] || {}).map(([metric, v]: any) => (
+                      <tr key={metric} className="border-t" style={{ borderColor: colors.accent+"20" }}>
+                        <td className="px-2 py-1" style={{ color: colors.text }}>{metric}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>
+                          {direction[metric] === "lower" ? "lower→better" : direction[metric] === "higher" ? "higher→better" : direction[metric] === "bool" ? "boolean" : "parity≈1.0"}
+                        </td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.min ?? "—"}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.avg ?? "—"}</td>
+                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.max ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Block>
+
+          <Block id="references" title="References (Code)" icon={InformationCircleIcon}>
             <ul className="list-disc list-inside space-y-1">
               <li>Backend scoring: <code>ethicsupply-node-backend/src/utils/esgScoring.js</code></li>
               <li>Bands data: <code>ethicsupply-node-backend/data/bands_v1.json</code></li>
@@ -130,7 +229,20 @@ const Methodology: React.FC = () => {
         </div>
 
         {/* Right column */}
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-4 md:space-y-6 lg:sticky lg:top-20 h-max">
+          {/* Mini TOC */}
+          <motion.div variants={fadeUp} initial="hidden" animate="show" className="rounded-xl border p-4 md:p-5" style={{ backgroundColor: colors.panel, borderColor: colors.accent+"40" }}>
+            <h3 className="text-base md:text-lg font-semibold mb-2">On this page</h3>
+            <ul className="text-sm space-y-1" style={{ color: colors.textMuted }}>
+              <li><a href="#normalization" className="hover:underline">Metric Normalization</a></li>
+              <li><a href="#pillars" className="hover:underline">Pillar Scores</a></li>
+              <li><a href="#composite" className="hover:underline">Composite & Risk</a></li>
+              <li><a href="#completeness" className="hover:underline">Completeness</a></li>
+              <li><a href="#bands" className="hover:underline">Industry Bands</a></li>
+              <li><a href="#references" className="hover:underline">References</a></li>
+            </ul>
+          </motion.div>
+
           <Block title="Quick Weights" icon={DocumentTextIcon}>
             <div className="text-sm space-y-2" style={{ color: colors.textMuted }}>
               <div><span className="font-semibold" style={{ color: colors.text }}>Environmental</span>: emission_intensity 0.4; renewable_pct 0.2; water_intensity 0.2; waste_intensity 0.2</div>
@@ -157,4 +269,3 @@ const Methodology: React.FC = () => {
 };
 
 export default Methodology;
-
