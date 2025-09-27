@@ -437,7 +437,20 @@ const Tooltip = ({ children, content, position = "top" }) => {
 // --- SuppliersList Component ---
 
 const SuppliersList = () => {
-  const colors = useThemeColors() as any;
+  const themeColors = useThemeColors() as any;
+  const colors = themeColors || {
+    background: '#ffffff',
+    panel: '#ffffff',
+    primary: '#2563eb',
+    secondary: '#8B5CF6',
+    accent: '#4D5BFF',
+    text: '#111827',
+    textMuted: '#6B7280',
+    success: '#16A34A',
+    warning: '#D97706',
+    error: '#DC2626',
+    inputBg: '#F3F4F6',
+  };
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -2306,7 +2319,7 @@ const SuppliersList = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                       {selectedSuppliers.map((supplier) => {
                         const supplierId = supplier._id || supplier.id || supplier.name;
-                        const statusStyles = getStatusStyles(supplier.status);
+                        const statusStyles = getStatusStyles(colors, supplier.status);
                         return (
                           <div
                             key={`summary-${supplierId}`}
