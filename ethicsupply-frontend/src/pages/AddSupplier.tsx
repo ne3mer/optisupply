@@ -82,7 +82,9 @@ const InputField = ({
   min?: number;
   max?: number;
   helper?: string;
-}) => (
+}) => {
+  const colors = useThemeColors() as any;
+  return (
   <div className="mb-4">
     <label
       htmlFor={name}
@@ -118,7 +120,8 @@ const InputField = ({
       </p>
     )}
   </div>
-);
+  );
+};
 
 const SelectField = ({
   name,
@@ -128,7 +131,9 @@ const SelectField = ({
   options,
   required = false,
   disabled = false,
-}) => (
+}) => {
+  const colors = useThemeColors() as any;
+  return (
   <div className="mb-4 relative">
     <label
       htmlFor={name}
@@ -179,7 +184,8 @@ const SelectField = ({
       </svg>
     </div>
   </div>
-);
+  );
+};
 
 const SliderField = ({
   name,
@@ -192,6 +198,7 @@ const SliderField = ({
   unit = "",
   disabled = false,
 }) => {
+  const colors = useThemeColors() as any;
   // Calculate the percentage for visual elements
   const percentage =
     typeof value === "number" ? ((value - min) / (max - min)) * 100 : 50;
@@ -311,6 +318,7 @@ const SliderField = ({
 
 // --- Helper Components for Real-time ESG Scoring ---
 const ScoreGauge = ({ value, label, color, impactWeight = null }) => {
+  const colors = useThemeColors() as any;
   const normalizedValue = value > 0 && value <= 1 ? value * 100 : value;
 
   return (
@@ -370,6 +378,7 @@ const MetricImpactRow = ({
   unit = "",
   isRisk = false,
 }) => {
+  const colors = useThemeColors() as any;
   const normalizedValue =
     typeof value === "number"
       ? value > 0 && value <= 1
@@ -444,6 +453,7 @@ const MetricImpactRow = ({
 
 // Risk Badge Component
 const RiskBadge = ({ riskLevel }) => {
+  const colors = useThemeColors() as any;
   const getRiskColor = (level) => {
     switch (level.toLowerCase()) {
       case "low":
@@ -481,6 +491,7 @@ const RiskBadge = ({ riskLevel }) => {
 };
 
 const ESGScorePreview = ({ formData }) => {
+  const colors = useThemeColors() as any;
   // Define category weights for the overall score
   const categoryWeights = {
     environmental: 0.33,
