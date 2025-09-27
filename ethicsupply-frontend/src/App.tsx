@@ -17,8 +17,9 @@ import SupplierScorecard from "./pages/SupplierScorecard";
 import AddSupplier from "./pages/AddSupplier";
 import SupplierAnalytics from "./pages/SupplierAnalytics";
 import SupplierAssessment from "./pages/enhanced/SupplierAssessment";
-import GeoRiskMapping from "./pages/GeoRiskMapping";
-import SupplyChainGraph from "./pages/SupplyChainGraph";
+import { lazy, Suspense } from "react";
+const GeoRiskMapping = lazy(() => import("./pages/GeoRiskMapping"));
+const SupplyChainGraph = lazy(() => import("./pages/SupplyChainGraph"));
 import AboutMethodology from "./pages/AboutMethodology";
 import SupplierEditForm from "./pages/SupplierEditForm";
 import Methodology from "./pages/Methodology";
@@ -118,14 +119,20 @@ function App() {
                           <Route
                             path="supply-chain-graph"
                             element={
-                              <ReactFlowProvider>
-                                <SupplyChainGraph />
-                              </ReactFlowProvider>
+                              <Suspense fallback={<div className="p-8">Loading 3D graph…</div>}>
+                                <ReactFlowProvider>
+                                  <SupplyChainGraph />
+                                </ReactFlowProvider>
+                              </Suspense>
                             }
                           />
                           <Route
                             path="geo-risk-mapping"
-                            element={<GeoRiskMapping />}
+                            element={
+                              <Suspense fallback={<div className="p-8">Loading globe…</div>}>
+                                <GeoRiskMapping />
+                              </Suspense>
+                            }
                           />
                           <Route path="about" element={<AboutMethodology />} />
                           <Route path="methodology" element={<Methodology />} />

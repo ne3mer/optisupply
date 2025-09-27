@@ -7,6 +7,7 @@ import {
   Supplier,
   SupplierEvaluation,
   EvaluationResult,
+  getBands,
 } from "../../services/api"; // Correct path?
 import {
   // ... keep existing icons ...
@@ -224,11 +225,70 @@ const SupplierAssessment = () => {
     "China",
     /* ... other countries ... */ "Other",
   ];
-  const industries = [
+  // Build a comprehensive, user-friendly industries list
+  const defaultIndustries = [
     "Manufacturing",
     "Technology",
-    /* ... other industries ... */ "Other",
+    "Electronics",
+    "Automotive",
+    "Aerospace",
+    "Consumer Goods",
+    "Food & Beverage",
+    "Pharmaceuticals",
+    "Healthcare",
+    "Telecommunications",
+    "Energy",
+    "Oil & Gas",
+    "Renewable Energy",
+    "Mining & Metals",
+    "Chemicals",
+    "Textiles & Apparel",
+    "Agriculture",
+    "Construction",
+    "Transportation",
+    "Logistics & Supply Chain",
+    "Retail",
+    "Financial Services",
+    "Software",
+    "Hardware",
+    "Biotechnology",
+    "Medical Devices",
+    "Home Appliances",
+    "Furniture",
+    "Packaging",
+    "Professional Services",
+    "Food Retail",
+    "Logistics",
+    "Apparel",
+    "Other",
   ];
+  const [allIndustries, setAllIndustries] = useState<string[]>(defaultIndustries);
+  const [recentIndustries, setRecentIndustries] = useState<string[]>([]);
+  const [industryQuery, setIndustryQuery] = useState("");
+
+  useEffect(() => {
+    // Load bands to augment industry list, and recent selections
+    (async () => {
+      try {
+        const bands = await getBands();
+        const bandIndustries = bands ? Object.keys(bands) : [];
+        const union = Array.from(new Set([...defaultIndustries, ...bandIndustries])).sort();
+        setAllIndustries(union);
+      } catch {}
+      try {
+        const raw = localStorage.getItem("assessment:recentIndustries");
+        if (raw) setRecentIndustries(JSON.parse(raw));
+      } catch {}
+    })();
+  }, []);
+
+  const addRecentIndustry = useCallback((ind: string) => {
+    try {
+      const next = [ind, ...recentIndustries.filter((x) => x !== ind)].slice(0, 6);
+      setRecentIndustries(next);
+      localStorage.setItem("assessment:recentIndustries", JSON.stringify(next));
+    } catch {}
+  }, [recentIndustries]);
 
   // Sections definition
   const sections = {
@@ -286,6 +346,33 @@ const SupplierAssessment = () => {
     // Add supplier_id if needed by API
     supplier_id: supplierId ?? undefined,
   });
+
+  // Derive a smart industry suggestion from supplier name after formData exists
+  const suggestedIndustry = useMemo(() => {
+    const name = (formData?.name || "").toLowerCase();
+    const rules: Array<[string, string]> = [
+      ["logistic", "Logistics & Supply Chain"],
+      ["retail", "Retail"],
+      ["food", "Food & Beverage"],
+      ["beverage", "Food & Beverage"],
+      ["pharma", "Pharmaceuticals"],
+      ["hospital", "Healthcare"],
+      ["clinic", "Healthcare"],
+      ["apparel", "Textiles & Apparel"],
+      ["textile", "Textiles & Apparel"],
+      ["agri", "Agriculture"],
+      ["mining", "Mining & Metals"],
+      ["software", "Software"],
+      ["hardware", "Hardware"],
+      ["auto", "Automotive"],
+      ["aero", "Aerospace"],
+      ["energy", "Energy"],
+    ];
+    for (const [kw, ind] of rules) {
+      if (name.includes(kw)) return ind;
+    }
+    return "";
+  }, [formData?.name]);
   const [loadingSupplier, setLoadingSupplier] = useState(!!supplierId);
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -613,6 +700,9 @@ const SupplierAssessment = () => {
     value,
     onChange,
     placeholder = "",
+    min,
+    max,
+    step,
   }) => (
     <div className="mb-4">
       <label
@@ -629,6 +719,24 @@ const SupplierAssessment = () => {
         value={value}
         onChange={onChange}
         placeholder={placeholder}
+        min={min}
+        max={max}
+        step={step}
+        data-type={type === "number" ? "number" : undefined}
+        onWheel={(e) => {
+          // Prevent page scroll jump when adjusting number inputs with wheel
+          if (type === "number") e.preventDefault();
+        }}
+        onKeyDown={(e) => {
+          // Prevent page scroll on PageUp/PageDown and keep focus stable
+          if (e.key === "PageUp" || e.key === "PageDown") {
+            e.preventDefault();
+          }
+          // Prevent accidental form submit on Enter in numeric fields
+          if (type === "number" && e.key === "Enter") {
+            e.preventDefault();
+          }
+        }}
         className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
         style={{
           backgroundColor: colors.inputBg,
@@ -858,13 +966,112 @@ const SupplierAssessment = () => {
                   onChange={handleChange}
                   options={countries}
                 />
-                <SelectField
-                  name="industry"
-                  label="Industry"
-                  value={formData.industry}
-                  onChange={handleChange}
-                  options={industries}
-                />
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1" style={{ color: colors.textMuted }}>Industry</label>
+                  {/* Popular chips */}
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {["Manufacturing","Technology","Logistics","Retail","Energy"].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          setFormData((f: any) => ({ ...f, industry: chip }));
+                          addRecentIndustry(chip);
+                        }}
+                        className={`px-2.5 py-1 rounded-full border text-xs ${formData.industry===chip?"opacity-100":"opacity-80"}`}
+                        style={{ borderColor: colors.accent+"40", color: colors.text }}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Searchable combobox */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={industryQuery}
+                      onChange={(e) => setIndustryQuery(e.target.value)}
+                      placeholder={formData.industry || "Search or type an industry..."}
+                      className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
+                      style={{ backgroundColor: colors.inputBg, borderColor: colors.accent+"50", color: colors.text, "--tw-ring-color": colors.primary }}
+                    />
+                    {industryQuery && (
+                      <div className="absolute z-20 mt-1 w-full max-h-48 overflow-auto rounded-md border" style={{ backgroundColor: colors.panel, borderColor: colors.accent+"30" }}>
+                        {allIndustries
+                          .filter((ind) => ind.toLowerCase().includes(industryQuery.toLowerCase()))
+                          .slice(0, 12)
+                          .map((ind) => (
+                            <button
+                              key={ind}
+                              type="button"
+                              onClick={() => {
+                                setFormData((f: any) => ({ ...f, industry: ind }));
+                                setIndustryQuery("");
+                                addRecentIndustry(ind);
+                              }}
+                              className="w-full text-left px-3 py-2 hover:opacity-90"
+                              style={{ color: colors.text }}
+                            >
+                              {ind}
+                            </button>
+                          ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const val = industryQuery.trim();
+                            if (!val) return;
+                            setFormData((f: any) => ({ ...f, industry: val }));
+                            setIndustryQuery("");
+                            addRecentIndustry(val);
+                            if (!allIndustries.includes(val)) setAllIndustries((prev) => [...prev, val]);
+                          }}
+                          className="w-full text-left px-3 py-2 border-t text-xs"
+                          style={{ color: colors.textMuted, borderColor: colors.accent+"20" }}
+                        >
+                          Add custom: “{industryQuery}”
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {/* Smart suggestion from name */}
+                  {!formData.industry && suggestedIndustry && (
+                    <div className="mt-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((f: any) => ({ ...f, industry: suggestedIndustry }));
+                          addRecentIndustry(suggestedIndustry);
+                        }}
+                        className="underline"
+                        style={{ color: colors.textMuted }}
+                      >
+                        Use suggestion: {suggestedIndustry}
+                      </button>
+                    </div>
+                  )}
+                  {/* Recent selections */}
+                  {recentIndustries.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs mb-1" style={{ color: colors.textMuted }}>Recent</p>
+                      <div className="flex flex-wrap gap-2">
+                        {recentIndustries.map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => {
+                              setFormData((f: any) => ({ ...f, industry: r }));
+                              addRecentIndustry(r);
+                            }}
+                            className={`px-2.5 py-1 rounded-full border text-xs ${formData.industry===r?"opacity-100":"opacity-80"}`}
+                            style={{ borderColor: colors.accent+"30", color: colors.text }}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <InputField
                   name="revenue"
                   label="Revenue (millions USD)"
@@ -944,6 +1151,7 @@ const SupplierAssessment = () => {
                   name="total_emissions"
                   label="Total Emissions (tons CO₂e)"
                   type="number"
+                  step={0.01}
                   value={(formData as any).total_emissions as any}
                   onChange={handleChange}
                   placeholder="Optional"
