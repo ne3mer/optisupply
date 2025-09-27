@@ -25,68 +25,48 @@ import {
 } from "@heroicons/react/24/outline";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { useThemeColors } from "../theme/useThemeColors";
 
 // --- Reusing Dashboard Colors & Helpers ---
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
+// Theme-aware colors provided via hook
+
+const LoadingIndicator = () => {
+  const colors = useThemeColors();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[80vh]" style={{ backgroundColor: colors.background }}>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-16 h-16 border-t-4 border-b-4 rounded-full mb-4"
+        style={{ borderColor: colors.primary }}
+      ></motion.div>
+      <p style={{ color: colors.textMuted }}>Accessing Supplier Dossier...</p>
+    </div>
+  );
 };
 
-const LoadingIndicator = () => (
-  <div
-    className="flex flex-col items-center justify-center min-h-[80vh]"
-    style={{ backgroundColor: colors.background }}
-  >
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="w-16 h-16 border-t-4 border-b-4 rounded-full mb-4"
-      style={{ borderColor: colors.primary }}
-    ></motion.div>
-    <p style={{ color: colors.textMuted }}>Accessing Supplier Dossier...</p>
-  </div>
-);
-
-const ErrorDisplay = ({ message }) => (
-  <div
-    className="flex flex-col items-center justify-center min-h-[80vh]"
-    style={{ backgroundColor: colors.background }}
-  >
-    <div className="bg-red-900/50 border border-red-500 p-8 rounded-lg text-center max-w-lg">
-      <ExclamationTriangleIcon
-        className="h-16 w-16 mx-auto mb-5"
-        style={{ color: colors.error }}
-      />
-      <h3
-        className="text-2xl font-semibold mb-3"
-        style={{ color: colors.error }}
-      >
-        Data Corruption Detected
-      </h3>
-      <p className="text-lg" style={{ color: colors.textMuted }}>
-        {message}
-      </p>
-      <Link
-        to="/suppliers"
-        className="mt-6 inline-block px-4 py-2 rounded border border-accent hover:bg-accent/20 transition-colors"
-        style={{ color: colors.accent }}
-      >
-        Return to Registry
-      </Link>
+const ErrorDisplay = ({ message }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[80vh]" style={{ backgroundColor: colors.background }}>
+      <div className="bg-red-900/50 border border-red-500 p-8 rounded-lg text-center max-w-lg">
+        <ExclamationTriangleIcon className="h-16 w-16 mx-auto mb-5" style={{ color: colors.error }} />
+        <h3 className="text-2xl font-semibold mb-3" style={{ color: colors.error }}>
+          Data Corruption Detected
+        </h3>
+        <p className="text-lg" style={{ color: colors.textMuted }}>
+          {message}
+        </p>
+        <Link to="/suppliers" className="mt-6 inline-block px-4 py-2 rounded border border-accent hover:bg-accent/20 transition-colors" style={{ color: colors.accent }}>
+          Return to Registry
+        </Link>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Helper to get risk color
-const getRiskColor = (riskLevel: string | undefined) => {
+const getRiskColor = (colors: any, riskLevel: string | undefined) => {
   switch (riskLevel?.toLowerCase()) {
     case "low":
       return colors.success;
@@ -100,17 +80,14 @@ const getRiskColor = (riskLevel: string | undefined) => {
       return colors.textMuted;
   }
 };
-const getScoreColor = (score: number | null | undefined) => {
+const getScoreColor = (colors: any, score: number | null | undefined) => {
   if (score === null || score === undefined) return colors.textMuted;
-
-  // Normalize score to 0-100 scale if it's in 0-1 range
   const normalizedScore = score > 0 && score <= 1 ? score * 100 : score;
-
-  if (normalizedScore >= 80) return "#10b981"; // emerald-500
-  if (normalizedScore >= 60) return "#14b8a6"; // teal-500
-  if (normalizedScore >= 40) return "#f59e0b"; // amber-500
-  if (normalizedScore >= 20) return "#f97316"; // orange-500
-  return "#ef4444"; // red-500
+  if (normalizedScore >= 80) return colors.success;
+  if (normalizedScore >= 60) return colors.primary;
+  if (normalizedScore >= 40) return colors.warning;
+  if (normalizedScore >= 20) return colors.accent;
+  return colors.error;
 };
 
 // --- Detail Item Component ---
@@ -131,6 +108,7 @@ const DetailItem: React.FC<DetailItemProps> = ({
   color,
   isScore = false,
 }) => {
+  const colors = useThemeColors() as any;
   const displayValue = value ?? "N/A";
   const textColor = color || colors.text;
   const scoreSuffix = isScore ? (
@@ -290,9 +268,11 @@ const SupplierDetails = () => {
     return score > 0 && score <= 1 ? score * 100 : score;
   }, [supplier]);
 
-  const scoreColor = useMemo(() => getScoreColor(overallScore), [overallScore]);
+  const themeColors = useThemeColors() as any;
+  const colors = themeColors as any;
+  const scoreColor = useMemo(() => getScoreColor(themeColors, overallScore), [themeColors, overallScore]);
   const riskColor = useMemo(
-    () => getRiskColor(supplier?.risk_level),
+    () => getRiskColor(themeColors, supplier?.risk_level),
     [supplier?.risk_level]
   );
   const completenessPct = useMemo(() => {
@@ -534,21 +514,21 @@ const SupplierDetails = () => {
                 label="Environmental"
                 value={supplier.environmental_score}
                 icon={BeakerIcon}
-                color={getScoreColor(supplier.environmental_score)}
+                color={getScoreColor(themeColors, supplier.environmental_score)}
                 isScore
               />
               <DetailItem
                 label="Social"
                 value={supplier.social_score}
                 icon={UserGroupIcon}
-                color={getScoreColor(supplier.social_score)}
+                color={getScoreColor(themeColors, supplier.social_score)}
                 isScore
               />
               <DetailItem
                 label="Governance"
                 value={supplier.governance_score}
                 icon={ShieldCheckIcon}
-                color={getScoreColor(supplier.governance_score)}
+                color={getScoreColor(themeColors, supplier.governance_score)}
                 isScore
               />
               {/* Note: Supply Chain Score is not in the Supplier interface, so we'll conditionally render it only if it becomes available */}
@@ -632,7 +612,7 @@ const SupplierDetails = () => {
                 label="Overall Risk Level"
                 value={supplier.risk_level || "Unknown"}
                 icon={ShieldExclamationIcon}
-                color={getRiskColor(supplier.risk_level)} // Use color helper
+                color={getRiskColor(themeColors, supplier.risk_level)} // Use color helper
               />
               {/* Other risk metrics are not in the Supplier interface, so we'll exclude them */}
             </div>
@@ -691,7 +671,7 @@ const SupplierDetails = () => {
                         <span
                           className="text-sm font-mono font-semibold"
                           style={{
-                            color: getScoreColor(similar.ethical_score),
+                            color: getScoreColor(themeColors, similar.ethical_score),
                           }}
                         >
                           {similarScore}

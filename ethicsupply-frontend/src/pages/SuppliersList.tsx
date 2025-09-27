@@ -41,60 +41,40 @@ import {
   ClockIcon as ClockIconSolid,
 } from "@heroicons/react/24/outline";
 import { CheckBadgeIcon as CheckBadgeSolid } from "@heroicons/react/24/solid";
+import { useThemeColors } from "../theme/useThemeColors";
 
-// --- Reusing Dashboard Colors & Helpers ---
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  inputBg: "rgba(40, 44, 66, 0.9)", // Darker input background
+const LoadingIndicator = () => {
+  const colors = useThemeColors();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]" style={{ backgroundColor: colors.background }}>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-12 h-12 border-t-4 border-b-4 rounded-full mb-4"
+        style={{ borderColor: colors.primary }}
+      ></motion.div>
+      <p style={{ color: colors.textMuted }}>Loading Supplier Intel...</p>
+    </div>
+  );
 };
 
-const LoadingIndicator = () => (
-  <div
-    className="flex flex-col items-center justify-center min-h-[60vh]"
-    style={{ backgroundColor: colors.background }}
-  >
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="w-12 h-12 border-t-4 border-b-4 rounded-full mb-4"
-      style={{ borderColor: colors.primary }}
-    ></motion.div>
-    <p style={{ color: colors.textMuted }}>Loading Supplier Intel...</p>
-  </div>
-);
-
-const ErrorDisplay = ({ message }) => (
-  <div
-    className="flex items-center justify-center min-h-[60vh]"
-    style={{ backgroundColor: colors.background }}
-  >
-    <div className="bg-red-900/50 border border-red-500 p-6 rounded-lg text-center max-w-md">
-      <ExclamationTriangleIcon
-        className="h-12 w-12 mx-auto mb-4"
-        style={{ color: colors.error }}
-      />
-      <h3
-        className="text-xl font-semibold mb-2"
-        style={{ color: colors.error }}
-      >
-        Access Denied
-      </h3>
-      <p style={{ color: colors.textMuted }}>{message}</p>
+const ErrorDisplay = ({ message }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]" style={{ backgroundColor: colors.background }}>
+      <div className="bg-red-900/50 border border-red-500 p-6 rounded-lg text-center max-w-md">
+        <ExclamationTriangleIcon className="h-12 w-12 mx-auto mb-4" style={{ color: colors.error }} />
+        <h3 className="text-xl font-semibold mb-2" style={{ color: colors.error }}>
+          Access Denied
+        </h3>
+        <p style={{ color: colors.textMuted }}>{message}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Helper to get risk color
-const getRiskColor = (riskLevel: string | undefined) => {
+const getRiskColor = (colors: any, riskLevel: string | undefined) => {
   switch (riskLevel?.toLowerCase()) {
     case "low":
       return colors.success;
@@ -125,17 +105,13 @@ const getRiskIcon = (riskLevel: string | undefined) => {
   }
 };
 
-const getScoreColor = (score: number | null | undefined) => {
+const getScoreColor = (colors: any, score: number | null | undefined) => {
   if (score === null || score === undefined) return colors.textMuted;
-
-  // Normalize score to 0-100 scale if it's in 0-1 range
   const normalizedScore = score > 0 && score <= 1 ? score * 100 : score;
-
-  if (normalizedScore >= 80) return "#10b981"; // emerald-500
-  if (normalizedScore >= 60) return "#14b8a6"; // teal-500
-  if (normalizedScore >= 40) return "#f59e0b"; // amber-500
-  if (normalizedScore >= 20) return "#f97316"; // orange-500
-  return "#ef4444"; // red-500
+  if (normalizedScore >= 80) return colors.success;
+  if (normalizedScore >= 60) return colors.primary;
+  if (normalizedScore >= 40) return colors.warning;
+  return colors.error;
 };
 
 const normalizeScoreTo100 = (score: number | null | undefined) => {
@@ -213,7 +189,7 @@ const sectionHelp = {
 };
 
 // Helper to get supplier status style
-const getStatusStyles = (status: string | undefined) => {
+const getStatusStyles = (colors: any, status: string | undefined) => {
   switch (status?.toLowerCase()) {
     case "active":
       return {
@@ -247,7 +223,7 @@ const getStatusStyles = (status: string | undefined) => {
 };
 
 // Helper to determine AI recommendation
-const getRecommendation = (supplier: Supplier) => {
+const getRecommendation = (colors: any, supplier: Supplier) => {
   const ethicalScore = supplier.ethical_score || 0;
   const riskLevel = supplier.risk_level?.toLowerCase() || "";
 
@@ -330,7 +306,7 @@ const getTimeElapsed = (dateString: string | undefined) => {
   }
 };
 
-const getLastUpdatedBadge = (dateString: string | undefined) => {
+const getLastUpdatedBadge = (colors: any, dateString: string | undefined) => {
   if (!dateString) {
     return {
       label: "Awaiting first sync",
@@ -368,6 +344,7 @@ const Tooltip = ({ children, content, position = "top" }) => {
   const [isVisible, setIsVisible] = useState(false);
   const tooltipRef = useRef(null);
   const triggerRef = useRef(null);
+  const colors = useThemeColors() as any;
 
   // Define positions - offset tooltips to prevent overlaps
   const positionClasses = {
@@ -460,6 +437,7 @@ const Tooltip = ({ children, content, position = "top" }) => {
 // --- SuppliersList Component ---
 
 const SuppliersList = () => {
+  const colors = useThemeColors() as any;
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1741,9 +1719,9 @@ const SuppliersList = () => {
           >
             {sortedAndPaginatedSuppliers.length > 0 ? (
               sortedAndPaginatedSuppliers.map((supplier) => {
-                const riskColor = getRiskColor(supplier.risk_level);
+                const riskColor = getRiskColor(colors, supplier.risk_level);
                 const riskIcon = getRiskIcon(supplier.risk_level);
-                const scoreColor = getScoreColor(supplier.ethical_score);
+                const scoreColor = getScoreColor(colors, supplier.ethical_score);
                 const riskAdjustedScore =
                   supplier.ethical_score !== null &&
                   supplier.ethical_score !== undefined
@@ -1759,11 +1737,9 @@ const SuppliersList = () => {
                     : null;
                 const supplierId = supplier._id || supplier.id; // Handle both ID types
                 const isSelected = isSupplierSelected(supplier);
-                const statusStyles = getStatusStyles(supplier.status);
-                const recommendation = getRecommendation(supplier);
-                const lastUpdatedBadge = getLastUpdatedBadge(
-                  supplier.last_updated
-                );
+                const statusStyles = getStatusStyles(colors, supplier.status);
+                const recommendation = getRecommendation(colors, supplier);
+                const lastUpdatedBadge = getLastUpdatedBadge(colors, supplier.last_updated);
 
                 return (
                   <motion.div
@@ -2379,9 +2355,10 @@ const SuppliersList = () => {
                                 className="px-2 py-1 rounded-full flex items-center"
                                 style={{
                                   backgroundColor:
-                                    getRiskColor(supplier.risk_level) + "20",
-                                  color: getRiskColor(supplier.risk_level),
+                                    getRiskColor(colors, supplier.risk_level) + "20",
+                                  color: getRiskColor(colors, supplier.risk_level),
                                   border: `1px solid ${getRiskColor(
+                                    colors,
                                     supplier.risk_level
                                   )}40`,
                                 }}
@@ -2580,20 +2557,20 @@ const SuppliersList = () => {
                         {selectedSupplier.name}
 
                         {/* AI Recommendation Tag in Modal */}
-                        {getRecommendation(selectedSupplier) && (
+                        {getRecommendation(colors, selectedSupplier) && (
                           <span
                             className="ml-3 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             style={{
                               backgroundColor:
-                                getRecommendation(selectedSupplier)!.bgColor,
-                              color: getRecommendation(selectedSupplier)!.color,
+                                getRecommendation(colors, selectedSupplier)!.bgColor,
+                              color: getRecommendation(colors, selectedSupplier)!.color,
                               border: `1px solid ${
-                                getRecommendation(selectedSupplier)!.color
+                                getRecommendation(colors, selectedSupplier)!.color
                               }40`,
                             }}
                           >
-                            {getRecommendation(selectedSupplier)!.icon}
-                            {getRecommendation(selectedSupplier)!.label}
+                            {getRecommendation(colors, selectedSupplier)!.icon}
+                            {getRecommendation(colors, selectedSupplier)!.label}
                           </span>
                         )}
                       </h2>
@@ -2617,22 +2594,24 @@ const SuppliersList = () => {
                         <span
                           className="px-2 py-0.5 rounded-full flex items-center text-xs"
                           style={{
-                            color: getStatusStyles(selectedSupplier.status)
+                            color: getStatusStyles(colors, selectedSupplier.status)
                               .color,
                             backgroundColor: getStatusStyles(
+                              colors,
                               selectedSupplier.status
                             ).bgColor,
-                            border: getStatusStyles(selectedSupplier.status)
+                            border: getStatusStyles(colors, selectedSupplier.status)
                               .border,
                           }}
                         >
-                          {getStatusStyles(selectedSupplier.status).icon}
+                          {getStatusStyles(colors, selectedSupplier.status).icon}
                           {selectedSupplier.status || "Status Unknown"}
                         </span>
 
                         {/* Last Updated in Modal */}
                         {(() => {
                           const badge = getLastUpdatedBadge(
+                            colors,
                             selectedSupplier.last_updated
                           );
                           return (
@@ -2751,6 +2730,7 @@ const SuppliersList = () => {
                                 className="font-bold"
                                 style={{
                                   color: getScoreColor(
+                                    colors,
                                     selectedSupplier.ethical_score
                                   ),
                                 }}
@@ -2777,6 +2757,7 @@ const SuppliersList = () => {
                                       : selectedSupplier.ethical_score || 0
                                   }%`,
                                   backgroundColor: getScoreColor(
+                                    colors,
                                     selectedSupplier.ethical_score
                                   ),
                                 }}
@@ -2957,12 +2938,14 @@ const SuppliersList = () => {
                                 className="px-3 py-1 rounded text-xs font-medium capitalize flex items-center"
                                 style={{
                                   backgroundColor:
-                                    getRiskColor(selectedSupplier.risk_level) +
+                                    getRiskColor(colors, selectedSupplier.risk_level) +
                                     "20",
                                   color: getRiskColor(
+                                    colors,
                                     selectedSupplier.risk_level
                                   ),
                                   border: `1px solid ${getRiskColor(
+                                    colors,
                                     selectedSupplier.risk_level
                                   )}40`,
                                 }}

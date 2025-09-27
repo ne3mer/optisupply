@@ -1,19 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useThemeColors } from "../theme/useThemeColors";
 
 const NotFound: React.FC = () => {
-  // Define colors for the dark theme to match other pages
-  const colors = {
-    background: "#0D0F1A",
-    panel: "rgba(25, 28, 43, 0.8)",
-    panelSolid: "#191C2B",
-    primary: "#6366F1", // Indigo
-    secondary: "#A78BFA", // Violet
-    accent: "#34D399", // Emerald Green
-    text: "#E0E0FF", // Light Lavender
-    textMuted: "#8A94C8", // Muted Lavender
-  };
+  const colors = useThemeColors();
 
   return (
     <div

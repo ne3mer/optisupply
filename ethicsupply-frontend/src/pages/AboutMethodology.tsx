@@ -11,19 +11,9 @@ import {
   DocumentTextIcon,
   BeakerIcon,
 } from "@heroicons/react/24/outline";
+import { useThemeColors } from "../theme/useThemeColors";
 
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF",
-  secondary: "#FF00FF",
-  accent: "#4D5BFF",
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F",
-  warning: "#FFD700",
-  error: "#FF4D4D",
-};
+const useColors = () => useThemeColors() as any;
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -31,6 +21,7 @@ const fadeUp = {
 };
 
 const AboutMethodology: React.FC = () => {
+  const colors = useColors();
   return (
     <div
       className="min-h-screen p-4 md:p-8"

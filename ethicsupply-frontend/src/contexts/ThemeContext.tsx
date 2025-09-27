@@ -52,6 +52,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     // Update class on document element
     if (darkMode) {
       document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
       localStorage.setItem("theme", "dark");
       // Update theme-color and background for better UX on mobile/desktop
       try {
@@ -61,6 +62,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch {}
     } else {
       document.documentElement.classList.remove("dark");
+      document.documentElement.style.colorScheme = "light";
       localStorage.setItem("theme", "light");
       try {
         const meta = document.querySelector('meta[name="theme-color"]');

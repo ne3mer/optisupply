@@ -25,47 +25,37 @@ import {
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import * as XLSX from "xlsx";
+import { useThemeColors } from "../theme/useThemeColors";
 
-// --- Reusing Theme Colors from SupplierEditForm ---
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  inputBg: "rgba(40, 44, 66, 0.9)",
-  blue: "#4D5BFF", // Keep blue separately for some UI elements
-};
+// Colors are provided by theme hook
 
 // --- UI Components ---
-const LoadingIndicator = ({ message = "Processing..." }) => (
-  <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="w-10 h-10 border-t-2 border-b-2 rounded-full mb-3"
-      style={{ borderColor: colors.primary }}
-    ></motion.div>
-    <p style={{ color: colors.textMuted }}>{message}</p>
-  </div>
-);
+const LoadingIndicator = ({ message = "Processing..." }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-10 h-10 border-t-2 border-b-2 rounded-full mb-3"
+        style={{ borderColor: colors.primary }}
+      ></motion.div>
+      <p style={{ color: colors.textMuted }}>{message}</p>
+    </div>
+  );
+};
 
-const ErrorDisplay = ({ message }) => (
-  <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
-    <ExclamationTriangleIcon
-      className="h-8 w-8 mx-auto mb-2"
-      style={{ color: colors.error }}
-    />
-    <p style={{ color: colors.text }}>
-      {message || "An error occurred while processing your request."}
-    </p>
-  </div>
-);
+const ErrorDisplay = ({ message }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
+      <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2" style={{ color: colors.error }} />
+      <p style={{ color: colors.text }}>
+        {message || "An error occurred while processing your request."}
+      </p>
+    </div>
+  );
+};
 
 // --- Input Components ---
 const InputField = ({
@@ -1532,6 +1522,7 @@ const BatchUpload = () => {
 };
 
 const AddSupplier = () => {
+  const colors = useThemeColors() as any;
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);

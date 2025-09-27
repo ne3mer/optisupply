@@ -1,31 +1,16 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "../contexts/ThemeContext";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Switch } from "lucide-react";
+import { useThemeColors } from "../theme/useThemeColors";
 
 const Settings: React.FC = () => {
   const { darkMode, toggleDarkMode } = useTheme();
+  const colors = useThemeColors();
   const [apiEndpoint, setApiEndpoint] = useState<string>(
     localStorage.getItem("apiEndpoint") || "http://localhost:8000"
   );
-
-  // Define colors for the dark theme
-  const colors = {
-    background: "#0D0F1A",
-    panel: "rgba(25, 28, 43, 0.8)",
-    panelSolid: "#191C2B",
-    primary: "#6366F1", // Indigo
-    secondary: "#A78BFA", // Violet
-    accent: "#34D399", // Emerald Green
-    text: "#E0E0FF", // Light Lavender
-    textMuted: "#8A94C8", // Muted Lavender
-  };
 
   const saveApiEndpoint = () => {
     localStorage.setItem("apiEndpoint", apiEndpoint);
@@ -33,10 +18,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-h-screen p-4 md:p-6 lg:p-8"
-      style={{ backgroundColor: colors.background, color: colors.text }}
-    >
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: colors.background, color: colors.text }}>
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -50,10 +32,7 @@ const Settings: React.FC = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <Card
-            className="h-full border-accent/30"
-            style={{ backgroundColor: colors.panelSolid }}
-          >
+          <Card className="h-full" style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
             <CardHeader>
               <CardTitle className="text-lg" style={{ color: colors.primary }}>
                 Appearance
@@ -63,7 +42,7 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span>Dark Mode</span>
                 <div
-                  className="w-12 h-6 flex items-center bg-gray-700 rounded-full p-1 cursor-pointer"
+                  className="w-12 h-6 flex items-center rounded-full p-1 cursor-pointer"
                   onClick={toggleDarkMode}
                   style={{
                     backgroundColor: darkMode
@@ -89,10 +68,7 @@ const Settings: React.FC = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
         >
-          <Card
-            className="h-full border-accent/30"
-            style={{ backgroundColor: colors.panelSolid }}
-          >
+          <Card className="h-full" style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
             <CardHeader>
               <CardTitle className="text-lg" style={{ color: colors.primary }}>
                 API Configuration
@@ -114,7 +90,7 @@ const Settings: React.FC = () => {
                     onChange={(e) => setApiEndpoint(e.target.value)}
                     className="w-full p-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none"
                     style={{
-                      backgroundColor: "rgba(40, 44, 68, 0.6)",
+                      backgroundColor: colors.inputBg,
                       borderColor: colors.accent + "40",
                       color: colors.text,
                     }}

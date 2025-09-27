@@ -27,32 +27,18 @@ import {
   UserGroupIcon,
   DocumentChartBarIcon,
 } from "@heroicons/react/24/outline";
+import { useThemeColors } from "../theme/useThemeColors";
 
-// --- Reusing Theme Colors & Helpers from Assessment ---
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  inputBg: "rgba(40, 44, 66, 0.9)",
-};
+// Theme-aware color helper is provided by useThemeColors
 
 // Helper function to get color based on risk level
-const getRiskColor = (riskLevel?: string) => {
+const getRiskColor = (colors: any, riskLevel?: string) => {
   if (!riskLevel) return colors.textMuted;
-
   const risk = riskLevel.toLowerCase();
   if (risk.includes("low")) return colors.success;
   if (risk.includes("medium")) return colors.warning;
   if (risk.includes("high")) return colors.error;
   if (risk.includes("critical")) return colors.secondary;
-
   return colors.textMuted;
 };
 
@@ -66,27 +52,30 @@ const formatPercent = (
   return `${(value * 100).toFixed(digits)}%`;
 };
 
-const LoadingIndicator = ({ message = "Loading Data..." }) => (
-  <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="w-10 h-10 border-t-2 border-b-2 rounded-full mb-3"
-      style={{ borderColor: colors.primary }}
-    ></motion.div>
-    <p style={{ color: colors.textMuted }}>{message}</p>
-  </div>
-);
+const LoadingIndicator = ({ message = "Loading Data..." }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-10 h-10 border-t-2 border-b-2 rounded-full mb-3"
+        style={{ borderColor: colors.primary }}
+      ></motion.div>
+      <p style={{ color: colors.textMuted }}>{message}</p>
+    </div>
+  );
+};
 
-const ErrorDisplay = ({ message }) => (
-  <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
-    <ExclamationTriangleIcon
-      className="h-8 w-8 mx-auto mb-2"
-      style={{ color: colors.error }}
-    />
-    <p style={{ color: colors.textMuted }}>{message}</p>
-  </div>
-);
+const ErrorDisplay = ({ message }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
+      <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2" style={{ color: colors.error }} />
+      <p style={{ color: colors.textMuted }}>{message}</p>
+    </div>
+  );
+};
 
 // --- Input Components (Copied from Assessment) ---
 const InputField = ({
@@ -113,51 +102,48 @@ const InputField = ({
   max?: number;
   step?: number;
   helper?: string;
-}) => (
-  <div className="mb-4">
-    <label
-      htmlFor={name}
-      className="block text-sm font-medium mb-1"
-      style={{ color: colors.textMuted }}
-    >
-      {label}
-    </label>
-    <input
-      type={type}
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      disabled={disabled}
-      min={min}
-      max={max}
-      step={step}
-      onWheel={(e) => {
-        if (type === "number") e.preventDefault();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "PageUp" || e.key === "PageDown") e.preventDefault();
-        if (type === "number" && e.key === "Enter") e.preventDefault();
-      }}
-      className={`w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 ${
-        disabled ? "opacity-60 cursor-not-allowed" : ""
-      }`}
-      style={{
-        backgroundColor: colors.inputBg,
-        borderColor: colors.accent + "50",
-        color: colors.text,
-        "--tw-ring-color": colors.primary,
-      }}
-      data-type={type === "number" ? "number" : undefined}
-    />
-    {helper && (
-      <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
-        {helper}
-      </p>
-    )}
-  </div>
-);
+}) => {
+  const colors = useThemeColors();
+  return (
+    <div className="mb-4">
+      <label htmlFor={name} className="block text-sm font-medium mb-1" style={{ color: colors.textMuted }}>
+        {label}
+      </label>
+      <input
+        type={type}
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        min={min}
+        max={max}
+        step={step}
+        onWheel={(e) => {
+          if (type === "number") e.preventDefault();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "PageUp" || e.key === "PageDown") e.preventDefault();
+          if (type === "number" && e.key === "Enter") e.preventDefault();
+        }}
+        className={`w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+        style={{
+          backgroundColor: colors.inputBg,
+          borderColor: colors.accent + "50",
+          color: colors.text,
+          "--tw-ring-color": colors.primary as any,
+        }}
+        data-type={type === "number" ? "number" : undefined}
+      />
+      {helper && (
+        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+          {helper}
+        </p>
+      )}
+    </div>
+  );
+};
 
 const SelectField = ({
   name,
@@ -166,46 +152,40 @@ const SelectField = ({
   onChange,
   options,
   disabled = false,
-}) => (
-  <div className="mb-4 relative">
-    <label
-      htmlFor={name}
-      className="block text-sm font-medium mb-1"
-      style={{ color: colors.textMuted }}
-    >
-      {label}
-    </label>
-    <select
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      disabled={disabled}
-      className={`w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2 ${
-        disabled ? "opacity-60 cursor-not-allowed" : ""
-      }`}
-      style={{
-        backgroundColor: colors.inputBg,
-        borderColor: colors.accent + "50",
-        color: colors.text,
-        "--tw-ring-color": colors.primary,
-      }}
-    >
-      <option value="" style={{ color: colors.textMuted }}>
-        Select...
-      </option>
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
+}) => {
+  const colors = useThemeColors();
+  return (
+    <div className="mb-4 relative">
+      <label htmlFor={name} className="block text-sm font-medium mb-1" style={{ color: colors.textMuted }}>
+        {label}
+      </label>
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        className={`w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2 ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+        style={{
+          backgroundColor: colors.inputBg,
+          borderColor: colors.accent + "50",
+          color: colors.text,
+          "--tw-ring-color": colors.primary as any,
+        }}
+      >
+        <option value="" style={{ color: colors.textMuted }}>
+          Select...
         </option>
-      ))}
-    </select>
-    <ChevronDownIcon
-      className="absolute right-3 top-9 h-5 w-5 pointer-events-none"
-      style={{ color: colors.textMuted }}
-    />
-  </div>
-);
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+      <ChevronDownIcon className="absolute right-3 top-9 h-5 w-5 pointer-events-none" style={{ color: colors.textMuted }} />
+    </div>
+  );
+};
 
 const SliderField = ({
   name,
@@ -230,6 +210,7 @@ const SliderField = ({
   disabled?: boolean;
   helper?: string;
 }) => {
+  const colors = useThemeColors();
   // Calculate the percentage for visual elements
   const percentage =
     typeof value === "number" ? ((value - min) / (max - min)) * 100 : 50;
@@ -358,6 +339,7 @@ const SliderField = ({
 const SupplierEditForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const colors = useThemeColors();
 
   const countries = [
     "United States",
@@ -757,17 +739,17 @@ const SupplierEditForm = () => {
                   transition={{ delay: 0.3 }}
                   className="ml-4 px-4 py-1 rounded-full text-sm font-medium flex items-center"
                   style={{
-                    backgroundColor: getRiskColor(formData.risk_level) + "30",
-                    color: getRiskColor(formData.risk_level),
+                    backgroundColor: getRiskColor(colors, formData.risk_level) + "30",
+                    color: getRiskColor(colors, formData.risk_level),
                     border: `1px solid ${
-                      getRiskColor(formData.risk_level) + "60"
+                      getRiskColor(colors, formData.risk_level) + "60"
                     }`,
                   }}
                 >
                   <span
                     className="w-2 h-2 rounded-full mr-2 animate-pulse"
                     style={{
-                      backgroundColor: getRiskColor(formData.risk_level),
+                      backgroundColor: getRiskColor(colors, formData.risk_level),
                     }}
                   ></span>
                   {formData.risk_level || "Unknown"} Risk Level

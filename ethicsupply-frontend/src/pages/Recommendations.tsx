@@ -36,6 +36,7 @@ import {
   X,
 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
+import { useThemeColors } from "../theme/useThemeColors";
 
 // --- MOCK DATA for Fallback ---
 const generateMockRecommendationsFallback = (): Recommendation[] => [
@@ -104,23 +105,10 @@ const generateMockRecommendationsFallback = (): Recommendation[] => [
   },
 ];
 
-// --- Supplier List Theme Colors ---
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  inputBg: "rgba(40, 44, 66, 0.9)",
-};
+// Colors come from theme
 
 // --- Adjusted Configs for Dark Theme ---
-const categoryConfig = {
+const buildCategoryConfig = (colors: any) => ({
   environmental: {
     icon: <Zap className="h-5 w-5" />,
     color: colors.primary, // Teal
@@ -145,9 +133,9 @@ const categoryConfig = {
     border: "border-purple-700",
     gradient: `from-[${colors.secondary}]/20 to-[${colors.primary}]/20`, // Magenta to Teal
   },
-};
+});
 
-const priorityConfig = {
+const buildPriorityConfig = (colors: any) => ({
   high: {
     icon: <AlertCircle className="h-4 w-4" />,
     color: colors.error, // Red
@@ -172,9 +160,9 @@ const priorityConfig = {
     border: "border-green-700",
     label: "Low Priority",
   },
-};
+});
 
-const statusConfig = {
+const buildStatusConfig = (colors: any) => ({
   pending: {
     icon: <Clock className="h-4 w-4" />,
     color: colors.textMuted, // Grayish-blue
@@ -199,7 +187,7 @@ const statusConfig = {
     border: "border-green-700",
     label: "Completed",
   },
-};
+});
 
 type EnhancedRecommendation = Recommendation & {
   action_started_at?: string;
@@ -378,6 +366,10 @@ const RecommendationCard = ({
     triggerOnce: true,
     threshold: 0.1,
   });
+  const colors = useThemeColors() as any;
+  const categoryConfig = buildCategoryConfig(colors);
+  const priorityConfig = buildPriorityConfig(colors);
+  const statusConfig = buildStatusConfig(colors);
 
   const currentStatus = recommendation.status || "pending";
   const statusInfo = statusConfig[currentStatus] || statusConfig.pending;
@@ -731,6 +723,7 @@ const ActionPlanModal = ({
     recommendation.action_owner || actionOwners[0]
   );
   const [notes, setNotes] = useState("");
+  const colors = useThemeColors() as any;
 
   const steps = useMemo(() => buildActionSteps(recommendation), [recommendation]);
   const hasActivePlan = Boolean(recommendation.action_started_at);
@@ -915,6 +908,10 @@ const ActionPlanModal = ({
 
 // Main Page Component (Dark Theme Adjustments)
 const RecommendationsPage = () => {
+  const colors = useThemeColors() as any;
+  const categoryConfig = buildCategoryConfig(colors);
+  const priorityConfig = buildPriorityConfig(colors);
+  const statusConfig = buildStatusConfig(colors);
   const [recommendations, setRecommendations] = useState<
     EnhancedRecommendation[]
   >([]);

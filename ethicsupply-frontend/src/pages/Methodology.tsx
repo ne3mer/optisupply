@@ -11,36 +11,27 @@ import {
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { getBands, getDatasetMeta, BandsMap, DatasetMeta } from "../services/api";
-
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF",
-  secondary: "#FF00FF",
-  accent: "#4D5BFF",
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F",
-  warning: "#FFD700",
-  error: "#FF4D4D",
-};
+import { useThemeColors } from "../theme/useThemeColors";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
   show: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: 0.06 * i, duration: 0.45 } }),
 };
 
-const Block = ({ id, title, icon: Icon, children }: { id?: string; title: string; icon: any; children: React.ReactNode }) => (
-  <motion.div id={id} variants={fadeUp} initial="hidden" animate="show" className="rounded-xl border p-5 md:p-6 scroll-mt-24" style={{ backgroundColor: colors.panel, borderColor: colors.accent+"40" }}>
-    <div className="flex items-center mb-3">
-      <Icon className="h-5 w-5 mr-2" style={{ color: colors.primary }} />
-      <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
-    </div>
-    <div className="text-sm md:text-base" style={{ color: colors.text }}>
-      {children}
-    </div>
-  </motion.div>
-);
+const Block = ({ id, title, icon: Icon, children }: { id?: string; title: string; icon: any; children: React.ReactNode }) => {
+  const colors = useThemeColors() as any;
+  return (
+    <motion.div id={id} variants={fadeUp} initial="hidden" animate="show" className="rounded-xl border p-5 md:p-6 scroll-mt-24" style={{ backgroundColor: colors.panel, borderColor: colors.accent+"40" }}>
+      <div className="flex items-center mb-3">
+        <Icon className="h-5 w-5 mr-2" style={{ color: colors.primary }} />
+        <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
+      </div>
+      <div className="text-sm md:text-base" style={{ color: colors.text }}>
+        {children}
+      </div>
+    </motion.div>
+  );
+};
 
 const Methodology: React.FC = () => {
   const [bands, setBands] = useState<BandsMap | null>(null);
@@ -74,6 +65,7 @@ const Methodology: React.FC = () => {
     transparency_score: "higher",
   };
 
+  const colors = useThemeColors() as any;
   return (
     <div
       className="min-h-screen p-4 md:p-8"

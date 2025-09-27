@@ -34,12 +34,8 @@ import {
   ChartBarIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import {
-  getSuppliers,
-  Supplier,
-  getGeoRiskAlerts,
-  GeoRiskAlert,
-} from "../services/api";
+import { getSuppliers, Supplier, getGeoRiskAlerts, GeoRiskAlert } from "../services/api";
+import { useThemeColors } from "../theme/useThemeColors";
 
 // Risk categories with their color and icon
 const riskTypes = {
@@ -324,6 +320,7 @@ const GeoRiskMapping = () => {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"globe" | "map" | "chart">("globe");
   const [showAlerts, setShowAlerts] = useState<boolean>(true);
+  const colors = useThemeColors() as any;
 
   useEffect(() => {
     async function fetchData() {
@@ -391,11 +388,11 @@ const GeoRiskMapping = () => {
   }
 
   return (
-    <div className="relative w-full h-screen bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden" style={{ backgroundColor: colors.background, color: colors.text }}>
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4 bg-black/50 backdrop-blur-sm">
+      <div className="absolute top-0 left-0 right-0 z-10 p-4 backdrop-blur-sm" style={{ backgroundColor: colors.panel }}>
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Global Risk Mapping</h1>
+          <h1 className="text-2xl font-bold" style={{ color: colors.text }}>Global Risk Mapping</h1>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setViewMode("globe")}
@@ -446,6 +443,7 @@ const GeoRiskMapping = () => {
             <Canvas
               camera={{ position: [0, 0, 15], fov: 45 }}
               gl={{ antialias: true, alpha: false }}
+              style={{ background: colors.background }}
             >
               <Suspense fallback={<LoadingSpinner />}>
                 <ambientLight intensity={0.6} />
@@ -635,12 +633,12 @@ const GeoRiskMapping = () => {
             {Object.keys(countryCoordinates)
               .sort((a, b) => (countryRiskData[b]?.length || 0) - (countryRiskData[a]?.length || 0))
               .map((country) => (
-                <div key={country} className="rounded-lg border p-4 bg-gray-900/60" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
+                <div key={country} className="rounded-lg border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.accent + '30' }}>
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-white font-semibold">{country}</h3>
+                    <h3 className="font-semibold" style={{ color: colors.text }}>{country}</h3>
                     <button
                       className="text-xs underline"
-                      style={{ color: "#93C5FD" }}
+                      style={{ color: colors.primary }}
                       onClick={() => setSelectedCountry(country)}
                     >
                       View details
@@ -648,17 +646,15 @@ const GeoRiskMapping = () => {
                   </div>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {(countryRiskData[country] || []).map((risk) => (
-                      <span key={risk} className="px-2 py-0.5 rounded-full text-xs text-white" style={{ backgroundColor: riskTypes[risk]?.color }}>
+                      <span key={risk} className="px-2 py-0.5 rounded-full text-xs" style={{ backgroundColor: riskTypes[risk]?.color, color: colors.background }}>
                         {riskTypes[risk]?.name}
                       </span>
                     ))}
                     {(countryRiskData[country] || []).length === 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-xs text-gray-300 bg-gray-700/80">No risks</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs" style={{ color: colors.textMuted, backgroundColor: colors.panel }}>No risks</span>
                     )}
                   </div>
-                  <div className="text-sm text-gray-300">
-                    Suppliers: {suppliers.filter((s) => s.country === country).length}
-                  </div>
+                  <div className="text-sm" style={{ color: colors.textMuted }}>Suppliers: {suppliers.filter((s) => s.country === country).length}</div>
                 </div>
               ))}
           </div>
@@ -669,31 +665,31 @@ const GeoRiskMapping = () => {
       {viewMode === "chart" && (
         <div className="absolute inset-0 pt-16 overflow-auto">
           <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-lg border p-4 bg-gray-900/60" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
-              <h3 className="text-white font-semibold mb-3">Alerts by Type</h3>
+            <div className="rounded-lg border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.accent + '30' }}>
+              <h3 className="font-semibold mb-3" style={{ color: colors.text }}>Alerts by Type</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={Object.keys(riskTypes).map((t) => ({ type: riskTypes[t].name, count: alerts.filter((a) => a.type === t).length }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="type" stroke="#9CA3AF" tick={{ fill: '#9CA3AF' }} />
-                    <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF' }} />
-                    <Tooltip wrapperStyle={{ outline: 'none' }} contentStyle={{ backgroundColor: 'rgba(17,24,39,0.9)', border: '1px solid rgba(255,255,255,0.1)', color: '#E5E7EB' }} />
-                    <Legend wrapperStyle={{ color: '#E5E7EB' }} />
-                    <Bar dataKey="count" name="Alerts" fill="#60A5FA" radius={[4,4,0,0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={colors.accent + '20'} />
+                    <XAxis dataKey="type" stroke={colors.textMuted} tick={{ fill: colors.textMuted }} />
+                    <YAxis stroke={colors.textMuted} tick={{ fill: colors.textMuted }} />
+                    <Tooltip wrapperStyle={{ outline: 'none' }} contentStyle={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}30`, color: colors.text }} />
+                    <Legend wrapperStyle={{ color: colors.text }} />
+                    <Bar dataKey="count" name="Alerts" fill={colors.primary} radius={[4,4,0,0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            <div className="rounded-lg border p-4 bg-gray-900/60" style={{ borderColor: "rgba(255,255,255,0.12)" }}>
-              <h3 className="text-white font-semibold mb-3">Countries by Risk Count</h3>
+            <div className="rounded-lg border p-4" style={{ backgroundColor: colors.panel, borderColor: colors.accent + '30' }}>
+              <h3 className="font-semibold mb-3" style={{ color: colors.text }}>Countries by Risk Count</h3>
               <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={Object.keys(countryRiskData).map((c) => ({ country: c, risks: countryRiskData[c].length }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="country" stroke="#9CA3AF" tick={{ fill: '#9CA3AF' }} angle={-30} height={60} textAnchor="end" />
-                    <YAxis stroke="#9CA3AF" tick={{ fill: '#9CA3AF' }} />
-                    <Tooltip wrapperStyle={{ outline: 'none' }} contentStyle={{ backgroundColor: 'rgba(17,24,39,0.9)', border: '1px solid rgba(255,255,255,0.1)', color: '#E5E7EB' }} />
-                    <Bar dataKey="risks" name="Risk types" fill="#F59E0B" radius={[4,4,0,0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={colors.accent + '20'} />
+                    <XAxis dataKey="country" stroke={colors.textMuted} tick={{ fill: colors.textMuted }} angle={-30} height={60} textAnchor="end" />
+                    <YAxis stroke={colors.textMuted} tick={{ fill: colors.textMuted }} />
+                    <Tooltip wrapperStyle={{ outline: 'none' }} contentStyle={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}30`, color: colors.text }} />
+                    <Bar dataKey="risks" name="Risk types" fill={colors.warning} radius={[4,4,0,0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

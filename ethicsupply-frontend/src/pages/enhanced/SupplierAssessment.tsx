@@ -28,24 +28,12 @@ import {
   ChevronDownIcon, // Select dropdown
 } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
+import { useThemeColors } from "../../theme/useThemeColors";
 
-// --- Reusing Theme Colors & Helpers ---
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  inputBg: "rgba(40, 44, 66, 0.9)",
-};
+// colors come from theme hook
 
 // Helper for coloring score values
-const getScoreColor = (score: number): string => {
+const getScoreColor = (colors: any, score: number): string => {
   console.log("Getting color for score:", score, typeof score);
   if (score === undefined || score === null) return colors.textMuted; // Handle undefined
   if (score >= 80) return colors.success;
@@ -69,27 +57,30 @@ const safeFormat = (
   }
 };
 
-const LoadingIndicator = ({ message = "Loading Data..." }) => (
-  <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="w-10 h-10 border-t-2 border-b-2 rounded-full mb-3"
-      style={{ borderColor: colors.primary }}
-    ></motion.div>
-    <p style={{ color: colors.textMuted }}>{message}</p>
-  </div>
-);
+const LoadingIndicator = ({ message = "Loading Data..." }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="flex flex-col items-center justify-center p-10 min-h-[200px]">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-10 h-10 border-t-2 border-b-2 rounded-full mb-3"
+        style={{ borderColor: colors.primary }}
+      ></motion.div>
+      <p style={{ color: colors.textMuted }}>{message}</p>
+    </div>
+  );
+};
 
-const ErrorDisplay = ({ message }) => (
-  <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
-    <ExclamationTriangleIcon
-      className="h-8 w-8 mx-auto mb-2"
-      style={{ color: colors.error }}
-    />
-    <p style={{ color: colors.textMuted }}>{message}</p>
-  </div>
-);
+const ErrorDisplay = ({ message }) => {
+  const colors = useThemeColors();
+  return (
+    <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
+      <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2" style={{ color: colors.error }} />
+      <p style={{ color: colors.textMuted }}>{message}</p>
+    </div>
+  );
+};
 
 // Helper function to generate ML-based recommendations when API doesn't provide them
 const generateMLRecommendations = (data) => {
@@ -217,6 +208,7 @@ const generateMLRecommendations = (data) => {
 
 // --- Main Component ---
 const SupplierAssessment = () => {
+  const colors = useThemeColors() as any;
   const { id: supplierId } = useParams();
   const navigate = useNavigate();
 
@@ -1385,6 +1377,7 @@ const SupplierAssessment = () => {
                           className="text-2xl font-bold font-mono"
                           style={{
                             color: getScoreColor(
+                              colors,
                               result.ethical_score !== undefined
                                 ? result.ethical_score
                                 : result.scores?.overall
@@ -1415,6 +1408,7 @@ const SupplierAssessment = () => {
                           className="text-2xl font-bold font-mono"
                           style={{
                             color: getScoreColor(
+                              colors,
                               result.environmental_score !== undefined
                                 ? result.environmental_score
                                 : result.scores?.environmental
@@ -1445,6 +1439,7 @@ const SupplierAssessment = () => {
                           className="text-2xl font-bold font-mono"
                           style={{
                             color: getScoreColor(
+                              colors,
                               result.social_score !== undefined
                                 ? result.social_score
                                 : result.scores?.social
@@ -1475,6 +1470,7 @@ const SupplierAssessment = () => {
                           className="text-2xl font-bold font-mono"
                           style={{
                             color: getScoreColor(
+                              colors,
                               result.governance_score !== undefined
                                 ? result.governance_score
                                 : result.scores?.governance

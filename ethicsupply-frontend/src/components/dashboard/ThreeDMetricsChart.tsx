@@ -9,18 +9,9 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import { Vector3 } from "three";
+import { useThemeColors } from "../../theme/useThemeColors";
 
-// Color constants
-const colors = {
-  primary: "#6E56CF",
-  secondary: "#1C7ED6",
-  accent: "#00CFFD",
-  success: "#4ADE80",
-  warning: "#FBA94F",
-  error: "#F87171",
-  textPrimary: "#E0E0FF",
-  grid: "#192136",
-};
+// Colors now come from active theme
 
 interface ThreeDMetricsChartProps {
   scores: Record<string, number>;
@@ -60,8 +51,10 @@ const DataPoint: React.FC<{
 
 // Connecting lines between data points
 const ConnectionLines = ({ points }) => {
+  const theme = useThemeColors() as any;
+  const gridColor = theme.grid || (theme.accent + "30");
   const linesMaterial = new THREE.LineBasicMaterial({
-    color: colors.grid,
+    color: gridColor,
     transparent: true,
     opacity: 0.4,
   });
@@ -84,13 +77,9 @@ const ConnectionLines = ({ points }) => {
 
 // Grid helper component
 const GridHelper = () => {
-  return (
-    <gridHelper
-      args={[20, 20, colors.grid, colors.grid]}
-      position={[0, -3, 0]}
-      rotation={[0, 0, 0]}
-    />
-  );
+  const theme = useThemeColors() as any;
+  const gridColor = theme.grid || (theme.accent + "30");
+  return <gridHelper args={[20, 20, gridColor, gridColor]} position={[0, -3, 0]} rotation={[0, 0, 0]} />;
 };
 
 // Animated camera orbit
@@ -126,6 +115,7 @@ const DataVisualization: React.FC<DataVisualizationProps> = ({
   compliance,
   trends,
 }) => {
+  const theme = useThemeColors() as any;
   const dataPoints = useMemo(() => {
     const points = [];
     const radius = 3;
@@ -140,7 +130,7 @@ const DataVisualization: React.FC<DataVisualizationProps> = ({
           number,
           number
         ],
-        color: colors.primary,
+        color: theme.primary,
         size: (value / 100) * 0.8,
         label: key,
       });
@@ -155,7 +145,7 @@ const DataVisualization: React.FC<DataVisualizationProps> = ({
           0,
           Math.sin(angle) * (radius - 1),
         ] as [number, number, number],
-        color: colors.success,
+        color: theme.success,
         size: (value / 100) * 0.8,
         label: key,
       });
@@ -170,14 +160,14 @@ const DataVisualization: React.FC<DataVisualizationProps> = ({
           -1,
           Math.sin(angle) * (radius - 2),
         ] as [number, number, number],
-        color: colors.accent,
+        color: theme.accent,
         size: (value / 100) * 0.8,
         label: key,
       });
     });
 
     return points;
-  }, [scores, compliance, trends]);
+  }, [scores, compliance, trends, theme]);
 
   return (
     <>
@@ -195,7 +185,7 @@ const DataVisualization: React.FC<DataVisualizationProps> = ({
               point.position[2],
             ]}
             fontSize={0.3}
-            color={colors.textPrimary}
+            color={theme.text}
             anchorX="center"
             anchorY="middle"
           >

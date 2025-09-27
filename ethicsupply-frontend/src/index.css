@@ -206,6 +206,13 @@ body {
   @apply text-gray-900 bg-slate-50;
 }
 
+/* Ensure dark mode applies a dark base background/text */
+@layer base {
+  .dark body {
+    @apply bg-gray-900 text-gray-100;
+  }
+}
+
 /* Custom scrollbar for a more modern look */
 ::-webkit-scrollbar {
   width: 8px;

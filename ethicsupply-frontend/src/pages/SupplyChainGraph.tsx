@@ -58,43 +58,14 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import Globe from "react-globe.gl";
-import { useTheme } from "../contexts/ThemeContext";
+import { useThemeColors } from "../theme/useThemeColors";
 import logger from "../utils/log";
 
 // --- Define default edgeTypes OUTSIDE component ---
 // We are not using custom edges, but defining this might help silence the warning
 const defaultEdgeTypes = {}; // Or import default types if needed
 
-// --- Supplier List Theme Colors ---
-const lightColors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  panelSolid: "#191C2B",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  inputBg: "rgba(40, 44, 66, 0.9)",
-};
-
-const darkColors = {
-  background: "#1a1a1a",
-  panel: "#2d2d2d",
-  panelSolid: "#2d2d2d",
-  primary: "#3b82f6",
-  secondary: "#6b7280",
-  accent: "#8b5cf6",
-  text: "#ffffff",
-  textMuted: "#9ca3af",
-  success: "#10b981",
-  warning: "#f59e0b",
-  error: "#ef4444",
-  inputBg: "#2d2d2d",
-};
+// Colors are provided by theme
 
 // Extended interfaces (keep relevant parts, add lat/lng)
 interface NodeObject extends GraphNode {
@@ -218,22 +189,7 @@ const createNodeTypes = (colors) => ({
 const SupplyChainGraph = () => {
   const globeEl = useRef<Globe | null>(null);
   const controlsRef = useRef<any>(); // For OrbitControls
-  const { darkMode } = useTheme();
-  const colors = darkMode ? darkColors : lightColors;
-  const defaultColors = {
-    background: darkMode ? "#1a1a1a" : "#ffffff",
-    text: darkMode ? "#ffffff" : "#000000",
-    panel: darkMode ? "#2d2d2d" : "#ffffff",
-    panelSolid: darkMode ? "#2d2d2d" : "#ffffff",
-    primary: darkMode ? "#3b82f6" : "#2563eb",
-    secondary: darkMode ? "#6b7280" : "#4b5563",
-    accent: darkMode ? "#8b5cf6" : "#7c3aed",
-    textMuted: darkMode ? "#9ca3af" : "#6b7280",
-    success: darkMode ? "#10b981" : "#059669",
-    warning: darkMode ? "#f59e0b" : "#d97706",
-    error: darkMode ? "#ef4444" : "#dc2626",
-    inputBg: darkMode ? "#2d2d2d" : "#f3f4f6",
-  };
+  const colors = useThemeColors() as any;
 
   // Memoize nodeTypes to prevent recreation on every render
   const nodeTypes = useMemo(() => createNodeTypes(colors), [colors]);
@@ -765,8 +721,8 @@ const SupplyChainGraph = () => {
     <div
       className="min-h-screen flex flex-col p-4 md:p-6 lg:p-8 gap-6"
       style={{
-        backgroundColor: colors?.background || defaultColors.background,
-        color: colors?.text || defaultColors.text,
+        backgroundColor: colors.background,
+        color: colors.text,
       }}
     >
       {/* Header (Optional - Assuming Navbar is external) */}

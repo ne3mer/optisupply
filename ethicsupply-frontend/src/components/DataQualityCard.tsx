@@ -121,10 +121,9 @@ const DataQualityCard: React.FC<Props> = ({ suppliers, bands, colors }) => {
                 <div key={industry} className="rounded border" style={{ borderColor: colors.accent + "20", backgroundColor: colors.panel }}>
                   <button
                     className="w-full flex items-center justify-between p-3 focus:outline-none"
-                    style={{ outline: "none" }}
                     aria-expanded={!!open[industry]}
                     onClick={() => toggle(industry)}
-                    style={{ color: colors.text }}
+                    style={{ outline: "none", color: colors.text }}
                   >
                     <div className="flex items-center gap-3">
                       <span className="font-medium">{industry}</span>

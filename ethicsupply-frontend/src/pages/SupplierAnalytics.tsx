@@ -37,26 +37,24 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { useTheme } from "../contexts/ThemeContext";
+import { getThemeColors } from "../theme/colors";
 
-// --- Theme Colors & Helpers ---
-const colors = {
-  background: "#070B14",
-  panel: "rgba(16, 23, 42, 0.7)",
-  card: "rgba(22, 28, 45, 0.6)",
-  primary: "#05D3FB", // Brighter teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#5667FF", // Bluer accent
-  text: "#E6E7FF",
-  textMuted: "#8A94C8",
-  success: "#05FFA3", // Brighter green
-  warning: "#FFE347", // Warmer yellow
-  error: "#FF5370", // Softer red
-  gradientStart: "#05D3FB",
-  gradientEnd: "#FF00FF",
+// Theme-aware colors helper
+const useColors = () => {
+  const { darkMode } = useTheme();
+  const base = getThemeColors(darkMode) as any;
+  return {
+    ...base,
+    gradientStart: darkMode ? "#05D3FB" : base.primary,
+    gradientEnd: darkMode ? "#FF00FF" : base.accent,
+  } as any;
 };
 
 // Reusable components
-const LoadingIndicator = () => (
+const LoadingIndicator = () => {
+  const colors = useColors();
+  return (
   <div className="flex flex-col items-center justify-center min-h-[80vh]">
     <motion.div
       className="relative w-24 h-24"
@@ -93,15 +91,18 @@ const LoadingIndicator = () => (
       Analyzing data streams...
     </motion.p>
   </div>
-);
+  );
+};
 
-const ErrorDisplay = ({ message }) => (
+const ErrorDisplay = ({ message }) => {
+  const colors = useColors();
+  return (
   <div className="flex flex-col items-center justify-center min-h-[80vh]">
     <div
       className="max-w-lg p-8 rounded-xl backdrop-blur-lg border"
       style={{
-        backgroundColor: "rgba(255,70,70,0.1)",
-        borderColor: colors.error + "30",
+        backgroundColor: (colors.error || "#ef4444") + "15",
+        borderColor: (colors.error || "#ef4444") + "30",
       }}
     >
       <ExclamationTriangleIcon
@@ -129,9 +130,12 @@ const ErrorDisplay = ({ message }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
-const Card = ({ title, icon: Icon, children, className = "" }) => (
+const Card = ({ title, icon: Icon, children, className = "" }) => {
+  const colors = useColors();
+  return (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -164,9 +168,12 @@ const Card = ({ title, icon: Icon, children, className = "" }) => (
       {children}
     </div>
   </motion.div>
-);
+  );
+};
 
-const ScoreCard = ({ label, value, icon: Icon, color }) => (
+const ScoreCard = ({ label, value, icon: Icon, color }) => {
+  const colors = useColors();
+  return (
   <div
     className="relative p-4 rounded-lg backdrop-blur-sm border overflow-hidden"
     style={{
@@ -201,10 +208,11 @@ const ScoreCard = ({ label, value, icon: Icon, color }) => (
       />
     </div>
   </div>
-);
+  );
+};
 
-// Helper to get risk color
-const getRiskColor = (level) => {
+// Helper to get risk color (use active theme)
+const getRiskColor = (level: string | undefined, colors: any) => {
   switch (level?.toLowerCase()) {
     case "low":
       return colors.success;
@@ -292,6 +300,7 @@ const SupplierAnalytics = () => {
     ];
   }, [data]);
 
+  const colors = useColors();
   // Loading and error states
   if (loading) return <LoadingIndicator />;
   if (error || !data)
@@ -312,8 +321,7 @@ const SupplierAnalytics = () => {
       style={{
         backgroundColor: colors.background,
         color: colors.text,
-        backgroundImage:
-          "radial-gradient(circle at 10% 20%, rgba(5, 211, 251, 0.05) 0%, transparent 30%), radial-gradient(circle at 90% 80%, rgba(255, 0, 255, 0.05) 0%, transparent 30%)",
+        backgroundImage: `radial-gradient(circle at 10% 20%, ${colors.primary}10 0%, transparent 30%), radial-gradient(circle at 90% 80%, ${colors.secondary}10 0%, transparent 30%)`,
       }}
     >
       {/* Header */}
@@ -513,8 +521,8 @@ const SupplierAnalytics = () => {
                     transition={{ delay: index * 0.1 }}
                     className="p-3 rounded-lg border"
                     style={{
-                      backgroundColor: "rgba(0,0,0,0.2)",
-                      borderColor: getRiskColor(risk.severity) + "30",
+                      backgroundColor: (colors.background || "#000000") + "20",
+                      borderColor: getRiskColor(risk.severity, colors) + "30",
                     }}
                   >
                     <div className="flex justify-between items-center mb-2">
@@ -527,8 +535,8 @@ const SupplierAnalytics = () => {
                       <span
                         className="px-2 py-0.5 rounded-full text-xs font-medium"
                         style={{
-                          backgroundColor: getRiskColor(risk.severity) + "20",
-                          color: getRiskColor(risk.severity),
+                          backgroundColor: getRiskColor(risk.severity, colors) + "20",
+                          color: getRiskColor(risk.severity, colors),
                         }}
                       >
                         {risk.severity}

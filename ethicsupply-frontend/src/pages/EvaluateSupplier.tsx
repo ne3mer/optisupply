@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { evaluateSupplier, getSupplier } from "../services/api";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useThemeColors } from "../theme/useThemeColors";
 import {
   BuildingOfficeIcon,
   GlobeAltIcon,
@@ -22,20 +23,7 @@ import {
   DocumentChartBarIcon,
 } from "@heroicons/react/24/outline";
 
-// Define theme colors
-const colors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  inputBg: "rgba(40, 44, 66, 0.9)",
-};
+// Colors are theme-aware via hook
 
 // Define types for the form data
 interface FormData {
@@ -118,6 +106,7 @@ interface EvaluationResult {
 
 const EvaluateSupplier = () => {
   const [searchParams] = useSearchParams();
+  const colors = useThemeColors() as any;
   const supplierId = searchParams.get("id");
   const formRef = useRef<HTMLDivElement>(null);
 

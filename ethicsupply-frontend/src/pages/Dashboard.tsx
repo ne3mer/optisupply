@@ -75,6 +75,8 @@ import EditTargetsModal from "../components/EditTargetsModal";
 import { defaultTargets, Targets } from "../config/targets";
 import logger from "../utils/log";
 import useIsMobile from "../hooks/useIsMobile";
+import { useTheme } from "../contexts/ThemeContext";
+import { getThemeColors } from "../theme/colors";
 
 // Load persisted target overrides
 function loadTargets(): Targets {
@@ -137,40 +139,22 @@ const COLORS = [
 
 const apiEndpoint = "/api/dashboard/";
 
-// --- Dashboard Specific Design System ---
-const colors = {
-  background: "#0D0F1A", // Dark background
-  panel: "rgba(25, 28, 43, 0.8)", // Translucent panel
-  card: "rgba(22, 28, 45, 0.6)", // Slightly darker card background
-  primary: "#00F0FF", // Teal
-  secondary: "#FF00FF", // Magenta
-  accent: "#4D5BFF", // Blue
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F", // Green
-  warning: "#FFD700", // Yellow
-  error: "#FF4D4D", // Red
-  grid: "rgba(77, 91, 255, 0.1)", // Grid lines color (accent with low opacity)
-  tooltipBg: "rgba(13, 15, 26, 0.95)", // Darker tooltip background
+// Theme-aware colors
+const useColors = () => {
+  const { darkMode } = useTheme();
+  return getThemeColors(darkMode) as any;
 };
 
-const chartColors = [
-  colors.primary,
-  colors.secondary,
-  colors.success,
-  colors.warning,
-  "#8B5CF6", // Purple
-  "#38BDF8", // Sky Blue
-];
+// Chart colors derived per-render from active theme
 
 // Helper to get score color (consistent with other pages)
-const getScoreColor = (score: number | null | undefined) => {
-  if (score === null || score === undefined) return colors.textMuted;
+const getScoreColor = (score: number | null | undefined, themeColors: any) => {
+  if (score === null || score === undefined) return themeColors.textMuted;
   const normalizedScore = score > 0 && score <= 1 ? score * 100 : score;
-  if (normalizedScore >= 80) return colors.success;
-  if (normalizedScore >= 60) return colors.primary; // Use teal for good
-  if (normalizedScore >= 40) return colors.warning;
-  return colors.error;
+  if (normalizedScore >= 80) return themeColors.success;
+  if (normalizedScore >= 60) return themeColors.primary; // Use teal for good
+  if (normalizedScore >= 40) return themeColors.warning;
+  return themeColors.error;
 };
 
 // Helper to get risk color (consistent with other pages)
@@ -199,43 +183,43 @@ const formatPercent = (
 
 // --- Reusable Styled Components ---
 
-const LoadingIndicator = () => (
-  <div className="flex flex-col items-center justify-center min-h-[80vh]">
-    <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      className="w-20 h-20 border-t-4 border-b-4 rounded-full mb-6"
-      style={{ borderColor: colors.primary }}
-    />
-    <p className="text-xl font-light" style={{ color: colors.textMuted }}>
-      Initializing Command Center...
-    </p>
-  </div>
-);
-
-const ErrorDisplay = ({ message }) => (
-  <div className="flex items-center justify-center min-h-[80vh]">
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="bg-red-900/30 border border-red-500 p-8 rounded-lg text-center max-w-lg shadow-xl"
-    >
-      <ExclamationTriangleIcon
-        className="h-16 w-16 mx-auto mb-5"
-        style={{ color: colors.error }}
+const LoadingIndicator = () => {
+  const colors = useColors();
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="w-20 h-20 border-t-4 border-b-4 rounded-full mb-6"
+        style={{ borderColor: colors.primary }}
       />
-      <h3
-        className="text-2xl font-semibold mb-3"
-        style={{ color: colors.error }}
-      >
-        Connection Error
-      </h3>
-      <p className="text-lg" style={{ color: colors.textMuted }}>
-        {message}
+      <p className="text-xl font-light" style={{ color: colors.textMuted }}>
+        Initializing Command Center...
       </p>
-    </motion.div>
-  </div>
-);
+    </div>
+  );
+};
+
+const ErrorDisplay = ({ message }) => {
+  const colors = useColors();
+  return (
+    <div className="flex items-center justify-center min-h-[80vh]">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-red-900/30 border border-red-500 p-8 rounded-lg text-center max-w-lg shadow-xl"
+      >
+        <ExclamationTriangleIcon className="h-16 w-16 mx-auto mb-5" style={{ color: colors.error }} />
+        <h3 className="text-2xl font-semibold mb-3" style={{ color: colors.error }}>
+          Connection Error
+        </h3>
+        <p className="text-lg" style={{ color: colors.textMuted }}>
+          {message}
+        </p>
+      </motion.div>
+    </div>
+  );
+};
 
 const DashboardCard = ({
   title,
@@ -243,35 +227,34 @@ const DashboardCard = ({
   children,
   className = "",
   gridSpan = "col-span-1",
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5 }}
-    className={`relative overflow-hidden rounded-xl border backdrop-blur-md p-5 ${gridSpan} ${className}`}
-    style={{
-      backgroundColor: colors.card,
-      borderColor: colors.accent + "20",
-      boxShadow: `0 0 15px ${colors.accent}10`,
-    }}
-  >
-    {/* Subtle background pattern/glow could be added here */}
-    <div className="relative z-10 h-full flex flex-col">
-      <div className="flex items-center mb-4">
-        <div
-          className="p-2 rounded-lg mr-3"
-          style={{ backgroundColor: colors.panel }}
-        >
-          <Icon className="h-5 w-5" style={{ color: colors.primary }} />
+}) => {
+  const colors = useColors();
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`relative overflow-hidden rounded-xl border backdrop-blur-md p-5 ${gridSpan} ${className}`}
+      style={{
+        backgroundColor: colors.card,
+        borderColor: colors.accent + "20",
+        boxShadow: `0 0 15px ${colors.accent}10`,
+      }}
+    >
+      <div className="relative z-10 h-full flex flex-col">
+        <div className="flex items-center mb-4">
+          <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: colors.panel }}>
+            <Icon className="h-5 w-5" style={{ color: colors.primary }} />
+          </div>
+          <h3 className="text-lg font-semibold" style={{ color: colors.text }}>
+            {title}
+          </h3>
         </div>
-        <h3 className="text-lg font-semibold" style={{ color: colors.text }}>
-          {title}
-        </h3>
+        <div className="flex-grow">{children}</div>
       </div>
-      <div className="flex-grow">{children}</div>
-    </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const KpiIndicator = ({
   label,
@@ -280,27 +263,30 @@ const KpiIndicator = ({
   icon: Icon,
   color,
   children,
-}) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.4 }}
-    className="flex flex-col items-center justify-center text-center p-4 rounded-lg border"
-    style={{ borderColor: color + "40", backgroundColor: color + "10" }}
-  >
-    <Icon className="h-8 w-8 mb-3" style={{ color: color }} />
-    <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
-      {label}
-    </span>
-    {value !== undefined && value !== null && (
-      <span className="text-3xl font-bold mt-1" style={{ color: colors.text }}>
-        {value}
-        {unit}
+}) => {
+  const colors = useColors();
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col items-center justify-center text-center p-4 rounded-lg border"
+      style={{ borderColor: color + "40", backgroundColor: color + "10" }}
+    >
+      <Icon className="h-8 w-8 mb-3" style={{ color: color }} />
+      <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
+        {label}
       </span>
-    )}
-    {children}
-  </motion.div>
-);
+      {value !== undefined && value !== null && (
+        <span className="text-3xl font-bold mt-1" style={{ color: colors.text }}>
+          {value}
+          {unit}
+        </span>
+      )}
+      {children}
+    </motion.div>
+  );
+};
 
 // Report Generation
 const ReportGenerator = ({
@@ -311,6 +297,7 @@ const ReportGenerator = ({
   const [reportType, setReportType] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const reportContainerRef = React.useRef(null);
+  const colors = useColors();
 
   // Format data for report
   const formatDataForReport = () => {
@@ -1152,6 +1139,7 @@ const ReportGenerator = ({
 // --- Dashboard Component ---
 
 const Dashboard = () => {
+  const colors = useColors();
   const navigate = useNavigate();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -1470,7 +1458,7 @@ const Dashboard = () => {
     avgCompletenessRatio,
     highRiskCount,
   } = kpiData || {};
-  const scoreColor = getScoreColor(avgEthicalScore);
+  const scoreColor = getScoreColor(avgEthicalScore, colors);
 
   const formatVersionLabel = (version?: string) => {
     if (!version) return "Synthetic v1";
