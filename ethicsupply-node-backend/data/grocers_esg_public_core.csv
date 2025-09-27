@@ -1,0 +1,5 @@
+revenue,employees,emissions,renewable_pct,water_use,waste,injury_rate,training_hours,wage_ratio,diversity_pct,board_diversity,board_independence,anti_corruption,transparency_score,climate_risk,geo_risk,labor_risk,company_id,company_name,industry,notes
+681000,2100000,15700000,48.5,,,,,,,,,1,,,,,FR001,Walmart Inc.,Food Retail,"Revenue in USD (millions); Emissions = Scope 1+2 FY2024 tCO2e; ~48.5% renewable electricity."
+61500,340000,900000,100,,,,,,,,,1,,,,,FR002,Tesco PLC,Food Retail,"Revenue in GBP (millions); Emissions ≈ Scope 1 (~0.9 MtCO2e); 100% renewable electricity."
+32700,145000,131794,100,,41784,,,,,,,,1,,,,,FR003,J Sainsbury plc,Food Retail,"Revenue in GBP (millions); Emissions = Scope 1 (refrigerants only) tCO2e; Food waste = 41,784 t; 100% renewables."
+

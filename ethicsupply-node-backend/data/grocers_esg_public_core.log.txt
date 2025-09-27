@@ -1,0 +1,2 @@
+Missing critical fields (require anti_corruption=1):
+- FR003: missing [water_use, injury_rate, training_hours, wage_ratio, diversity_pct, board_diversity, board_independence, anti_corruption]
