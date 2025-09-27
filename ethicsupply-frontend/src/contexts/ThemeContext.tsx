@@ -53,9 +53,20 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     if (darkMode) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
+      // Update theme-color and background for better UX on mobile/desktop
+      try {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', '#0D0F1A');
+        document.body.style.backgroundColor = '#0D0F1A';
+      } catch {}
     } else {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
+      try {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', '#ffffff');
+        document.body.style.backgroundColor = '#ffffff';
+      } catch {}
     }
   }, [darkMode]);
 
