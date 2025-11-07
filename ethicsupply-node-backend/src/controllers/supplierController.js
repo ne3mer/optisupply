@@ -80,8 +80,7 @@ exports.getSupplierById = async (req, res) => {
       risk_penalty: scores.risk_penalty, // Ensure risk_penalty is always computed
       completeness_ratio: scores.completeness_ratio,
       composite_score: scores.composite_score,
-      finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty)
-      final_score: scores.finalScore ?? scores.ethical_score, // Alias
+      finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty) - camelCase in API
     };
 
     // Return the supplier with computed scores
@@ -110,8 +109,7 @@ exports.createSupplier = async (req, res) => {
       risk_penalty: scores.risk_penalty, // Include new risk_penalty field
       completeness_ratio: scores.completeness_ratio,
       composite_score: scores.composite_score,
-      finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty)
-      final_score: scores.finalScore ?? scores.ethical_score, // Alias
+      finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty) - camelCase in API
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -166,8 +164,7 @@ exports.bulkImportSuppliers = async (req, res) => {
           risk_penalty: scores.risk_penalty,
           completeness_ratio: scores.completeness_ratio,
           composite_score: scores.composite_score,
-          finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty)
-          final_score: scores.finalScore ?? scores.ethical_score, // Alias
+      finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty) - camelCase in API
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -1407,8 +1404,9 @@ async function calculateSupplierScores(supplier) {
       risk_penalty: scores.risk_penalty !== null ? roundToTwo(scores.risk_penalty) : null, // 0-100 or null
       completeness_ratio: roundToTwo(scores.completeness_ratio),
       composite_score: roundToTwo(scores.composite_score),
+      // Use camelCase consistently in API (finalScore)
+      // Store as both camelCase and snake_case for compatibility
       finalScore: roundToTwo(scores.finalScore ?? scores.ethical_score), // Final score (post-penalty)
-      final_score: roundToTwo(scores.finalScore ?? scores.ethical_score), // Alias for snake_case
     };
 
     try {

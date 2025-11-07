@@ -180,11 +180,7 @@ const SupplierSchema = new Schema(
     },
     finalScore: {
       type: Number,
-      description: "Final score (post-penalty, post-disclosure cap) 0-100",
-    },
-    final_score: {
-      type: Number,
-      description: "Alias for finalScore (snake_case)",
+      description: "Final score (post-penalty, post-disclosure cap) 0-100 - camelCase in API",
     },
     completeness_ratio: {
       type: Number,

@@ -459,6 +459,44 @@ function scoreSupplierAgainstBenchmarks(supplier, useIndustryBands = true) {
 }
 
 /**
+ * Normalize weights to sum to 1.0
+ */
+function normalizeWeights(weights) {
+  const entries = Object.entries(weights);
+  const sum = entries.reduce((acc, [, v]) => acc + (Number.isFinite(v) ? v : 0), 0);
+  if (sum === 0 || !Number.isFinite(sum)) {
+    // If all weights are 0 or invalid, use equal weights
+    const equalWeight = 1 / entries.length;
+    return Object.fromEntries(entries.map(([k]) => [k, equalWeight]));
+  }
+  return Object.fromEntries(entries.map(([k, v]) => [k, Number.isFinite(v) ? v / sum : 0]));
+}
+
+/**
+ * Scale array values to 0-100 range
+ * Detects if values are 0-1, 0-50, or already 0-100
+ */
+function scaleTo100(arr) {
+  const clean = arr.filter(x => Number.isFinite(x) && x !== null && x !== undefined);
+  if (clean.length === 0) return arr;
+  
+  const max = Math.max(...clean, 0);
+  
+  // If max <= 1.01, assume 0-1 scale → multiply by 100
+  if (max <= 1.01) {
+    return arr.map(x => Number.isFinite(x) && x !== null && x !== undefined ? x * 100 : x);
+  }
+  
+  // If max <= 50.5, assume 0-50 scale → multiply by 2
+  if (max <= 50.5) {
+    return arr.map(x => Number.isFinite(x) && x !== null && x !== undefined ? x * 2 : x);
+  }
+  
+  // Already ~0-100, return as-is
+  return arr;
+}
+
+/**
  * Convert value to 0-100 scale
  * Handles values that might be 0-1, 0-100, or percentages
  */
@@ -531,36 +569,36 @@ function computePillarScores(normalizedMetrics, weights = null, supplier = null)
     supplier?.ethics_program ?? 50
   ) ?? 50;
   
-  // Board diversity: if stored as percentage (0-100), use as-is; if 0-1, multiply by 100
-  // If max is 50, double it to 0-100 scale
-  let boardDiversity = toZeroToHundred(
-    supplier?.board_diversity ?? normalized.board_diversity?.value ?? normalized.board_diversity?.normalized * 100 ?? 50
-  ) ?? 50;
-  // If board diversity max is 50, rescale to 0-100
-  if (boardDiversity <= 50 && boardDiversity > 0) {
-    boardDiversity = (boardDiversity / 50) * 100;
-  }
+  // Board diversity and independence: use scaleTo100 to detect and rescale properly
+  const boardDiversityRaw = supplier?.board_diversity ?? normalized.board_diversity?.value ?? normalized.board_diversity?.normalized * 100 ?? 50;
+  const boardIndependenceRaw = supplier?.board_independence ?? normalized.board_independence?.value ?? normalized.board_independence?.normalized * 100 ?? 50;
   
-  // Board independence: same treatment
-  let boardIndependence = toZeroToHundred(
-    supplier?.board_independence ?? normalized.board_independence?.value ?? normalized.board_independence?.normalized * 100 ?? 50
-  ) ?? 50;
-  // If board independence max is 50, rescale to 0-100
-  if (boardIndependence <= 50 && boardIndependence > 0) {
-    boardIndependence = (boardIndependence / 50) * 100;
-  }
+  // Scale board metrics to 0-100 using smart detection
+  const [boardDiversityScaled, boardIndependenceScaled] = scaleTo100([boardDiversityRaw, boardIndependenceRaw]);
+  const boardDiversity = Number.isFinite(boardDiversityScaled) ? Math.max(0, Math.min(100, boardDiversityScaled)) : 50;
+  const boardIndependence = Number.isFinite(boardIndependenceScaled) ? Math.max(0, Math.min(100, boardIndependenceScaled)) : 50;
   
   // Anti-corruption: boolean to 0-100
   const antiCorruption = (antiCorruptionScore === 1 || supplier?.anti_corruption_policy === true || supplier?.anti_corruption_policy === 1) ? 100 : 0;
 
-  // Governance weighted average (all inputs 0-100)
+  // Normalize governance weights to sum to 1.0
+  const govWeights = normalizeWeights({
+    transparency: w.governance?.transparency ?? defaultWeights.governance.transparency,
+    compliance: w.governance?.compliance ?? defaultWeights.governance.compliance,
+    ethics: w.governance?.ethics ?? defaultWeights.governance.ethics,
+    boardDiversity: w.governance?.boardDiversity ?? defaultWeights.governance.boardDiversity,
+    boardIndependence: w.governance?.boardIndependence ?? defaultWeights.governance.boardIndependence,
+    antiCorruption: w.governance?.antiCorruption ?? defaultWeights.governance.antiCorruption,
+  });
+
+  // Governance weighted average (all inputs 0-100, weights sum to 1.0)
   const governance = (
-    (w.governance?.transparency ?? defaultWeights.governance.transparency) * transparency +
-    (w.governance?.compliance ?? defaultWeights.governance.compliance) * compliance +
-    (w.governance?.ethics ?? defaultWeights.governance.ethics) * ethicsProgram +
-    (w.governance?.boardDiversity ?? defaultWeights.governance.boardDiversity) * boardDiversity +
-    (w.governance?.boardIndependence ?? defaultWeights.governance.boardIndependence) * boardIndependence +
-    (w.governance?.antiCorruption ?? defaultWeights.governance.antiCorruption) * antiCorruption
+    govWeights.transparency * transparency +
+    govWeights.compliance * compliance +
+    govWeights.ethics * ethicsProgram +
+    govWeights.boardDiversity * boardDiversity +
+    govWeights.boardIndependence * boardIndependence +
+    govWeights.antiCorruption * antiCorruption
   );
 
   return {
@@ -616,11 +654,18 @@ function scoreSupplier(supplier, settings = null) {
   const socialWeight = settings?.socialWeight ?? 0.3;
   const govWeight = settings?.governanceWeight ?? 0.3;
 
-  // Composite: weighted average of pillar scores (all on 0-100 scale)
+  // Normalize composite weights to sum to 1.0
+  const compositeWeights = normalizeWeights({
+    environmental: envWeight,
+    social: socialWeight,
+    governance: govWeight,
+  });
+
+  // Composite: weighted average of pillar scores (all on 0-100 scale, weights sum to 1.0)
   const baseComposite =
-    pillarScores.environmental * envWeight +
-    pillarScores.social * socialWeight +
-    pillarScores.governance * govWeight;
+    pillarScores.environmental * compositeWeights.environmental +
+    pillarScores.social * compositeWeights.social +
+    pillarScores.governance * compositeWeights.governance;
 
   // Ensure composite is computed even with missing fields (use defaults/imputation)
   if (isNaN(baseComposite) || baseComposite === null || baseComposite === undefined) {
@@ -645,8 +690,12 @@ function scoreSupplier(supplier, settings = null) {
   // Compute risk penalty using new spec
   const riskPenalty = computeRiskPenalty(supplier, settings);
   
+  // Ensure penalty is non-negative (should already be, but guard against negative)
+  const safePenalty = Math.max(0, riskPenalty || 0);
+  
   // Apply penalty: finalScore = clamp(composite - penalty, 0, 100)
-  const finalScore = Math.min(100, Math.max(0, baseComposite - (riskPenalty || 0)));
+  // Single-apply: only subtract penalty once, never re-penalize
+  const finalScore = Math.min(100, Math.max(0, baseComposite - safePenalty));
 
   // Apply disclosure cap (separate from risk penalty)
   const cappedFinalScore = completenessRatio < 0.7 
@@ -803,11 +852,18 @@ module.exports = {
       antiCorruptionScore,
     }, weights, supplier);
 
-    // Composite: weighted average (not sum)
+    // Normalize composite weights to sum to 1.0
+    const compositeWeights = normalizeWeights({
+      environmental: weights.composite.environmental,
+      social: weights.composite.social,
+      governance: weights.composite.governance,
+    });
+
+    // Composite: weighted average (not sum, weights sum to 1.0)
     const composite =
-      pillarScores.environmental * weights.composite.environmental +
-      pillarScores.social * weights.composite.social +
-      pillarScores.governance * weights.composite.governance;
+      pillarScores.environmental * compositeWeights.environmental +
+      pillarScores.social * compositeWeights.social +
+      pillarScores.governance * compositeWeights.governance;
 
     // Ensure composite is computed
     if (isNaN(composite) || composite === null || composite === undefined) {
@@ -828,8 +884,12 @@ module.exports = {
     // Compute risk penalty using new spec
     const riskPenalty = computeRiskPenalty(supplier, settings);
     
+    // Ensure penalty is non-negative (should already be, but guard against negative)
+    const safePenalty = Math.max(0, riskPenalty || 0);
+    
     // Apply penalty: finalScore = clamp(composite - penalty, 0, 100)
-    const finalScore = Math.min(100, Math.max(0, composite - (riskPenalty || 0)));
+    // Single-apply: only subtract penalty once, never re-penalize
+    const finalScore = Math.min(100, Math.max(0, composite - safePenalty));
     
     const finalEthical = completenessRatio < 0.7 ? Math.min(finalScore, 50) : finalScore;
     

@@ -11,6 +11,7 @@ const settingsController = require("../controllers/settingsController");
 const scenarioController = require("../controllers/scenarioController");
 const exportController = require("../controllers/exportController");
 const transparencyController = require("../controllers/transparencyController");
+const adminController = require("../controllers/adminController");
 const { exportRateLimiter } = require("../middleware/rateLimiter");
 const { optionalAuth } = require("../middleware/simpleAuth");
 

@@ -56,10 +56,22 @@ function computeRiskPenalty(supplier, settings = null) {
   };
 
   // Get weights from settings - handle both formats
-  const weights = {
+  const rawWeights = {
     geopolitical: settings?.weights?.geo ?? settings?.riskWeightGeopolitical ?? 0.33,
     climate: settings?.weights?.climate ?? settings?.riskWeightClimate ?? 0.33,
     labor: settings?.weights?.labor ?? settings?.riskWeightLabor ?? 0.34,
+  };
+
+  // Normalize weights to sum to 1.0
+  const sum = rawWeights.geopolitical + rawWeights.climate + rawWeights.labor;
+  const weights = sum > 0 ? {
+    geopolitical: rawWeights.geopolitical / sum,
+    climate: rawWeights.climate / sum,
+    labor: rawWeights.labor / sum,
+  } : {
+    geopolitical: 1/3,
+    climate: 1/3,
+    labor: 1/3,
   };
 
   // Filter to only available risks and their weights
@@ -100,10 +112,11 @@ function computeRiskPenalty(supplier, settings = null) {
   const riskExcess = Math.max(0, riskRaw - threshold);
 
   // Compute penalty: λ * risk_excess * 100 (scale to 0-100 space)
-  const penalty = lambda * riskExcess * 100;
+  // Ensure penalty is non-negative
+  const penalty = Math.max(0, lambda * riskExcess * 100);
 
-  // Return penalty (not clamped - can exceed 100 if lambda is high)
-  return Math.max(0, penalty);
+  // Return penalty (can exceed 100 if lambda is high, but always non-negative)
+  return penalty;
 }
 
 module.exports = {
