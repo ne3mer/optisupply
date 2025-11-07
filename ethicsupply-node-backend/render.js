@@ -535,3 +535,4 @@ if (require.main === module) {
 
 // For serverless environment
 module.exports = app;
+module.exports.setupServer = setupServer;
