@@ -42,6 +42,7 @@ router.get("/", (req, res) => {
       trace: "/api/suppliers/:id/trace",
       traceabilityMetrics: "/api/traceability/metrics",
       scenarios: "/api/scenarios/s1|s2|s3|s4",
+      admin: "/api/admin/recompute-all",
     },
   });
 });
