@@ -4,10 +4,12 @@
  */
 
 const db = require("../models");
+// Import calculateSupplierScores from supplierController (must be at top)
+const { calculateSupplierScores } = require('./supplierController');
 
 /**
  * Recompute all supplier scores
- * POST /admin/recompute-all
+ * POST /api/admin/recompute-all
  * Query params: seed (optional, for testing)
  */
 exports.recomputeAllSuppliers = async (req, res) => {
@@ -78,7 +80,4 @@ exports.recomputeAllSuppliers = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// Import calculateSupplierScores from supplierController
-const { calculateSupplierScores } = require('./supplierController');
 
