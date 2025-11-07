@@ -18,6 +18,18 @@ const getEndpoint = (path: string) => {
   return `${API_URL}/${cleanPath}`;
 };
 
+// Helper function to download CSV from blob
+const downloadCSV = (blob: Blob, filename: string) => {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
 export interface Supplier {
   id: number;
   name: string;
@@ -3615,6 +3627,110 @@ export const runScenarioS4 = async (supplierId: string | number, removePillar?: 
     return await response.json();
   } catch (error) {
     logger.error("Error running S4 scenario:", error);
+    throw error;
+  }
+};
+
+// ==================== CSV EXPORT FUNCTIONS ====================
+
+/**
+ * Export all suppliers with full details as CSV
+ */
+export const exportSuppliersFull = async (apiKey?: string): Promise<void> => {
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "text/csv",
+    };
+    if (apiKey) {
+      headers["X-API-Key"] = apiKey;
+    }
+
+    const response = await fetch(getEndpoint("suppliers/export/csv"), {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("Export rate limit exceeded. Please try again later.");
+      }
+      throw new Error(`Failed to export suppliers: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const filename = `supplier_rankings_${new Date().toISOString().split("T")[0]}.csv`;
+    downloadCSV(blob, filename);
+  } catch (error) {
+    logger.error("Error exporting suppliers CSV:", error);
+    throw error;
+  }
+};
+
+/**
+ * Export rankings CSV with scenario support
+ * @param scenario - "baseline" | "s1" | "s2" | "s3" | "s4"
+ * @param apiKey - Optional API key for authentication
+ */
+export const exportRankings = async (scenario: string = "baseline", apiKey?: string): Promise<void> => {
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "text/csv",
+    };
+    if (apiKey) {
+      headers["X-API-Key"] = apiKey;
+    }
+
+    const response = await fetch(getEndpoint(`exports/rankings?scenario=${scenario}`), {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("Export rate limit exceeded. You can export up to 10 times per hour.");
+      }
+      throw new Error(`Failed to export rankings: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const filename = `rankings_${scenario}_${new Date().toISOString().split("T")[0]}.csv`;
+    downloadCSV(blob, filename);
+  } catch (error) {
+    logger.error("Error exporting rankings CSV:", error);
+    throw error;
+  }
+};
+
+/**
+ * Export industry map CSV
+ * @param apiKey - Optional API key for authentication
+ */
+export const exportIndustryMap = async (apiKey?: string): Promise<void> => {
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "text/csv",
+    };
+    if (apiKey) {
+      headers["X-API-Key"] = apiKey;
+    }
+
+    const response = await fetch(getEndpoint("exports/industry-map"), {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error("Export rate limit exceeded. You can export up to 10 times per hour.");
+      }
+      throw new Error(`Failed to export industry map: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const filename = `industry_map_${new Date().toISOString().split("T")[0]}.csv`;
+    downloadCSV(blob, filename);
+  } catch (error) {
+    logger.error("Error exporting industry map CSV:", error);
     throw error;
   }
 };

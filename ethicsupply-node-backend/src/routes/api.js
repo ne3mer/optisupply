@@ -11,6 +11,8 @@ const settingsController = require("../controllers/settingsController");
 const scenarioController = require("../controllers/scenarioController");
 const exportController = require("../controllers/exportController");
 const transparencyController = require("../controllers/transparencyController");
+const { exportRateLimiter } = require("../middleware/rateLimiter");
+const { optionalAuth } = require("../middleware/simpleAuth");
 
 // Health check route
 router.get("/health-check", (req, res) => {
@@ -135,8 +137,10 @@ router.get("/settings", settingsController.getSettings);
 router.put("/settings", settingsController.updateSettings);
 router.post("/settings/reset", settingsController.resetSettings);
 
-// Export routes
-router.get("/suppliers/export/csv", exportController.exportSuppliersCSV);
+// Export routes - with rate limiting and optional auth
+router.get("/suppliers/export/csv", optionalAuth, exportRateLimiter, exportController.exportSuppliersCSV);
+router.get("/exports/rankings", optionalAuth, exportRateLimiter, exportController.exportRankingsCSV);
+router.get("/exports/industry-map", optionalAuth, exportRateLimiter, exportController.exportIndustryMapCSV);
 
 // Transparency routes
 router.get("/suppliers/:supplierId/transparency", transparencyController.getCalculationTrace);

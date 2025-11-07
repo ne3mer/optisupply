@@ -3,6 +3,7 @@
 ## Problem
 
 Getting 404 errors on Render deployment:
+
 - `GET https://optisupply.onrender.com/api/settings 404 (Not Found)`
 - `GET https://optisupply.onrender.com/api/bands 404 (Not Found)`
 - `GET https://optisupply.onrender.com/api/dataset/meta 404 (Not Found)`
@@ -12,6 +13,7 @@ Getting 404 errors on Render deployment:
 ### Investigation Steps
 
 1. **Initial assumption**: Routes not registered correctly in `render.js`
+
    - ❌ Routes WERE registered correctly in `render.js` (lines 73-81)
    - ❌ Mock fallbacks WERE implemented in `render.js`
    - ❌ Controllers WERE made resilient to database errors
@@ -26,11 +28,12 @@ Getting 404 errors on Render deployment:
 ### Changed Files
 
 **`ethicsupply-node-backend/package.json`**:
+
 ```json
 {
-  "main": "render.js",  // Changed from "src/server.js"
+  "main": "render.js", // Changed from "src/server.js"
   "scripts": {
-    "start": "node render.js",  // Changed from "node src/server.js"
+    "start": "node render.js", // Changed from "node src/server.js"
     "dev": "nodemon dev-server.js",
     "test": "jest --runInBand"
   }
@@ -40,11 +43,13 @@ Getting 404 errors on Render deployment:
 ### Why This Fixes It
 
 1. **Render deployment flow**:
+
    - Render clones the repo
    - Runs `npm install`
    - Runs `npm start` (unless configured otherwise)
 
 2. **Before the fix**:
+
    ```
    npm start → node src/server.js
    ❌ src/server.js doesn't have early route registration
@@ -63,6 +68,7 @@ Getting 404 errors on Render deployment:
 ## What render.js Does
 
 ### 1. Early Route Registration (Before MongoDB)
+
 ```javascript
 // Lines 66-81: Always register critical routes early
 const settingsController = require("./src/controllers/settingsController");
@@ -77,12 +83,15 @@ app.get("/api/dataset/meta", datasetController.getDatasetMeta);
 ```
 
 ### 2. Resilient Controllers
+
 - `settingsController.getSettings()` returns default settings if DB unavailable
 - `bandsController.getBands()` returns mock data if DB unavailable
 - `datasetController.getDatasetMeta()` returns mock metadata if DB unavailable
 
 ### 3. Mock Fallbacks
+
 If MongoDB connection fails:
+
 ```javascript
 function setupMockRoutes(app) {
   // Provides complete mock API endpoints
@@ -93,12 +102,14 @@ function setupMockRoutes(app) {
 ## Testing
 
 ### Before Fix
+
 ```bash
 curl https://optisupply.onrender.com/api/settings
 # 404 Not Found
 ```
 
 ### After Fix (expected)
+
 ```bash
 curl https://optisupply.onrender.com/api/settings
 # 200 OK with settings data (either from DB or defaults)
@@ -106,11 +117,13 @@ curl https://optisupply.onrender.com/api/settings
 
 ## Lessons Learned
 
-1. **Always check the entry point**: 
+1. **Always check the entry point**:
+
    - What file is actually being executed?
    - Is it the one you modified?
 
 2. **package.json is critical**:
+
    - The `start` script determines what runs in production
    - Don't assume the entry point without checking
 
@@ -129,4 +142,3 @@ curl https://optisupply.onrender.com/api/settings
 - **Commit**: `fix: Change start script to use render.js instead of server.js`
 - **Expected Result**: Render will redeploy automatically and use the correct entry point
 - **ETA**: 2-3 minutes for Render to detect changes and redeploy
-

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { getSuppliers, Supplier } from "../services/api"; // Corrected path
+import { getSuppliers, Supplier, exportRankings, exportIndustryMap } from "../services/api"; // Corrected path
 import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -1102,6 +1102,28 @@ const SuppliersList = () => {
     }
   };
 
+  // Export Rankings CSV from server (with rate limiting)
+  const handleExportRankings = async (scenario: string = "baseline") => {
+    try {
+      await exportRankings(scenario);
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error("Error exporting rankings:", error);
+      alert(error instanceof Error ? error.message : "Failed to export rankings. Please try again.");
+    }
+  };
+
+  // Export Industry Map CSV from server (with rate limiting)
+  const handleExportIndustryMap = async () => {
+    try {
+      await exportIndustryMap();
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error("Error exporting industry map:", error);
+      alert(error instanceof Error ? error.message : "Failed to export industry map. Please try again.");
+    }
+  };
+
   const exportComparison = () => {
     if (selectedSuppliers.length < 2) {
       alert("Select at least two suppliers before exporting a comparison.");
@@ -1408,6 +1430,71 @@ const SuppliersList = () => {
                         <DocumentIcon className="h-4 w-4 mr-3" />
                         Export as PDF
                       </button>
+                      
+                      {/* Divider */}
+                      <div className="border-t my-1" style={{ borderColor: colors.border }} />
+                      
+                      {/* Server-side exports with rate limiting */}
+                      <div className="px-4 py-2 text-xs font-semibold" style={{ color: colors.textMuted }}>
+                        Rankings & Analysis
+                      </div>
+                      <button
+                        onClick={() => handleExportRankings("baseline")}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <ArrowTrendingUpIcon className="h-4 w-4 mr-3" />
+                        Rankings (Baseline)
+                      </button>
+                      <button
+                        onClick={handleExportIndustryMap}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <MapPinIcon className="h-4 w-4 mr-3" />
+                        Industry Map
+                      </button>
+                      
+                      {/* Scenario exports */}
+                      <div className="px-4 py-2 text-xs font-semibold" style={{ color: colors.textMuted }}>
+                        Scenario Analysis
+                      </div>
+                      <button
+                        onClick={() => handleExportRankings("s1")}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <SparklesIcon className="h-4 w-4 mr-3" />
+                        S1: Utility
+                      </button>
+                      <button
+                        onClick={() => handleExportRankings("s2")}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <AdjustmentsHorizontalIcon className="h-4 w-4 mr-3" />
+                        S2: Sensitivity
+                      </button>
+                      <button
+                        onClick={() => handleExportRankings("s3")}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <ExclamationCircleIcon className="h-4 w-4 mr-3" />
+                        S3: Missingness
+                      </button>
+                      <button
+                        onClick={() => handleExportRankings("s4")}
+                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                        style={{ color: colors.text }}
+                      >
+                        <ScaleIcon className="h-4 w-4 mr-3" />
+                        S4: Ablation
+                      </button>
+                      
+                      <div className="px-4 py-2 text-xs italic" style={{ color: colors.textMuted }}>
+                        Rate limit: 10 exports/hour
+                      </div>
                     </div>
                   </motion.div>
                 )}
