@@ -20,7 +20,6 @@ const Settings: React.FC = () => {
   const [settings, setSettings] = useState<ScoringSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"general" | "normalization" | "weights" | "export">("general");
 
   useEffect(() => {
     loadSettings();
@@ -132,60 +131,87 @@ const Settings: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: colors.background, color: colors.text }}>
-        <div className="text-center">Loading settings...</div>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: colors.primary }}></div>
+            <p className="text-lg">Loading settings...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: colors.background, color: colors.text }}>
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 tracking-tight"
-      >
-        <span style={{ color: colors.primary }}>Settings</span>
-      </motion.h1>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b" style={{ borderColor: colors.accent + "30" }}>
-        {(["general", "normalization", "weights", "export"] as const).map((tab) => (
+      {/* Header with Actions */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-4xl font-bold tracking-tight">
+            <span style={{ color: colors.primary }}>⚙️ ESG Configuration</span>
+          </h1>
+          <p className="mt-2 text-sm" style={{ color: colors.textMuted }}>
+            Configure scoring methodology, weights, and normalization settings
+          </p>
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }} 
+          animate={{ opacity: 1, x: 0 }}
+          className="flex gap-2 flex-wrap"
+        >
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className="px-4 py-2 capitalize transition-colors"
+            onClick={handleSaveSettings}
+            disabled={saving}
+            className="px-6 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
             style={{
-              borderBottom: activeTab === tab ? `2px solid ${colors.primary}` : "2px solid transparent",
-              color: activeTab === tab ? colors.primary : colors.textMuted,
+              backgroundColor: colors.primary,
+              color: "white",
+              opacity: saving ? 0.6 : 1,
             }}
           >
-            {tab}
+            {saving ? "💾 Saving..." : "💾 Save All Changes"}
           </button>
-        ))}
+          <button
+            onClick={handleResetSettings}
+            className="px-6 py-2.5 rounded-lg font-medium border-2 transition-all duration-200 hover:shadow-md"
+            style={{
+              borderColor: colors.accent,
+              color: colors.text,
+              backgroundColor: 'transparent',
+            }}
+          >
+            🔄 Reset to Defaults
+          </button>
+        </motion.div>
       </div>
 
-      {/* General Settings */}
-      {activeTab === "general" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <Card className="h-full" style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
-              <CardHeader>
-                <CardTitle className="text-lg" style={{ color: colors.primary }}>
-                  Appearance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+      {settings && (
+        <div className="space-y-8">
+          {/* Quick Settings Row */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            {/* Dark Mode Card */}
+            <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+              <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <span>Dark Mode</span>
+                  <div>
+                    <div className="font-semibold mb-1">🌓 Dark Mode</div>
+                    <div className="text-xs" style={{ color: colors.textMuted }}>
+                      {darkMode ? "Enabled" : "Disabled"}
+                    </div>
+                  </div>
                   <div
-                    className="w-12 h-6 flex items-center rounded-full p-1 cursor-pointer"
+                    className="w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors"
                     onClick={toggleDarkMode}
                     style={{
                       backgroundColor: darkMode ? colors.accent : colors.textMuted,
                     }}
                   >
                     <div
-                      className="bg-white w-5 h-5 rounded-full shadow-md transform duration-300 ease-in-out"
+                      className="bg-white w-6 h-6 rounded-full shadow-md transform duration-300 ease-in-out"
                       style={{
                         transform: darkMode ? "translateX(100%)" : "translateX(0)",
                       }}
@@ -194,416 +220,491 @@ const Settings: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Industry Bands Card */}
+            <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold mb-1">📊 Industry Bands</div>
+                    <div className="text-xs" style={{ color: colors.textMuted }}>
+                      {(settings.useIndustryBands ?? false) ? "Industry-specific" : "Global"}
+                    </div>
+                  </div>
+                  <div
+                    className="w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors"
+                    onClick={() => updateSetting("useIndustryBands", !(settings.useIndustryBands ?? false))}
+                    style={{
+                      backgroundColor: (settings.useIndustryBands ?? false) ? colors.accent : colors.textMuted,
+                    }}
+                  >
+                    <div
+                      className="bg-white w-6 h-6 rounded-full shadow-md transform duration-300 ease-in-out"
+                      style={{
+                        transform: (settings.useIndustryBands ?? false) ? "translateX(100%)" : "translateX(0)",
+                      }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Risk Penalty Card */}
+            <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-semibold mb-1">⚠️ Risk Penalty</div>
+                    <div className="text-xs" style={{ color: colors.textMuted }}>
+                      {(settings.riskPenaltyEnabled ?? true) ? "Enabled" : "Disabled"}
+                    </div>
+                  </div>
+                  <div
+                    className="w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors"
+                    onClick={() => updateSetting("riskPenaltyEnabled", !(settings.riskPenaltyEnabled ?? true))}
+                    style={{
+                      backgroundColor: (settings.riskPenaltyEnabled ?? true) ? colors.accent : colors.textMuted,
+                    }}
+                  >
+                    <div
+                      className="bg-white w-6 h-6 rounded-full shadow-md transform duration-300 ease-in-out"
+                      style={{
+                        transform: (settings.riskPenaltyEnabled ?? true) ? "translateX(100%)" : "translateX(0)",
+                      }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-            <Card className="h-full" style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+          {/* Main Grid: Weights and Risk Configuration */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column: ESG Weights */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}>
+              <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <span style={{ color: colors.primary }}>🎯 Composite ESG Weights</span>
+                  </CardTitle>
+                  <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
+                    Configure Environmental, Social, and Governance pillar weights
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {/* Environmental Weight */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <span>🌱 Environmental</span>
+                      </label>
+                      <span className="text-sm font-mono" style={{ color: colors.primary }}>
+                        {(settings.environmentalWeight ?? 0.4).toFixed(2)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.environmentalWeight ?? 0.4}
+                      onChange={(e) => updateSetting("environmentalWeight", parseFloat(e.target.value))}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, ${colors.accent} 0%, ${colors.accent} ${((settings.environmentalWeight ?? 0.4) * 100)}%, ${colors.textMuted} ${((settings.environmentalWeight ?? 0.4) * 100)}%, ${colors.textMuted} 100%)`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Social Weight */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <span>👥 Social</span>
+                      </label>
+                      <span className="text-sm font-mono" style={{ color: colors.primary }}>
+                        {(settings.socialWeight ?? 0.3).toFixed(2)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.socialWeight ?? 0.3}
+                      onChange={(e) => updateSetting("socialWeight", parseFloat(e.target.value))}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, ${colors.accent} 0%, ${colors.accent} ${((settings.socialWeight ?? 0.3) * 100)}%, ${colors.textMuted} ${((settings.socialWeight ?? 0.3) * 100)}%, ${colors.textMuted} 100%)`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Governance Weight */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <span>⚖️ Governance</span>
+                      </label>
+                      <span className="text-sm font-mono" style={{ color: colors.primary }}>
+                        {(settings.governanceWeight ?? 0.3).toFixed(2)}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.governanceWeight ?? 0.3}
+                      onChange={(e) => updateSetting("governanceWeight", parseFloat(e.target.value))}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, ${colors.accent} 0%, ${colors.accent} ${((settings.governanceWeight ?? 0.3) * 100)}%, ${colors.textMuted} ${((settings.governanceWeight ?? 0.3) * 100)}%, ${colors.textMuted} 100%)`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Sum Indicator */}
+                  <div className="pt-3 border-t" style={{ borderColor: colors.accent + "30" }}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Total Sum</span>
+                      <span 
+                        className="text-sm font-mono font-bold"
+                        style={{ 
+                          color: Math.abs(((settings.environmentalWeight ?? 0.4) + (settings.socialWeight ?? 0.3) + (settings.governanceWeight ?? 0.3)) - 1.0) > 0.1 ? colors.warning : colors.accent 
+                        }}
+                      >
+                        {((settings.environmentalWeight ?? 0.4) + (settings.socialWeight ?? 0.3) + (settings.governanceWeight ?? 0.3)).toFixed(2)}
+                        {Math.abs(((settings.environmentalWeight ?? 0.4) + (settings.socialWeight ?? 0.3) + (settings.governanceWeight ?? 0.3)) - 1.0) > 0.1 && " ⚠️"}
+                      </span>
+                    </div>
+                    {Math.abs(((settings.environmentalWeight ?? 0.4) + (settings.socialWeight ?? 0.3) + (settings.governanceWeight ?? 0.3)) - 1.0) > 0.1 && (
+                      <p className="text-xs mt-1" style={{ color: colors.warning }}>
+                        Weights should sum to ~1.0 for balanced scoring
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Right Column: Risk Configuration */}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+              <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <span style={{ color: colors.primary }}>⚠️ Risk Penalty Configuration</span>
+                  </CardTitle>
+                  <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
+                    Configure risk weights, threshold, and scaling factor
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {(settings.riskPenaltyEnabled ?? true) ? (
+                    <>
+                      {/* Risk Weights Grid */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium mb-2" style={{ color: colors.textMuted }}>
+                            🌍 Geopolitical
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={settings.riskWeightGeopolitical ?? 0.33}
+                            onChange={(e) => updateSetting("riskWeightGeopolitical", parseFloat(e.target.value) || 0.33)}
+                            className="w-full p-2 rounded-md border text-sm font-mono text-center"
+                            style={{
+                              backgroundColor: colors.inputBg,
+                              borderColor: colors.accent + "40",
+                              color: colors.text,
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium mb-2" style={{ color: colors.textMuted }}>
+                            🌡️ Climate
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={settings.riskWeightClimate ?? 0.33}
+                            onChange={(e) => updateSetting("riskWeightClimate", parseFloat(e.target.value) || 0.33)}
+                            className="w-full p-2 rounded-md border text-sm font-mono text-center"
+                            style={{
+                              backgroundColor: colors.inputBg,
+                              borderColor: colors.accent + "40",
+                              color: colors.text,
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium mb-2" style={{ color: colors.textMuted }}>
+                            👷 Labor
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={settings.riskWeightLabor ?? 0.34}
+                            onChange={(e) => updateSetting("riskWeightLabor", parseFloat(e.target.value) || 0.34)}
+                            className="w-full p-2 rounded-md border text-sm font-mono text-center"
+                            style={{
+                              backgroundColor: colors.inputBg,
+                              borderColor: colors.accent + "40",
+                              color: colors.text,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Risk Weights Sum */}
+                      <div className="text-xs flex items-center justify-between px-1">
+                        <span style={{ color: colors.textMuted }}>Risk Weights Sum:</span>
+                        <span 
+                          className="font-mono font-bold"
+                          style={{ 
+                            color: Math.abs(((settings.riskWeightGeopolitical ?? 0.33) + (settings.riskWeightClimate ?? 0.33) + (settings.riskWeightLabor ?? 0.34)) - 1.0) > 0.1 ? colors.warning : colors.accent 
+                          }}
+                        >
+                          {((settings.riskWeightGeopolitical ?? 0.33) + (settings.riskWeightClimate ?? 0.33) + (settings.riskWeightLabor ?? 0.34)).toFixed(2)}
+                          {Math.abs(((settings.riskWeightGeopolitical ?? 0.33) + (settings.riskWeightClimate ?? 0.33) + (settings.riskWeightLabor ?? 0.34)) - 1.0) > 0.1 && " ⚠️"}
+                        </span>
+                      </div>
+
+                      {/* Threshold T */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-sm font-medium">📏 Threshold (T)</label>
+                          <span className="text-sm font-mono" style={{ color: colors.primary }}>
+                            {(settings.riskThreshold ?? 0.3).toFixed(2)}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.01"
+                          value={settings.riskThreshold ?? 0.3}
+                          onChange={(e) => updateSetting("riskThreshold", parseFloat(e.target.value))}
+                          className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                          style={{
+                            background: `linear-gradient(to right, ${colors.accent} 0%, ${colors.accent} ${((settings.riskThreshold ?? 0.3) * 100)}%, ${colors.textMuted} ${((settings.riskThreshold ?? 0.3) * 100)}%, ${colors.textMuted} 100%)`,
+                          }}
+                        />
+                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+                          Penalty applies when risk exceeds this threshold
+                        </p>
+                      </div>
+
+                      {/* Lambda λ */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          ⚡ Lambda (λ) - Scaling Factor
+                        </label>
+                        <input
+                          type="number"
+                          min="0.1"
+                          max="50"
+                          step="0.1"
+                          value={settings.riskLambda ?? 1.0}
+                          onChange={(e) => updateSetting("riskLambda", parseFloat(e.target.value) || 1.0)}
+                          className="w-full p-3 rounded-md border text-center font-mono text-lg"
+                          style={{
+                            backgroundColor: colors.inputBg,
+                            borderColor: colors.accent + "40",
+                            color: colors.text,
+                          }}
+                        />
+                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+                          Controls how severely penalties are applied (must be &gt; 0)
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-12 text-center" style={{ color: colors.textMuted }}>
+                      <div className="text-6xl mb-4">⏸️</div>
+                      <p className="text-lg font-medium mb-2">Risk Penalty Disabled</p>
+                      <p className="text-sm">Enable risk penalty to configure weights and parameters</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Advanced Metric Weights */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
               <CardHeader>
-                <CardTitle className="text-lg" style={{ color: colors.primary }}>
-                  API Configuration
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <span style={{ color: colors.primary }}>🔬 Advanced Metric Weights</span>
                 </CardTitle>
+                <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
+                  Fine-tune individual environmental metric importance
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      💨 Emission Intensity
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.emissionIntensityWeight ?? 0.4}
+                      onChange={(e) => updateSetting("emissionIntensityWeight", parseFloat(e.target.value) || 0.4)}
+                      className="w-full p-2 rounded-md border text-center font-mono"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.accent + "40",
+                        color: colors.text,
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      ♻️ Renewable Share
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.renewableShareWeight ?? 0.2}
+                      onChange={(e) => updateSetting("renewableShareWeight", parseFloat(e.target.value) || 0.2)}
+                      className="w-full p-2 rounded-md border text-center font-mono"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.accent + "40",
+                        color: colors.text,
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      💧 Water Intensity
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.waterIntensityWeight ?? 0.2}
+                      onChange={(e) => updateSetting("waterIntensityWeight", parseFloat(e.target.value) || 0.2)}
+                      className="w-full p-2 rounded-md border text-center font-mono"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.accent + "40",
+                        color: colors.text,
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      🗑️ Waste Intensity
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={settings.wasteIntensityWeight ?? 0.2}
+                      onChange={(e) => updateSetting("wasteIntensityWeight", parseFloat(e.target.value) || 0.2)}
+                      className="w-full p-2 rounded-md border text-center font-mono"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.accent + "40",
+                        color: colors.text,
+                      }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* API & Export Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* API Configuration */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+              <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <span style={{ color: colors.primary }}>🔌 API Configuration</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
                     <label className="block mb-2 text-sm font-medium" htmlFor="api-endpoint">
-                      API Endpoint
+                      Backend Endpoint
                     </label>
                     <input
                       id="api-endpoint"
                       type="text"
                       value={apiEndpoint}
                       onChange={(e) => setApiEndpoint(e.target.value)}
-                      className="w-full p-2 rounded-md border focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full p-2.5 rounded-md border focus:ring-2 outline-none font-mono text-sm"
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.accent + "40",
                         color: colors.text,
+                        focusRingColor: colors.primary,
                       }}
+                      placeholder="http://localhost:8000"
                     />
                   </div>
                   <button
                     onClick={saveApiEndpoint}
-                    className="px-4 py-2 rounded-md transition-colors duration-200"
+                    className="w-full px-4 py-2.5 rounded-md font-medium transition-colors"
                     style={{
-                      backgroundColor: colors.primary,
-                      color: "white",
+                      backgroundColor: colors.accent,
+                      color: colors.text,
                     }}
                   >
-                    Save
+                    💾 Save & Reload
                   </button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            </motion.div>
 
-      {/* Normalization Settings */}
-      {activeTab === "normalization" && settings && (
-        <div className="space-y-6">
-          <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
-            <CardHeader>
-              <CardTitle className="text-lg" style={{ color: colors.primary }}>
-                Normalization Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Use Industry Bands</div>
-                  <div className="text-sm" style={{ color: colors.textMuted }}>
-                    {(settings.useIndustryBands ?? false)
-                      ? "Normalizing using industry-specific min/max bands"
-                      : "Normalizing using global min/max bands"}
-                  </div>
-                </div>
-                <div
-                  className="w-12 h-6 flex items-center rounded-full p-1 cursor-pointer"
-                  onClick={() => updateSetting("useIndustryBands", !(settings.useIndustryBands ?? false))}
-                  style={{
-                    backgroundColor: (settings.useIndustryBands ?? false) ? colors.accent : colors.textMuted,
-                  }}
-                >
-                  <div
-                    className="bg-white w-5 h-5 rounded-full shadow-md transform duration-300 ease-in-out"
-                    style={{
-                      transform: (settings.useIndustryBands ?? false) ? "translateX(100%)" : "translateX(0)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Risk Penalty</div>
-                  <div className="text-sm" style={{ color: colors.textMuted }}>
-                    Apply risk factor to final score
-                  </div>
-                </div>
-                <div
-                  className="w-12 h-6 flex items-center rounded-full p-1 cursor-pointer"
-                  onClick={() => updateSetting("riskPenaltyEnabled", !(settings.riskPenaltyEnabled ?? true))}
-                  style={{
-                    backgroundColor: (settings.riskPenaltyEnabled ?? true) ? colors.accent : colors.textMuted,
-                  }}
-                >
-                  <div
-                    className="bg-white w-5 h-5 rounded-full shadow-md transform duration-300 ease-in-out"
-                    style={{
-                      transform: (settings.riskPenaltyEnabled ?? true) ? "translateX(100%)" : "translateX(0)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {(settings.riskPenaltyEnabled ?? true) && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block mb-2 text-sm font-medium">Risk Weights (must sum to ~1.0)</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: colors.textMuted }}>Geopolitical</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={settings.riskWeightGeopolitical ?? 0.33}
-                          onChange={(e) => updateSetting("riskWeightGeopolitical", parseFloat(e.target.value) || 0.33)}
-                          className="w-full p-2 rounded-md border text-sm"
-                          style={{
-                            backgroundColor: colors.inputBg,
-                            borderColor: colors.accent + "40",
-                            color: colors.text,
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: colors.textMuted }}>Climate</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={settings.riskWeightClimate ?? 0.33}
-                          onChange={(e) => updateSetting("riskWeightClimate", parseFloat(e.target.value) || 0.33)}
-                          className="w-full p-2 rounded-md border text-sm"
-                          style={{
-                            backgroundColor: colors.inputBg,
-                            borderColor: colors.accent + "40",
-                            color: colors.text,
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs mb-1 block" style={{ color: colors.textMuted }}>Labor</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={settings.riskWeightLabor ?? 0.34}
-                          onChange={(e) => updateSetting("riskWeightLabor", parseFloat(e.target.value) || 0.34)}
-                          className="w-full p-2 rounded-md border text-sm"
-                          style={{
-                            backgroundColor: colors.inputBg,
-                            borderColor: colors.accent + "40",
-                            color: colors.text,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-xs mt-1" style={{ color: colors.textMuted }}>
-                      Sum: {((settings.riskWeightGeopolitical ?? 0.33) + (settings.riskWeightClimate ?? 0.33) + (settings.riskWeightLabor ?? 0.34)).toFixed(2)}
-                      {Math.abs(((settings.riskWeightGeopolitical ?? 0.33) + (settings.riskWeightClimate ?? 0.33) + (settings.riskWeightLabor ?? 0.34)) - 1.0) > 0.1 && (
-                        <span className="ml-2" style={{ color: colors.warning }}>
-                          (Should be ~1.0)
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2 text-sm font-medium">Threshold T (0-1)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={settings.riskThreshold ?? 0.3}
-                      onChange={(e) => updateSetting("riskThreshold", parseFloat(e.target.value) || 0.3)}
-                      className="w-full p-2 rounded-md border"
+            {/* Export Data */}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+              <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <span style={{ color: colors.primary }}>📥 Data Export</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <p className="text-sm" style={{ color: colors.textMuted }}>
+                      Export all suppliers with ESG scores and rankings
+                    </p>
+                    <button
+                      onClick={handleExportCSV}
+                      className="w-full px-4 py-2.5 rounded-md font-medium transition-all duration-200 shadow-sm hover:shadow-md"
                       style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.accent + "40",
-                        color: colors.text,
+                        backgroundColor: colors.primary,
+                        color: "white",
                       }}
-                    />
-                    <div className="text-xs mt-1" style={{ color: colors.textMuted }}>
-                      Penalty applies only when risk exceeds this threshold
-                    </div>
+                    >
+                      📊 Export Full Dataset (CSV)
+                    </button>
                   </div>
-
-                  <div>
-                    <label className="block mb-2 text-sm font-medium">Lambda λ (scaling factor, &gt; 0)</label>
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.1"
-                      value={settings.riskLambda ?? 1.0}
-                      onChange={(e) => updateSetting("riskLambda", parseFloat(e.target.value) || 1.0)}
-                      className="w-full p-2 rounded-md border"
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.accent + "40",
-                        color: colors.text,
-                      }}
-                    />
-                    <div className="text-xs mt-1" style={{ color: colors.textMuted }}>
-                      Penalty = λ × max(0, risk_raw - T) × 100
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  onClick={handleSaveSettings}
-                  disabled={saving}
-                  className="px-4 py-2 rounded-md transition-colors duration-200"
-                  style={{
-                    backgroundColor: colors.primary,
-                    color: "white",
-                    opacity: saving ? 0.6 : 1,
-                  }}
-                >
-                  {saving ? "Saving..." : "Save Settings"}
-                </button>
-                <button
-                  onClick={handleResetSettings}
-                  className="px-4 py-2 rounded-md border transition-colors duration-200"
-                  style={{
-                    borderColor: colors.accent + "40",
-                    color: colors.text,
-                  }}
-                >
-                  Reset to Defaults
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Weight Configuration */}
-      {activeTab === "weights" && settings && (
-        <div className="space-y-6">
-          <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
-            <CardHeader>
-              <CardTitle className="text-lg" style={{ color: colors.primary }}>
-                Composite ESG Weights (E, S, G)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block mb-2 text-sm font-medium">Environmental Weight</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={settings.environmentalWeight ?? 0.4}
-                  onChange={(e) => updateSetting("environmentalWeight", parseFloat(e.target.value) || 0.4)}
-                  className="w-full p-2 rounded-md border"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.accent + "40",
-                    color: colors.text,
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block mb-2 text-sm font-medium">Social Weight</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={settings.socialWeight ?? 0.3}
-                  onChange={(e) => updateSetting("socialWeight", parseFloat(e.target.value) || 0.3)}
-                  className="w-full p-2 rounded-md border"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.accent + "40",
-                    color: colors.text,
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block mb-2 text-sm font-medium">Governance Weight</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={settings.governanceWeight ?? 0.3}
-                  onChange={(e) => updateSetting("governanceWeight", parseFloat(e.target.value) || 0.3)}
-                  className="w-full p-2 rounded-md border"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.accent + "40",
-                    color: colors.text,
-                  }}
-                />
-              </div>
-              <div className="text-sm" style={{ color: colors.textMuted }}>
-                Sum: {((settings.environmentalWeight ?? 0.4) + (settings.socialWeight ?? 0.3) + (settings.governanceWeight ?? 0.3)).toFixed(2)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
-            <CardHeader>
-              <CardTitle className="text-lg" style={{ color: colors.primary }}>
-                Metric Weights (Advanced)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2 text-sm font-medium">Emission Intensity</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={settings.emissionIntensityWeight ?? 0.4}
-                    onChange={(e) => updateSetting("emissionIntensityWeight", parseFloat(e.target.value) || 0.4)}
-                    className="w-full p-2 rounded-md border"
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.accent + "40",
-                      color: colors.text,
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2 text-sm font-medium">Renewable Share</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={settings.renewableShareWeight ?? 0.2}
-                    onChange={(e) => updateSetting("renewableShareWeight", parseFloat(e.target.value) || 0.2)}
-                    className="w-full p-2 rounded-md border"
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.accent + "40",
-                      color: colors.text,
-                    }}
-                  />
-                </div>
-                {/* Add more metric weight inputs as needed */}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-2">
-            <button
-              onClick={handleSaveSettings}
-              disabled={saving}
-              className="px-4 py-2 rounded-md transition-colors duration-200"
-              style={{
-                backgroundColor: colors.primary,
-                color: "white",
-                opacity: saving ? 0.6 : 1,
-              }}
-            >
-              {saving ? "Saving..." : "Save Settings"}
-            </button>
-            <button
-              onClick={handleResetSettings}
-              className="px-4 py-2 rounded-md border transition-colors duration-200"
-              style={{
-                borderColor: colors.accent + "40",
-                color: colors.text,
-              }}
-            >
-              Reset to Defaults
-            </button>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
-      )}
-
-      {/* Export */}
-      {activeTab === "export" && (
-        <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
-          <CardHeader>
-            <CardTitle className="text-lg" style={{ color: colors.primary }}>
-              Export Data
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="font-medium mb-2">Export Supplier Rankings</div>
-              <div className="text-sm mb-4" style={{ color: colors.textMuted }}>
-                Download all suppliers with their ESG scores and rankings as CSV
-              </div>
-              <button
-                onClick={handleExportCSV}
-                className="px-4 py-2 rounded-md transition-colors duration-200"
-                style={{
-                  backgroundColor: colors.primary,
-                  color: "white",
-                }}
-              >
-                Export CSV
-              </button>
-            </div>
-          </CardContent>
-        </Card>
       )}
     </div>
   );
