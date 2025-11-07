@@ -3568,8 +3568,15 @@ export const getCalculationTrace = async (supplierId: string | number, options?:
     
     const queryString = params.toString();
     const url = getEndpoint(`suppliers/${supplierId}/trace${queryString ? `?${queryString}` : ''}`);
-    const response = await fetch(url);
-    if (!response.ok) throw new Error("Failed to fetch calculation trace");
+    const response = await fetch(url, {
+      credentials: "include",
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Trace API error ${response.status}:`, errorText);
+      throw new Error(`Failed to fetch calculation trace: ${response.status} ${errorText}`);
+    }
     return await response.json();
   } catch (error) {
     logger.error("Error fetching calculation trace:", error);

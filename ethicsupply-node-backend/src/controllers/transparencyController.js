@@ -98,15 +98,99 @@ exports.getCalculationTrace = async (req, res) => {
       });
     }
 
+    // Helper function to generate trace on-the-fly
+    const generateTraceOnTheFly = async (supplier) => {
+      const settings = await db.ScoringSettings.getDefault();
+      const breakdown = scoreSupplierWithBreakdown(supplier.toObject(), settings);
+
+      // Generate trace structure
+      const trace = {
+        supplierId: supplier._id,
+        supplierName: supplier.name,
+        timestamp: new Date(),
+        steps: [
+          {
+            name: "raw",
+            description: "Raw metric values from supplier data",
+            values: Object.keys(breakdown.normalizedMetrics || {}).reduce((acc, key) => {
+              if (breakdown.normalizedMetrics[key]?.raw !== undefined) {
+                acc[key] = breakdown.normalizedMetrics[key].raw;
+              }
+              return acc;
+            }, {}),
+          },
+          {
+            name: "normalized",
+            description: "Industry-band normalized values (0-1 scale)",
+            values: Object.keys(breakdown.normalizedMetrics || {}).reduce((acc, key) => {
+              if (breakdown.normalizedMetrics[key]?.normalized !== undefined) {
+                acc[key] = breakdown.normalizedMetrics[key].normalized;
+              }
+              return acc;
+            }, {}),
+          },
+          {
+            name: "weighted",
+            description: "Weighted aggregation into pillar scores",
+            values: breakdown.pillarScores || {},
+          },
+          {
+            name: "composite",
+            description: "Final composite score with risk penalty applied",
+            values: {
+              baseComposite: breakdown.compositeScore || breakdown.ethical_score || 0,
+              riskPenalty: breakdown.riskPenalty || 0,
+              finalScore: breakdown.finalScore || breakdown.ethical_score || 0,
+            },
+            score: breakdown.finalScore || breakdown.ethical_score || 0,
+          },
+        ],
+        finalScore: breakdown.finalScore || breakdown.ethical_score || 0,
+        pillarScores: breakdown.pillarScores || {},
+      };
+      return trace;
+    };
+
     // If latest=true, return only the most recent trace
     if (latest === "true") {
-      const trace = await db.CalculationTrace.getLatestForSupplier(mongoSupplierId);
-      if (!trace) {
-        return res.status(404).json({
-          error: "No calculation trace found for this supplier",
-        });
+      let trace = null;
+      
+      // Try to get from database if CalculationTrace model exists
+      if (db.CalculationTrace) {
+        try {
+          trace = await db.CalculationTrace.getLatestForSupplier(mongoSupplierId);
+        } catch (error) {
+          console.warn("Error fetching trace from database:", error.message);
+        }
       }
-      return res.status(200).json({ trace });
+      
+      // If no trace in database, generate on-the-fly
+      if (!trace) {
+        console.log(`[Trace] No persisted trace found for supplier ${supplierId}, generating on-the-fly`);
+        trace = await generateTraceOnTheFly(supplier);
+        
+        // Optionally save to database if model is available
+        if (db.CalculationTrace) {
+          try {
+            await db.CalculationTrace.create({
+              supplierId: mongoSupplierId,
+              supplierName: supplier.name,
+              settingsSnapshot: await db.ScoringSettings.getDefault(),
+              steps: trace.steps,
+              createdAt: new Date(),
+            });
+            console.log(`[Trace] Saved generated trace to database`);
+          } catch (saveError) {
+            console.warn("Could not save trace to database:", saveError.message);
+            // Continue anyway - trace is still returned
+          }
+        }
+      }
+      
+      return res.status(200).json({ 
+        trace,
+        generated: !trace._id, // true if generated on-the-fly
+      });
     }
 
     // Paginated traces

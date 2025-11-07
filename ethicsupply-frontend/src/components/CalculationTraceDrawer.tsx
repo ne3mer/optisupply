@@ -49,10 +49,18 @@ const CalculationTraceDrawer: React.FC<CalculationTraceDrawerProps> = ({
       setLoading(true);
       setError(null);
       const response = await getCalculationTrace(supplierId, { latest: true });
-      setTrace(response.trace || response);
+      // Handle both response formats: { trace: {...} } or direct trace object
+      const traceData = response.trace || response;
+      if (traceData && traceData.steps) {
+        setTrace(traceData);
+      } else {
+        throw new Error("Invalid trace data format received");
+      }
     } catch (err) {
       console.error("Error loading trace:", err);
-      setError(err instanceof Error ? err.message : "Failed to load calculation trace");
+      const errorMessage = err instanceof Error ? err.message : "Failed to load calculation trace";
+      setError(errorMessage);
+      // Don't set loading to false immediately - let user see the error
     } finally {
       setLoading(false);
     }
