@@ -954,6 +954,7 @@ const ESGScorePreview = ({ formData }) => {
 
 // Component for batch upload
 const BatchUpload = () => {
+  const colors = useThemeColors() as any;
   const [file, setFile] = useState(null);
   const [filename, setFilename] = useState("");
   const [uploading, setUploading] = useState(false);
