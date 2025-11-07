@@ -466,6 +466,31 @@ async function setupServer() {
     app.use("/api", apiRoutes);
     console.log("Real API routes setup complete");
     // Note: Settings routes are already registered above (before MongoDB connection)
+
+    // Root route handler
+    app.get("/", (req, res) => {
+      res.status(200).json({
+        status: "running",
+        mode: "production",
+        message: "OptiSupply API running with MongoDB",
+        endpoints: [
+          "/api/health-check",
+          "/api/suppliers",
+          "/api/suppliers/:id",
+          "/api/suppliers/:id/analytics",
+          "/api/dashboard",
+          "/api/settings",
+          "/api/bands",
+          "/api/dataset/meta",
+          "/api/scenarios/s1",
+          "/api/scenarios/s2",
+          "/api/scenarios/s3",
+          "/api/scenarios/s4",
+          "/api/suppliers/:id/trace",
+          "/api/traceability/metrics",
+        ],
+      });
+    });
   } catch (error) {
     console.error(
       "Failed to connect to MongoDB or initialize ML model:",
