@@ -11,20 +11,46 @@ exports.getCalculationTrace = async (req, res) => {
     const { supplierId } = req.params;
     const { page = 1, limit = 10, latest = "true" } = req.query;
 
+    // Helper function to find supplier by ID (handles both MongoDB ObjectId and numeric ID)
+    const findSupplierById = async (id) => {
+      let supplier = null;
+      
+      // First try to find by MongoDB ObjectId
+      try {
+        supplier = await db.Supplier.findById(id);
+      } catch (idError) {
+        // If ID format is invalid, try numeric ID approach
+        if (!isNaN(id)) {
+          const allSuppliers = await db.Supplier.find({});
+          const index = parseInt(id) - 1;
+          if (index >= 0 && index < allSuppliers.length) {
+            supplier = allSuppliers[index];
+          }
+        }
+      }
+      
+      return supplier;
+    };
+
+    // Find the supplier to get MongoDB _id
+    const supplier = await findSupplierById(supplierId);
+    if (!supplier) {
+      return res.status(404).json({ error: "Supplier not found" });
+    }
+
+    // Use MongoDB _id for trace queries
+    const mongoSupplierId = supplier._id;
+
     if (!db.CalculationTrace) {
       console.warn("CalculationTrace model not available");
       // Fallback: generate trace on-the-fly
-      const supplier = await db.Supplier.findById(supplierId);
-      if (!supplier) {
-        return res.status(404).json({ error: "Supplier not found" });
-      }
 
       const settings = await db.ScoringSettings.getDefault();
       const breakdown = scoreSupplierWithBreakdown(supplier.toObject(), settings);
 
       // Generate trace structure
       const trace = {
-        supplierId: supplier._id,
+        supplierId: mongoSupplierId,
         supplierName: supplier.name,
         timestamp: new Date(),
         steps: [
@@ -72,7 +98,7 @@ exports.getCalculationTrace = async (req, res) => {
 
     // If latest=true, return only the most recent trace
     if (latest === "true") {
-      const trace = await db.CalculationTrace.getLatestForSupplier(supplierId);
+      const trace = await db.CalculationTrace.getLatestForSupplier(mongoSupplierId);
       if (!trace) {
         return res.status(404).json({
           error: "No calculation trace found for this supplier",
@@ -83,13 +109,13 @@ exports.getCalculationTrace = async (req, res) => {
 
     // Paginated traces
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const traces = await db.CalculationTrace.find({ supplierId })
+    const traces = await db.CalculationTrace.find({ supplierId: mongoSupplierId })
       .sort({ timestamp: -1 })
       .skip(skip)
       .limit(parseInt(limit))
       .lean();
 
-    const total = await db.CalculationTrace.countDocuments({ supplierId });
+    const total = await db.CalculationTrace.countDocuments({ supplierId: mongoSupplierId });
 
     res.status(200).json({
       traces,
@@ -144,7 +170,28 @@ exports.generateTrace = async (req, res) => {
   try {
     const { supplierId } = req.params;
 
-    const supplier = await db.Supplier.findById(supplierId);
+    // Helper function to find supplier by ID (handles both MongoDB ObjectId and numeric ID)
+    const findSupplierById = async (id) => {
+      let supplier = null;
+      
+      // First try to find by MongoDB ObjectId
+      try {
+        supplier = await db.Supplier.findById(id);
+      } catch (idError) {
+        // If ID format is invalid, try numeric ID approach
+        if (!isNaN(id)) {
+          const allSuppliers = await db.Supplier.find({});
+          const index = parseInt(id) - 1;
+          if (index >= 0 && index < allSuppliers.length) {
+            supplier = allSuppliers[index];
+          }
+        }
+      }
+      
+      return supplier;
+    };
+
+    const supplier = await findSupplierById(supplierId);
     if (!supplier) {
       return res.status(404).json({ error: "Supplier not found" });
     }
