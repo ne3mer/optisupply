@@ -158,4 +158,7 @@ router.post("/scenarios/s2", scenarioController.s2Sensitivity);
 router.post("/scenarios/s3", scenarioController.s3Missingness);
 router.post("/scenarios/s4", scenarioController.s4Ablation);
 
+// Admin routes
+router.post("/admin/recompute-all", adminController.recomputeAllSuppliers);
+
 module.exports = router;
