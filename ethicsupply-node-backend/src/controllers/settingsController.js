@@ -6,20 +6,56 @@ exports.getSettings = async (req, res) => {
     // Check if ScoringSettings model exists
     if (!db.ScoringSettings) {
       console.error("ScoringSettings model not found");
-      return res.status(500).json({ error: "ScoringSettings model not available" });
+      // Return default settings if model not available
+      return res.status(200).json(getDefaultSettings());
     }
     
-    const settings = await db.ScoringSettings.getDefault();
-    
-    // Convert mongoose document to plain object
-    const settingsObj = settings.toObject ? settings.toObject() : settings;
-    
-    res.status(200).json(settingsObj);
+    try {
+      const settings = await db.ScoringSettings.getDefault();
+      // Convert mongoose document to plain object
+      const settingsObj = settings.toObject ? settings.toObject() : settings;
+      res.status(200).json(settingsObj);
+    } catch (dbError) {
+      // If database is not available, return default settings
+      console.warn("Database not available, returning default settings:", dbError.message);
+      res.status(200).json(getDefaultSettings());
+    }
   } catch (error) {
     console.error("Error fetching settings:", error);
-    res.status(500).json({ error: error.message });
+    // Return default settings as fallback
+    res.status(200).json(getDefaultSettings());
   }
 };
+
+// Helper function to get default settings
+function getDefaultSettings() {
+  return {
+    useIndustryBands: true,
+    environmentalWeight: 0.4,
+    socialWeight: 0.3,
+    governanceWeight: 0.3,
+    emissionIntensityWeight: 0.4,
+    renewableShareWeight: 0.2,
+    waterIntensityWeight: 0.2,
+    wasteIntensityWeight: 0.2,
+    injuryRateWeight: 0.3,
+    trainingHoursWeight: 0.2,
+    wageRatioWeight: 0.2,
+    diversityWeight: 0.3,
+    boardDiversityWeight: 0.25,
+    boardIndependenceWeight: 0.25,
+    antiCorruptionWeight: 0.2,
+    transparencyWeight: 0.3,
+    riskPenaltyEnabled: true,
+    defaultRiskFactor: 0.15,
+    riskWeightGeopolitical: 0.33,
+    riskWeightClimate: 0.33,
+    riskWeightLabor: 0.34,
+    riskThreshold: 0.3,
+    riskLambda: 1.0,
+    isDefault: true,
+  };
+}
 
 // Update scoring settings
 exports.updateSettings = async (req, res) => {

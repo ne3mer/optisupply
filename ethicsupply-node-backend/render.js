@@ -62,6 +62,13 @@ app.get("/api/health-check", (req, res) => {
   res.status(200).json({ status: "ok", deployment: "render" });
 });
 
+// Always register settings routes early (before MongoDB connection attempt)
+// This ensures they're available whether MongoDB connects or not
+const settingsController = require("./src/controllers/settingsController");
+app.get("/api/settings", settingsController.getSettings);
+app.put("/api/settings", settingsController.updateSettings);
+app.post("/api/settings/reset", settingsController.resetSettings);
+
 // Create mock data routes for when MongoDB is not available
 function setupMockRoutes(app) {
   console.log("Setting up mock routes for Render deployment");
@@ -417,6 +424,7 @@ async function setupServer() {
     console.log("Setting up real API routes...");
     app.use("/api", apiRoutes);
     console.log("Real API routes setup complete");
+    // Note: Settings routes are already registered above (before MongoDB connection)
   } catch (error) {
     console.error(
       "Failed to connect to MongoDB or initialize ML model:",

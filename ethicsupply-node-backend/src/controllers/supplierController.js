@@ -63,8 +63,27 @@ exports.getSupplierById = async (req, res) => {
       });
     }
 
-    // Return the found supplier
-    res.status(200).json(supplier);
+    // Recompute scores with current settings to ensure risk_penalty is calculated
+    // This ensures scores are always up-to-date with current settings
+    const supplierObj = supplier.toObject ? supplier.toObject() : supplier;
+    const scores = await calculateSupplierScores(supplierObj);
+    
+    // Merge computed scores with supplier data
+    const supplierWithScores = {
+      ...supplierObj,
+      ethical_score: scores.ethical_score,
+      environmental_score: scores.environmental_score,
+      social_score: scores.social_score,
+      governance_score: scores.governance_score,
+      risk_level: scores.risk_level,
+      risk_factor: scores.risk_factor,
+      risk_penalty: scores.risk_penalty, // Ensure risk_penalty is always computed
+      completeness_ratio: scores.completeness_ratio,
+      composite_score: scores.composite_score,
+    };
+
+    // Return the supplier with computed scores
+    res.status(200).json(supplierWithScores);
   } catch (error) {
     console.error("Error fetching supplier by ID:", error);
     res.status(500).json({ error: error.message });
