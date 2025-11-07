@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const apiRoutes = require("./src/routes/api");
 const { connectToDatabase } = require("./src/config/database");
 const EthicalScoringModel = require("./src/ml/EthicalScoringModel");
@@ -62,12 +63,22 @@ app.get("/api/health-check", (req, res) => {
   res.status(200).json({ status: "ok", deployment: "render" });
 });
 
-// Always register settings routes early (before MongoDB connection attempt)
+// Always register critical routes early (before MongoDB connection attempt)
 // This ensures they're available whether MongoDB connects or not
 const settingsController = require("./src/controllers/settingsController");
+const bandsController = require("./src/controllers/bandsController");
+const datasetController = require("./src/controllers/datasetController");
+
+// Settings routes
 app.get("/api/settings", settingsController.getSettings);
 app.put("/api/settings", settingsController.updateSettings);
 app.post("/api/settings/reset", settingsController.resetSettings);
+
+// Bands route
+app.get("/api/bands", bandsController.getBands);
+
+// Dataset metadata route
+app.get("/api/dataset/meta", datasetController.getDatasetMeta);
 
 // Create mock data routes for when MongoDB is not available
 function setupMockRoutes(app) {
@@ -315,6 +326,34 @@ function setupMockRoutes(app) {
     });
   });
 
+  // Mock bands endpoint
+  app.get("/api/bands", (req, res) => {
+    try {
+      const bandsPath = path.join(__dirname, "data/bands_v1.json");
+      if (fs.existsSync(bandsPath)) {
+        const raw = fs.readFileSync(bandsPath, "utf-8");
+        const json = JSON.parse(raw);
+        return res.status(200).json(json);
+      }
+      // Return empty bands if file not found
+      res.status(200).json({});
+    } catch (e) {
+      console.error("Error reading bands:", e);
+      res.status(200).json({});
+    }
+  });
+
+  // Mock dataset meta endpoint
+  app.get("/api/dataset/meta", (req, res) => {
+    res.json({
+      version: "synthetic-v1",
+      seed: null,
+      generatedAt: null,
+      bandsVersion: "v1",
+      isMockData: true,
+    });
+  });
+
   // Mock settings endpoint
   app.get("/api/settings", (req, res) => {
     res.json({
@@ -399,6 +438,8 @@ function setupMockRoutes(app) {
         "/api/suppliers/:id/analytics",
         "/api/dashboard",
         "/api/settings",
+        "/api/bands",
+        "/api/dataset/meta",
       ],
     });
   });
