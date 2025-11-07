@@ -11,14 +11,19 @@ const { calculateSupplierScores } = require('./supplierController');
  * Recompute all supplier scores
  * POST /api/admin/recompute-all
  * Query params: seed (optional, for testing)
+ * Headers: Authorization: Bearer $ADMIN_TOKEN (optional, can be enabled)
+ * 
+ * Idempotent: Running twice produces the same results (no double-penalty)
  */
 exports.recomputeAllSuppliers = async (req, res) => {
   try {
     const { seed } = req.query;
     
     // Optional: require authentication in production
-    // const apiKey = req.headers['x-api-key'];
-    // if (apiKey !== process.env.ADMIN_API_KEY) {
+    // Uncomment to enable:
+    // const authHeader = req.headers['authorization'];
+    // const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    // if (!token || token !== process.env.ADMIN_TOKEN) {
     //   return res.status(401).json({ error: 'Unauthorized' });
     // }
 
@@ -35,9 +40,12 @@ exports.recomputeAllSuppliers = async (req, res) => {
     for (const supplier of suppliers) {
       try {
         // Recalculate scores with current settings
+        // This is idempotent: recompute pillars → composite → penalty → finalScore
+        // No double-penalty because we always compute from raw supplier data
         const scores = await calculateSupplierScores(supplier.toObject());
 
         // Update supplier with new scores
+        // Using $set ensures idempotency: same input → same output
         await db.Supplier.updateOne(
           { _id: supplier._id },
           {
@@ -51,7 +59,7 @@ exports.recomputeAllSuppliers = async (req, res) => {
               risk_penalty: scores.risk_penalty,
               completeness_ratio: scores.completeness_ratio,
               composite_score: scores.composite_score,
-              finalScore: scores.finalScore ?? scores.ethical_score,
+              finalScore: scores.finalScore ?? scores.ethical_score, // Final Score (post-penalty, NOT capped at 50)
               updatedAt: new Date(),
             },
           }
@@ -73,6 +81,7 @@ exports.recomputeAllSuppliers = async (req, res) => {
 
     res.status(200).json({
       message: 'Bulk recompute completed',
+      idempotent: true, // Indicates running twice produces same results
       results,
     });
   } catch (error) {

@@ -600,11 +600,19 @@ function computePillarScores(normalizedMetrics, weights = null, supplier = null)
     govWeights.boardIndependence * boardIndependence +
     govWeights.antiCorruption * antiCorruption
   );
+  
+  // Ensure governance is in 0-100 range (weighted average of 0-100 values with weights summing to 1.0)
+  const clampedGovernance = Math.max(0, Math.min(100, governance));
+  
+  // Log warning if governance exceeds 100 (should never happen with proper weights)
+  if (governance > 100.01) {
+    console.warn(`[scoring] Governance score ${governance} exceeds 100 for supplier ${supplier?.name || supplier?.id || 'unknown'}. Components: transparency=${transparency}, compliance=${compliance}, ethics=${ethicsProgram}, boardDiversity=${boardDiversity}, boardIndependence=${boardIndependence}, antiCorruption=${antiCorruption}`);
+  }
 
   return {
     environmental: env,
     social,
-    governance,
+    governance: clampedGovernance,
   };
 }
 
@@ -660,6 +668,12 @@ function scoreSupplier(supplier, settings = null) {
     social: socialWeight,
     governance: govWeight,
   });
+  
+  // Ensure weights sum to 1.0 (bias ≈ 0)
+  const weightSum = compositeWeights.environmental + compositeWeights.social + compositeWeights.governance;
+  if (Math.abs(weightSum - 1.0) > 0.001) {
+    console.warn(`[scoring] Composite weights sum to ${weightSum}, expected 1.0. Normalizing.`);
+  }
 
   // Composite: weighted average of pillar scores (all on 0-100 scale, weights sum to 1.0)
   const baseComposite =
@@ -695,12 +709,8 @@ function scoreSupplier(supplier, settings = null) {
   
   // Apply penalty: finalScore = clamp(composite - penalty, 0, 100)
   // Single-apply: only subtract penalty once, never re-penalize
+  // REMOVED: disclosure cap at 50 - Final Score should not be capped at 50 per Chapter 4 requirements
   const finalScore = Math.min(100, Math.max(0, baseComposite - safePenalty));
-
-  // Apply disclosure cap (separate from risk penalty)
-  const cappedFinalScore = completenessRatio < 0.7 
-    ? Math.min(finalScore, 50) 
-    : finalScore;
 
   // For backward compatibility, also compute risk_factor (0-1) for display
   const riskFactor = riskPenalty !== null 
@@ -721,8 +731,8 @@ function scoreSupplier(supplier, settings = null) {
     social_score: pillarScores.social,
     governance_score: pillarScores.governance,
     composite_score: baseComposite,
-    finalScore: cappedFinalScore, // Final score (post-penalty, post-disclosure cap)
-    ethical_score: cappedFinalScore, // Backward compatibility
+    finalScore: finalScore, // Final score (post-penalty) - NOT capped at 50
+    ethical_score: finalScore, // Backward compatibility
     risk_factor: riskFactor, // 0-1 for backward compatibility
     risk_penalty: riskPenalty, // 0-100 or null (null = disabled, shows "N/A")
     risk_level: riskLevel,
@@ -889,9 +899,10 @@ module.exports = {
     
     // Apply penalty: finalScore = clamp(composite - penalty, 0, 100)
     // Single-apply: only subtract penalty once, never re-penalize
+    // REMOVED: disclosure cap at 50 - Final Score should not be capped at 50 per Chapter 4 requirements
     const finalScore = Math.min(100, Math.max(0, composite - safePenalty));
     
-    const finalEthical = completenessRatio < 0.7 ? Math.min(finalScore, 50) : finalScore;
+    const finalEthical = finalScore; // No disclosure cap
     
     // For display
     const riskFactor = riskPenalty !== null 

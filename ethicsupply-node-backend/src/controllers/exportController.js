@@ -34,53 +34,51 @@ exports.exportSuppliersCSV = async (req, res) => {
     const suppliersWithScores = suppliers.map((supplier) => {
       const scores = scoreSupplier(supplier.toObject(), settings);
       return {
-        id: supplier._id,
+        id: supplier._id.toString(),
         name: supplier.name || "",
         country: supplier.country || "",
         industry: supplier.industry || "",
-        environmental_score: scores.environmental_score.toFixed(2),
-        social_score: scores.social_score.toFixed(2),
-        governance_score: scores.governance_score.toFixed(2),
-        composite_score: scores.composite_score.toFixed(2),
-        ethical_score: scores.ethical_score.toFixed(2),
-        risk_factor: scores.risk_factor.toFixed(3),
+        environmental_score: scores.environmental_score,
+        social_score: scores.social_score,
+        governance_score: scores.governance_score,
+        composite_score: scores.composite_score,
+        risk_penalty: scores.risk_penalty !== null ? scores.risk_penalty : 0,
+        finalScore: scores.finalScore ?? scores.ethical_score,
+        ethical_score: scores.ethical_score, // Backward compatibility
+        risk_factor: scores.risk_factor,
         risk_level: scores.risk_level || "",
-        completeness_ratio: scores.completeness_ratio.toFixed(3),
+        completeness_ratio: scores.completeness_ratio,
       };
     });
 
     // Rank suppliers
     rankSuppliers(suppliersWithScores);
 
-    // Generate CSV
+    // Generate CSV with required columns per Chapter 4
     const headers = [
+      "SupplierID",
       "Rank",
       "Name",
-      "Country",
       "Industry",
       "Environmental Score",
       "Social Score",
       "Governance Score",
       "Composite Score",
-      "Ethical Score",
-      "Risk Factor",
-      "Risk Level",
-      "Completeness Ratio",
+      "Risk Penalty",
+      "Final Score",
     ];
 
     const rows = suppliersWithScores.map((s) => [
+      s.id,
       s.rank,
       s.name,
-      s.country,
       s.industry,
-      s.environmental_score,
-      s.social_score,
-      s.governance_score,
-      s.composite_score,
-      s.ethical_score,
-      s.risk_factor,
-      s.risk_level,
-      s.completeness_ratio,
+      Number(s.environmental_score).toFixed(2),
+      Number(s.social_score).toFixed(2),
+      Number(s.governance_score).toFixed(2),
+      Number(s.composite_score).toFixed(2),
+      Number(s.risk_penalty).toFixed(2),
+      Number(s.finalScore).toFixed(2), // Final Score (post-penalty) - NOT capped at 50
     ]);
 
     const csv = generateCSV(headers, rows);
@@ -146,21 +144,33 @@ exports.exportRankingsCSV = async (req, res) => {
           return {
             id: supplier._id.toString(),
             name: supplier.name || "",
-            ethical_score: scores.ethical_score.toFixed(2),
+            industry: supplier.industry || "Unknown",
+            finalScore: scores.finalScore ?? scores.ethical_score,
+            ethical_score: scores.ethical_score, // Backward compatibility
           };
         })
       );
     }
 
-    // Sort by ethical score (descending) and add rank
-    suppliersWithScores.sort((a, b) => parseFloat(b.ethical_score) - parseFloat(a.ethical_score));
+    // Sort by finalScore (descending) and add rank
+    suppliersWithScores.sort((a, b) => {
+      const scoreA = a.finalScore ?? a.ethical_score ?? 0;
+      const scoreB = b.finalScore ?? b.ethical_score ?? 0;
+      return scoreB - scoreA;
+    });
     suppliersWithScores.forEach((supplier, index) => {
       supplier.rank = index + 1;
     });
 
-    // Generate CSV with minimal columns: SupplierID, Rank
-    const headers = ["SupplierID", "Rank", "Name", "Score"];
-    const rows = suppliersWithScores.map((s) => [s.id, s.rank, s.name, s.ethical_score]);
+    // Generate CSV with required columns per Chapter 4: SupplierID, Rank, Industry, Final Score
+    const headers = ["SupplierID", "Rank", "Name", "Industry", "Final Score"];
+    const rows = suppliersWithScores.map((s) => [
+      s.id,
+      s.rank,
+      s.name,
+      s.industry,
+      Number(s.finalScore ?? s.ethical_score).toFixed(2), // Final Score (post-penalty) - NOT capped at 50
+    ]);
 
     const csv = generateCSV(headers, rows);
 
