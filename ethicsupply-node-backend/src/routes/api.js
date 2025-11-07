@@ -78,10 +78,19 @@ router.get(
 // Supplier routes
 router.get("/suppliers", supplierController.getSuppliers);
 router.post("/suppliers", supplierController.createSupplier);
+// IMPORTANT: More specific routes must come BEFORE generic /suppliers/:id route
+// Transparency routes (trace endpoints)
+router.get("/suppliers/:supplierId/transparency", transparencyController.getCalculationTrace);
+router.get("/suppliers/:supplierId/trace", transparencyController.getCalculationTrace);
+router.post("/suppliers/:supplierId/trace/generate", transparencyController.generateTrace);
+// Other specific supplier routes
+router.post("/suppliers/:id/recompute", supplierController.recomputeSupplierScores);
+router.get("/suppliers/:id/analytics", supplierController.getSupplierAnalytics);
+router.get("/suppliers/:supplierId/evaluate", supplierController.evaluateSupplier);
+// Generic supplier routes (must be last)
 router.get("/suppliers/:id", supplierController.getSupplierById);
 router.put("/suppliers/:id", supplierController.updateSupplier);
 router.delete("/suppliers/:id", supplierController.deleteSupplier);
-router.post("/suppliers/:id/recompute", supplierController.recomputeSupplierScores);
 
 // Dashboard route (uses supplierController)
 router.get("/dashboard", supplierController.getDashboard);
@@ -96,14 +105,7 @@ router.get("/dataset/meta", datasetController.getDatasetMeta);
 router.get("/supply-chain-graph", supplierController.getSupplyChainGraph);
 
 // Supplier evaluation routes (uses supplierController)
-router.get(
-  "/suppliers/:supplierId/evaluate",
-  supplierController.evaluateSupplier
-);
 router.post("/suppliers/evaluate", supplierController.evaluateSupplierPost);
-
-// Supplier analytics route (uses supplierController)
-router.get("/suppliers/:id/analytics", supplierController.getSupplierAnalytics);
 
 // ======= END RE-ENABLED SUPPLIER ROUTES =======
 
@@ -142,10 +144,7 @@ router.get("/suppliers/export/csv", optionalAuth, exportRateLimiter, exportContr
 router.get("/exports/rankings", optionalAuth, exportRateLimiter, exportController.exportRankingsCSV);
 router.get("/exports/industry-map", optionalAuth, exportRateLimiter, exportController.exportIndustryMapCSV);
 
-// Transparency routes
-router.get("/suppliers/:supplierId/transparency", transparencyController.getCalculationTrace);
-router.get("/suppliers/:supplierId/trace", transparencyController.getCalculationTrace);
-router.post("/suppliers/:supplierId/trace/generate", transparencyController.generateTrace);
+// Transparency routes (non-supplier-specific)
 router.get("/traceability/metrics", transparencyController.getTraceabilityMetrics);
 router.post("/trace/generate-all", transparencyController.generateAllTraces);
 
