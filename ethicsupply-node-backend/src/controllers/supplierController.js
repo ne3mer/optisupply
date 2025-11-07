@@ -120,6 +120,84 @@ exports.createSupplier = async (req, res) => {
   }
 };
 
+// Bulk import suppliers from array
+exports.bulkImportSuppliers = async (req, res) => {
+  try {
+    const { suppliers } = req.body;
+
+    if (!Array.isArray(suppliers) || suppliers.length === 0) {
+      return res.status(400).json({ 
+        error: "Invalid request. Expected an array of suppliers." 
+      });
+    }
+
+    const results = {
+      total: suppliers.length,
+      successful: [],
+      failed: [],
+    };
+
+    // Process each supplier
+    for (let i = 0; i < suppliers.length; i++) {
+      const supplierData = suppliers[i];
+      
+      try {
+        // Validate required fields
+        if (!supplierData.name || !supplierData.country) {
+          throw new Error("Missing required fields: name and country");
+        }
+
+        // Calculate scores for the supplier
+        const scores = await calculateSupplierScores(supplierData);
+
+        // Create new supplier with calculated scores
+        const newSupplier = new db.Supplier({
+          ...supplierData,
+          ethical_score: scores.ethical_score,
+          environmental_score: scores.environmental_score,
+          social_score: scores.social_score,
+          governance_score: scores.governance_score,
+          risk_level: scores.risk_level,
+          risk_factor: scores.risk_factor,
+          risk_penalty: scores.risk_penalty,
+          completeness_ratio: scores.completeness_ratio,
+          composite_score: scores.composite_score,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        const savedSupplier = await newSupplier.save();
+        
+        results.successful.push({
+          index: i,
+          name: supplierData.name,
+          country: supplierData.country,
+          id: savedSupplier._id,
+          success: true,
+        });
+      } catch (error) {
+        results.failed.push({
+          index: i,
+          name: supplierData.name || `Row ${i + 1}`,
+          country: supplierData.country || "N/A",
+          error: error.message,
+          success: false,
+        });
+      }
+    }
+
+    res.status(200).json({
+      total: results.total,
+      successful: results.successful.length,
+      failed: results.failed.length,
+      records: [...results.successful, ...results.failed].sort((a, b) => a.index - b.index),
+    });
+  } catch (error) {
+    console.error("Error in bulk import:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Update a supplier
 exports.updateSupplier = async (req, res) => {
   try {

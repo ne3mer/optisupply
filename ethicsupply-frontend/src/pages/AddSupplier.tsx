@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { addSupplier } from "../services/api";
+import { addSupplier, bulkImportSuppliers } from "../services/api";
 import { motion } from "framer-motion";
 import {
   ArrowLeftIcon,
@@ -1051,14 +1051,14 @@ const BatchUpload = () => {
 
           // Parse the file based on its type
           if (fileExtension === "csv") {
-            // Parse CSV
-            const csv = e.target.result;
-            const workbook = XLSX.read(csv, { type: "binary" });
+            // Parse CSV - read as text first, then parse
+            const csvText = e.target.result as string;
+            const workbook = XLSX.read(csvText, { type: "string" });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             data = XLSX.utils.sheet_to_json(worksheet);
           } else {
-            // Parse Excel
+            // Parse Excel (xlsx, xls)
             const excel = e.target.result;
             const workbook = XLSX.read(excel, { type: "binary" });
             const sheetName = workbook.SheetNames[0];
@@ -1079,28 +1079,61 @@ const BatchUpload = () => {
             );
           }
 
-          // Simulate API call to batch upload suppliers
-          // In a real implementation, you would call your API here
-          await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate network delay
+          // Normalize data: convert field names and ensure proper types
+          const normalizedData = data.map((item) => {
+            const normalized: any = {};
+            
+            // Map common field name variations
+            Object.keys(item).forEach((key) => {
+              const lowerKey = key.toLowerCase().trim();
+              // Handle common variations
+              if (lowerKey === 'company name' || lowerKey === 'supplier name') {
+                normalized.name = item[key];
+              } else if (lowerKey === 'country' || lowerKey === 'location') {
+                normalized.country = item[key];
+              } else if (lowerKey === 'industry' || lowerKey === 'sector') {
+                normalized.industry = item[key];
+              } else {
+                // Use original key, converting to snake_case if needed
+                const snakeKey = key.replace(/\s+/g, '_').toLowerCase();
+                normalized[snakeKey] = item[key];
+              }
+            });
+            
+            // Ensure required fields
+            if (!normalized.name && item.name) normalized.name = item.name;
+            if (!normalized.country && item.country) normalized.country = item.country;
+            if (!normalized.industry && item.industry) normalized.industry = item.industry || 'Manufacturing';
+            
+            // Convert numeric strings to numbers
+            const numericFields = [
+              'co2_emissions', 'water_usage', 'renewable_energy_percent',
+              'energy_efficiency', 'waste_management_score', 'wage_fairness',
+              'human_rights_index', 'diversity_inclusion_score', 'community_engagement',
+              'worker_safety', 'transparency_score', 'corruption_risk', 'board_diversity',
+              'ethics_program', 'compliance_systems', 'delivery_efficiency',
+              'quality_control_score', 'supplier_diversity', 'traceability',
+              'geopolitical_risk', 'climate_risk', 'labor_dispute_risk', 'pollution_control'
+            ];
+            
+            numericFields.forEach(field => {
+              if (normalized[field] !== undefined && normalized[field] !== null) {
+                const num = parseFloat(normalized[field]);
+                if (!isNaN(num)) {
+                  normalized[field] = num;
+                }
+              }
+            });
+            
+            return normalized;
+          });
+
+          setParseProgress(70);
+
+          // Call the bulk import API
+          const processingResults = await bulkImportSuppliers(normalizedData);
 
           setParseProgress(100);
-
-          // Simulate processing results (success/failure)
-          const processingResults = {
-            total: data.length,
-            successful: Math.floor(data.length * 0.9), // 90% success rate for demo
-            failed: Math.ceil(data.length * 0.1), // 10% failure rate for demo
-            records: data.map((item, index) => ({
-              name: item.name,
-              country: item.country,
-              success: index % 10 !== 0, // Every 10th record fails for demo
-              error:
-                index % 10 === 0
-                  ? "Validation failed for mandatory fields"
-                  : null,
-            })),
-          };
-
           setUploadResults(processingResults);
         } catch (err) {
           console.error("Error parsing file:", err);
@@ -1118,8 +1151,13 @@ const BatchUpload = () => {
         setUploading(false);
       };
 
-      // Read the file as binary
-      reader.readAsBinaryString(file);
+      // Read the file - use text for CSV, binary for Excel
+      const fileExtension = filename.split(".").pop().toLowerCase();
+      if (fileExtension === "csv") {
+        reader.readAsText(file);
+      } else {
+        reader.readAsBinaryString(file);
+      }
     } catch (err) {
       console.error("Error processing file:", err);
       setUploadError(

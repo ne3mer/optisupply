@@ -1985,6 +1985,44 @@ function getMockSimulationResult(
   };
 }
 
+// Bulk import suppliers from array
+export const bulkImportSuppliers = async (
+  suppliers: Record<string, any>[]
+): Promise<{
+  total: number;
+  successful: number;
+  failed: number;
+  records: Array<{
+    index: number;
+    name: string;
+    country: string;
+    success: boolean;
+    error?: string;
+    id?: string;
+  }>;
+}> => {
+  try {
+    const response = await fetch(getEndpoint("suppliers/bulk"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ suppliers }),
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Bulk import failed: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    logger.log("Bulk import result:", result);
+    return result;
+  } catch (error) {
+    logger.error("Error in bulk import:", error);
+    throw error instanceof Error ? error : new Error("Failed to bulk import suppliers");
+  }
+};
+
 // Add this new function to handle adding suppliers
 export const addSupplier = async (
   supplierData: Record<string, any>
