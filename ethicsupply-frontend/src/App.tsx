@@ -30,6 +30,7 @@ import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./components/Layout";
 import Settings from "./pages/Settings";
+import Scenarios from "./pages/Scenarios";
 import NotFound from "./pages/NotFound";
 
 // Redirect component for suppliers/:id to supplier-details/:id
@@ -141,6 +142,7 @@ function App() {
                             element={<Redirect3D />}
                           />
                           <Route path="settings" element={<Settings />} />
+                          <Route path="scenarios" element={<Scenarios />} />
                           <Route path="*" element={<NotFound />} />
                         </Route>
                       </Routes>

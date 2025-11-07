@@ -390,9 +390,90 @@ exports.s4Ablation = async (req, res) => {
   }
 };
 
+/**
+ * Unified scenario runner endpoint
+ * POST /api/scenarios/run
+ * Body: { type: "s1"|"s2"|"s3"|"s4", params: {...} }
+ * Returns: CSV or ZIP of CSVs
+ */
+exports.runScenario = async (req, res) => {
+  try {
+    const { type, params = {} } = req.body;
+
+    if (!type || !["s1", "s2", "s3", "s4"].includes(type)) {
+      return res.status(400).json({ ok: false, error: "Unknown scenario type. Must be s1, s2, s3, or s4." });
+    }
+
+    // Load current config
+    const settings = await db.ScoringSettings.getDefault();
+    const baseCfg = {
+      environmentalWeight: settings.environmentalWeight || 0.4,
+      socialWeight: settings.socialWeight || 0.3,
+      governanceWeight: settings.governanceWeight || 0.3,
+      riskPenaltyEnabled: settings.riskPenaltyEnabled !== false,
+      riskWeightGeopolitical: settings.riskWeightGeopolitical || 0.33,
+      riskWeightClimate: settings.riskWeightClimate || 0.33,
+      riskWeightLabor: settings.riskWeightLabor || 0.34,
+      riskThreshold: settings.riskThreshold || 0.3,
+      riskLambda: settings.riskLambda || 1.0,
+      useIndustryBands: settings.useIndustryBands !== false,
+    };
+
+    const { ScenarioRunner, createZip } = require("../scenarios/ScenarioRunner");
+    const runner = new ScenarioRunner(baseCfg);
+
+    if (type === "s1") {
+      const minMarginPct = params.minMarginPct ?? 10;
+      const { csv, baselineObjective, s1Objective } = await runner.runS1(minMarginPct);
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename="s1_ranking_${new Date().toISOString().split("T")[0]}.csv"`);
+      res.setHeader("X-Baseline-Objective", String(baselineObjective));
+      res.setHeader("X-S1-Objective", String(s1Objective));
+      return res.send(csv);
+    }
+
+    if (type === "s2") {
+      const files = await runner.runS2();
+      const zipBuffer = await createZip(files);
+
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="s2_bundle_${new Date().toISOString().split("T")[0]}.zip"`);
+      return res.send(zipBuffer);
+    }
+
+    if (type === "s3") {
+      const files = await runner.runS3();
+      const zipBuffer = await createZip(files);
+
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="s3_bundle_${new Date().toISOString().split("T")[0]}.zip"`);
+      return res.send(zipBuffer);
+    }
+
+    if (type === "s4") {
+      const { on, off } = await runner.runS4();
+      const zipBuffer = await createZip({
+        "s4_on.csv": on,
+        "s4_off.csv": off,
+      });
+
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="s4_bundle_${new Date().toISOString().split("T")[0]}.zip"`);
+      return res.send(zipBuffer);
+    }
+
+    return res.status(400).json({ ok: false, error: "Unknown scenario type" });
+  } catch (error) {
+    console.error("Error in runScenario:", error);
+    res.status(500).json({ ok: false, error: String(error.message || error) });
+  }
+};
+
 module.exports = {
   s1Utility: exports.s1Utility,
   s2Sensitivity: exports.s2Sensitivity,
   s3Missingness: exports.s3Missingness,
   s4Ablation: exports.s4Ablation,
+  runScenario: exports.runScenario,
 };

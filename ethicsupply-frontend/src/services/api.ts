@@ -3701,6 +3701,50 @@ export const runScenarioS4 = async (normalization: "off" | "on"): Promise<{ D: n
   }
 };
 
+/**
+ * Unified scenario runner (Chapter 4)
+ * POST /api/scenarios/run
+ * @param type - "s1" | "s2" | "s3" | "s4"
+ * @param params - Scenario-specific parameters
+ * @param filename - Optional filename for download
+ */
+export const runScenario = async (
+  type: "s1" | "s2" | "s3" | "s4",
+  params: any = {},
+  filename?: string
+): Promise<void> => {
+  try {
+    const response = await fetch(getEndpoint("scenarios/run"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ type, params }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to run scenario ${type}: ${response.status} ${errorText}`);
+    }
+
+    // Get content type to determine if CSV or ZIP
+    const contentType = response.headers.get("content-type") || "";
+    const isZip = contentType.includes("application/zip");
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || (isZip ? `${type}_bundle.zip` : `${type}_ranking.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    logger.error(`Error running scenario ${type}:`, error);
+    throw error;
+  }
+};
+
 // ==================== CSV EXPORT FUNCTIONS ====================
 
 /**
