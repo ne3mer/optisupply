@@ -271,7 +271,8 @@ function applyBandsJson(bandsJson) {
 function normalizeLowerIsBetter(value, band) {
   if (value === null || value === undefined) return null;
   const { min, max } = band;
-  if (max === min) return 1;
+  // Fallback to 0 if denominator is 0 (spec requirement)
+  if (max === min) return 0;
   const clamped = clamp(value, min, max);
   return (max - clamped) / (max - min);
 }
@@ -279,7 +280,8 @@ function normalizeLowerIsBetter(value, band) {
 function normalizeHigherIsBetter(value, band) {
   if (value === null || value === undefined) return null;
   const { min, max } = band;
-  if (max === min) return 1;
+  // Fallback to 0 if denominator is 0 (spec requirement: normalized_x = (x - min_industry) / (max_industry - min_industry))
+  if (max === min) return 0;
   const clamped = clamp(value, min, max);
   return (clamped - min) / (max - min);
 }
@@ -298,75 +300,45 @@ function normalizeWageRatio(value, band) {
   return (clamped - lowerBound) / (1 - lowerBound);
 }
 
+// Import risk penalty calculation from separate module
+const { computeRiskPenalty: computeRiskPenaltyFromModule } = require("../risk/penalty");
+
 /**
- * Compute risk penalty according to spec:
- * - Penalty disabled → return null (frontend shows "N/A")
- * - Penalty enabled, all risks missing → return 0.0 (frontend shows "0.0")
- * - Penalty enabled, some risks present → compute weighted mean, apply threshold and lambda
+ * Compute risk penalty (wrapper for backward compatibility)
+ * Uses the separate risk/penalty module
  * 
  * @param {Object} supplier - Supplier data with risk fields
  * @param {Object} settings - Scoring settings with risk weights, threshold, lambda
  * @returns {number|null} - Penalty value (0-100) or null if disabled
  */
 function computeRiskPenalty(supplier, settings = null) {
-  // If penalty is disabled, return null (frontend will show "N/A")
+  // Convert settings format for the module
+  const moduleSettings = settings ? {
+    enabled: settings.riskPenaltyEnabled !== false,
+    weights: {
+      geo: settings.riskWeightGeopolitical,
+      climate: settings.riskWeightClimate,
+      labor: settings.riskWeightLabor,
+    },
+    threshold: settings.riskThreshold,
+    lambda: settings.riskLambda,
+    // Also pass through original format for compatibility
+    riskPenaltyEnabled: settings.riskPenaltyEnabled,
+    riskWeightGeopolitical: settings.riskWeightGeopolitical,
+    riskWeightClimate: settings.riskWeightClimate,
+    riskWeightLabor: settings.riskWeightLabor,
+    riskThreshold: settings.riskThreshold,
+    riskLambda: settings.riskLambda,
+  } : null;
+
+  const penalty = computeRiskPenaltyFromModule(supplier, moduleSettings);
+  
+  // For backward compatibility: return null if disabled (frontend shows "N/A")
   if (settings && settings.riskPenaltyEnabled === false) {
     return null;
   }
-
-  // Extract risk values
-  const riskValues = {
-    geopolitical: toNumber(supplier.geopolitical_risk),
-    climate: toNumber(supplier.climate_risk),
-    labor: toNumber(supplier.labor_dispute_risk),
-  };
-
-  // Get weights from settings or use defaults
-  const weights = {
-    geopolitical: settings?.riskWeightGeopolitical ?? 0.33,
-    climate: settings?.riskWeightClimate ?? 0.33,
-    labor: settings?.riskWeightLabor ?? 0.34,
-  };
-
-  // Filter to only available risks and their weights
-  const availableRisks = [];
-  const availableWeights = [];
   
-  Object.entries(riskValues).forEach(([key, value]) => {
-    if (typeof value === "number" && !Number.isNaN(value)) {
-      availableRisks.push({ key, value: Math.max(0, Math.min(1, value)) });
-      availableWeights.push(weights[key]);
-    }
-  });
-
-  // If all risks are missing, return 0.0 (not null - frontend shows "0.0")
-  if (availableRisks.length === 0) {
-    return 0.0;
-  }
-
-  // Renormalize weights to sum to 1.0 for available risks
-  const totalWeight = availableWeights.reduce((sum, w) => sum + w, 0);
-  const normalizedWeights = totalWeight > 0 
-    ? availableWeights.map(w => w / totalWeight)
-    : availableWeights.map(() => 1 / availableWeights.length); // Equal weights if all zero
-
-  // Compute weighted mean
-  const riskRaw = availableRisks.reduce((sum, risk, idx) => {
-    return sum + risk.value * normalizedWeights[idx];
-  }, 0);
-
-  // Get threshold T and lambda λ from settings
-  const threshold = settings?.riskThreshold ?? 0.3;
-  const lambda = settings?.riskLambda ?? 1.0;
-
-  // Compute excess risk above threshold
-  const riskExcess = Math.max(0, riskRaw - threshold);
-
-  // Compute penalty: λ * risk_excess * 100 (scale to 0-100 space)
-  const penalty = lambda * riskExcess * 100;
-
-  // Clamp to 0-100
-  return Math.max(0, Math.min(100, penalty));
+  return penalty;
 }
 
 /**

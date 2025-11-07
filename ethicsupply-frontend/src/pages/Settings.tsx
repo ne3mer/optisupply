@@ -253,22 +253,22 @@ const Settings: React.FC = () => {
                 <div>
                   <div className="font-medium">Use Industry Bands</div>
                   <div className="text-sm" style={{ color: colors.textMuted }}>
-                    {settings.useIndustryBands
+                    {(settings.useIndustryBands ?? false)
                       ? "Normalizing using industry-specific min/max bands"
                       : "Normalizing using global min/max bands"}
                   </div>
                 </div>
                 <div
                   className="w-12 h-6 flex items-center rounded-full p-1 cursor-pointer"
-                  onClick={() => updateSetting("useIndustryBands", !settings.useIndustryBands)}
+                  onClick={() => updateSetting("useIndustryBands", !(settings.useIndustryBands ?? false))}
                   style={{
-                    backgroundColor: settings.useIndustryBands ? colors.accent : colors.textMuted,
+                    backgroundColor: (settings.useIndustryBands ?? false) ? colors.accent : colors.textMuted,
                   }}
                 >
                   <div
                     className="bg-white w-5 h-5 rounded-full shadow-md transform duration-300 ease-in-out"
                     style={{
-                      transform: settings.useIndustryBands ? "translateX(100%)" : "translateX(0)",
+                      transform: (settings.useIndustryBands ?? false) ? "translateX(100%)" : "translateX(0)",
                     }}
                   />
                 </div>
@@ -283,21 +283,21 @@ const Settings: React.FC = () => {
                 </div>
                 <div
                   className="w-12 h-6 flex items-center rounded-full p-1 cursor-pointer"
-                  onClick={() => updateSetting("riskPenaltyEnabled", !settings.riskPenaltyEnabled)}
+                  onClick={() => updateSetting("riskPenaltyEnabled", !(settings.riskPenaltyEnabled ?? true))}
                   style={{
-                    backgroundColor: settings.riskPenaltyEnabled ? colors.accent : colors.textMuted,
+                    backgroundColor: (settings.riskPenaltyEnabled ?? true) ? colors.accent : colors.textMuted,
                   }}
                 >
                   <div
                     className="bg-white w-5 h-5 rounded-full shadow-md transform duration-300 ease-in-out"
                     style={{
-                      transform: settings.riskPenaltyEnabled ? "translateX(100%)" : "translateX(0)",
+                      transform: (settings.riskPenaltyEnabled ?? true) ? "translateX(100%)" : "translateX(0)",
                     }}
                   />
                 </div>
               </div>
 
-              {settings.riskPenaltyEnabled && (
+              {(settings.riskPenaltyEnabled ?? true) && (
                 <div className="space-y-4">
                   <div>
                     <label className="block mb-2 text-sm font-medium">Risk Weights (must sum to ~1.0)</label>
@@ -453,7 +453,7 @@ const Settings: React.FC = () => {
                   min="0"
                   max="1"
                   step="0.01"
-                  value={settings.environmentalWeight}
+                  value={settings.environmentalWeight ?? 0.4}
                   onChange={(e) => updateSetting("environmentalWeight", parseFloat(e.target.value) || 0.4)}
                   className="w-full p-2 rounded-md border"
                   style={{
@@ -470,7 +470,7 @@ const Settings: React.FC = () => {
                   min="0"
                   max="1"
                   step="0.01"
-                  value={settings.socialWeight}
+                  value={settings.socialWeight ?? 0.3}
                   onChange={(e) => updateSetting("socialWeight", parseFloat(e.target.value) || 0.3)}
                   className="w-full p-2 rounded-md border"
                   style={{
@@ -487,7 +487,7 @@ const Settings: React.FC = () => {
                   min="0"
                   max="1"
                   step="0.01"
-                  value={settings.governanceWeight}
+                  value={settings.governanceWeight ?? 0.3}
                   onChange={(e) => updateSetting("governanceWeight", parseFloat(e.target.value) || 0.3)}
                   className="w-full p-2 rounded-md border"
                   style={{
@@ -498,7 +498,7 @@ const Settings: React.FC = () => {
                 />
               </div>
               <div className="text-sm" style={{ color: colors.textMuted }}>
-                Sum: {(settings.environmentalWeight + settings.socialWeight + settings.governanceWeight).toFixed(2)}
+                Sum: {((settings.environmentalWeight ?? 0.4) + (settings.socialWeight ?? 0.3) + (settings.governanceWeight ?? 0.3)).toFixed(2)}
               </div>
             </CardContent>
           </Card>
@@ -518,7 +518,7 @@ const Settings: React.FC = () => {
                     min="0"
                     max="1"
                     step="0.01"
-                    value={settings.emissionIntensityWeight}
+                    value={settings.emissionIntensityWeight ?? 0.4}
                     onChange={(e) => updateSetting("emissionIntensityWeight", parseFloat(e.target.value) || 0.4)}
                     className="w-full p-2 rounded-md border"
                     style={{
@@ -535,7 +535,7 @@ const Settings: React.FC = () => {
                     min="0"
                     max="1"
                     step="0.01"
-                    value={settings.renewableShareWeight}
+                    value={settings.renewableShareWeight ?? 0.2}
                     onChange={(e) => updateSetting("renewableShareWeight", parseFloat(e.target.value) || 0.2)}
                     className="w-full p-2 rounded-md border"
                     style={{

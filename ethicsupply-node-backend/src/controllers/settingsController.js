@@ -3,8 +3,18 @@ const db = require("../models");
 // Get current scoring settings
 exports.getSettings = async (req, res) => {
   try {
+    // Check if ScoringSettings model exists
+    if (!db.ScoringSettings) {
+      console.error("ScoringSettings model not found");
+      return res.status(500).json({ error: "ScoringSettings model not available" });
+    }
+    
     const settings = await db.ScoringSettings.getDefault();
-    res.status(200).json(settings);
+    
+    // Convert mongoose document to plain object
+    const settingsObj = settings.toObject ? settings.toObject() : settings;
+    
+    res.status(200).json(settingsObj);
   } catch (error) {
     console.error("Error fetching settings:", error);
     res.status(500).json({ error: error.message });
@@ -16,6 +26,12 @@ exports.updateSettings = async (req, res) => {
   try {
     const updates = req.body;
     const settings = await db.ScoringSettings.updateDefault(updates);
+    
+    // If useIndustryBands changed, scores need to be recomputed
+    // Note: This is handled on-demand when suppliers are fetched/exported
+    // The scores are computed fresh each time using current settings
+    // No need to bulk update stored scores - they're computed dynamically
+    
     res.status(200).json(settings);
   } catch (error) {
     console.error("Error updating settings:", error);

@@ -7,7 +7,8 @@ const ScoringSettingsSchema = new Schema(
     useIndustryBands: {
       type: Boolean,
       default: true,
-      description: "If true, use industry-specific bands; if false, use global min/max",
+      description:
+        "If true, use industry-specific bands; if false, use global min/max",
     },
 
     // Composite ESG weights (E, S, G)
@@ -114,13 +115,33 @@ const ScoringSettingsSchema = new Schema(
 ScoringSettingsSchema.statics.getDefault = async function () {
   let settings = await this.findOne({ isDefault: true });
   if (!settings) {
+    // Create with all default values from schema
     settings = await this.create({
       isDefault: true,
       useIndustryBands: true,
       environmentalWeight: 0.4,
       socialWeight: 0.3,
       governanceWeight: 0.3,
-      // ... other defaults from schema
+      emissionIntensityWeight: 0.4,
+      renewableShareWeight: 0.2,
+      waterIntensityWeight: 0.2,
+      wasteIntensityWeight: 0.2,
+      injuryRateWeight: 0.3,
+      trainingHoursWeight: 0.2,
+      wageRatioWeight: 0.2,
+      diversityWeight: 0.3,
+      boardDiversityWeight: 0.25,
+      boardIndependenceWeight: 0.25,
+      antiCorruptionWeight: 0.2,
+      transparencyWeight: 0.3,
+      riskPenaltyEnabled: true,
+      defaultRiskFactor: 0.15,
+      riskWeightGeopolitical: 0.33,
+      riskWeightClimate: 0.33,
+      riskWeightLabor: 0.34,
+      riskThreshold: 0.3,
+      riskLambda: 1.0,
+      updatedBy: "system",
     });
   }
   return settings;
@@ -134,4 +155,3 @@ ScoringSettingsSchema.statics.updateDefault = async function (updates) {
 };
 
 module.exports = mongoose.model("ScoringSettings", ScoringSettingsSchema);
-

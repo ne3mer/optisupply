@@ -308,6 +308,77 @@ function setupMockRoutes(app) {
     });
   });
 
+  // Mock settings endpoint
+  app.get("/api/settings", (req, res) => {
+    res.json({
+      useIndustryBands: true,
+      environmentalWeight: 0.4,
+      socialWeight: 0.3,
+      governanceWeight: 0.3,
+      emissionIntensityWeight: 0.4,
+      renewableShareWeight: 0.2,
+      waterIntensityWeight: 0.2,
+      wasteIntensityWeight: 0.2,
+      injuryRateWeight: 0.3,
+      trainingHoursWeight: 0.2,
+      wageRatioWeight: 0.2,
+      diversityWeight: 0.3,
+      boardDiversityWeight: 0.25,
+      boardIndependenceWeight: 0.25,
+      antiCorruptionWeight: 0.2,
+      transparencyWeight: 0.3,
+      riskPenaltyEnabled: true,
+      defaultRiskFactor: 0.15,
+      riskWeightGeopolitical: 0.33,
+      riskWeightClimate: 0.33,
+      riskWeightLabor: 0.34,
+      riskThreshold: 0.3,
+      riskLambda: 1.0,
+      isDefault: true,
+      isMockData: true,
+    });
+  });
+
+  // Mock settings update endpoint
+  app.put("/api/settings", (req, res) => {
+    res.json({
+      ...req.body,
+      isMockData: true,
+      updated_at: new Date(),
+    });
+  });
+
+  // Mock settings reset endpoint
+  app.post("/api/settings/reset", (req, res) => {
+    res.json({
+      useIndustryBands: true,
+      environmentalWeight: 0.4,
+      socialWeight: 0.3,
+      governanceWeight: 0.3,
+      emissionIntensityWeight: 0.4,
+      renewableShareWeight: 0.2,
+      waterIntensityWeight: 0.2,
+      wasteIntensityWeight: 0.2,
+      injuryRateWeight: 0.3,
+      trainingHoursWeight: 0.2,
+      wageRatioWeight: 0.2,
+      diversityWeight: 0.3,
+      boardDiversityWeight: 0.25,
+      boardIndependenceWeight: 0.25,
+      antiCorruptionWeight: 0.2,
+      transparencyWeight: 0.3,
+      riskPenaltyEnabled: true,
+      defaultRiskFactor: 0.15,
+      riskWeightGeopolitical: 0.33,
+      riskWeightClimate: 0.33,
+      riskWeightLabor: 0.34,
+      riskThreshold: 0.3,
+      riskLambda: 1.0,
+      isDefault: true,
+      isMockData: true,
+    });
+  });
+
   // Info route for debugging
   app.get("/", (req, res) => {
     res.status(200).json({
@@ -320,6 +391,7 @@ function setupMockRoutes(app) {
         "/api/suppliers/:id",
         "/api/suppliers/:id/analytics",
         "/api/dashboard",
+        "/api/settings",
       ],
     });
   });
