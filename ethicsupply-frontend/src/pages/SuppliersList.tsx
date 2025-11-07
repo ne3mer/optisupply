@@ -951,52 +951,97 @@ const SuppliersList = () => {
     { action: "Monitor News Coverage", priority: "low", timeframe: "Ongoing" },
   ];
 
-  // Format supplier data for export
+  // Helper to format value for export
+  const formatValue = (value: any): string => {
+    if (value === null || value === undefined) return "N/A";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (typeof value === "number") {
+      // If it's a score between 0-1, show as percentage
+      if (value > 0 && value <= 1 && value !== 0 && value !== 1) {
+        return (value * 100).toFixed(2);
+      }
+      return value.toFixed(2);
+    }
+    if (typeof value === "string") return value;
+    return String(value);
+  };
+
+  // Format supplier data for export - includes ALL fields
   const formatSuppliersForExport = (suppliers: Supplier[]) => {
-    return suppliers.map((supplier) => ({
-      "Supplier Name": supplier.name || "N/A",
-      Country: supplier.country || "N/A",
-      Industry: supplier.industry || "N/A",
-      "Risk Level": supplier.risk_level || "N/A",
-      "Ethical Score":
-        supplier.ethical_score !== null && supplier.ethical_score !== undefined
-          ? supplier.ethical_score > 0 && supplier.ethical_score <= 1
-            ? (supplier.ethical_score * 100).toFixed(1)
-            : supplier.ethical_score.toFixed(1)
-          : "N/A",
-      "Environmental Score":
-        supplier.environmental_score !== null &&
-        supplier.environmental_score !== undefined
-          ? supplier.environmental_score > 0 &&
-            supplier.environmental_score <= 1
-            ? (supplier.environmental_score * 100).toFixed(1)
-            : supplier.environmental_score.toFixed(1)
-          : "N/A",
-      "Social Score":
-        supplier.social_score !== null && supplier.social_score !== undefined
-          ? supplier.social_score > 0 && supplier.social_score <= 1
-            ? (supplier.social_score * 100).toFixed(1)
-            : supplier.social_score.toFixed(1)
-          : "N/A",
-      "Governance Score":
-        supplier.governance_score !== null &&
-        supplier.governance_score !== undefined
-          ? supplier.governance_score > 0 && supplier.governance_score <= 1
-            ? (supplier.governance_score * 100).toFixed(1)
-            : supplier.governance_score.toFixed(1)
-          : "N/A",
-      "CO2 Emissions":
-        supplier.co2_emissions !== null && supplier.co2_emissions !== undefined
-          ? supplier.co2_emissions.toFixed(2)
-          : "N/A",
-      "Delivery Efficiency":
-        supplier.delivery_efficiency !== null &&
-        supplier.delivery_efficiency !== undefined
-          ? supplier.delivery_efficiency.toFixed(2)
-          : "N/A",
-      Status: supplier.status || "N/A",
-      "Last Updated": supplier.last_updated || "N/A",
-    }));
+    return suppliers.map((supplier) => {
+      const formatted: Record<string, string> = {};
+      
+      // Basic Information
+      formatted["ID"] = supplier.id?.toString() || supplier._id?.toString() || "N/A";
+      formatted["Supplier Name"] = supplier.name || "N/A";
+      formatted["Country"] = supplier.country || "N/A";
+      formatted["Industry"] = supplier.industry || "N/A";
+      formatted["Description"] = (supplier as any).description || "N/A";
+      formatted["Website"] = (supplier as any).website || "N/A";
+      formatted["Revenue (millions USD)"] = formatValue((supplier as any).revenue);
+      formatted["Employee Count"] = formatValue((supplier as any).employee_count);
+      
+      // Overall Scores
+      formatted["Ethical Score"] = formatValue(supplier.ethical_score);
+      formatted["Environmental Score"] = formatValue(supplier.environmental_score);
+      formatted["Social Score"] = formatValue(supplier.social_score);
+      formatted["Governance Score"] = formatValue(supplier.governance_score);
+      formatted["Composite Score"] = formatValue(supplier.composite_score);
+      formatted["Final Score (post-penalty)"] = formatValue((supplier as any).finalScore);
+      
+      // Risk Information
+      formatted["Risk Level"] = supplier.risk_level || "N/A";
+      formatted["Risk Factor"] = formatValue(supplier.risk_factor);
+      formatted["Risk Penalty"] = formatValue(supplier.risk_penalty);
+      formatted["Completeness Ratio"] = formatValue(supplier.completeness_ratio);
+      
+      // Environmental Metrics
+      formatted["CO2 Emissions (tons)"] = formatValue(supplier.co2_emissions);
+      formatted["Total Emissions"] = formatValue((supplier as any).total_emissions);
+      formatted["Water Usage (cubic meters)"] = formatValue(supplier.water_usage);
+      formatted["Waste Generated"] = formatValue((supplier as any).waste_generated);
+      formatted["Energy Efficiency"] = formatValue((supplier as any).energy_efficiency);
+      formatted["Waste Management Score"] = formatValue(supplier.waste_management_score);
+      formatted["Renewable Energy Percent"] = formatValue(supplier.renewable_energy_percent);
+      formatted["Pollution Control"] = formatValue((supplier as any).pollution_control);
+      
+      // Social Metrics
+      formatted["Wage Fairness"] = formatValue(supplier.wage_fairness);
+      formatted["Human Rights Index"] = formatValue(supplier.human_rights_index);
+      formatted["Diversity Inclusion Score"] = formatValue((supplier as any).diversity_inclusion_score);
+      formatted["Community Engagement"] = formatValue((supplier as any).community_engagement);
+      formatted["Worker Safety"] = formatValue((supplier as any).worker_safety);
+      formatted["Injury Rate"] = formatValue((supplier as any).injury_rate);
+      formatted["Training Hours"] = formatValue((supplier as any).training_hours);
+      formatted["Living Wage Ratio"] = formatValue((supplier as any).living_wage_ratio);
+      formatted["Gender Diversity Percent"] = formatValue((supplier as any).gender_diversity_percent);
+      
+      // Governance Metrics
+      formatted["Transparency Score"] = formatValue(supplier.transparency_score);
+      formatted["Corruption Risk"] = formatValue((supplier as any).corruption_risk);
+      formatted["Board Diversity"] = formatValue(supplier.board_diversity);
+      formatted["Board Independence"] = formatValue((supplier as any).board_independence);
+      formatted["Ethics Program"] = formatValue((supplier as any).ethics_program);
+      formatted["Compliance Systems"] = formatValue((supplier as any).compliance_systems);
+      formatted["Anti-Corruption Policy"] = formatValue((supplier as any).anti_corruption_policy);
+      
+      // Supply Chain Metrics
+      formatted["Delivery Efficiency"] = formatValue(supplier.delivery_efficiency);
+      formatted["Quality Control Score"] = formatValue((supplier as any).quality_control_score);
+      formatted["Supplier Diversity"] = formatValue((supplier as any).supplier_diversity);
+      formatted["Traceability"] = formatValue((supplier as any).traceability);
+      
+      // Risk Factors
+      formatted["Geopolitical Risk"] = formatValue(supplier.geopolitical_risk);
+      formatted["Climate Risk"] = formatValue(supplier.climate_risk);
+      formatted["Labor Dispute Risk"] = formatValue(supplier.labor_dispute_risk);
+      
+      // Timestamps
+      formatted["Created At"] = supplier.created_at || (supplier as any).createdAt || "N/A";
+      formatted["Updated At"] = supplier.updated_at || (supplier as any).updatedAt || "N/A";
+      
+      return formatted;
+    });
   };
 
   // Export to CSV
