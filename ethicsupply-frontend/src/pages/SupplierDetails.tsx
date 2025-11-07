@@ -19,6 +19,7 @@ import {
   PencilIcon, // Edit
   PlayIcon, // Run Assessment
   ChartBarIcon, // View Analytics
+  SparklesIcon, // AI Analytics
   GlobeAltIcon, // Added for Geopolitical Risk
   CloudIcon, // Added for Climate Risk
   UsersIcon, // Added for Labor Dispute Risk
@@ -491,6 +492,16 @@ const SupplierDetails = () => {
                 }}
               >
                 <ChartBarIcon className="h-5 w-5 mr-2" /> View Calculation Trace
+              </button>
+              <button
+                onClick={() => navigate(`/suppliers/${supplierId}/analytics`)}
+                className="w-full flex items-center justify-center text-sm py-2 px-4 rounded hover:opacity-90 transition-opacity duration-200"
+                style={{
+                  backgroundColor: colors.accent,
+                  color: colors.background,
+                }}
+              >
+                <SparklesIcon className="h-5 w-5 mr-2" /> View AI Analytics
               </button>
               <button
                 onClick={() => navigate(`/suppliers/${supplierId}/edit`)} // Fixed edit route path
