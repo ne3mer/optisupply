@@ -26,7 +26,7 @@ const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
 // Enable CORS for all requests with specific origin handling
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // Check if origin is in allowed list
   if (origin && allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
@@ -42,7 +42,7 @@ app.use((req, res, next) => {
       res.header("Access-Control-Allow-Origin", allowedOrigins[0] || "*");
     }
   }
-  
+
   res.header(
     "Access-Control-Allow-Methods",
     "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS"
@@ -67,8 +67,12 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.includes(origin) || origin.includes("localhost") || origin.includes("127.0.0.1")) {
+
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1")
+      ) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));

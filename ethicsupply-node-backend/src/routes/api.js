@@ -38,7 +38,9 @@ router.get("/", (req, res) => {
       settings: "/api/settings",
       exportCSV: "/api/suppliers/export/csv",
       transparency: "/api/suppliers/:id/transparency",
-      scenarios: "/api/scenarios/s1|s2|s3|s4/:supplierId",
+      trace: "/api/suppliers/:id/trace",
+      traceabilityMetrics: "/api/traceability/metrics",
+      scenarios: "/api/scenarios/s1|s2|s3|s4",
     },
   });
 });

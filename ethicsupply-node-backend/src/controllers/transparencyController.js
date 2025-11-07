@@ -10,6 +10,8 @@ exports.getCalculationTrace = async (req, res) => {
   try {
     const { supplierId } = req.params;
     const { page = 1, limit = 10, latest = "true" } = req.query;
+    
+    console.log(`[Trace] Request received for supplierId: ${supplierId}, latest: ${latest}`);
 
     // Helper function to find supplier by ID (handles both MongoDB ObjectId and numeric ID)
     const findSupplierById = async (id) => {

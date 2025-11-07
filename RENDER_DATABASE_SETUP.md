@@ -1,6 +1,7 @@
 # Render Database Connection Setup
 
 ## Problem
+
 Your Render backend is not connected to MongoDB because the `MONGODB_URI` environment variable is missing.
 
 ## Solution: Add MongoDB Connection String to Render
@@ -13,11 +14,13 @@ Your Render backend is not connected to MongoDB because the `MONGODB_URI` enviro
 
 1. Go to your **Render Dashboard**: https://dashboard.render.com
 2. You'll see a list of all your services. Look for:
+
    - A service with type **"PostgreSQL"** or **"MongoDB"** (database icon)
    - OR check the **"Databases"** section in the left sidebar
    - The name might be: `optiethic-db`, `optisupply-db`, or similar
 
 3. **If you DON'T see a database service:**
+
    - You're probably using **MongoDB Atlas** (cloud database) - skip to Option B below
    - OR you need to create a database first (see "Creating a Database" section)
 
@@ -84,21 +87,25 @@ After adding the environment variable:
 ### Still seeing "fallback mode" or mock data?
 
 1. **Check deployment logs**:
+
    - Go to Render Dashboard → Your Service → "Logs" tab
    - Look for MongoDB connection errors
 
 2. **Common errors**:
 
    **"MongoNetworkError"** or **"Connection timeout"**
+
    - Your MongoDB server might not allow connections from Render's IPs
    - **For MongoDB Atlas**: Add `0.0.0.0/0` to IP Whitelist (Network Access)
    - **For Render Database**: Should work automatically, check if database is running
 
    **"Authentication failed"**
+
    - Check username/password in connection string
    - Make sure the connection string is correct
 
    **"MONGODB_URI is not defined"**
+
    - Environment variable not set correctly
    - Make sure variable name is exactly `MONGODB_URI` (case-sensitive)
    - Redeploy after adding the variable
@@ -131,11 +138,13 @@ If you don't see a database service in your Render dashboard:
 If you're using Render's managed MongoDB database:
 
 1. The connection string format is usually:
+
    ```
    mongodb://[username]:[password]@[host]:[port]/[database]?authSource=admin
    ```
 
 2. You can find it in:
+
    - Database service → **"Info"** tab → **"Internal Database URL"**
 
 3. **Important**: Use the **Internal Database URL** (not external) for better performance
@@ -165,11 +174,13 @@ If you're using Render's managed MongoDB database:
 ### Step 2: Customize the Connection String
 
 Replace the placeholders:
+
 - Replace `<username>` with your database username
 - Replace `<password>` with your database password
 - Add your database name at the end: `/optiethic` or `/optisupply`
 
 **Final format should be:**
+
 ```
 mongodb+srv://myuser:mypassword@cluster0.xxxxx.mongodb.net/optiethic?retryWrites=true&w=majority
 ```
@@ -209,10 +220,12 @@ Use the connection string from Step 2 as your `MONGODB_URI` in Render.
 Once connected, you should:
 
 1. **Seed the database** (if not already done):
+
    - You can create a one-time script or use MongoDB Compass/Atlas UI
    - Or add a `/api/seed` endpoint for initial setup
 
 2. **Verify data**:
+
    - Visit `https://optisupply.onrender.com/api/suppliers`
    - Should return real data (not mock data)
 
@@ -228,4 +241,3 @@ If you're still having issues:
 2. Verify MongoDB is accessible (test connection string locally)
 3. Make sure database user has proper permissions
 4. Check network/firewall settings
-
