@@ -13,6 +13,7 @@ const Supplier = require("./Supplier");
 const User = require("./User");
 const ScoringSettings = require("./ScoringSettings");
 const ScoringWeight = require("./ScoringWeight");
+const CalculationTrace = require("./CalculationTrace");
 
 // Export all models
 module.exports = {
@@ -28,4 +29,5 @@ module.exports = {
   User,
   ScoringSettings,
   ScoringWeight,
+  CalculationTrace,
 };

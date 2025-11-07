@@ -2,10 +2,13 @@
   "name": "ethicsupply-node-backend",
   "version": "1.0.0",
   "description": "Node.js backend for EthicSupply with MongoDB",
-  "main": "render.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node render.js",
-    "dev": "nodemon dev-server.js",
+    "start": "node src/server.js",
+    "start:render": "node render.js",
+    "dev": "nodemon src/server.js",
+    "dev:mock": "nodemon dev-server.js",
+    "seed": "node src/scripts/seedDatabase.js",
     "test": "jest --runInBand"
   },
   "dependencies": {

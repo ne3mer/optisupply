@@ -144,11 +144,15 @@ router.get("/exports/industry-map", optionalAuth, exportRateLimiter, exportContr
 
 // Transparency routes
 router.get("/suppliers/:supplierId/transparency", transparencyController.getCalculationTrace);
+router.get("/suppliers/:supplierId/trace", transparencyController.getCalculationTrace);
+router.post("/suppliers/:supplierId/trace/generate", transparencyController.generateTrace);
+router.get("/traceability/metrics", transparencyController.getTraceabilityMetrics);
+router.post("/trace/generate-all", transparencyController.generateAllTraces);
 
-// Scenario routes (S1-S4)
-router.post("/scenarios/s1/:supplierId", scenarioController.s1Utility);
-router.post("/scenarios/s2/:supplierId", scenarioController.s2Sensitivity);
-router.post("/scenarios/s3/:supplierId", scenarioController.s3Missingness);
-router.post("/scenarios/s4/:supplierId", scenarioController.s4Ablation);
+// Scenario routes (S1-S4) - Updated API
+router.post("/scenarios/s1", scenarioController.s1Utility);
+router.post("/scenarios/s2", scenarioController.s2Sensitivity);
+router.post("/scenarios/s3", scenarioController.s3Missingness);
+router.post("/scenarios/s4", scenarioController.s4Ablation);
 
 module.exports = router;

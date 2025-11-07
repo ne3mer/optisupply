@@ -1,33 +1,125 @@
 const db = require("../models");
 const { scoreSupplier, scoreSupplierWithBreakdown } = require("../utils/esgScoring");
+const { 
+  kendallTau, 
+  meanAbsoluteError,
+  calculateRankShifts,
+  calculateDisparity,
+  topKPreservation,
+  knnImpute,
+} = require("../utils/statistics");
+const { exportRankingsCSV } = require("./exportController");
 
-// S1: Utility - Test scoring with different weight configurations
+/**
+ * Helper: Get baseline rankings
+ */
+async function getBaselineRankings() {
+  const settings = await db.ScoringSettings.getDefault();
+  const suppliers = await db.Supplier.find({});
+
+  const rankings = suppliers.map((supplier) => {
+    const scores = scoreSupplier(supplier.toObject(), settings);
+    return {
+      id: supplier._id.toString(),
+      name: supplier.name,
+      score: scores.ethical_score,
+    };
+  });
+
+  // Sort by score (descending) and assign ranks
+  rankings.sort((a, b) => b.score - a.score);
+  rankings.forEach((r, idx) => {
+    r.rank = idx + 1;
+  });
+
+  return { rankings, suppliers, settings };
+}
+
+/**
+ * Helper: Generate CSV and return URL/data
+ */
+function generateRankingsCsv(rankings, scenario) {
+  const headers = ["SupplierID", "Rank", "Name", "Score"];
+  const rows = rankings.map((r) => [r.id, r.rank, r.name, r.score.toFixed(2)]);
+
+  const csvLines = [
+    headers.join(","),
+    ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")),
+  ];
+
+  const csv = csvLines.join("\n");
+  const filename = `rankings_${scenario}_${new Date().toISOString().split("T")[0]}.csv`;
+
+  return {
+    csv,
+    filename,
+    url: `/api/scenarios/${scenario}/csv`, // Placeholder URL
+  };
+}
+
+/**
+ * S1: Utility Analysis
+ * POST /api/scenarios/s1
+ * Tests scoring with constraints (e.g., minimum margin requirement)
+ * 
+ * Request body: { constraint: { marginMin?: number } }
+ * Returns: { deltaObjectivePct, ranksCsvUrl, rankings, baseline }
+ */
 exports.s1Utility = async (req, res) => {
   try {
-    const { supplierId } = req.params;
-    const { weights } = req.body; // Optional custom weights
+    const { constraint = {} } = req.body;
+    const { marginMin } = constraint;
 
-    const supplier = await db.Supplier.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ error: "Supplier not found" });
-    }
+    // Get baseline
+    const { rankings: baselineRankings, suppliers, settings } = await getBaselineRankings();
 
-    const defaultSettings = await db.ScoringSettings.getDefault();
-    const testSettings = weights ? { ...defaultSettings.toObject(), ...weights } : defaultSettings;
+    // Apply constraint: filter suppliers by minimum margin (if provided)
+    // Margin can be calculated as (score - threshold)
+    const threshold = marginMin || 0;
+    
+    const constrainedSuppliers = suppliers.filter((supplier) => {
+      const scores = scoreSupplier(supplier.toObject(), settings);
+      return scores.ethical_score >= threshold;
+    });
 
-    const scores = scoreSupplier(supplier.toObject(), testSettings);
-    const breakdown = scoreSupplierWithBreakdown(supplier.toObject(), testSettings);
+    // Calculate new rankings with constraint
+    const constrainedRankings = constrainedSuppliers.map((supplier) => {
+      const scores = scoreSupplier(supplier.toObject(), settings);
+      return {
+        id: supplier._id.toString(),
+        name: supplier.name,
+        score: scores.ethical_score,
+      };
+    });
+
+    constrainedRankings.sort((a, b) => b.score - a.score);
+    constrainedRankings.forEach((r, idx) => {
+      r.rank = idx + 1;
+    });
+
+    // Calculate delta objective (change in total score)
+    const baselineTotal = baselineRankings.reduce((sum, r) => sum + r.score, 0);
+    const constrainedTotal = constrainedRankings.reduce((sum, r) => sum + r.score, 0);
+    const deltaObjectivePct = baselineTotal > 0 
+      ? ((constrainedTotal - baselineTotal) / baselineTotal) * 100 
+      : 0;
+
+    // Generate CSV
+    const csvData = generateRankingsCsv(constrainedRankings, "s1");
 
     res.status(200).json({
       scenario: "S1 - Utility",
-      description: "Test scoring with different weight configurations",
-      supplier: {
-        id: supplier._id,
-        name: supplier.name,
+      description: "Test scoring with constraints",
+      constraint: { marginMin: threshold },
+      deltaObjectivePct: parseFloat(deltaObjectivePct.toFixed(2)),
+      ranksCsvUrl: csvData.url,
+      rankings: constrainedRankings,
+      baseline: baselineRankings,
+      summary: {
+        baselineCount: baselineRankings.length,
+        constrainedCount: constrainedRankings.length,
+        filtered: baselineRankings.length - constrainedRankings.length,
       },
-      settings: testSettings,
-      scores,
-      breakdown,
     });
   } catch (error) {
     console.error("Error in S1 scenario:", error);
@@ -35,61 +127,65 @@ exports.s1Utility = async (req, res) => {
   }
 };
 
-// S2: Sensitivity - Test how scores change with small input variations
+/**
+ * S2: Sensitivity Analysis
+ * POST /api/scenarios/s2
+ * Tests how rankings change with perturbations
+ * 
+ * Request body: { perturbation: "+10" | "-10" | "+20" | "-20" }
+ * Returns: { tau, meanRankShift, maxRankShift, ranksCsvUrl, rankings }
+ */
 exports.s2Sensitivity = async (req, res) => {
   try {
-    const { supplierId } = req.params;
-    const { variation = 0.05 } = req.body; // Default 5% variation
+    const { perturbation = "+10" } = req.body;
 
-    const supplier = await db.Supplier.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ error: "Supplier not found" });
-    }
+    // Parse perturbation
+    const perturbValue = parseFloat(perturbation) / 100; // Convert to decimal
 
-    const settings = await db.ScoringSettings.getDefault();
-    const baseScores = scoreSupplier(supplier.toObject(), settings);
+    // Get baseline
+    const { rankings: baselineRankings, suppliers, settings } = await getBaselineRankings();
 
-    // Test variations on key metrics
-    const variations = [
-      { field: "revenue", multiplier: 1 + variation },
-      { field: "revenue", multiplier: 1 - variation },
-      { field: "renewable_energy_percent", delta: variation * 100 },
-      { field: "renewable_energy_percent", delta: -variation * 100 },
-      { field: "transparency_score", delta: variation * 100 },
-      { field: "transparency_score", delta: -variation * 100 },
-    ];
-
-    const results = variations.map(({ field, multiplier, delta }) => {
-      const modified = { ...supplier.toObject() };
-      if (multiplier) {
-        modified[field] = (modified[field] || 0) * multiplier;
-      } else if (delta !== undefined) {
-        modified[field] = (modified[field] || 0) + delta;
-      }
-      const scores = scoreSupplier(modified, settings);
+    // Apply perturbation to all scores
+    const perturbedRankings = suppliers.map((supplier) => {
+      const scores = scoreSupplier(supplier.toObject(), settings);
+      // Perturb the final score
+      const perturbedScore = scores.ethical_score * (1 + perturbValue);
       return {
-        variation: { field, multiplier, delta },
-        scores,
-        delta: {
-          environmental: scores.environmental_score - baseScores.environmental_score,
-          social: scores.social_score - baseScores.social_score,
-          governance: scores.governance_score - baseScores.governance_score,
-          composite: scores.composite_score - baseScores.composite_score,
-          ethical: scores.ethical_score - baseScores.ethical_score,
-        },
+        id: supplier._id.toString(),
+        name: supplier.name,
+        score: Math.max(0, Math.min(100, perturbedScore)), // Clamp to [0, 100]
       };
     });
 
+    perturbedRankings.sort((a, b) => b.score - a.score);
+    perturbedRankings.forEach((r, idx) => {
+      r.rank = idx + 1;
+    });
+
+    // Calculate statistics
+    const tau = kendallTau(
+      baselineRankings.map(r => ({ id: r.id, rank: r.rank })),
+      perturbedRankings.map(r => ({ id: r.id, rank: r.rank }))
+    );
+
+    const { meanShift, maxShift } = calculateRankShifts(
+      baselineRankings.map(r => ({ id: r.id, rank: r.rank })),
+      perturbedRankings.map(r => ({ id: r.id, rank: r.rank }))
+    );
+
+    // Generate CSV
+    const csvData = generateRankingsCsv(perturbedRankings, "s2");
+
     res.status(200).json({
       scenario: "S2 - Sensitivity",
-      description: "Test how scores change with small input variations",
-      supplier: {
-        id: supplier._id,
-        name: supplier.name,
-      },
-      baseScores,
-      variation,
-      results,
+      description: "Test how rankings change with perturbations",
+      perturbation,
+      tau: parseFloat(tau.toFixed(4)),
+      meanRankShift: parseFloat(meanShift.toFixed(2)),
+      maxRankShift: maxShift,
+      ranksCsvUrl: csvData.url,
+      rankings: perturbedRankings,
+      baseline: baselineRankings,
     });
   } catch (error) {
     console.error("Error in S2 scenario:", error);
@@ -97,50 +193,127 @@ exports.s2Sensitivity = async (req, res) => {
   }
 };
 
-// S3: Missingness - Test scoring with missing data (imputation behavior)
+/**
+ * S3: Missingness Analysis
+ * POST /api/scenarios/s3
+ * Tests scoring with missing data and imputation
+ * 
+ * Request body: { missingPct: 5|10, imputation: "industryMean"|"knn", k?: number }
+ * Returns: { top3PreservationPct, mae, ranksCsvUrl, rankings }
+ */
 exports.s3Missingness = async (req, res) => {
   try {
-    const { supplierId } = req.params;
-    const { missingFields = [] } = req.body; // Array of field names to remove
+    const { missingPct = 10, imputation = "industryMean", k = 5 } = req.body;
 
-    const supplier = await db.Supplier.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ error: "Supplier not found" });
-    }
+    // Get baseline
+    const { rankings: baselineRankings, suppliers, settings } = await getBaselineRankings();
 
-    const settings = await db.ScoringSettings.getDefault();
-    const baseScores = scoreSupplier(supplier.toObject(), settings);
-    const baseBreakdown = scoreSupplierWithBreakdown(supplier.toObject(), settings);
+    // Metrics that can be made missing
+    const metrics = [
+      "transparency_score",
+      "renewable_energy_percent",
+      "injury_rate",
+      "training_hours",
+      "diversity_pct",
+    ];
 
-    // Create modified supplier with missing fields
-    const modified = { ...supplier.toObject() };
-    missingFields.forEach((field) => {
-      modified[field] = null;
+    // Create modified suppliers with missing data
+    const modifiedSuppliers = suppliers.map((supplier) => {
+      const supplierObj = supplier.toObject();
+      
+      // Randomly make metrics missing based on missingPct
+      metrics.forEach((metric) => {
+        if (Math.random() * 100 < missingPct) {
+          supplierObj[metric] = null;
+        }
+      });
+
+      return supplierObj;
     });
 
-    const modifiedScores = scoreSupplier(modified, settings);
-    const modifiedBreakdown = scoreSupplierWithBreakdown(modified, settings);
+    // Perform imputation
+    const imputedSuppliers = modifiedSuppliers.map((supplier, idx) => {
+      const imputedSupplier = { ...supplier };
 
-    // Count imputed values
-    const imputedCount = Object.values(modifiedBreakdown.normalizedMetrics).filter(
-      (m) => m.imputed
-    ).length;
+      metrics.forEach((metric) => {
+        if (supplier[metric] === null) {
+          if (imputation === "industryMean") {
+            // Calculate industry mean
+            const sameIndustry = suppliers.filter(
+              (s) => s.industry === supplier.industry && s[metric] !== null
+            );
+            if (sameIndustry.length > 0) {
+              const sum = sameIndustry.reduce((acc, s) => acc + (s[metric] || 0), 0);
+              imputedSupplier[metric] = sum / sameIndustry.length;
+            } else {
+              // Fallback to global mean
+              const allValues = suppliers
+                .map((s) => s[metric])
+                .filter((v) => v !== null);
+              imputedSupplier[metric] =
+                allValues.length > 0
+                  ? allValues.reduce((a, b) => a + b, 0) / allValues.length
+                  : 0;
+            }
+          } else if (imputation === "knn") {
+            // Use KNN imputation
+            const allSuppliers = suppliers.map((s) => s.toObject());
+            imputedSupplier[metric] = knnImpute(
+              allSuppliers,
+              idx,
+              metric,
+              metrics.filter((m) => m !== metric),
+              k
+            );
+          }
+        }
+      });
+
+      return imputedSupplier;
+    });
+
+    // Calculate new rankings with imputed data
+    const imputedRankings = imputedSuppliers.map((supplier) => {
+      const scores = scoreSupplier(supplier, settings);
+      return {
+        id: supplier._id.toString(),
+        name: supplier.name,
+        score: scores.ethical_score,
+      };
+    });
+
+    imputedRankings.sort((a, b) => b.score - a.score);
+    imputedRankings.forEach((r, idx) => {
+      r.rank = idx + 1;
+    });
+
+    // Calculate top-3 preservation
+    const top3Baseline = baselineRankings.slice(0, 3);
+    const top3Imputed = imputedRankings.slice(0, 3);
+    const top3PreservationPct = topKPreservation(top3Baseline, top3Imputed);
+
+    // Calculate MAE of scores
+    const baselineScores = baselineRankings.map((r) => r.score);
+    const imputedScores = baselineRankings.map((br) => {
+      const imputed = imputedRankings.find((ir) => ir.id === br.id);
+      return imputed ? imputed.score : 0;
+    });
+    const mae = meanAbsoluteError(baselineScores, imputedScores);
+
+    // Generate CSV
+    const csvData = generateRankingsCsv(imputedRankings, "s3");
 
     res.status(200).json({
       scenario: "S3 - Missingness",
-      description: "Test scoring with missing data (imputation behavior)",
-      supplier: {
-        id: supplier._id,
-        name: supplier.name,
-      },
-      missingFields,
-      baseScores,
-      modifiedScores,
-      imputedCount,
-      breakdown: {
-        base: baseBreakdown,
-        modified: modifiedBreakdown,
-      },
+      description: "Test scoring with missing data and imputation",
+      missingPct,
+      imputation,
+      k: imputation === "knn" ? k : undefined,
+      top3PreservationPct: parseFloat(top3PreservationPct.toFixed(2)),
+      mae: parseFloat(mae.toFixed(4)),
+      ranksCsvUrl: csvData.url,
+      rankings: imputedRankings,
+      baseline: baselineRankings,
     });
   } catch (error) {
     console.error("Error in S3 scenario:", error);
@@ -148,97 +321,70 @@ exports.s3Missingness = async (req, res) => {
   }
 };
 
-// S4: Ablation - Test scoring with individual metrics/pillars removed
+/**
+ * S4: Fairness/Ablation Analysis
+ * POST /api/scenarios/s4
+ * Tests scoring with normalization on/off
+ * 
+ * Request body: { normalization: "off"|"on" }
+ * Returns: { D, tau, ranksCsvUrl, rankings }
+ */
 exports.s4Ablation = async (req, res) => {
   try {
-    const { supplierId } = req.params;
-    const { removePillar, removeMetric } = req.body; // Optional: "environmental", "social", "governance" or metric name
+    const { normalization = "on" } = req.body;
 
-    const supplier = await db.Supplier.findById(supplierId);
-    if (!supplier) {
-      return res.status(404).json({ error: "Supplier not found" });
-    }
+    // Get baseline
+    const { rankings: baselineRankings, suppliers, settings } = await getBaselineRankings();
 
-    const settings = await db.ScoringSettings.getDefault();
-    const baseScores = scoreSupplier(supplier.toObject(), settings);
+    // Modify settings for normalization
+    const modifiedSettings = {
+      ...settings.toObject ? settings.toObject() : settings,
+      useIndustryBands: normalization === "on",
+    };
 
-    const results = [];
-
-    if (removePillar) {
-      // Test removing entire pillar
-      const modifiedSettings = { ...settings.toObject() };
-      if (removePillar === "environmental") {
-        modifiedSettings.environmentalWeight = 0;
-        modifiedSettings.socialWeight = 0.5;
-        modifiedSettings.governanceWeight = 0.5;
-      } else if (removePillar === "social") {
-        modifiedSettings.environmentalWeight = 0.5;
-        modifiedSettings.socialWeight = 0;
-        modifiedSettings.governanceWeight = 0.5;
-      } else if (removePillar === "governance") {
-        modifiedSettings.environmentalWeight = 0.5;
-        modifiedSettings.socialWeight = 0.5;
-        modifiedSettings.governanceWeight = 0;
-      }
+    // Calculate new rankings with modified normalization
+    const modifiedRankings = suppliers.map((supplier) => {
       const scores = scoreSupplier(supplier.toObject(), modifiedSettings);
-      results.push({
-        type: "pillar",
-        removed: removePillar,
-        scores,
-        impact: {
-          environmental: scores.environmental_score - baseScores.environmental_score,
-          social: scores.social_score - baseScores.social_score,
-          governance: scores.governance_score - baseScores.governance_score,
-          composite: scores.composite_score - baseScores.composite_score,
-          ethical: scores.ethical_score - baseScores.ethical_score,
-        },
-      });
-    }
-
-    if (removeMetric) {
-      // Test removing individual metric (set weight to 0)
-      const modifiedSettings = { ...settings.toObject() };
-      const metricWeightMap = {
-        emission_intensity: "emissionIntensityWeight",
-        renewable_pct: "renewableShareWeight",
-        water_intensity: "waterIntensityWeight",
-        waste_intensity: "wasteIntensityWeight",
-        injury_rate: "injuryRateWeight",
-        training_hours: "trainingHoursWeight",
-        wage_ratio: "wageRatioWeight",
-        diversity_pct: "diversityWeight",
-        board_diversity: "boardDiversityWeight",
-        board_independence: "boardIndependenceWeight",
-        anti_corruption: "antiCorruptionWeight",
-        transparency_score: "transparencyWeight",
+      return {
+        id: supplier._id.toString(),
+        name: supplier.name,
+        industry: supplier.industry,
+        score: scores.ethical_score,
       };
-      if (metricWeightMap[removeMetric]) {
-        modifiedSettings[metricWeightMap[removeMetric]] = 0;
-      }
-      const scores = scoreSupplier(supplier.toObject(), modifiedSettings);
-      results.push({
-        type: "metric",
-        removed: removeMetric,
-        scores,
-        impact: {
-          environmental: scores.environmental_score - baseScores.environmental_score,
-          social: scores.social_score - baseScores.social_score,
-          governance: scores.governance_score - baseScores.governance_score,
-          composite: scores.composite_score - baseScores.composite_score,
-          ethical: scores.ethical_score - baseScores.ethical_score,
-        },
-      });
-    }
+    });
+
+    modifiedRankings.sort((a, b) => b.score - a.score);
+    modifiedRankings.forEach((r, idx) => {
+      r.rank = idx + 1;
+    });
+
+    // Calculate Kendall's tau
+    const tau = kendallTau(
+      baselineRankings.map((r) => ({ id: r.id, rank: r.rank })),
+      modifiedRankings.map((r) => ({ id: r.id, rank: r.rank }))
+    );
+
+    // Calculate disparity by industry
+    const scoresWithGroup = modifiedRankings.map((r) => ({
+      id: r.id,
+      score: r.score,
+      group: r.industry || "Unknown",
+    }));
+    const { D, groupMeans } = calculateDisparity(scoresWithGroup);
+
+    // Generate CSV
+    const csvData = generateRankingsCsv(modifiedRankings, "s4");
 
     res.status(200).json({
-      scenario: "S4 - Ablation",
-      description: "Test scoring with individual metrics/pillars removed",
-      supplier: {
-        id: supplier._id,
-        name: supplier.name,
-      },
-      baseScores,
-      results,
+      scenario: "S4 - Fairness/Ablation",
+      description: "Test scoring with normalization on/off",
+      normalization,
+      D: parseFloat(D.toFixed(4)),
+      tau: parseFloat(tau.toFixed(4)),
+      ranksCsvUrl: csvData.url,
+      rankings: modifiedRankings,
+      baseline: baselineRankings,
+      disparityByIndustry: groupMeans,
     });
   } catch (error) {
     console.error("Error in S4 scenario:", error);
@@ -246,3 +392,9 @@ exports.s4Ablation = async (req, res) => {
   }
 };
 
+module.exports = {
+  s1Utility: exports.s1Utility,
+  s2Sensitivity: exports.s2Sensitivity,
+  s3Missingness: exports.s3Missingness,
+  s4Ablation: exports.s4Ablation,
+};

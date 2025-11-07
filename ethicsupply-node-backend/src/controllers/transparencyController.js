@@ -1,12 +1,150 @@
 const db = require("../models");
 const { scoreSupplierWithBreakdown } = require("../utils/esgScoring");
 
-// Get full calculation trace for a supplier (raw → normalized → weighted → final)
+/**
+ * Get calculation trace for a supplier
+ * GET /api/suppliers/:supplierId/transparency
+ * GET /api/suppliers/:supplierId/trace (new alias)
+ */
 exports.getCalculationTrace = async (req, res) => {
   try {
     const { supplierId } = req.params;
-    const supplier = await db.Supplier.findById(supplierId);
+    const { page = 1, limit = 10, latest = "true" } = req.query;
 
+    if (!db.CalculationTrace) {
+      console.warn("CalculationTrace model not available");
+      // Fallback: generate trace on-the-fly
+      const supplier = await db.Supplier.findById(supplierId);
+      if (!supplier) {
+        return res.status(404).json({ error: "Supplier not found" });
+      }
+
+      const settings = await db.ScoringSettings.getDefault();
+      const breakdown = scoreSupplierWithBreakdown(supplier.toObject(), settings);
+
+      // Generate trace structure
+      const trace = {
+        supplierId: supplier._id,
+        supplierName: supplier.name,
+        timestamp: new Date(),
+        steps: [
+          {
+            name: "raw",
+            description: "Raw metric values from supplier data",
+            values: Object.keys(breakdown.normalizedMetrics).reduce((acc, key) => {
+              acc[key] = breakdown.normalizedMetrics[key].raw;
+              return acc;
+            }, {}),
+          },
+          {
+            name: "normalized",
+            description: "Industry-band normalized values (0-1 scale)",
+            values: Object.keys(breakdown.normalizedMetrics).reduce((acc, key) => {
+              acc[key] = breakdown.normalizedMetrics[key].normalized;
+              return acc;
+            }, {}),
+          },
+          {
+            name: "weighted",
+            description: "Weighted aggregation into pillar scores",
+            values: breakdown.pillarScores,
+          },
+          {
+            name: "composite",
+            description: "Final composite score with risk penalty applied",
+            values: {
+              baseComposite: breakdown.compositeScore,
+              riskPenalty: breakdown.riskPenalty || 0,
+              finalScore: breakdown.finalScore,
+            },
+          },
+        ],
+        finalScore: breakdown.finalScore,
+        pillarScores: breakdown.pillarScores,
+      };
+
+      return res.status(200).json({
+        trace,
+        generated: true,
+        message: "Trace generated on-the-fly (not persisted)",
+      });
+    }
+
+    // If latest=true, return only the most recent trace
+    if (latest === "true") {
+      const trace = await db.CalculationTrace.getLatestForSupplier(supplierId);
+      if (!trace) {
+        return res.status(404).json({
+          error: "No calculation trace found for this supplier",
+        });
+      }
+      return res.status(200).json({ trace });
+    }
+
+    // Paginated traces
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const traces = await db.CalculationTrace.find({ supplierId })
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .lean();
+
+    const total = await db.CalculationTrace.countDocuments({ supplierId });
+
+    res.status(200).json({
+      traces,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching calculation trace:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Get traceability metrics
+ * GET /api/traceability/metrics
+ */
+exports.getTraceabilityMetrics = async (req, res) => {
+  try {
+    if (!db.CalculationTrace) {
+      return res.status(200).json({
+        traceabilityRate: 0,
+        meanStepsCount: 0,
+        message: "CalculationTrace model not available",
+      });
+    }
+
+    const [traceabilityRate, meanStepsCount] = await Promise.all([
+      db.CalculationTrace.getTraceabilityRate(),
+      db.CalculationTrace.getMeanStepsCount(),
+    ]);
+
+    res.status(200).json({
+      traceabilityRate: parseFloat(traceabilityRate.toFixed(2)),
+      meanStepsCount: parseFloat(meanStepsCount.toFixed(2)),
+      totalTraces: await db.CalculationTrace.countDocuments(),
+    });
+  } catch (error) {
+    console.error("Error fetching traceability metrics:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Generate and persist trace for a supplier
+ * POST /api/suppliers/:supplierId/trace/generate
+ */
+exports.generateTrace = async (req, res) => {
+  try {
+    const { supplierId } = req.params;
+
+    const supplier = await db.Supplier.findById(supplierId);
     if (!supplier) {
       return res.status(404).json({ error: "Supplier not found" });
     }
@@ -14,85 +152,79 @@ exports.getCalculationTrace = async (req, res) => {
     const settings = await db.ScoringSettings.getDefault();
     const breakdown = scoreSupplierWithBreakdown(supplier.toObject(), settings);
 
-    // Build detailed trace
-    const trace = {
-      supplier: {
-        id: supplier._id,
-        name: supplier.name,
-        country: supplier.country,
-        industry: supplier.industry,
-      },
-      settings: {
-        useIndustryBands: breakdown.useIndustryBands,
-        riskPenaltyEnabled: breakdown.risk.enabled,
-        weights: breakdown.weights,
-      },
-      rawValues: {},
-      normalizedValues: {},
-      pillarScores: breakdown.pillarScores,
-      compositeScore: breakdown.composite,
-      riskAdjustment: {
-        factor: breakdown.risk.factor,
-        level: breakdown.risk.level,
-        enabled: breakdown.risk.enabled,
-      },
-      finalScore: breakdown.ethical_score,
-      completenessRatio: breakdown.completeness_ratio,
-    };
+    if (!db.CalculationTrace) {
+      return res.status(503).json({
+        error: "CalculationTrace model not available",
+      });
+    }
 
-    // Extract raw and normalized values
-    Object.entries(breakdown.normalizedMetrics).forEach(([metric, data]) => {
-      trace.rawValues[metric] = {
-        value: data.value,
-        imputed: data.imputed,
-        band: data.band,
-      };
-      trace.normalizedValues[metric] = {
-        normalized: data.normalized,
-        weighted: (() => {
-          // Calculate weighted contribution
-          if (metric.includes("emission") || metric.includes("intensity")) {
-            return data.normalized * breakdown.weights.environmental.emission_intensity;
-          } else if (metric === "renewable_pct") {
-            return data.normalized * breakdown.weights.environmental.renewable_pct;
-          } else if (metric === "water_intensity") {
-            return data.normalized * breakdown.weights.environmental.water_intensity;
-          } else if (metric === "waste_intensity") {
-            return data.normalized * breakdown.weights.environmental.waste_intensity;
-          } else if (metric === "injury_rate") {
-            return data.normalized * breakdown.weights.social.injury_rate;
-          } else if (metric === "training_hours") {
-            return data.normalized * breakdown.weights.social.training_hours;
-          } else if (metric === "wage_ratio") {
-            return data.normalized * breakdown.weights.social.wage_ratio;
-          } else if (metric === "diversity_pct") {
-            return data.normalized * breakdown.weights.social.diversity_pct;
-          } else if (metric === "board_diversity") {
-            return data.normalized * breakdown.weights.governance.board_diversity;
-          } else if (metric === "board_independence") {
-            return data.normalized * breakdown.weights.governance.board_independence;
-          } else if (metric === "transparency_score") {
-            return data.normalized * breakdown.weights.governance.transparency_score;
-          }
-          return null;
-        })(),
-      };
-    });
+    // Create and persist trace
+    const trace = await db.CalculationTrace.createFromBreakdown(
+      supplier._id,
+      supplier.name,
+      breakdown,
+      settings.toObject ? settings.toObject() : settings
+    );
 
-    res.status(200).json({
+    res.status(201).json({
+      message: "Calculation trace generated and persisted",
       trace,
-      summary: {
-        formula: `Final Score = Composite × (1 - Risk Factor)`,
-        compositeFormula: `Composite = E×${breakdown.weights.composite.environmental} + S×${breakdown.weights.composite.social} + G×${breakdown.weights.composite.governance}`,
-        riskFormula: breakdown.risk.enabled
-          ? `Risk Factor = avg(climate_risk, geopolitical_risk, labor_dispute_risk)`
-          : `Risk Factor = 0 (disabled)`,
-        finalCalculation: `${breakdown.composite.toFixed(2)} × (1 - ${breakdown.risk.factor.toFixed(3)}) = ${breakdown.ethical_score.toFixed(2)}`,
-      },
     });
   } catch (error) {
-    console.error("Error generating calculation trace:", error);
+    console.error("Error generating trace:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
+/**
+ * Batch generate traces for all suppliers
+ * POST /api/trace/generate-all
+ */
+exports.generateAllTraces = async (req, res) => {
+  try {
+    if (!db.CalculationTrace) {
+      return res.status(503).json({
+        error: "CalculationTrace model not available",
+      });
+    }
+
+    const suppliers = await db.Supplier.find({});
+    const settings = await db.ScoringSettings.getDefault();
+
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: [],
+    };
+
+    for (const supplier of suppliers) {
+      try {
+        const breakdown = scoreSupplierWithBreakdown(
+          supplier.toObject(),
+          settings
+        );
+        await db.CalculationTrace.createFromBreakdown(
+          supplier._id,
+          supplier.name,
+          breakdown,
+          settings.toObject ? settings.toObject() : settings
+        );
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          supplierId: supplier._id,
+          error: error.message,
+        });
+      }
+    }
+
+    res.status(200).json({
+      message: "Batch trace generation completed",
+      results,
+    });
+  } catch (error) {
+    console.error("Error in batch trace generation:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
