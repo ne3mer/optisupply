@@ -104,4 +104,3 @@ Verify the backend is running:
 - Health check: https://optisupply.onrender.com/
 
 All endpoints should return valid JSON responses, not 404 errors.
-

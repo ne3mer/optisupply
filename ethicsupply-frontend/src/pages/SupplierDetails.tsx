@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getSuppliers, Supplier } from "../services/api";
 import { motion } from "framer-motion";
+import CalculationTraceDrawer from "../components/CalculationTraceDrawer";
 import {
   ArrowLeftIcon,
   BuildingOfficeIcon,
@@ -175,6 +176,7 @@ const SupplierDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+  const [showTraceDrawer, setShowTraceDrawer] = useState(false);
 
   const fetchSupplier = async () => {
     if (!id) {
@@ -471,7 +473,7 @@ const SupplierDetails = () => {
                 <PlayIcon className="h-5 w-5 mr-2" /> Run/View Assessment
               </button>
               <button
-                onClick={() => navigate(`/supplier-analytics/${supplierId}`)} // Assuming analytics route
+                onClick={() => setShowTraceDrawer(true)}
                 className="w-full flex items-center justify-center text-sm py-2 px-4 rounded hover:opacity-90 transition-opacity duration-200"
                 style={{
                   backgroundColor: colors.secondary,
@@ -745,6 +747,16 @@ const SupplierDetails = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Calculation Trace Drawer */}
+      {supplier && (
+        <CalculationTraceDrawer
+          isOpen={showTraceDrawer}
+          onClose={() => setShowTraceDrawer(false)}
+          supplierId={supplier.id || id || ""}
+          supplierName={supplier.name}
+        />
+      )}
     </div>
   );
 };

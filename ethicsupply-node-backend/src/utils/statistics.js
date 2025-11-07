@@ -57,40 +57,30 @@ function kendallTau(rankings1, rankings2) {
 
 /**
  * Calculate Mean Absolute Error (MAE)
- * @param {Array<number>} actual - Actual values
- * @param {Array<number>} predicted - Predicted values
+ * Exact implementation as specified
+ * @param {Array<number>} a - Actual values
+ * @param {Array<number>} b - Predicted values
  * @returns {number} MAE value
  */
-function meanAbsoluteError(actual, predicted) {
-  if (actual.length !== predicted.length || actual.length === 0) {
+function meanAbsoluteError(a, b) {
+  if (a.length !== b.length || a.length === 0) {
     return 0;
   }
-
-  const sum = actual.reduce((acc, val, i) => {
-    return acc + Math.abs(val - predicted[i]);
-  }, 0);
-
-  return sum / actual.length;
+  return a.reduce((s, _, i) => s + Math.abs(a[i] - b[i]), 0) / a.length;
 }
 
 /**
  * Calculate Mean Absolute Percentage Error (MAPE)
- * @param {Array<number>} actual - Actual values
- * @param {Array<number>} predicted - Predicted values
+ * Exact implementation as specified
+ * @param {Array<number>} a - Actual values
+ * @param {Array<number>} b - Predicted values
  * @returns {number} MAPE value (as percentage)
  */
-function meanAbsolutePercentageError(actual, predicted) {
-  if (actual.length !== predicted.length || actual.length === 0) {
+function meanAbsolutePercentageError(a, b) {
+  if (a.length !== b.length || a.length === 0) {
     return 0;
   }
-
-  const sum = actual.reduce((acc, val, i) => {
-    if (val === 0) return acc; // Avoid division by zero
-    return acc + Math.abs((val - predicted[i]) / val);
-  }, 0);
-
-  const validCount = actual.filter(v => v !== 0).length;
-  return validCount > 0 ? (sum / validCount) * 100 : 0;
+  return 100 * a.reduce((s, _, i) => s + Math.abs(a[i] - b[i]) / (a[i] || 1), 0) / a.length;
 }
 
 /**
@@ -124,41 +114,29 @@ function calculateRankShifts(rankings1, rankings2) {
 
 /**
  * Calculate disparity (D) metric for fairness analysis
- * Measures difference in mean scores between groups
+ * Exact implementation as specified: measures difference in mean ranks between industries
  * 
- * @param {Array<{id: string, score: number, group: string}>} scores - Scores with group labels
- * @returns {{D: number, groupMeans: Object, details: Object}}
+ * @param {Array<{rank: number, industry: string}>} ranks - Ranks with industry labels
+ * @returns {number} Disparity D value
  */
-function calculateDisparity(scores) {
-  // Group scores by group
-  const groups = {};
-  scores.forEach(s => {
-    if (!groups[s.group]) {
-      groups[s.group] = [];
+function calculateDisparity(ranks) {
+  const by = new Map();
+  ranks.forEach(r => {
+    if (!by.has(r.industry)) {
+      by.set(r.industry, []);
     }
-    groups[s.group].push(s.score);
+    by.get(r.industry).push(r.rank);
   });
 
-  // Calculate mean for each group
-  const groupMeans = {};
-  for (const [group, values] of Object.entries(groups)) {
-    groupMeans[group] = values.reduce((sum, v) => sum + v, 0) / values.length;
-  }
+  const overall = ranks.reduce((s, r) => s + r.rank, 0) / ranks.length;
+  const K = by.size;
 
-  // Calculate maximum disparity (difference between highest and lowest group means)
-  const means = Object.values(groupMeans);
-  const D = means.length > 1 ? Math.max(...means) - Math.min(...means) : 0;
+  if (K === 0) return 0;
 
-  return {
-    D,
-    groupMeans,
-    details: {
-      groupCounts: Object.fromEntries(
-        Object.entries(groups).map(([k, v]) => [k, v.length])
-      ),
-      totalGroups: Object.keys(groups).length,
-    },
-  };
+  return Array.from(by.values()).reduce((s, arr) => {
+    const industryMean = arr.reduce((x, y) => x + y, 0) / arr.length;
+    return s + Math.abs(industryMean - overall);
+  }, 0) / K;
 }
 
 /**

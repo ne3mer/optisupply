@@ -364,13 +364,12 @@ exports.s4Ablation = async (req, res) => {
       modifiedRankings.map((r) => ({ id: r.id, rank: r.rank }))
     );
 
-    // Calculate disparity by industry
-    const scoresWithGroup = modifiedRankings.map((r) => ({
-      id: r.id,
-      score: r.score,
-      group: r.industry || "Unknown",
+    // Calculate disparity by industry (using exact implementation)
+    const ranksWithIndustry = modifiedRankings.map((r) => ({
+      rank: r.rank,
+      industry: r.industry || "Unknown",
     }));
-    const { D, groupMeans } = calculateDisparity(scoresWithGroup);
+    const D = calculateDisparity(ranksWithIndustry);
 
     // Generate CSV
     const csvData = generateRankingsCsv(modifiedRankings, "s4");
@@ -384,7 +383,6 @@ exports.s4Ablation = async (req, res) => {
       ranksCsvUrl: csvData.url,
       rankings: modifiedRankings,
       baseline: baselineRankings,
-      disparityByIndustry: groupMeans,
     });
   } catch (error) {
     console.error("Error in S4 scenario:", error);

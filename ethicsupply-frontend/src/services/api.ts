@@ -3559,9 +3559,16 @@ export const exportSuppliersCSV = async (): Promise<void> => {
 };
 
 // Get calculation trace for a supplier
-export const getCalculationTrace = async (supplierId: string | number): Promise<any> => {
+export const getCalculationTrace = async (supplierId: string | number, options?: { latest?: boolean, page?: number, limit?: number }): Promise<any> => {
   try {
-    const response = await fetch(getEndpoint(`suppliers/${supplierId}/transparency`));
+    const params = new URLSearchParams();
+    if (options?.latest !== undefined) params.append('latest', options.latest.toString());
+    if (options?.page) params.append('page', options.page.toString());
+    if (options?.limit) params.append('limit', options.limit.toString());
+    
+    const queryString = params.toString();
+    const url = getEndpoint(`suppliers/${supplierId}/trace${queryString ? `?${queryString}` : ''}`);
+    const response = await fetch(url);
     if (!response.ok) throw new Error("Failed to fetch calculation trace");
     return await response.json();
   } catch (error) {
@@ -3570,13 +3577,26 @@ export const getCalculationTrace = async (supplierId: string | number): Promise<
   }
 };
 
-// Scenario endpoints
-export const runScenarioS1 = async (supplierId: string | number, weights?: any): Promise<any> => {
+// Get traceability metrics
+export const getTraceabilityMetrics = async (): Promise<{ traceabilityRate: number; meanStepsCount: number; totalTraces: number }> => {
   try {
-    const response = await fetch(getEndpoint(`scenarios/s1/${supplierId}`), {
+    const response = await fetch(getEndpoint("traceability/metrics"));
+    if (!response.ok) throw new Error("Failed to fetch traceability metrics");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error fetching traceability metrics:", error);
+    throw error;
+  }
+};
+
+// Scenario endpoints (Chapter 4 requirements)
+// S1 Utility: constraint-based filtering
+export const runScenarioS1 = async (constraint: { marginMin?: number }): Promise<{ deltaObjectivePct: number; ranksCsvUrl: string }> => {
+  try {
+    const response = await fetch(getEndpoint("scenarios/s1"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ weights }),
+      body: JSON.stringify({ constraint }),
     });
     if (!response.ok) throw new Error("Failed to run S1 scenario");
     return await response.json();
@@ -3586,12 +3606,13 @@ export const runScenarioS1 = async (supplierId: string | number, weights?: any):
   }
 };
 
-export const runScenarioS2 = async (supplierId: string | number, variation?: number): Promise<any> => {
+// S2 Sensitivity: weight perturbations
+export const runScenarioS2 = async (perturbation: "+10" | "-10" | "+20" | "-20"): Promise<{ tau: number; meanRankShift: number; maxRankShift: number; ranksCsvUrl: string }> => {
   try {
-    const response = await fetch(getEndpoint(`scenarios/s2/${supplierId}`), {
+    const response = await fetch(getEndpoint("scenarios/s2"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ variation }),
+      body: JSON.stringify({ perturbation }),
     });
     if (!response.ok) throw new Error("Failed to run S2 scenario");
     return await response.json();
@@ -3601,12 +3622,13 @@ export const runScenarioS2 = async (supplierId: string | number, variation?: num
   }
 };
 
-export const runScenarioS3 = async (supplierId: string | number, missingFields?: string[]): Promise<any> => {
+// S3 Missingness: imputation strategies
+export const runScenarioS3 = async (missingPct: 5 | 10, imputation: "industryMean" | "knn", k?: number): Promise<{ top3PreservationPct: number; mae: number; ranksCsvUrl: string }> => {
   try {
-    const response = await fetch(getEndpoint(`scenarios/s3/${supplierId}`), {
+    const response = await fetch(getEndpoint("scenarios/s3"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ missingFields }),
+      body: JSON.stringify({ missingPct, imputation, k }),
     });
     if (!response.ok) throw new Error("Failed to run S3 scenario");
     return await response.json();
@@ -3616,12 +3638,13 @@ export const runScenarioS3 = async (supplierId: string | number, missingFields?:
   }
 };
 
-export const runScenarioS4 = async (supplierId: string | number, removePillar?: string, removeMetric?: string): Promise<any> => {
+// S4 Fairness/Ablation: normalization toggle
+export const runScenarioS4 = async (normalization: "off" | "on"): Promise<{ D: number; tau: number; ranksCsvUrl: string }> => {
   try {
-    const response = await fetch(getEndpoint(`scenarios/s4/${supplierId}`), {
+    const response = await fetch(getEndpoint("scenarios/s4"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ removePillar, removeMetric }),
+      body: JSON.stringify({ normalization }),
     });
     if (!response.ok) throw new Error("Failed to run S4 scenario");
     return await response.json();
