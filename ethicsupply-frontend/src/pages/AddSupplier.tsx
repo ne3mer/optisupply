@@ -49,7 +49,10 @@ const ErrorDisplay = ({ message }) => {
   const colors = useThemeColors();
   return (
     <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
-      <ExclamationTriangleIcon className="h-8 w-8 mx-auto mb-2" style={{ color: colors.error }} />
+      <ExclamationTriangleIcon
+        className="h-8 w-8 mx-auto mb-2"
+        style={{ color: colors.error }}
+      />
       <p style={{ color: colors.text }}>
         {message || "An error occurred while processing your request."}
       </p>
@@ -85,41 +88,41 @@ const InputField = ({
 }) => {
   const colors = useThemeColors() as any;
   return (
-  <div className="mb-4">
-    <label
-      htmlFor={name}
-      className="block text-sm font-medium mb-1"
-      style={{ color: colors.textMuted }}
-    >
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <input
-      type={type}
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      required={required}
-      disabled={disabled}
-      min={min}
-      max={max}
-      className={`w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 ${
-        disabled ? "opacity-60 cursor-not-allowed" : ""
-      }`}
-      style={{
-        backgroundColor: colors.inputBg,
-        borderColor: colors.accent + "50",
-        color: colors.text,
-      }}
-      data-type={type === "number" ? "number" : undefined}
-    />
-    {helper && (
-      <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
-        {helper}
-      </p>
-    )}
-  </div>
+    <div className="mb-4">
+      <label
+        htmlFor={name}
+        className="block text-sm font-medium mb-1"
+        style={{ color: colors.textMuted }}
+      >
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        min={min}
+        max={max}
+        className={`w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 ${
+          disabled ? "opacity-60 cursor-not-allowed" : ""
+        }`}
+        style={{
+          backgroundColor: colors.inputBg,
+          borderColor: colors.accent + "50",
+          color: colors.text,
+        }}
+        data-type={type === "number" ? "number" : undefined}
+      />
+      {helper && (
+        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+          {helper}
+        </p>
+      )}
+    </div>
   );
 };
 
@@ -134,56 +137,56 @@ const SelectField = ({
 }) => {
   const colors = useThemeColors() as any;
   return (
-  <div className="mb-4 relative">
-    <label
-      htmlFor={name}
-      className="block text-sm font-medium mb-1"
-      style={{ color: colors.textMuted }}
-    >
-      {label} {required && <span className="text-red-500">*</span>}
-    </label>
-    <select
-      id={name}
-      name={name}
-      value={value}
-      onChange={onChange}
-      required={required}
-      disabled={disabled}
-      className={`w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2 ${
-        disabled ? "opacity-60 cursor-not-allowed" : ""
-      }`}
-      style={{
-        backgroundColor: colors.inputBg,
-        borderColor: colors.accent + "50",
-        color: colors.text,
-      }}
-    >
-      <option value="" style={{ color: colors.textMuted }}>
-        Select...
-      </option>
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
-      ))}
-    </select>
-    <div
-      className="absolute right-3 top-9 h-5 w-5 pointer-events-none"
-      style={{ color: colors.textMuted }}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 20 20"
-        fill="currentColor"
+    <div className="mb-4 relative">
+      <label
+        htmlFor={name}
+        className="block text-sm font-medium mb-1"
+        style={{ color: colors.textMuted }}
       >
-        <path
-          fillRule="evenodd"
-          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-          clipRule="evenodd"
-        />
-      </svg>
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={onChange}
+        required={required}
+        disabled={disabled}
+        className={`w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2 ${
+          disabled ? "opacity-60 cursor-not-allowed" : ""
+        }`}
+        style={{
+          backgroundColor: colors.inputBg,
+          borderColor: colors.accent + "50",
+          color: colors.text,
+        }}
+      >
+        <option value="" style={{ color: colors.textMuted }}>
+          Select...
+        </option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
+      <div
+        className="absolute right-3 top-9 h-5 w-5 pointer-events-none"
+        style={{ color: colors.textMuted }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </div>
     </div>
-  </div>
   );
 };
 
@@ -1083,160 +1086,199 @@ const BatchUpload = () => {
           // Normalize data: convert field names and ensure proper types
           const normalizedData = data.map((item) => {
             const normalized: any = {};
-            
+
             // Comprehensive field name mapping
             const fieldMapping: Record<string, string> = {
               // Basic info
-              'supplierid': 'id',
-              'supplier name': 'name',
-              'company name': 'name',
-              'name': 'name',
-              'country': 'country',
-              'location': 'country',
-              'industry': 'industry',
-              'sector': 'industry',
-              'revenue (millions usd)': 'revenue',
-              'revenue': 'revenue',
-              'employee count': 'employee_count',
-              'employees': 'employee_count',
-              'website': 'website',
-              'description': 'description',
-              
+              supplierid: "id",
+              "supplier name": "name",
+              "company name": "name",
+              name: "name",
+              country: "country",
+              location: "country",
+              industry: "industry",
+              sector: "industry",
+              "revenue (millions usd)": "revenue",
+              revenue: "revenue",
+              "employee count": "employee_count",
+              employees: "employee_count",
+              website: "website",
+              description: "description",
+
               // Environmental
-              'co2 emissions (tons)': 'co2_emissions',
-              'co2 emissions': 'co2_emissions',
-              'co2_emissions': 'co2_emissions',
-              'water usage (m3)': 'water_usage',
-              'water usage': 'water_usage',
-              'water_usage': 'water_usage',
-              'waste generated (tons)': 'waste_generated',
-              'waste generated': 'waste_generated',
-              'total emissions (tons co2e)': 'total_emissions',
-              'total emissions': 'total_emissions',
-              'energy efficiency score (0-1)': 'energy_efficiency',
-              'energy efficiency': 'energy_efficiency',
-              'waste management score (0-1)': 'waste_management_score',
-              'waste management score': 'waste_management_score',
-              'renewable energy (%)': 'renewable_energy_percent',
-              'renewable energy': 'renewable_energy_percent',
-              'pollution control score (0-1)': 'pollution_control',
-              'pollution control': 'pollution_control',
-              
+              "co2 emissions (tons)": "co2_emissions",
+              "co2 emissions": "co2_emissions",
+              co2_emissions: "co2_emissions",
+              "water usage (m3)": "water_usage",
+              "water usage": "water_usage",
+              water_usage: "water_usage",
+              "waste generated (tons)": "waste_generated",
+              "waste generated": "waste_generated",
+              "total emissions (tons co2e)": "total_emissions",
+              "total emissions": "total_emissions",
+              "energy efficiency score (0-1)": "energy_efficiency",
+              "energy efficiency": "energy_efficiency",
+              "waste management score (0-1)": "waste_management_score",
+              "waste management score": "waste_management_score",
+              "renewable energy (%)": "renewable_energy_percent",
+              "renewable energy": "renewable_energy_percent",
+              "pollution control score (0-1)": "pollution_control",
+              "pollution control": "pollution_control",
+
               // Social
-              'wage fairness score (0-1)': 'wage_fairness',
-              'wage fairness': 'wage_fairness',
-              'human rights index (0-1)': 'human_rights_index',
-              'human rights index': 'human_rights_index',
-              'diversity & inclusion score (0-1)': 'diversity_inclusion_score',
-              'diversity inclusion score': 'diversity_inclusion_score',
-              'diversity_inclusion_score': 'diversity_inclusion_score',
-              'community engagement (0-1)': 'community_engagement',
-              'community engagement': 'community_engagement',
-              'worker safety score (0-1)': 'worker_safety',
-              'worker safety': 'worker_safety',
-              'injury rate (per 200k hrs)': 'injury_rate',
-              'injury rate': 'injury_rate',
-              'training hours per employee': 'training_hours',
-              'training hours': 'training_hours',
-              'living wage ratio': 'living_wage_ratio',
-              'gender diversity (% women)': 'gender_diversity_percent',
-              'gender diversity': 'gender_diversity_percent',
-              
+              "wage fairness score (0-1)": "wage_fairness",
+              "wage fairness": "wage_fairness",
+              "human rights index (0-1)": "human_rights_index",
+              "human rights index": "human_rights_index",
+              "diversity & inclusion score (0-1)": "diversity_inclusion_score",
+              "diversity inclusion score": "diversity_inclusion_score",
+              diversity_inclusion_score: "diversity_inclusion_score",
+              "community engagement (0-1)": "community_engagement",
+              "community engagement": "community_engagement",
+              "worker safety score (0-1)": "worker_safety",
+              "worker safety": "worker_safety",
+              "injury rate (per 200k hrs)": "injury_rate",
+              "injury rate": "injury_rate",
+              "training hours per employee": "training_hours",
+              "training hours": "training_hours",
+              "living wage ratio": "living_wage_ratio",
+              "gender diversity (% women)": "gender_diversity_percent",
+              "gender diversity": "gender_diversity_percent",
+
               // Governance
-              'transparency score (0-1)': 'transparency_score',
-              'transparency score': 'transparency_score',
-              'corruption risk (0-1)': 'corruption_risk',
-              'corruption risk': 'corruption_risk',
-              'board diversity (%)': 'board_diversity',
-              'board diversity': 'board_diversity',
-              'board independence (%)': 'board_independence',
-              'board independence': 'board_independence',
-              'ethics program strength (0-1)': 'ethics_program',
-              'ethics program': 'ethics_program',
-              'compliance systems score (0-1)': 'compliance_systems',
-              'compliance systems': 'compliance_systems',
-              'anti-corruption policy in place': 'anti_corruption_policy',
-              'anti-corruption policy': 'anti_corruption_policy',
-              
+              "transparency score (0-1)": "transparency_score",
+              "transparency score": "transparency_score",
+              "corruption risk (0-1)": "corruption_risk",
+              "corruption risk": "corruption_risk",
+              "board diversity (%)": "board_diversity",
+              "board diversity": "board_diversity",
+              "board independence (%)": "board_independence",
+              "board independence": "board_independence",
+              "ethics program strength (0-1)": "ethics_program",
+              "ethics program": "ethics_program",
+              "compliance systems score (0-1)": "compliance_systems",
+              "compliance systems": "compliance_systems",
+              "anti-corruption policy in place": "anti_corruption_policy",
+              "anti-corruption policy": "anti_corruption_policy",
+
               // Supply Chain
-              'delivery efficiency (0-1)': 'delivery_efficiency',
-              'delivery efficiency': 'delivery_efficiency',
-              'quality control score (0-1)': 'quality_control_score',
-              'quality control score': 'quality_control_score',
-              'supplier diversity (0-1)': 'supplier_diversity',
-              'supplier diversity': 'supplier_diversity',
-              'supply chain traceability (0-1)': 'traceability',
-              'traceability': 'traceability',
-              
+              "delivery efficiency (0-1)": "delivery_efficiency",
+              "delivery efficiency": "delivery_efficiency",
+              "quality control score (0-1)": "quality_control_score",
+              "quality control score": "quality_control_score",
+              "supplier diversity (0-1)": "supplier_diversity",
+              "supplier diversity": "supplier_diversity",
+              "supply chain traceability (0-1)": "traceability",
+              traceability: "traceability",
+
               // Risk Factors
-              'geopolitical risk (0-1)': 'geopolitical_risk',
-              'geopolitical risk': 'geopolitical_risk',
-              'climate risk (0-1)': 'climate_risk',
-              'climate risk': 'climate_risk',
-              'labor dispute risk (0-1)': 'labor_dispute_risk',
-              'labor dispute risk': 'labor_dispute_risk',
+              "geopolitical risk (0-1)": "geopolitical_risk",
+              "geopolitical risk": "geopolitical_risk",
+              "climate risk (0-1)": "climate_risk",
+              "climate risk": "climate_risk",
+              "labor dispute risk (0-1)": "labor_dispute_risk",
+              "labor dispute risk": "labor_dispute_risk",
             };
-            
+
             // Map fields using the mapping table
             Object.keys(item).forEach((key) => {
               const lowerKey = key.toLowerCase().trim();
               const mappedField = fieldMapping[lowerKey];
-              
+
               if (mappedField) {
                 normalized[mappedField] = item[key];
               } else {
                 // Fallback: convert to snake_case
-                const snakeKey = key.replace(/\s+/g, '_').replace(/[&()]/g, '').toLowerCase();
+                const snakeKey = key
+                  .replace(/\s+/g, "_")
+                  .replace(/[&()]/g, "")
+                  .toLowerCase();
                 normalized[snakeKey] = item[key];
               }
             });
-            
+
             // Ensure required fields
             if (!normalized.name) {
               // Try to find name in any variation
-              const nameKey = Object.keys(item).find(k => 
-                k.toLowerCase().includes('name') || k.toLowerCase().includes('supplier')
+              const nameKey = Object.keys(item).find(
+                (k) =>
+                  k.toLowerCase().includes("name") ||
+                  k.toLowerCase().includes("supplier")
               );
               if (nameKey) normalized.name = item[nameKey];
             }
             if (!normalized.country) {
-              const countryKey = Object.keys(item).find(k => 
-                k.toLowerCase().includes('country') || k.toLowerCase().includes('location')
+              const countryKey = Object.keys(item).find(
+                (k) =>
+                  k.toLowerCase().includes("country") ||
+                  k.toLowerCase().includes("location")
               );
               if (countryKey) normalized.country = item[countryKey];
             }
             if (!normalized.industry) {
-              normalized.industry = item.Industry || item.industry || 'Manufacturing';
+              normalized.industry =
+                item.Industry || item.industry || "Manufacturing";
             }
-            
+
             // Convert numeric strings to numbers
             const numericFields = [
-              'revenue', 'employee_count', 'co2_emissions', 'water_usage', 'waste_generated',
-              'total_emissions', 'renewable_energy_percent', 'energy_efficiency', 
-              'waste_management_score', 'wage_fairness', 'human_rights_index', 
-              'diversity_inclusion_score', 'community_engagement', 'worker_safety', 
-              'injury_rate', 'training_hours', 'living_wage_ratio', 'gender_diversity_percent',
-              'transparency_score', 'corruption_risk', 'board_diversity', 'board_independence',
-              'ethics_program', 'compliance_systems', 'delivery_efficiency',
-              'quality_control_score', 'supplier_diversity', 'traceability',
-              'geopolitical_risk', 'climate_risk', 'labor_dispute_risk', 'pollution_control'
+              "revenue",
+              "employee_count",
+              "co2_emissions",
+              "water_usage",
+              "waste_generated",
+              "total_emissions",
+              "renewable_energy_percent",
+              "energy_efficiency",
+              "waste_management_score",
+              "wage_fairness",
+              "human_rights_index",
+              "diversity_inclusion_score",
+              "community_engagement",
+              "worker_safety",
+              "injury_rate",
+              "training_hours",
+              "living_wage_ratio",
+              "gender_diversity_percent",
+              "transparency_score",
+              "corruption_risk",
+              "board_diversity",
+              "board_independence",
+              "ethics_program",
+              "compliance_systems",
+              "delivery_efficiency",
+              "quality_control_score",
+              "supplier_diversity",
+              "traceability",
+              "geopolitical_risk",
+              "climate_risk",
+              "labor_dispute_risk",
+              "pollution_control",
             ];
-            
-            numericFields.forEach(field => {
-              if (normalized[field] !== undefined && normalized[field] !== null) {
-                const num = parseFloat(String(normalized[field]).replace(/,/g, ''));
+
+            numericFields.forEach((field) => {
+              if (
+                normalized[field] !== undefined &&
+                normalized[field] !== null
+              ) {
+                const num = parseFloat(
+                  String(normalized[field]).replace(/,/g, "")
+                );
                 if (!isNaN(num)) {
                   normalized[field] = num;
                 }
               }
             });
-            
+
             // Handle boolean fields
             if (normalized.anti_corruption_policy !== undefined) {
-              const val = String(normalized.anti_corruption_policy).toLowerCase();
-              normalized.anti_corruption_policy = val === '1' || val === 'true' || val === 'yes' || val === 'y';
+              const val = String(
+                normalized.anti_corruption_policy
+              ).toLowerCase();
+              normalized.anti_corruption_policy =
+                val === "1" || val === "true" || val === "yes" || val === "y";
             }
-            
+
             return normalized;
           });
 
@@ -1749,7 +1791,7 @@ const AddSupplier = () => {
 
   // Estimate data completeness similar to backend (key metrics presence)
   const estimatedCompleteness = useMemo(() => {
-    const has = (v: any) => v !== undefined && v !== null && v !== '';
+    const has = (v: any) => v !== undefined && v !== null && v !== "";
     let present = 0;
     let total = 0;
     // Intensities require revenue + numerator
@@ -1757,7 +1799,10 @@ const AddSupplier = () => {
     const em = Number(formData.total_emissions ?? formData.co2_emissions);
     const water = Number(formData.water_usage);
     const waste = Number(formData.waste_generated);
-    const addMetric = (cond: boolean) => { total++; if (cond) present++; };
+    const addMetric = (cond: boolean) => {
+      total++;
+      if (cond) present++;
+    };
     addMetric(rev > 0 && (em || em === 0)); // emission_intensity
     addMetric(has(formData.renewable_energy_percent)); // renewable_pct
     addMetric(rev > 0 && (water || water === 0)); // water_intensity
@@ -1765,11 +1810,14 @@ const AddSupplier = () => {
     addMetric(has(formData.injury_rate));
     addMetric(has(formData.training_hours));
     addMetric(has(formData.living_wage_ratio)); // wage_ratio
-    addMetric(has(formData.gender_diversity_percent) || has(formData.diversity_inclusion_score));
+    addMetric(
+      has(formData.gender_diversity_percent) ||
+        has(formData.diversity_inclusion_score)
+    );
     addMetric(has(formData.board_diversity));
     addMetric(has(formData.board_independence));
     addMetric(has(formData.transparency_score));
-    addMetric(typeof formData.anti_corruption_policy === 'boolean');
+    addMetric(typeof formData.anti_corruption_policy === "boolean");
     const ratio = total > 0 ? present / total : 1;
     return { ratio, present, total };
   }, [formData]);
@@ -1878,7 +1926,11 @@ const AddSupplier = () => {
         ) {
           processedValue = Math.max(0, Math.min(1, processedValue as number));
         }
-        if (name === "renewable_energy_percent" || name === "gender_diversity_percent" || name === "board_independence") {
+        if (
+          name === "renewable_energy_percent" ||
+          name === "gender_diversity_percent" ||
+          name === "board_independence"
+        ) {
           processedValue = Math.max(0, Math.min(100, processedValue as number));
         }
         if (name === "living_wage_ratio") {
@@ -2234,11 +2286,20 @@ const AddSupplier = () => {
 
       {/* Data Quality Indicator */}
       {uploadMode === "single" && (
-        <div className="mb-6 p-4 rounded-lg border flex items-center justify-between" style={{ borderColor: colors.accent + '40', backgroundColor: colors.panel }}>
+        <div
+          className="mb-6 p-4 rounded-lg border flex items-center justify-between"
+          style={{
+            borderColor: colors.accent + "40",
+            backgroundColor: colors.panel,
+          }}
+        >
           <div>
-            <div className="text-sm font-medium" style={{ color: colors.text }}>Estimated Data Completeness</div>
+            <div className="text-sm font-medium" style={{ color: colors.text }}>
+              Estimated Data Completeness
+            </div>
             <div className="text-xs" style={{ color: colors.textMuted }}>
-              {estimatedCompleteness.present}/{estimatedCompleteness.total} key metrics provided
+              {estimatedCompleteness.present}/{estimatedCompleteness.total} key
+              metrics provided
               {estimatedCompleteness.ratio < 0.7 && (
                 <span className="ml-2" style={{ color: colors.warning }}>
                   • Scores may be capped at 50 if below 70%
@@ -2246,11 +2307,30 @@ const AddSupplier = () => {
               )}
             </div>
           </div>
-          <span className="px-2 py-1 rounded text-sm font-mono" style={{
-            color: estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error,
-            backgroundColor: (estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error) + '20',
-            border: `1px solid ${(estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error)}40`,
-          }}>
+          <span
+            className="px-2 py-1 rounded text-sm font-mono"
+            style={{
+              color:
+                estimatedCompleteness.ratio >= 0.85
+                  ? colors.success
+                  : estimatedCompleteness.ratio >= 0.7
+                  ? colors.warning
+                  : colors.error,
+              backgroundColor:
+                (estimatedCompleteness.ratio >= 0.85
+                  ? colors.success
+                  : estimatedCompleteness.ratio >= 0.7
+                  ? colors.warning
+                  : colors.error) + "20",
+              border: `1px solid ${
+                estimatedCompleteness.ratio >= 0.85
+                  ? colors.success
+                  : estimatedCompleteness.ratio >= 0.7
+                  ? colors.warning
+                  : colors.error
+              }40`,
+            }}
+          >
             {(estimatedCompleteness.ratio * 100).toFixed(0)}%
           </span>
         </div>
@@ -2508,7 +2588,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                    <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                       <InputField
                         name="co2_emissions"
@@ -2597,7 +2677,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                    <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
                       <SliderField
                         name="wage_fairness"
@@ -2692,7 +2772,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                    <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
                       <SliderField
                         name="transparency_score"
@@ -2750,7 +2830,9 @@ const AddSupplier = () => {
                             borderColor: colors.accent + "60",
                           }}
                         />
-                        <span className="text-sm">Anti-Corruption Policy in Place</span>
+                        <span className="text-sm">
+                          Anti-Corruption Policy in Place
+                        </span>
                       </label>
                     </div>
                   </div>

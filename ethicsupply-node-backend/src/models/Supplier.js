@@ -178,6 +178,14 @@ const SupplierSchema = new Schema(
     composite_score: {
       type: Number,
     },
+    finalScore: {
+      type: Number,
+      description: "Final score (post-penalty, post-disclosure cap) 0-100",
+    },
+    final_score: {
+      type: Number,
+      description: "Alias for finalScore (snake_case)",
+    },
     completeness_ratio: {
       type: Number,
       default: 1,

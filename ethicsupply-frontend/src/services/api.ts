@@ -53,6 +53,8 @@ export interface Supplier {
   risk_factor?: number;
   risk_penalty?: number | null; // 0-100 or null (null = disabled, shows "N/A")
   composite_score?: number;
+  finalScore?: number; // Final score (post-penalty, post-disclosure cap) 0-100
+  final_score?: number; // Alias for snake_case
   completeness_ratio?: number;
   renewable_energy_percent?: number;
   water_usage?: number;

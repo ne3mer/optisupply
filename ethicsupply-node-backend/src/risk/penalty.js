@@ -48,6 +48,7 @@ function computeRiskPenalty(supplier, settings = null) {
   }
 
   // Extract risk values - handle both formats
+  // Risk factors in export are 0-100, convert to 0-1 internally
   const riskValues = {
     geopolitical: toNumber(supplier.geo ?? supplier.geopolitical_risk),
     climate: toNumber(supplier.climate ?? supplier.climate_risk),
@@ -67,7 +68,10 @@ function computeRiskPenalty(supplier, settings = null) {
   
   Object.entries(riskValues).forEach(([key, value]) => {
     if (typeof value === "number" && !Number.isNaN(value)) {
-      availableRisks.push({ key, value: Math.max(0, Math.min(1, value)) });
+      // Convert 0-100 scale to 0-1 scale internally
+      // If value > 1, assume it's 0-100 scale, otherwise assume 0-1
+      const normalizedValue = value > 1 ? value / 100 : value;
+      availableRisks.push({ key, value: Math.max(0, Math.min(1, normalizedValue)) });
       availableWeights.push(weights[key]);
     }
   });

@@ -80,6 +80,8 @@ exports.getSupplierById = async (req, res) => {
       risk_penalty: scores.risk_penalty, // Ensure risk_penalty is always computed
       completeness_ratio: scores.completeness_ratio,
       composite_score: scores.composite_score,
+      finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty)
+      final_score: scores.finalScore ?? scores.ethical_score, // Alias
     };
 
     // Return the supplier with computed scores
@@ -108,6 +110,8 @@ exports.createSupplier = async (req, res) => {
       risk_penalty: scores.risk_penalty, // Include new risk_penalty field
       completeness_ratio: scores.completeness_ratio,
       composite_score: scores.composite_score,
+      finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty)
+      final_score: scores.finalScore ?? scores.ethical_score, // Alias
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -162,6 +166,8 @@ exports.bulkImportSuppliers = async (req, res) => {
           risk_penalty: scores.risk_penalty,
           completeness_ratio: scores.completeness_ratio,
           composite_score: scores.composite_score,
+          finalScore: scores.finalScore ?? scores.ethical_score, // Final score (post-penalty)
+          final_score: scores.finalScore ?? scores.ethical_score, // Alias
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -225,6 +231,8 @@ exports.updateSupplier = async (req, res) => {
     updatedData.risk_penalty = scores.risk_penalty; // Include new risk_penalty field
     updatedData.completeness_ratio = scores.completeness_ratio;
     updatedData.composite_score = scores.composite_score;
+    updatedData.finalScore = scores.finalScore ?? scores.ethical_score; // Final score (post-penalty)
+    updatedData.final_score = scores.finalScore ?? scores.ethical_score; // Alias
     updatedData.updatedAt = new Date();
 
     const updatedSupplier = await db.Supplier.findByIdAndUpdate(
@@ -263,6 +271,8 @@ exports.recomputeSupplierScores = async (req, res) => {
     supplier.risk_penalty = scores.risk_penalty;
     supplier.completeness_ratio = scores.completeness_ratio;
     supplier.composite_score = scores.composite_score;
+    supplier.finalScore = scores.finalScore ?? scores.ethical_score; // Final score (post-penalty)
+    supplier.final_score = scores.finalScore ?? scores.ethical_score; // Alias
     supplier.updatedAt = new Date();
 
     await supplier.save();
@@ -1397,6 +1407,8 @@ async function calculateSupplierScores(supplier) {
       risk_penalty: scores.risk_penalty !== null ? roundToTwo(scores.risk_penalty) : null, // 0-100 or null
       completeness_ratio: roundToTwo(scores.completeness_ratio),
       composite_score: roundToTwo(scores.composite_score),
+      finalScore: roundToTwo(scores.finalScore ?? scores.ethical_score), // Final score (post-penalty)
+      final_score: roundToTwo(scores.finalScore ?? scores.ethical_score), // Alias for snake_case
     };
 
     try {
