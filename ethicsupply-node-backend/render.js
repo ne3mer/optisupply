@@ -10,17 +10,48 @@ const EthicalScoringModel = require("./src/ml/EthicalScoringModel");
 // Create Express app
 const app = express();
 
-// Enable CORS for all requests with direct headers
+// CORS configuration - must use specific origins when credentials are included
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+  ? process.env.CORS_ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+  : [
+      "https://optisupply.vercel.app",
+      "https://optisupply-front.onrender.com",
+      "https://optimill.onrender.com",
+      "https://optiethic-frontend.onrender.com",
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:8080",
+    ];
+
+// Enable CORS for all requests with specific origin handling
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  
+  // Check if origin is in allowed list
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  } else if (!origin) {
+    // Allow requests without origin (e.g., Postman, curl)
+    res.header("Access-Control-Allow-Origin", "*");
+  } else {
+    // For development, allow localhost
+    if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+      res.header("Access-Control-Allow-Origin", origin);
+    } else {
+      // Default to first allowed origin or wildcard for non-credential requests
+      res.header("Access-Control-Allow-Origin", allowedOrigins[0] || "*");
+    }
+  }
+  
   res.header(
     "Access-Control-Allow-Methods",
     "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS"
   );
   res.header(
     "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization, X-API-Key"
   );
+  res.header("Access-Control-Allow-Credentials", "true");
 
   // Handle preflight requests
   if (req.method === "OPTIONS") {
@@ -33,7 +64,16 @@ app.use((req, res, next) => {
 // Also apply standard CORS middleware as a backup
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin) || origin.includes("localhost") || origin.includes("127.0.0.1")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: [
       "Content-Type",
@@ -42,6 +82,7 @@ app.use(
       "X-HTTP-Method-Override",
       "Accept",
       "Origin",
+      "X-API-Key",
     ],
     credentials: true,
     maxAge: 86400,

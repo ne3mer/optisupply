@@ -7,16 +7,28 @@ Your Render backend is not connected to MongoDB because the `MONGODB_URI` enviro
 
 ### Step 1: Get Your MongoDB Connection String
 
-#### Option A: Using Render's Managed Database (Recommended)
+#### Option A: Using Render's Managed Database
+
+**Where to find it:**
 
 1. Go to your **Render Dashboard**: https://dashboard.render.com
-2. Find your database service: **optiethic-db** (or whatever you named it)
-3. Click on it to open the database details
-4. Look for **"Internal Database URL"** or **"Connection String"**
-5. Copy the connection string - it should look like:
-   ```
-   mongodb://dummy-user:password@dummy-host:27017/optiethic?authSource=admin
-   ```
+2. You'll see a list of all your services. Look for:
+   - A service with type **"PostgreSQL"** or **"MongoDB"** (database icon)
+   - OR check the **"Databases"** section in the left sidebar
+   - The name might be: `optiethic-db`, `optisupply-db`, or similar
+
+3. **If you DON'T see a database service:**
+   - You're probably using **MongoDB Atlas** (cloud database) - skip to Option B below
+   - OR you need to create a database first (see "Creating a Database" section)
+
+4. **If you DO see a database service:**
+   - Click on it to open the database details
+   - Go to the **"Info"** tab
+   - Look for **"Internal Database URL"** or **"Connection String"**
+   - Copy the connection string - it should look like:
+     ```
+     mongodb://dummy-user:password@dummy-host:27017/optiethic?authSource=admin
+     ```
 
 #### Option B: Using MongoDB Atlas (Cloud)
 
@@ -99,6 +111,21 @@ After adding the environment variable:
    node -e "require('./src/config/database').connectToDatabase().then(() => console.log('✅ Connected!')).catch(e => console.error('❌ Error:', e.message))"
    ```
 
+## Creating a Database on Render (If You Don't Have One)
+
+If you don't see a database service in your Render dashboard:
+
+1. Go to **Render Dashboard**: https://dashboard.render.com
+2. Click **"New +"** button (top right)
+3. Select **"PostgreSQL"** or **"MongoDB"** (if available)
+4. Configure:
+   - **Name**: `optisupply-db` (or any name)
+   - **Database**: `optiethic` (or `optisupply`)
+   - **Plan**: Free (or paid if needed)
+5. Click **"Create Database"**
+6. Wait for it to provision (2-3 minutes)
+7. Once ready, go to the database → **"Info"** tab → Copy **"Internal Database URL"**
+
 ## Using Render's Managed Database
 
 If you're using Render's managed MongoDB database:
@@ -113,21 +140,60 @@ If you're using Render's managed MongoDB database:
 
 3. **Important**: Use the **Internal Database URL** (not external) for better performance
 
-## Using MongoDB Atlas
+4. **Where to find the database service:**
+   - In Render Dashboard, look in the left sidebar for **"Databases"** section
+   - OR look for services with a database icon (🗄️)
+   - OR check the main dashboard - databases are listed alongside web services
 
-If you're using MongoDB Atlas:
+## Using MongoDB Atlas (Most Common)
 
-1. **Network Access**: 
-   - Go to Atlas → Network Access
-   - Add `0.0.0.0/0` to allow all IPs (or Render's specific IPs)
-   - Or add Render's IP ranges
+**If you're using MongoDB Atlas** (cloud.mongodb.com), this is probably your case:
 
-2. **Database User**:
-   - Create a database user with read/write permissions
-   - Use that username/password in connection string
+### Step 1: Get Your Atlas Connection String
 
-3. **Connection String**:
-   - Use the format: `mongodb+srv://username:password@cluster.mongodb.net/optiethic?retryWrites=true&w=majority`
+1. Go to **MongoDB Atlas**: https://cloud.mongodb.com
+2. Sign in to your account
+3. Click on your **Cluster** (or create one if you don't have one)
+4. Click **"Connect"** button
+5. Choose **"Connect your application"**
+6. Select **"Node.js"** and version **"5.5 or later"**
+7. Copy the connection string - it looks like:
+   ```
+   mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   ```
+
+### Step 2: Customize the Connection String
+
+Replace the placeholders:
+- Replace `<username>` with your database username
+- Replace `<password>` with your database password
+- Add your database name at the end: `/optiethic` or `/optisupply`
+
+**Final format should be:**
+```
+mongodb+srv://myuser:mypassword@cluster0.xxxxx.mongodb.net/optiethic?retryWrites=true&w=majority
+```
+
+### Step 3: Configure Network Access
+
+1. In MongoDB Atlas, go to **"Network Access"** (left sidebar)
+2. Click **"Add IP Address"**
+3. Click **"Allow Access from Anywhere"** (adds `0.0.0.0/0`)
+   - OR add Render's specific IP ranges for better security
+4. Click **"Confirm"**
+
+### Step 4: Create Database User (If Needed)
+
+1. Go to **"Database Access"** (left sidebar)
+2. Click **"Add New Database User"**
+3. Choose **"Password"** authentication
+4. Set username and password (save these!)
+5. Set user privileges: **"Read and write to any database"**
+6. Click **"Add User"**
+
+### Step 5: Use This Connection String in Render
+
+Use the connection string from Step 2 as your `MONGODB_URI` in Render.
 
 ## Quick Checklist
 
