@@ -9,7 +9,12 @@
     "start:local": "node src/server.js",
     "dev": "nodemon src/server.js",
     "dev:mock": "nodemon dev-server.js",
-    "seed": "node src/scripts/seedDatabase.js",
+    "seed": "node bin/seed-suppliers.js",
+    "seed:legacy": "node src/scripts/seedDatabase.js",
+    "scenario:s1": "node bin/run-s1.js --margin 10",
+    "scenario:s2": "node bin/run-s2.js --perturbation +10",
+    "scenario:s3": "node bin/run-s3.js --missingPct 5 --imputation industryMean",
+    "scenario:s4": "node bin/run-s4.js --normalization off",
     "test": "jest --runInBand"
   },
   "dependencies": {

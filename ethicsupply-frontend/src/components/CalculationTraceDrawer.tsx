@@ -136,6 +136,11 @@ const CalculationTraceDrawer: React.FC<CalculationTraceDrawerProps> = ({
                   <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
                     {supplierName || `Supplier ${supplierId}`}
                   </p>
+                  {trace?.steps && (
+                    <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
+                      {trace.steps.length} calculation steps
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={onClose}

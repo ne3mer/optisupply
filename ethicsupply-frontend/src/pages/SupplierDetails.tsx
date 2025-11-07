@@ -288,8 +288,10 @@ const SupplierDetails = () => {
   }, [supplier, allSuppliers]);
 
   // --- Memoized Values ---
+  // Overall Score: Use finalScore (post-penalty) if available, otherwise ethical_score
   const overallScore = useMemo(() => {
-    const score = supplier?.ethical_score ?? 0;
+    // Prefer finalScore (post-penalty) or composite_score, fallback to ethical_score
+    const score = supplier?.finalScore ?? supplier?.composite_score ?? supplier?.ethical_score ?? 0;
     // Normalize to 0-100 scale if it's in 0-1 range
     return score > 0 && score <= 1 ? score * 100 : score;
   }, [supplier]);
@@ -396,7 +398,7 @@ const SupplierDetails = () => {
                 className="text-sm flex items-center"
                 style={{ color: colors.textMuted }}
               >
-                <ScaleIcon className="h-4 w-4 mr-2" /> Overall Score
+                <ScaleIcon className="h-4 w-4 mr-2" /> Overall Score (post-penalty)
               </span>
               <span
                 className="text-xl font-bold font-mono"
@@ -457,12 +459,20 @@ const SupplierDetails = () => {
             </h3>
             <div className="space-y-3">
               <button
-                onClick={() => {
-                  // Trigger refresh after navigation
-                  setTimeout(() => {
-                    window.dispatchEvent(new Event('supplier-refresh'));
-                  }, 1000);
-                  navigate(`/suppliers/${supplierId}/assessment`);
+                onClick={async () => {
+                  try {
+                    // Trigger recompute before navigation
+                    const { recomputeSupplierScores } = await import("../services/api");
+                    await recomputeSupplierScores(supplierId);
+                    // Refresh supplier data
+                    await fetchSupplier();
+                    // Navigate to assessment
+                    navigate(`/suppliers/${supplierId}/assessment`);
+                  } catch (error) {
+                    console.error("Error recomputing scores:", error);
+                    // Still navigate even if recompute fails
+                    navigate(`/suppliers/${supplierId}/assessment`);
+                  }
                 }}
                 className="w-full flex items-center justify-center text-sm py-2 px-4 rounded hover:opacity-90 transition-opacity duration-200"
                 style={{
@@ -480,7 +490,7 @@ const SupplierDetails = () => {
                   color: colors.background,
                 }}
               >
-                <ChartBarIcon className="h-5 w-5 mr-2" /> View AI Analytics
+                <ChartBarIcon className="h-5 w-5 mr-2" /> View Calculation Trace
               </button>
               <button
                 onClick={() => navigate(`/suppliers/${supplierId}/edit`)} // Fixed edit route path
