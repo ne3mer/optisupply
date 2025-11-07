@@ -170,6 +170,11 @@ const SupplierSchema = new Schema(
       type: Number,
       default: 0.5,
     },
+    risk_penalty: {
+      type: Number,
+      default: null,
+      description: "Risk penalty value (0-100) or null if disabled",
+    },
     composite_score: {
       type: Number,
     },

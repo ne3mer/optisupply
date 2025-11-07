@@ -649,6 +649,19 @@ const SupplierAssessment = () => {
       setActiveTab("results");
       setUsingMockData(evaluation.isMockData === true);
 
+      // Trigger recomputation if supplierId is available
+      if (supplierId) {
+        try {
+          const { recomputeSupplierScores } = await import("../../services/api");
+          await recomputeSupplierScores(supplierId);
+          // Trigger refresh event for SupplierDetails page
+          window.dispatchEvent(new Event('supplier-refresh'));
+        } catch (recomputeError) {
+          console.warn("Failed to recompute scores after assessment:", recomputeError);
+          // Non-critical, continue with assessment display
+        }
+      }
+
       // If using mock data, show a user-friendly notification
       if (evaluation.isMockData) {
         console.info(

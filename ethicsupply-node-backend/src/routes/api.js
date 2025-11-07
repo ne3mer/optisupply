@@ -7,6 +7,10 @@ const mlController = require("../controllers/mlController");
 const geoRiskController = require("../controllers/geoRiskController");
 const recommendationController = require("../controllers/recommendationController");
 const bandsController = require("../controllers/bandsController");
+const settingsController = require("../controllers/settingsController");
+const scenarioController = require("../controllers/scenarioController");
+const exportController = require("../controllers/exportController");
+const transparencyController = require("../controllers/transparencyController");
 
 // Health check route
 router.get("/health-check", (req, res) => {
@@ -29,6 +33,10 @@ router.get("/", (req, res) => {
       mlStatus: "/api/ml/status",
       geoRiskAlerts: "/api/geo-risk-alerts",
       recommendations: "/api/suppliers/recommendations",
+      settings: "/api/settings",
+      exportCSV: "/api/suppliers/export/csv",
+      transparency: "/api/suppliers/:id/transparency",
+      scenarios: "/api/scenarios/s1|s2|s3|s4/:supplierId",
     },
   });
 });
@@ -71,6 +79,7 @@ router.post("/suppliers", supplierController.createSupplier);
 router.get("/suppliers/:id", supplierController.getSupplierById);
 router.put("/suppliers/:id", supplierController.updateSupplier);
 router.delete("/suppliers/:id", supplierController.deleteSupplier);
+router.post("/suppliers/:id/recompute", supplierController.recomputeSupplierScores);
 
 // Dashboard route (uses supplierController)
 router.get("/dashboard", supplierController.getDashboard);
@@ -120,5 +129,22 @@ router.get(
 );
 router.get("/geo-risk-alerts/type/:type", geoRiskController.getAlertsByType);
 // ======= END RE-ENABLED GEO RISK ROUTES =======
+
+// Settings routes
+router.get("/settings", settingsController.getSettings);
+router.put("/settings", settingsController.updateSettings);
+router.post("/settings/reset", settingsController.resetSettings);
+
+// Export routes
+router.get("/suppliers/export/csv", exportController.exportSuppliersCSV);
+
+// Transparency routes
+router.get("/suppliers/:supplierId/transparency", transparencyController.getCalculationTrace);
+
+// Scenario routes (S1-S4)
+router.post("/scenarios/s1/:supplierId", scenarioController.s1Utility);
+router.post("/scenarios/s2/:supplierId", scenarioController.s2Sensitivity);
+router.post("/scenarios/s3/:supplierId", scenarioController.s3Missingness);
+router.post("/scenarios/s4/:supplierId", scenarioController.s4Ablation);
 
 module.exports = router;

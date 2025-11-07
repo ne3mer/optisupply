@@ -11,6 +11,8 @@ const Report = require("./Report");
 const Risk = require("./Risk");
 const Supplier = require("./Supplier");
 const User = require("./User");
+const ScoringSettings = require("./ScoringSettings");
+const ScoringWeight = require("./ScoringWeight");
 
 // Export all models
 module.exports = {
@@ -24,4 +26,6 @@ module.exports = {
   Risk,
   Supplier,
   User,
+  ScoringSettings,
+  ScoringWeight,
 };

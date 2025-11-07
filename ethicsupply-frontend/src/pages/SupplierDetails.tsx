@@ -176,52 +176,76 @@ const SupplierDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
 
-  useEffect(() => {
-    const fetchAndSetSupplier = async () => {
-      if (!id) {
-        setError("No supplier ID provided.");
-        setLoading(false);
-        return;
+  const fetchSupplier = async () => {
+    if (!id) {
+      setError("No supplier ID provided.");
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      console.log(`Fetching suppliers list to find ID: ${id}`);
+      const suppliersList = await getSuppliers(); // Fetch the entire list
+      console.log("Full supplier list received:", suppliersList);
+
+      // Store all suppliers for similar suggestions
+      setAllSuppliers(suppliersList);
+
+      // Find the specific supplier from the list
+      const foundSupplier = suppliersList.find(
+        (s) => s.id.toString() === id.toString()
+      );
+
+      if (foundSupplier) {
+        console.log("Supplier found in list:", foundSupplier);
+        setSupplier(foundSupplier);
+      } else {
+        console.error(
+          `Supplier with ID ${id} not found in the fetched list.`
+        );
+        throw new Error(`Supplier with ID ${id} not found.`);
       }
-      try {
-        setLoading(true);
-        setError(null);
-        console.log(`Fetching suppliers list to find ID: ${id}`);
-        const suppliersList = await getSuppliers(); // Fetch the entire list
-        console.log("Full supplier list received:", suppliersList);
+    } catch (err) {
+      console.error("Error fetching or finding supplier details:", err);
+      setError(
+        `Failed to retrieve dossier for Supplier ID ${id}. ${
+          err instanceof Error
+            ? err.message
+            : "Data stream interrupted or supplier not found."
+        }`
+      );
+      setSupplier(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        // Store all suppliers for similar suggestions
-        setAllSuppliers(suppliersList);
+  useEffect(() => {
+    fetchSupplier();
+  }, [id]);
 
-        // Find the specific supplier from the list
-        const foundSupplier = suppliersList.find(
-          (s) => s.id.toString() === id.toString()
-        );
-
-        if (foundSupplier) {
-          console.log("Supplier found in list:", foundSupplier);
-          setSupplier(foundSupplier);
-        } else {
-          console.error(
-            `Supplier with ID ${id} not found in the fetched list.`
-          );
-          throw new Error(`Supplier with ID ${id} not found.`);
-        }
-      } catch (err) {
-        console.error("Error fetching or finding supplier details:", err);
-        setError(
-          `Failed to retrieve dossier for Supplier ID ${id}. ${
-            err instanceof Error
-              ? err.message
-              : "Data stream interrupted or supplier not found."
-          }`
-        );
-        setSupplier(null);
-      } finally {
-        setLoading(false);
+  // Listen for refresh events (e.g., after assessment)
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchSupplier();
+    };
+    
+    // Listen for custom refresh event
+    window.addEventListener('supplier-refresh', handleRefresh);
+    
+    // Also refresh when page becomes visible (user returns from assessment)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchSupplier();
       }
     };
-    fetchAndSetSupplier();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('supplier-refresh', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [id]);
 
   // Function to find similar suppliers based on industry and ESG scores
@@ -279,10 +303,16 @@ const SupplierDetails = () => {
     const r = supplier?.completeness_ratio;
     return typeof r === 'number' ? Math.round(r * 100) : null;
   }, [supplier?.completeness_ratio]);
+  // Risk penalty: use risk_penalty field if available (0-100 or null), otherwise fallback to risk_factor
   const riskPenaltyPct = useMemo(() => {
+    // New spec: risk_penalty is 0-100 or null (null = disabled, shows "N/A")
+    if (supplier?.risk_penalty !== undefined) {
+      return supplier.risk_penalty === null ? null : supplier.risk_penalty;
+    }
+    // Fallback to legacy risk_factor (0-1) for backward compatibility
     const rf = supplier?.risk_factor;
     return typeof rf === 'number' ? Math.round(rf * 100) : null;
-  }, [supplier?.risk_factor]);
+  }, [supplier?.risk_penalty, supplier?.risk_factor]);
 
   // --- Render Logic ---
   if (loading) {
@@ -394,7 +424,7 @@ const SupplierDetails = () => {
                 backgroundColor: riskColor + '15',
                 border: `1px solid ${riskColor}40`,
               }}>
-                {riskPenaltyPct !== null ? `${riskPenaltyPct}%` : 'N/A'}
+                {riskPenaltyPct !== null ? `${riskPenaltyPct.toFixed(1)}` : 'N/A'}
               </span>
             </div>
             <div className="flex items-center justify-between mt-2">
@@ -425,7 +455,13 @@ const SupplierDetails = () => {
             </h3>
             <div className="space-y-3">
               <button
-                onClick={() => navigate(`/suppliers/${supplierId}/assessment`)}
+                onClick={() => {
+                  // Trigger refresh after navigation
+                  setTimeout(() => {
+                    window.dispatchEvent(new Event('supplier-refresh'));
+                  }, 1000);
+                  navigate(`/suppliers/${supplierId}/assessment`);
+                }}
                 className="w-full flex items-center justify-center text-sm py-2 px-4 rounded hover:opacity-90 transition-opacity duration-200"
                 style={{
                   backgroundColor: colors.primary,

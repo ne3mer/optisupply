@@ -86,6 +86,7 @@ exports.createSupplier = async (req, res) => {
       governance_score: scores.governance_score,
       risk_level: scores.risk_level,
       risk_factor: scores.risk_factor,
+      risk_penalty: scores.risk_penalty, // Include new risk_penalty field
       completeness_ratio: scores.completeness_ratio,
       composite_score: scores.composite_score,
       createdAt: new Date(),
@@ -124,6 +125,7 @@ exports.updateSupplier = async (req, res) => {
     updatedData.governance_score = scores.governance_score;
     updatedData.risk_level = scores.risk_level;
     updatedData.risk_factor = scores.risk_factor;
+    updatedData.risk_penalty = scores.risk_penalty; // Include new risk_penalty field
     updatedData.completeness_ratio = scores.completeness_ratio;
     updatedData.composite_score = scores.composite_score;
     updatedData.updatedAt = new Date();
@@ -138,6 +140,40 @@ exports.updateSupplier = async (req, res) => {
   } catch (error) {
     console.error("Error updating supplier:", error);
     res.status(400).json({ error: error.message });
+  }
+};
+
+// Recompute supplier scores (triggers recalculation with current settings)
+exports.recomputeSupplierScores = async (req, res) => {
+  try {
+    const supplierId = req.params.id;
+    const supplier = await db.Supplier.findById(supplierId);
+    
+    if (!supplier) {
+      return res.status(404).json({ message: "Supplier not found" });
+    }
+
+    // Recalculate scores with current settings
+    const scores = await calculateSupplierScores(supplier.toObject());
+
+    // Update supplier with new scores
+    supplier.ethical_score = scores.ethical_score;
+    supplier.environmental_score = scores.environmental_score;
+    supplier.social_score = scores.social_score;
+    supplier.governance_score = scores.governance_score;
+    supplier.risk_level = scores.risk_level;
+    supplier.risk_factor = scores.risk_factor;
+    supplier.risk_penalty = scores.risk_penalty;
+    supplier.completeness_ratio = scores.completeness_ratio;
+    supplier.composite_score = scores.composite_score;
+    supplier.updatedAt = new Date();
+
+    await supplier.save();
+
+    res.status(200).json(supplier);
+  } catch (error) {
+    console.error("Error recomputing supplier scores:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -161,6 +197,9 @@ exports.getDashboard = async (req, res) => {
     const supplierDocs = await db.Supplier.find({});
     const supplierCount = supplierDocs.length;
 
+    // Get settings once for all suppliers
+    const settings = await db.ScoringSettings.getDefault();
+    
     const suppliers = supplierDocs.map((doc) => {
       const supplier = doc.toObject ? doc.toObject() : doc;
       const hasCompleteScores =
@@ -172,7 +211,8 @@ exports.getDashboard = async (req, res) => {
         return supplier;
       }
 
-      const computed = scoreSupplier(supplier);
+      // Calculate scores with settings
+      const computed = scoreSupplier(supplier, settings);
       return {
         ...supplier,
         environmental_score:
@@ -889,7 +929,8 @@ exports.getSupplierAnalytics = async (req, res) => {
 
     // Attach transparent scoring breakdown for UI (formulas, weights, normalized values)
     try {
-      const breakdown = scoreSupplierWithBreakdown(supplier.toObject ? supplier.toObject() : supplier);
+      const settings = await db.ScoringSettings.getDefault();
+      const breakdown = scoreSupplierWithBreakdown(supplier.toObject ? supplier.toObject() : supplier, settings);
       analytics.breakdown = breakdown;
     } catch (e) {
       console.warn("Failed to attach scoring breakdown:", e?.message || e);
@@ -1242,7 +1283,9 @@ function calculateConfidenceScores(mlScores) {
 // Helper function to calculate supplier scores
 async function calculateSupplierScores(supplier) {
   try {
-    const scores = scoreSupplier(supplier);
+    // Get current settings
+    const settings = await db.ScoringSettings.getDefault();
+    const scores = scoreSupplier(supplier, settings);
 
     const roundToTwo = (value) =>
       Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
@@ -1254,6 +1297,7 @@ async function calculateSupplierScores(supplier) {
       governance_score: roundToTwo(scores.governance_score),
       risk_level: scores.risk_level,
       risk_factor: roundToTwo(scores.risk_factor),
+      risk_penalty: scores.risk_penalty !== null ? roundToTwo(scores.risk_penalty) : null, // 0-100 or null
       completeness_ratio: roundToTwo(scores.completeness_ratio),
       composite_score: roundToTwo(scores.composite_score),
     };

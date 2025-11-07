@@ -39,6 +39,7 @@ export interface Supplier {
   governance_score?: number;
   risk_level?: string;
   risk_factor?: number;
+  risk_penalty?: number | null; // 0-100 or null (null = disabled, shows "N/A")
   composite_score?: number;
   completeness_ratio?: number;
   renewable_energy_percent?: number;
@@ -2816,6 +2817,30 @@ function subtractDays(date: Date, days: number): Date {
   return result;
 }
 
+// Recompute supplier scores with current settings
+export const recomputeSupplierScores = async (id: string | number): Promise<Supplier> => {
+  try {
+    const response = await fetch(getEndpoint(`suppliers/${id}/recompute`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to recompute scores. Server responded with ${response.status}`);
+    }
+
+    const updatedSupplier: Supplier = await response.json();
+    logger.log("Supplier scores recomputed:", updatedSupplier);
+    return updatedSupplier;
+  } catch (error) {
+    logger.error("Error recomputing supplier scores:", error);
+    throw error instanceof Error
+      ? error
+      : new Error("An unknown error occurred during score recomputation.");
+  }
+};
+
 // Function to update an existing supplier
 export const updateSupplier = async (
   id: string,
@@ -3430,3 +3455,166 @@ function getPercentileText(score: number): string {
   if (score >= 20) return "bottom 20%";
   return "bottom 10%";
 }
+
+// ========== NEW CHAPTER 4 FEATURES ==========
+
+export interface ScoringSettings {
+  useIndustryBands: boolean;
+  environmentalWeight: number;
+  socialWeight: number;
+  governanceWeight: number;
+  emissionIntensityWeight: number;
+  renewableShareWeight: number;
+  waterIntensityWeight: number;
+  wasteIntensityWeight: number;
+  injuryRateWeight: number;
+  trainingHoursWeight: number;
+  wageRatioWeight: number;
+  diversityWeight: number;
+  boardDiversityWeight: number;
+  boardIndependenceWeight: number;
+  antiCorruptionWeight: number;
+  transparencyWeight: number;
+  riskPenaltyEnabled: boolean;
+  defaultRiskFactor: number;
+  riskWeightGeopolitical: number;
+  riskWeightClimate: number;
+  riskWeightLabor: number;
+  riskThreshold: number;
+  riskLambda: number;
+}
+
+// Get scoring settings
+export const getScoringSettings = async (): Promise<ScoringSettings> => {
+  try {
+    const response = await fetch(getEndpoint("settings"));
+    if (!response.ok) throw new Error("Failed to fetch settings");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error fetching settings:", error);
+    throw error;
+  }
+};
+
+// Update scoring settings
+export const updateScoringSettings = async (settings: Partial<ScoringSettings>): Promise<ScoringSettings> => {
+  try {
+    const response = await fetch(getEndpoint("settings"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings),
+    });
+    if (!response.ok) throw new Error("Failed to update settings");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error updating settings:", error);
+    throw error;
+  }
+};
+
+// Reset settings to defaults
+export const resetScoringSettings = async (): Promise<ScoringSettings> => {
+  try {
+    const response = await fetch(getEndpoint("settings/reset"), {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Failed to reset settings");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error resetting settings:", error);
+    throw error;
+  }
+};
+
+// Export suppliers as CSV
+export const exportSuppliersCSV = async (): Promise<void> => {
+  try {
+    const response = await fetch(getEndpoint("suppliers/export/csv"));
+    if (!response.ok) throw new Error("Failed to export CSV");
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `supplier_rankings_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    logger.error("Error exporting CSV:", error);
+    throw error;
+  }
+};
+
+// Get calculation trace for a supplier
+export const getCalculationTrace = async (supplierId: string | number): Promise<any> => {
+  try {
+    const response = await fetch(getEndpoint(`suppliers/${supplierId}/transparency`));
+    if (!response.ok) throw new Error("Failed to fetch calculation trace");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error fetching calculation trace:", error);
+    throw error;
+  }
+};
+
+// Scenario endpoints
+export const runScenarioS1 = async (supplierId: string | number, weights?: any): Promise<any> => {
+  try {
+    const response = await fetch(getEndpoint(`scenarios/s1/${supplierId}`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weights }),
+    });
+    if (!response.ok) throw new Error("Failed to run S1 scenario");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error running S1 scenario:", error);
+    throw error;
+  }
+};
+
+export const runScenarioS2 = async (supplierId: string | number, variation?: number): Promise<any> => {
+  try {
+    const response = await fetch(getEndpoint(`scenarios/s2/${supplierId}`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ variation }),
+    });
+    if (!response.ok) throw new Error("Failed to run S2 scenario");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error running S2 scenario:", error);
+    throw error;
+  }
+};
+
+export const runScenarioS3 = async (supplierId: string | number, missingFields?: string[]): Promise<any> => {
+  try {
+    const response = await fetch(getEndpoint(`scenarios/s3/${supplierId}`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ missingFields }),
+    });
+    if (!response.ok) throw new Error("Failed to run S3 scenario");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error running S3 scenario:", error);
+    throw error;
+  }
+};
+
+export const runScenarioS4 = async (supplierId: string | number, removePillar?: string, removeMetric?: string): Promise<any> => {
+  try {
+    const response = await fetch(getEndpoint(`scenarios/s4/${supplierId}`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ removePillar, removeMetric }),
+    });
+    if (!response.ok) throw new Error("Failed to run S4 scenario");
+    return await response.json();
+  } catch (error) {
+    logger.error("Error running S4 scenario:", error);
+    throw error;
+  }
+};

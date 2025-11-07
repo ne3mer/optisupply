@@ -205,11 +205,14 @@ function computeStats(records) {
   };
 }
 
-function getMetricBand(metric, industry) {
-  const industryStats = INDUSTRY_STATS[industry];
-  if (industryStats && industryStats[metric]) {
-    return industryStats[metric];
+function getMetricBand(metric, industry, useIndustryBands = true) {
+  if (useIndustryBands) {
+    const industryStats = INDUSTRY_STATS[industry];
+    if (industryStats && industryStats[metric]) {
+      return industryStats[metric];
+    }
   }
+  // Use global bands (either forced or as fallback)
   return (
     GLOBAL_STATS[metric] || {
       min: 0,
@@ -295,14 +298,89 @@ function normalizeWageRatio(value, band) {
   return (clamped - lowerBound) / (1 - lowerBound);
 }
 
-function computeRiskFactor(supplier) {
+/**
+ * Compute risk penalty according to spec:
+ * - Penalty disabled → return null (frontend shows "N/A")
+ * - Penalty enabled, all risks missing → return 0.0 (frontend shows "0.0")
+ * - Penalty enabled, some risks present → compute weighted mean, apply threshold and lambda
+ * 
+ * @param {Object} supplier - Supplier data with risk fields
+ * @param {Object} settings - Scoring settings with risk weights, threshold, lambda
+ * @returns {number|null} - Penalty value (0-100) or null if disabled
+ */
+function computeRiskPenalty(supplier, settings = null) {
+  // If penalty is disabled, return null (frontend will show "N/A")
+  if (settings && settings.riskPenaltyEnabled === false) {
+    return null;
+  }
+
+  // Extract risk values
+  const riskValues = {
+    geopolitical: toNumber(supplier.geopolitical_risk),
+    climate: toNumber(supplier.climate_risk),
+    labor: toNumber(supplier.labor_dispute_risk),
+  };
+
+  // Get weights from settings or use defaults
+  const weights = {
+    geopolitical: settings?.riskWeightGeopolitical ?? 0.33,
+    climate: settings?.riskWeightClimate ?? 0.33,
+    labor: settings?.riskWeightLabor ?? 0.34,
+  };
+
+  // Filter to only available risks and their weights
+  const availableRisks = [];
+  const availableWeights = [];
+  
+  Object.entries(riskValues).forEach(([key, value]) => {
+    if (typeof value === "number" && !Number.isNaN(value)) {
+      availableRisks.push({ key, value: Math.max(0, Math.min(1, value)) });
+      availableWeights.push(weights[key]);
+    }
+  });
+
+  // If all risks are missing, return 0.0 (not null - frontend shows "0.0")
+  if (availableRisks.length === 0) {
+    return 0.0;
+  }
+
+  // Renormalize weights to sum to 1.0 for available risks
+  const totalWeight = availableWeights.reduce((sum, w) => sum + w, 0);
+  const normalizedWeights = totalWeight > 0 
+    ? availableWeights.map(w => w / totalWeight)
+    : availableWeights.map(() => 1 / availableWeights.length); // Equal weights if all zero
+
+  // Compute weighted mean
+  const riskRaw = availableRisks.reduce((sum, risk, idx) => {
+    return sum + risk.value * normalizedWeights[idx];
+  }, 0);
+
+  // Get threshold T and lambda λ from settings
+  const threshold = settings?.riskThreshold ?? 0.3;
+  const lambda = settings?.riskLambda ?? 1.0;
+
+  // Compute excess risk above threshold
+  const riskExcess = Math.max(0, riskRaw - threshold);
+
+  // Compute penalty: λ * risk_excess * 100 (scale to 0-100 space)
+  const penalty = lambda * riskExcess * 100;
+
+  // Clamp to 0-100
+  return Math.max(0, Math.min(100, penalty));
+}
+
+/**
+ * Legacy function for backward compatibility
+ * Returns risk factor (0-1) for use in multiplier approach
+ */
+function computeRiskFactor(supplier, defaultRiskFactor = 0.15) {
   const risks = [
     toNumber(supplier.climate_risk),
     toNumber(supplier.geopolitical_risk),
     toNumber(supplier.labor_dispute_risk),
   ].filter((value) => typeof value === "number" && !Number.isNaN(value));
 
-  if (!risks.length) return 0.2; // moderate default
+  if (!risks.length) return defaultRiskFactor; // Use configurable default
   const avg =
     risks.reduce((sum, value) => sum + Math.max(0, Math.min(1, value)), 0) /
     risks.length;
@@ -349,7 +427,7 @@ function buildSupplierMetricPayload(supplier) {
   };
 }
 
-function scoreSupplierAgainstBenchmarks(supplier) {
+function scoreSupplierAgainstBenchmarks(supplier, useIndustryBands = true) {
   const industry = supplier.industry || "Unknown";
   const metricValues = buildSupplierMetricPayload(supplier);
 
@@ -367,7 +445,7 @@ function scoreSupplierAgainstBenchmarks(supplier) {
       imputed = true;
     }
 
-    const band = getMetricBand(metric, industry);
+    const band = getMetricBand(metric, industry, useIndustryBands);
     let normalizedValue = null;
     if (metric === "emission_intensity" ||
         metric === "water_intensity" ||
@@ -384,6 +462,7 @@ function scoreSupplierAgainstBenchmarks(supplier) {
       value,
       normalized: normalizedValue,
       imputed,
+      band: { min: band.min, max: band.max }, // Include band info for transparency
     };
 
     if (!imputed) completeness.present += 1;
@@ -407,28 +486,52 @@ function scoreSupplierAgainstBenchmarks(supplier) {
   };
 }
 
-function computePillarScores(normalizedMetrics) {
+function computePillarScores(normalizedMetrics, weights = null) {
   const { normalized, antiCorruptionScore } = normalizedMetrics;
 
+  // Default weights
+  const defaultWeights = {
+    environmental: {
+      emission_intensity: 0.4,
+      renewable_pct: 0.2,
+      water_intensity: 0.2,
+      waste_intensity: 0.2,
+    },
+    social: {
+      injury_rate: 0.3,
+      training_hours: 0.2,
+      wage_ratio: 0.2,
+      diversity_pct: 0.3,
+    },
+    governance: {
+      board_diversity: 0.25,
+      board_independence: 0.25,
+      anti_corruption: 0.2,
+      transparency_score: 0.3,
+    },
+  };
+
+  const w = weights || defaultWeights;
+
   const env = (
-    (normalized.emission_intensity?.normalized ?? 0) * 0.4 +
-    (normalized.renewable_pct?.normalized ?? 0) * 0.2 +
-    (normalized.water_intensity?.normalized ?? 0) * 0.2 +
-    (normalized.waste_intensity?.normalized ?? 0) * 0.2
+    (normalized.emission_intensity?.normalized ?? 0) * (w.environmental?.emission_intensity ?? defaultWeights.environmental.emission_intensity) +
+    (normalized.renewable_pct?.normalized ?? 0) * (w.environmental?.renewable_pct ?? defaultWeights.environmental.renewable_pct) +
+    (normalized.water_intensity?.normalized ?? 0) * (w.environmental?.water_intensity ?? defaultWeights.environmental.water_intensity) +
+    (normalized.waste_intensity?.normalized ?? 0) * (w.environmental?.waste_intensity ?? defaultWeights.environmental.waste_intensity)
   ) * 100;
 
   const social = (
-    (normalized.injury_rate?.normalized ?? 0) * 0.3 +
-    (normalized.training_hours?.normalized ?? 0) * 0.2 +
-    (normalized.wage_ratio?.normalized ?? 0) * 0.2 +
-    (normalized.diversity_pct?.normalized ?? 0) * 0.3
+    (normalized.injury_rate?.normalized ?? 0) * (w.social?.injury_rate ?? defaultWeights.social.injury_rate) +
+    (normalized.training_hours?.normalized ?? 0) * (w.social?.training_hours ?? defaultWeights.social.training_hours) +
+    (normalized.wage_ratio?.normalized ?? 0) * (w.social?.wage_ratio ?? defaultWeights.social.wage_ratio) +
+    (normalized.diversity_pct?.normalized ?? 0) * (w.social?.diversity_pct ?? defaultWeights.social.diversity_pct)
   ) * 100;
 
   const governance = (
-    (normalized.board_diversity?.normalized ?? 0) * 0.25 +
-    (normalized.board_independence?.normalized ?? 0) * 0.25 +
-    antiCorruptionScore * 0.2 +
-    (normalized.transparency_score?.normalized ?? 0) * 0.3
+    (normalized.board_diversity?.normalized ?? 0) * (w.governance?.board_diversity ?? defaultWeights.governance.board_diversity) +
+    (normalized.board_independence?.normalized ?? 0) * (w.governance?.board_independence ?? defaultWeights.governance.board_independence) +
+    antiCorruptionScore * (w.governance?.anti_corruption ?? defaultWeights.governance.anti_corruption) +
+    (normalized.transparency_score?.normalized ?? 0) * (w.governance?.transparency_score ?? defaultWeights.governance.transparency_score)
   ) * 100;
 
   return {
@@ -445,24 +548,69 @@ function determineRiskLevel(riskFactor) {
   return "critical";
 }
 
-function scoreSupplier(supplier) {
-  const { normalized, antiCorruptionScore, completenessRatio } =
-    scoreSupplierAgainstBenchmarks(supplier);
+function scoreSupplier(supplier, settings = null) {
+  const useIndustryBands = settings?.useIndustryBands !== false; // default true
+  const riskPenaltyEnabled = settings?.riskPenaltyEnabled !== false; // default true
+  const defaultRiskFactor = settings?.defaultRiskFactor ?? 0.15;
 
-  const pillarScores = computePillarScores({ normalized, antiCorruptionScore });
+  const { normalized, antiCorruptionScore, completenessRatio } =
+    scoreSupplierAgainstBenchmarks(supplier, useIndustryBands);
+
+  // Build weights from settings or use defaults
+  const weights = settings ? {
+    environmental: {
+      emission_intensity: settings.emissionIntensityWeight ?? 0.4,
+      renewable_pct: settings.renewableShareWeight ?? 0.2,
+      water_intensity: settings.waterIntensityWeight ?? 0.2,
+      waste_intensity: settings.wasteIntensityWeight ?? 0.2,
+    },
+    social: {
+      injury_rate: settings.injuryRateWeight ?? 0.3,
+      training_hours: settings.trainingHoursWeight ?? 0.2,
+      wage_ratio: settings.wageRatioWeight ?? 0.2,
+      diversity_pct: settings.diversityWeight ?? 0.3,
+    },
+    governance: {
+      board_diversity: settings.boardDiversityWeight ?? 0.25,
+      board_independence: settings.boardIndependenceWeight ?? 0.25,
+      anti_corruption: settings.antiCorruptionWeight ?? 0.2,
+      transparency_score: settings.transparencyWeight ?? 0.3,
+    },
+  } : null;
+
+  const pillarScores = computePillarScores({ normalized, antiCorruptionScore }, weights);
+
+  const envWeight = settings?.environmentalWeight ?? 0.4;
+  const socialWeight = settings?.socialWeight ?? 0.3;
+  const govWeight = settings?.governanceWeight ?? 0.3;
 
   const baseComposite =
-    pillarScores.environmental * 0.4 +
-    pillarScores.social * 0.3 +
-    pillarScores.governance * 0.3;
+    pillarScores.environmental * envWeight +
+    pillarScores.social * socialWeight +
+    pillarScores.governance * govWeight;
 
-  const riskFactor = computeRiskFactor(supplier);
-  const riskAdjusted = baseComposite * (1 - riskFactor);
+  // Compute risk penalty using new spec
+  const riskPenalty = computeRiskPenalty(supplier, settings);
+  
+  // Apply penalty: finalScore = clamp(baseScore - penalty, 0, 100)
+  let finalScore = baseComposite;
+  if (riskPenalty !== null) {
+    finalScore = Math.max(0, Math.min(100, baseComposite - riskPenalty));
+  } else {
+    // If penalty is disabled, use legacy multiplier approach for backward compatibility
+    const riskFactor = computeRiskFactor(supplier, defaultRiskFactor);
+    finalScore = baseComposite * (1 - riskFactor);
+  }
 
-  let finalScore = riskAdjusted;
+  // Apply disclosure cap (separate from risk penalty)
   if (completenessRatio < 0.7) {
     finalScore = Math.min(finalScore, 50);
   }
+
+  // For backward compatibility, also compute risk_factor (0-1) for display
+  const riskFactor = riskPenalty !== null 
+    ? (riskPenalty / 100) // Convert penalty (0-100) to factor (0-1) for display
+    : (riskPenaltyEnabled ? computeRiskFactor(supplier, defaultRiskFactor) : 0);
 
   const riskLevel = determineRiskLevel(riskFactor);
 
@@ -479,7 +627,8 @@ function scoreSupplier(supplier) {
     governance_score: pillarScores.governance,
     composite_score: baseComposite,
     ethical_score: finalScore,
-    risk_factor: riskFactor,
+    risk_factor: riskFactor, // 0-1 for backward compatibility
+    risk_penalty: riskPenalty, // 0-100 or null (null = disabled, shows "N/A")
     risk_level: riskLevel,
     completeness_ratio: completenessRatio,
   };
@@ -534,29 +683,49 @@ function scoreSupplier(supplier) {
   }
 })();
 
+// Export computeRiskPenalty for testing
+function computeRiskPenaltyForTesting(supplier, settings) {
+  return computeRiskPenalty(supplier, settings);
+}
+
 module.exports = {
   scoreSupplier,
+  computeRiskPenalty: computeRiskPenaltyForTesting, // Export for testing
   // Expose a richer breakdown for UI explanations
-  scoreSupplierWithBreakdown: (supplier) => {
+  scoreSupplierWithBreakdown: (supplier, settings = null) => {
+    const useIndustryBands = settings?.useIndustryBands !== false;
+    const riskPenaltyEnabled = settings?.riskPenaltyEnabled !== false;
+    const defaultRiskFactor = settings?.defaultRiskFactor ?? 0.15;
+
     const { normalized, antiCorruptionScore, completenessRatio } =
-      scoreSupplierAgainstBenchmarks(supplier);
+      scoreSupplierAgainstBenchmarks(supplier, useIndustryBands);
 
-    const pillarScores = computePillarScores({
-      normalized,
-      antiCorruptionScore,
-    });
-
-    const composite =
-      pillarScores.environmental * 0.4 +
-      pillarScores.social * 0.3 +
-      pillarScores.governance * 0.3;
-
-    const riskFactor = computeRiskFactor(supplier);
-    const riskLevel = determineRiskLevel(riskFactor);
-    const ethical = (composite || 0) * (1 - riskFactor);
-    const finalEthical = completenessRatio < 0.7 ? Math.min(ethical, 50) : ethical;
-
-    const weights = {
+    // Build weights from settings
+    const weights = settings ? {
+      environmental: {
+        emission_intensity: settings.emissionIntensityWeight ?? 0.4,
+        renewable_pct: settings.renewableShareWeight ?? 0.2,
+        water_intensity: settings.waterIntensityWeight ?? 0.2,
+        waste_intensity: settings.wasteIntensityWeight ?? 0.2,
+      },
+      social: {
+        injury_rate: settings.injuryRateWeight ?? 0.3,
+        training_hours: settings.trainingHoursWeight ?? 0.2,
+        wage_ratio: settings.wageRatioWeight ?? 0.2,
+        diversity_pct: settings.diversityWeight ?? 0.3,
+      },
+      governance: {
+        board_diversity: settings.boardDiversityWeight ?? 0.25,
+        board_independence: settings.boardIndependenceWeight ?? 0.25,
+        anti_corruption: settings.antiCorruptionWeight ?? 0.2,
+        transparency_score: settings.transparencyWeight ?? 0.3,
+      },
+      composite: {
+        environmental: settings.environmentalWeight ?? 0.4,
+        social: settings.socialWeight ?? 0.3,
+        governance: settings.governanceWeight ?? 0.3,
+      },
+    } : {
       environmental: {
         emission_intensity: 0.4,
         renewable_pct: 0.2,
@@ -578,14 +747,51 @@ module.exports = {
       composite: { environmental: 0.4, social: 0.3, governance: 0.3 },
     };
 
+    const pillarScores = computePillarScores({
+      normalized,
+      antiCorruptionScore,
+    }, weights);
+
+    const composite =
+      pillarScores.environmental * weights.composite.environmental +
+      pillarScores.social * weights.composite.social +
+      pillarScores.governance * weights.composite.governance;
+
+    // Compute risk penalty using new spec
+    const riskPenalty = computeRiskPenalty(supplier, settings);
+    
+    // Apply penalty
+    let ethical = composite || 0;
+    if (riskPenalty !== null) {
+      ethical = Math.max(0, Math.min(100, ethical - riskPenalty));
+    } else {
+      // Legacy approach if disabled
+      const riskFactor = computeRiskFactor(supplier, defaultRiskFactor);
+      ethical = ethical * (1 - riskFactor);
+    }
+    
+    const finalEthical = completenessRatio < 0.7 ? Math.min(ethical, 50) : ethical;
+    
+    // For display
+    const riskFactor = riskPenalty !== null 
+      ? (riskPenalty / 100)
+      : (riskPenaltyEnabled ? computeRiskFactor(supplier, defaultRiskFactor) : 0);
+    const riskLevel = determineRiskLevel(riskFactor);
+
     return {
       normalizedMetrics: normalized, // map: metric -> { value, normalized, band, imputed }
       pillarScores, // { environmental, social, governance }
       weights,
       composite,
-      risk: { factor: riskFactor, level: riskLevel },
+      risk: { 
+        factor: riskFactor, 
+        penalty: riskPenalty, // 0-100 or null
+        level: riskLevel, 
+        enabled: riskPenaltyEnabled 
+      },
       completeness_ratio: completenessRatio,
       ethical_score: finalEthical,
+      useIndustryBands,
     };
   },
   getDatasetMeta: () => ({ ...DATASET_META }),
