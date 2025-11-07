@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getSuppliers,
@@ -708,50 +708,71 @@ const SupplierAssessment = () => {
     min,
     max,
     step,
-  }) => (
-    <div className="mb-4">
-      <label
-        htmlFor={name}
-        className="block text-sm font-medium mb-1"
-        style={{ color: colors.textMuted }}
-      >
-        {label}
-      </label>
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        min={min}
-        max={max}
-        step={step}
-        data-type={type === "number" ? "number" : undefined}
-        onWheel={(e) => {
-          // Prevent page scroll jump when adjusting number inputs with wheel
-          if (type === "number") e.preventDefault();
-        }}
-        onKeyDown={(e) => {
-          // Prevent page scroll on PageUp/PageDown and keep focus stable
-          if (e.key === "PageUp" || e.key === "PageDown") {
-            e.preventDefault();
-          }
-          // Prevent accidental form submit on Enter in numeric fields
-          if (type === "number" && e.key === "Enter") {
-            e.preventDefault();
-          }
-        }}
-        className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
-        style={{
-          backgroundColor: colors.inputBg,
-          borderColor: colors.accent + "50",
-          color: colors.text,
-          "--tw-ring-color": colors.primary,
-        }}
-      />
-    </div>
-  );
+  }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+      const input = inputRef.current;
+      if (!input || type !== "number") return;
+
+      // Add wheel event listener with passive: false to allow preventDefault
+      const handleWheel = (e: WheelEvent) => {
+        // Only prevent default if input is focused
+        if (document.activeElement === input) {
+          e.preventDefault();
+          // Optionally blur to prevent accidental changes
+          input.blur();
+        }
+      };
+
+      input.addEventListener("wheel", handleWheel, { passive: false });
+      return () => {
+        input.removeEventListener("wheel", handleWheel);
+      };
+    }, [type]);
+
+    return (
+      <div className="mb-4">
+        <label
+          htmlFor={name}
+          className="block text-sm font-medium mb-1"
+          style={{ color: colors.textMuted }}
+        >
+          {label}
+        </label>
+        <input
+          ref={inputRef}
+          type={type}
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          min={min}
+          max={max}
+          step={step}
+          data-type={type === "number" ? "number" : undefined}
+          onKeyDown={(e) => {
+            // Prevent page scroll on PageUp/PageDown and keep focus stable
+            if (e.key === "PageUp" || e.key === "PageDown") {
+              e.preventDefault();
+            }
+            // Prevent accidental form submit on Enter in numeric fields
+            if (type === "number" && e.key === "Enter") {
+              e.preventDefault();
+            }
+          }}
+          className="w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2"
+          style={{
+            backgroundColor: colors.inputBg,
+            borderColor: colors.accent + "50",
+            color: colors.text,
+            "--tw-ring-color": colors.primary,
+          }}
+        />
+      </div>
+    );
+  };
 
   const SelectField = ({ name, label, value, onChange, options }) => (
     <div className="mb-4 relative">

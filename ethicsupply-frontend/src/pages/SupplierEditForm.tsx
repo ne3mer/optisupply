@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   getSuppliers,
@@ -104,12 +104,35 @@ const InputField = ({
   helper?: string;
 }) => {
   const colors = useThemeColors();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input || type !== "number" || disabled) return;
+
+    // Add wheel event listener with passive: false to allow preventDefault
+    const handleWheel = (e: WheelEvent) => {
+      // Only prevent default if input is focused
+      if (document.activeElement === input) {
+        e.preventDefault();
+        // Optionally blur to prevent accidental changes
+        input.blur();
+      }
+    };
+
+    input.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      input.removeEventListener("wheel", handleWheel);
+    };
+  }, [type, disabled]);
+
   return (
     <div className="mb-4">
       <label htmlFor={name} className="block text-sm font-medium mb-1" style={{ color: colors.textMuted }}>
         {label}
       </label>
       <input
+        ref={inputRef}
         type={type}
         id={name}
         name={name}
@@ -120,9 +143,6 @@ const InputField = ({
         min={min}
         max={max}
         step={step}
-        onWheel={(e) => {
-          if (type === "number") e.preventDefault();
-        }}
         onKeyDown={(e) => {
           if (e.key === "PageUp" || e.key === "PageDown") e.preventDefault();
           if (type === "number" && e.key === "Enter") e.preventDefault();
