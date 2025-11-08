@@ -339,69 +339,88 @@ const getLastUpdatedBadge = (colors: any, dateString: string | undefined) => {
   };
 };
 
-// Tooltip component
-const Tooltip = ({ children, content, position = "top" }) => {
+// Enhanced Tooltip component with better positioning and overflow handling
+const Tooltip = ({ children, content, position = "top" }: { children: React.ReactNode; content: string; position?: "top" | "bottom" | "left" | "right" }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const tooltipRef = useRef(null);
-  const triggerRef = useRef(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const colors = useThemeColors() as any;
 
-  // Define positions - offset tooltips to prevent overlaps
-  const positionClasses = {
-    top: "bottom-full left-1/2 transform -translate-x-1/2 mb-2",
-    bottom: "top-full left-1/2 transform -translate-x-1/2 mt-2",
-    left: "right-full top-1/2 transform -translate-y-1/2 mr-2",
-    right: "left-full top-1/2 transform -translate-y-1/2 ml-2",
-  };
-
-  // Adjust position if tooltip would go off-screen
+  // Smart positioning that adapts to viewport
   useEffect(() => {
-    if (isVisible && tooltipRef.current) {
+    if (isVisible && tooltipRef.current && triggerRef.current) {
       const tooltip = tooltipRef.current;
-      const rect = tooltip.getBoundingClientRect();
+      const trigger = triggerRef.current;
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const triggerRect = trigger.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const padding = 8;
 
-      // Check if tooltip is going off-screen
-      const isOffScreenRight = rect.right > window.innerWidth;
-      const isOffScreenLeft = rect.left < 0;
-      const isOffScreenTop = rect.top < 0;
-      const isOffScreenBottom = rect.bottom > window.innerHeight;
+      // Reset positioning
+      tooltip.style.left = "";
+      tooltip.style.right = "";
+      tooltip.style.top = "";
+      tooltip.style.bottom = "";
+      tooltip.style.transform = "";
 
-      // Apply adjustments as needed
-      if (isOffScreenRight) {
+      // Determine best position based on available space
+      const spaceAbove = triggerRect.top;
+      const spaceBelow = viewportHeight - triggerRect.bottom;
+      const spaceLeft = triggerRect.left;
+      const spaceRight = viewportWidth - triggerRect.right;
+
+      // Prefer top if more space, otherwise bottom
+      if (position === "top" || (spaceAbove > spaceBelow && spaceAbove > tooltipRect.height + padding)) {
+        tooltip.style.bottom = "100%";
+        tooltip.style.left = "50%";
+        tooltip.style.transform = "translateX(-50%)";
+        tooltip.style.marginBottom = `${padding}px`;
+      } else {
+        tooltip.style.top = "100%";
+        tooltip.style.left = "50%";
+        tooltip.style.transform = "translateX(-50%)";
+        tooltip.style.marginTop = `${padding}px`;
+      }
+
+      // Adjust horizontal position if going off-screen
+      const finalRect = tooltip.getBoundingClientRect();
+      if (finalRect.right > viewportWidth - padding) {
         tooltip.style.left = "auto";
         tooltip.style.right = "0";
-        tooltip.style.transform = "translateY(-50%)";
+        tooltip.style.transform = finalRect.top < triggerRect.bottom ? "translateX(0)" : "translateX(0) translateY(-50%)";
       }
-
-      if (isOffScreenLeft) {
+      if (finalRect.left < padding) {
         tooltip.style.left = "0";
         tooltip.style.right = "auto";
-        tooltip.style.transform = "translateY(-50%)";
+        tooltip.style.transform = finalRect.top < triggerRect.bottom ? "translateX(0)" : "translateX(0) translateY(-50%)";
       }
 
-      if (isOffScreenTop) {
+      // Adjust vertical position if going off-screen
+      if (finalRect.top < padding) {
         tooltip.style.top = "100%";
         tooltip.style.bottom = "auto";
-        tooltip.style.marginTop = "8px";
+        tooltip.style.marginTop = `${padding}px`;
         tooltip.style.marginBottom = "0";
       }
-
-      if (isOffScreenBottom) {
+      if (finalRect.bottom > viewportHeight - padding) {
         tooltip.style.bottom = "100%";
         tooltip.style.top = "auto";
-        tooltip.style.marginBottom = "8px";
+        tooltip.style.marginBottom = `${padding}px`;
         tooltip.style.marginTop = "0";
       }
     }
-  }, [isVisible]);
+  }, [isVisible, position]);
 
   return (
-    <div className="relative inline-flex z-0">
+    <div className="relative inline-flex" style={{ zIndex: isVisible ? 50 : 0 }}>
       <div
         ref={triggerRef}
-        className="cursor-help"
+        className="cursor-help inline-flex items-center"
         onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
+        onFocus={() => setIsVisible(true)}
+        onBlur={() => setIsVisible(false)}
       >
         {children}
       </div>
@@ -409,24 +428,34 @@ const Tooltip = ({ children, content, position = "top" }) => {
         {isVisible && (
           <motion.div
             ref={tooltipRef}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.95, y: -5 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -5 }}
             transition={{ duration: 0.15 }}
-            className={`absolute z-50 w-60 p-3 rounded-md shadow-lg pointer-events-none ${positionClasses[position]}`}
+            className="absolute z-[100] max-w-[280px] min-w-[200px] p-3 rounded-lg shadow-xl pointer-events-none border"
             style={{
               backgroundColor: colors.panel,
-              borderColor: colors.accent + "50",
-              maxWidth: "90vw",
-              boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.5)`,
+              borderColor: colors.accent + "60",
+              color: colors.text,
+              boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px ${colors.accent}20`,
+              wordWrap: "break-word",
+              overflowWrap: "break-word",
             }}
           >
-            <div
-              className="text-xs leading-tight"
-              style={{ color: colors.text }}
-            >
+            <div className="text-xs leading-relaxed" style={{ color: colors.text }}>
               {content}
             </div>
+            {/* Arrow pointer */}
+            <div
+              className="absolute w-2 h-2 rotate-45 border-r border-b"
+              style={{
+                backgroundColor: colors.panel,
+                borderColor: colors.accent + "60",
+                left: "50%",
+                bottom: "-4px",
+                transform: "translateX(-50%)",
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -1890,7 +1919,7 @@ const SuppliersList = () => {
                   <motion.div
                     key={supplierId}
                     variants={itemVariants}
-                    className={`rounded-lg border backdrop-blur-sm overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-primary/20 relative ${
+                    className={`rounded-xl border backdrop-blur-sm overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl relative ${
                       isSelected ? "ring-2 ring-offset-2" : ""
                     }`}
                     style={{
@@ -1898,66 +1927,76 @@ const SuppliersList = () => {
                       borderColor: colors.accent + "40",
                       ...(isSelected && { ringColor: colors.primary }),
                     }}
-                    whileHover={{ y: -5, borderColor: colors.primary }}
+                    whileHover={{ y: -4, scale: 1.01 }}
                   >
-                    {/* Selection Checkbox */}
-                    <div className="absolute top-2 right-2 z-10">
+                    {/* Selection Checkbox - Top Right */}
+                    <div className="absolute top-3 right-3 z-10">
                       <button
-                        onClick={() => toggleSupplierSelection(supplier)}
-                        className="p-1 rounded-full transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSupplierSelection(supplier);
+                        }}
+                        className="p-1.5 rounded-full transition-all hover:scale-110"
                         style={{
                           backgroundColor: isSelected
                             ? colors.primary + "20"
-                            : "transparent",
+                            : colors.panel + "80",
+                          backdropFilter: "blur(4px)",
                         }}
                       >
                         {isSelected ? (
                           <CheckCircleIcon
-                            className="h-6 w-6"
+                            className="h-5 w-5"
                             style={{ color: colors.primary }}
                           />
                         ) : (
                           <Square2StackIcon
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             style={{ color: colors.textMuted }}
                           />
                         )}
                       </button>
                     </div>
 
-                    {/* Card Header */}
+                    {/* Card Header - Cleaner Design */}
                     <div
-                      className="p-4 border-b"
-                      style={{ borderColor: colors.accent + "30" }}
+                      className="p-5 pb-4 border-b relative"
+                      style={{ 
+                        borderColor: colors.accent + "20",
+                        background: `linear-gradient(135deg, ${colors.panel} 0%, ${colors.panel}dd 100%)`,
+                      }}
                     >
-                      <Tooltip content={sectionHelp.header}>
-                        <div>
+                      {/* Supplier Name & Location */}
+                      <div className="pr-8">
+                        <Tooltip content={sectionHelp.header}>
                           <h2
-                            className="text-lg font-semibold truncate pr-6"
+                            className="text-xl font-bold truncate mb-2"
                             style={{ color: colors.text }}
                           >
                             {supplier.name}
                           </h2>
-                          <div
-                            className="flex items-center text-xs mt-1"
-                            style={{ color: colors.textMuted }}
-                          >
-                            <MapPinIcon className="h-3 w-3 mr-1" />{" "}
+                        </Tooltip>
+                        <div
+                          className="flex items-center text-xs gap-3 flex-wrap"
+                          style={{ color: colors.textMuted }}
+                        >
+                          <span className="flex items-center">
+                            <MapPinIcon className="h-3.5 w-3.5 mr-1.5" />
                             {supplier.country || "N/A"}
-                            <span className="mx-2">|</span>
-                            <BuildingOfficeIcon className="h-3 w-3 mr-1" />{" "}
+                          </span>
+                          <span className="text-accent">•</span>
+                          <span className="flex items-center">
+                            <BuildingOfficeIcon className="h-3.5 w-3.5 mr-1.5" />
                             {supplier.industry || "N/A"}
-                          </div>
+                          </span>
                         </div>
-                      </Tooltip>
+                      </div>
 
-                      {/* Status and Recommendation Row */}
-                      <Tooltip content={sectionHelp.statusBar}>
-                        <div className="flex items-center justify-between mt-2 gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {/* Status Indicator */}
+                      {/* Status Badges - Compact Row */}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                        <Tooltip content={sectionHelp.statusBar}>
                           <span
-                            className="px-2 py-0.5 rounded-full flex items-center text-xs"
+                            className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
                             style={{
                               color: statusStyles.color,
                               backgroundColor: statusStyles.bgColor,
@@ -1965,119 +2004,125 @@ const SuppliersList = () => {
                             }}
                           >
                             {statusStyles.icon}
-                            {supplier.status || "Status Unknown"}
+                            <span className="ml-1">{supplier.status || "Unknown"}</span>
                           </span>
+                        </Tooltip>
 
-                          {typeof supplier.risk_factor === "number" && (
+                        {typeof supplier.risk_factor === "number" && (
+                          <Tooltip content={`Risk penalty applied to final score: ${formatPercent(supplier.risk_factor, 1)}`}>
                             <span
-                              className="px-2 py-0.5 rounded-full flex items-center text-xs"
+                              className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
                               style={{
                                 color: riskColor,
-                                backgroundColor: riskColor + "20",
-                                border: `1px solid ${riskColor}40`,
+                                backgroundColor: riskColor + "15",
+                                border: `1px solid ${riskColor}30`,
                               }}
                             >
                               {riskIcon}
-                              Risk Penalty {formatPercent(supplier.risk_factor, 0)}
+                              <span className="ml-1">{formatPercent(supplier.risk_factor, 0)}</span>
                             </span>
-                          )}
+                          </Tooltip>
+                        )}
 
-                          {typeof supplier.completeness_ratio === "number" && (
+                        {typeof supplier.completeness_ratio === "number" && (
+                          <Tooltip content={`Data completeness: ${formatPercent(supplier.completeness_ratio, 1)} of key metrics reported`}>
                             <span
-                              className="px-2 py-0.5 rounded-full flex items-center text-xs"
+                              className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
                               style={{
                                 color: colors.primary,
-                                backgroundColor: colors.primary + "20",
-                                border: `1px solid ${colors.primary}40`,
+                                backgroundColor: colors.primary + "15",
+                                border: `1px solid ${colors.primary}30`,
                               }}
                             >
-                              <SparklesIcon className="h-3.5 w-3.5 mr-1" />
-                              Data Complete {formatPercent(supplier.completeness_ratio, 0)}
+                              <SparklesIcon className="h-3 w-3" />
+                              <span className="ml-1">{formatPercent(supplier.completeness_ratio, 0)}</span>
                             </span>
-                          )}
-                        </div>
+                          </Tooltip>
+                        )}
 
-                        {/* AI Recommendation Tag (if applicable) */}
+                        {/* AI Recommendation Tag */}
                         {recommendation && (
                           <Tooltip content={recommendation.description}>
                             <div
-                              className="flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                              className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
                               style={{
                                 backgroundColor: recommendation.bgColor,
                                 color: recommendation.color,
-                                border: `1px solid ${recommendation.color}40`,
+                                border: `1px solid ${recommendation.color}30`,
                               }}
                             >
                               {recommendation.icon}
-                              {recommendation.label}
+                              <span className="ml-1">{recommendation.label}</span>
                             </div>
                           </Tooltip>
                         )}
-                        </div>
-                      </Tooltip>
+                      </div>
                     </div>
 
-                    {/* Card Body - Key Metrics */}
-                    <div className="p-4 flex-grow space-y-3">
-                      <Tooltip content={sectionHelp.esgRiskAdjusted}>
-                        <div className="flex items-center justify-between">
-                          <span
-                            className="text-sm flex items-center"
-                            style={{ color: colors.textMuted }}
-                          >
-                            <ScaleIcon className="h-4 w-4 mr-2" /> ESG Score (Risk-Adjusted)
-                            <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
-                          </span>
-                          <span
-                            className="text-lg font-bold font-mono"
-                            style={{ color: scoreColor }}
-                          >
-                            {riskAdjustedScore !== null
-                              ? riskAdjustedScore.toFixed(1)
-                              : "N/A"}
-                          </span>
-                        </div>
-                      </Tooltip>
-                      <Tooltip content={sectionHelp.esgComposite}>
-                        <div className="flex items-center justify-between text-xs" style={{ color: colors.textMuted }}>
-                          <span>Composite ESG Score (pre-risk)</span>
-                          <span style={{ color: colors.text }}>
-                            {compositeScore !== null
-                              ? compositeScore.toFixed(1)
-                              : "N/A"}
-                          </span>
-                        </div>
-                      </Tooltip>
-                      <div className="flex items-center justify-between text-xs" style={{ color: colors.textMuted }}>
-                        <span>Risk Penalty Applied</span>
-                        <span style={{ color: colors.text }}>
-                          {typeof supplier.risk_factor === "number"
-                            ? formatPercent(supplier.risk_factor, 0)
-                            : "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs" style={{ color: colors.textMuted }}>
-                        <span>Disclosure Completeness</span>
-                        <span style={{ color: colors.text }}>
-                          {completenessRatio !== null
-                            ? formatPercent(completenessRatio, 0)
-                            : "N/A"}
-                        </span>
-                      </div>
-                      <Tooltip content={sectionHelp.riskExposure}>
-                        <div className="flex items-center justify-between">
-                          <span
-                            className="text-sm flex items-center"
-                            style={{ color: colors.textMuted }}
-                          >
-                            <ShieldExclamationIcon className="h-4 w-4 mr-2" />{" "}
-                            Risk Level
-                            <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
-                          </span>
-                          <div className="flex items-center">
-                            <span className="mr-1.5">{riskIcon}</span>
+                    {/* Card Body - Key Metrics - Cleaner Layout */}
+                    <div className="p-5 flex-grow space-y-4">
+                      {/* Main ESG Score - Prominent */}
+                      <div className="bg-gradient-to-br from-accent/10 to-primary/5 rounded-lg p-4 border" style={{ borderColor: colors.accent + "20" }}>
+                        <Tooltip content={sectionHelp.esgRiskAdjusted}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <ScaleIcon className="h-5 w-5" style={{ color: colors.primary }} />
+                              <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
+                                ESG Score
+                              </span>
+                              <Tooltip content={sectionHelp.esgRiskAdjusted}>
+                                <InformationCircleIcon className="h-4 w-4 cursor-help" style={{ color: colors.textMuted + "80" }} />
+                              </Tooltip>
+                            </div>
                             <span
-                              className="px-2 py-0.5 rounded text-xs font-medium capitalize flex items-center"
+                              className="text-2xl font-bold font-mono"
+                              style={{ color: scoreColor }}
+                            >
+                              {riskAdjustedScore !== null
+                                ? riskAdjustedScore.toFixed(1)
+                                : "N/A"}
+                            </span>
+                          </div>
+                        </Tooltip>
+                        
+                        {/* Secondary Metrics - Compact Grid */}
+                        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t" style={{ borderColor: colors.accent + "15" }}>
+                          <Tooltip content={sectionHelp.esgComposite}>
+                            <div className="flex flex-col">
+                              <span className="text-xs mb-0.5" style={{ color: colors.textMuted }}>Composite</span>
+                              <span className="text-sm font-semibold" style={{ color: colors.text }}>
+                                {compositeScore !== null ? compositeScore.toFixed(1) : "N/A"}
+                              </span>
+                            </div>
+                          </Tooltip>
+                          <div className="flex flex-col">
+                            <span className="text-xs mb-0.5" style={{ color: colors.textMuted }}>Completeness</span>
+                            <span className="text-sm font-semibold" style={{ color: colors.text }}>
+                              {completenessRatio !== null ? formatPercent(completenessRatio, 0) : "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Risk Level - Prominent Badge */}
+                      <Tooltip content={sectionHelp.riskExposure}>
+                        <div className="flex items-center justify-between p-3 rounded-lg border" style={{ 
+                          borderColor: riskColor + "30",
+                          backgroundColor: riskColor + "10",
+                        }}>
+                          <div className="flex items-center gap-2">
+                            <ShieldExclamationIcon className="h-5 w-5" style={{ color: riskColor }} />
+                            <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
+                              Risk Level
+                            </span>
+                            <Tooltip content={sectionHelp.riskExposure}>
+                              <InformationCircleIcon className="h-4 w-4 cursor-help" style={{ color: colors.textMuted + "80" }} />
+                            </Tooltip>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{riskIcon}</span>
+                            <span
+                              className="px-3 py-1 rounded-md text-sm font-semibold capitalize"
                               style={{
                                 backgroundColor: riskColor + "20",
                                 color: riskColor,
@@ -2090,134 +2135,106 @@ const SuppliersList = () => {
                         </div>
                       </Tooltip>
 
-                      {/* ESG Scores Row */}
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        {/* Environmental Score with Tooltip */}
+                      {/* ESG Pillars - Compact Visual Grid */}
+                      <div className="grid grid-cols-3 gap-2">
                         <Tooltip content={sectionHelp.pillarEnv}>
-                          <div className="flex flex-col items-center">
-                            <span
-                              className="text-xs flex items-center mb-1"
-                              style={{ color: colors.textMuted }}
-                            >
-                              Env
-                              <QuestionMarkCircleIcon className="h-3 w-3 ml-0.5 opacity-70" />
+                          <div className="flex flex-col items-center p-2.5 rounded-lg border hover:scale-105 transition-transform" style={{ 
+                            borderColor: colors.primary + "30",
+                            backgroundColor: colors.primary + "08",
+                          }}>
+                            <span className="text-xs font-medium mb-1" style={{ color: colors.textMuted }}>
+                              Environmental
                             </span>
-                            <span
-                              className="text-xs font-medium"
-                              style={{ color: colors.primary }}
-                            >
-                              {supplier.environmental_score !== null &&
-                              supplier.environmental_score !== undefined
-                                ? supplier.environmental_score > 0 &&
-                                  supplier.environmental_score <= 1
-                                  ? (supplier.environmental_score * 100).toFixed(
-                                      1
-                                    )
-                                  : supplier.environmental_score.toFixed(1)
+                            <span className="text-base font-bold" style={{ color: colors.primary }}>
+                              {supplier.environmental_score !== null && supplier.environmental_score !== undefined
+                                ? supplier.environmental_score > 0 && supplier.environmental_score <= 1
+                                  ? (supplier.environmental_score * 100).toFixed(0)
+                                  : supplier.environmental_score.toFixed(0)
                                 : "N/A"}
                             </span>
                           </div>
                         </Tooltip>
 
-                        {/* Social Score with Tooltip */}
                         <Tooltip content={sectionHelp.pillarSoc}>
-                          <div className="flex flex-col items-center">
-                            <span
-                              className="text-xs flex items-center mb-1"
-                              style={{ color: colors.textMuted }}
-                            >
-                              Soc
-                              <QuestionMarkCircleIcon className="h-3 w-3 ml-0.5 opacity-70" />
+                          <div className="flex flex-col items-center p-2.5 rounded-lg border hover:scale-105 transition-transform" style={{ 
+                            borderColor: colors.accent + "30",
+                            backgroundColor: colors.accent + "08",
+                          }}>
+                            <span className="text-xs font-medium mb-1" style={{ color: colors.textMuted }}>
+                              Social
                             </span>
-                            <span
-                              className="text-xs font-medium"
-                              style={{ color: colors.accent }}
-                            >
-                              {supplier.social_score !== null &&
-                              supplier.social_score !== undefined
-                                ? supplier.social_score > 0 &&
-                                  supplier.social_score <= 1
-                                  ? (supplier.social_score * 100).toFixed(1)
-                                  : supplier.social_score.toFixed(1)
+                            <span className="text-base font-bold" style={{ color: colors.accent }}>
+                              {supplier.social_score !== null && supplier.social_score !== undefined
+                                ? supplier.social_score > 0 && supplier.social_score <= 1
+                                  ? (supplier.social_score * 100).toFixed(0)
+                                  : supplier.social_score.toFixed(0)
                                 : "N/A"}
                             </span>
                           </div>
                         </Tooltip>
 
-                        {/* Governance Score with Tooltip */}
                         <Tooltip content={sectionHelp.pillarGov}>
-                          <div className="flex flex-col items-center">
-                            <span
-                              className="text-xs flex items-center mb-1"
-                              style={{ color: colors.textMuted }}
-                            >
-                              Gov
-                              <QuestionMarkCircleIcon className="h-3 w-3 ml-0.5 opacity-70" />
+                          <div className="flex flex-col items-center p-2.5 rounded-lg border hover:scale-105 transition-transform" style={{ 
+                            borderColor: colors.secondary + "30",
+                            backgroundColor: colors.secondary + "08",
+                          }}>
+                            <span className="text-xs font-medium mb-1" style={{ color: colors.textMuted }}>
+                              Governance
                             </span>
-                            <span
-                              className="text-xs font-medium"
-                              style={{ color: colors.secondary }}
-                            >
-                              {supplier.governance_score !== null &&
-                              supplier.governance_score !== undefined
-                                ? supplier.governance_score > 0 &&
-                                  supplier.governance_score <= 1
-                                  ? (supplier.governance_score * 100).toFixed(1)
-                                  : supplier.governance_score.toFixed(1)
+                            <span className="text-base font-bold" style={{ color: colors.secondary }}>
+                              {supplier.governance_score !== null && supplier.governance_score !== undefined
+                                ? supplier.governance_score > 0 && supplier.governance_score <= 1
+                                  ? (supplier.governance_score * 100).toFixed(0)
+                                  : supplier.governance_score.toFixed(0)
                                 : "N/A"}
                             </span>
                           </div>
                         </Tooltip>
                       </div>
 
-                      {/* Last Updated */}
+                      {/* Last Updated - Subtle Footer */}
                       <Tooltip content={sectionHelp.lastUpdated}>
-                        <div
-                          className="flex items-center justify-end border-t mt-3 pt-2"
-                          style={{ borderColor: colors.accent + "20" }}
-                        >
+                        <div className="flex items-center justify-end pt-2 border-t" style={{ borderColor: colors.accent + "15" }}>
                           <span
-                            className="text-xs flex items-center px-2 py-1 rounded-full"
+                            className="text-xs flex items-center px-2 py-1 rounded-md"
                             style={lastUpdatedBadge.style}
                           >
                             {lastUpdatedBadge.icon}
-                            {lastUpdatedBadge.label}
+                            <span className="ml-1.5">{lastUpdatedBadge.label}</span>
                           </span>
                         </div>
                       </Tooltip>
                     </div>
 
-                    {/* Card Footer - Actions */}
+                    {/* Card Footer - Actions - Cleaner Design */}
                     <div
-                      className="p-3 border-t"
+                      className="p-4 border-t flex gap-2"
                       style={{
-                        borderColor: colors.accent + "30",
-                        backgroundColor: colors.accent + "10",
+                        borderColor: colors.accent + "20",
+                        backgroundColor: colors.panel + "dd",
                       }}
                     >
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleQuickView(supplier)}
-                          className="flex-1 flex items-center justify-center text-sm py-1.5 rounded hover:opacity-80 transition-opacity duration-200"
-                          style={{
-                            backgroundColor: colors.panel,
-                            color: colors.primary,
-                            border: `1px solid ${colors.primary}30`,
-                          }}
-                        >
-                          <EyeIcon className="h-4 w-4 mr-1" /> Quick View
-                        </button>
-                        <button
-                          onClick={() => handleViewDetails(supplierId)}
-                          className="flex-1 flex items-center justify-center text-sm py-1.5 rounded hover:opacity-80 transition-opacity duration-200"
-                          style={{
-                            backgroundColor: colors.accent,
-                            color: colors.background,
-                          }}
-                        >
-                          Dossier <ArrowRightIcon className="h-4 w-4 ml-1" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleQuickView(supplier)}
+                        className="flex-1 flex items-center justify-center text-sm py-2.5 rounded-lg font-medium hover:opacity-90 transition-all hover:scale-[1.02]"
+                        style={{
+                          backgroundColor: colors.panel,
+                          color: colors.primary,
+                          border: `1.5px solid ${colors.primary}40`,
+                        }}
+                      >
+                        <EyeIcon className="h-4 w-4 mr-1.5" /> View
+                      </button>
+                      <button
+                        onClick={() => handleViewDetails(supplierId)}
+                        className="flex-1 flex items-center justify-center text-sm py-2.5 rounded-lg font-semibold hover:opacity-90 transition-all hover:scale-[1.02]"
+                        style={{
+                          backgroundColor: colors.accent,
+                          color: colors.background,
+                        }}
+                      >
+                        Details <ArrowRightIcon className="h-4 w-4 ml-1.5" />
+                      </button>
                     </div>
                   </motion.div>
                 );
