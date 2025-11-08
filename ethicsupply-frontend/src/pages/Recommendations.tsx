@@ -260,26 +260,38 @@ const applyStoredActionState = (
   }
 
   console.log("[Recommendations] Applying stored action state:", storedState);
-  console.log("[Recommendations] Recommendations IDs:", recommendations.map(r => r._id));
+  console.log(
+    "[Recommendations] Recommendations IDs:",
+    recommendations.map((r) => r._id)
+  );
 
   return recommendations.map((rec) => {
     // Try to match by _id first, then by id, then by title (as fallback)
-    const stored = storedState[String(rec._id)] || 
-                   (rec.id ? storedState[String(rec.id)] : null) ||
-                   (rec.title ? Object.values(storedState).find(s => 
-                     s.title === rec.title || 
-                     (typeof rec.supplier === "object" && 
-                      typeof s.supplier === "object" && 
-                      rec.supplier?.name === s.supplier?.name &&
-                      rec.category === s.category)
-                   ) : null);
+    const stored =
+      storedState[String(rec._id)] ||
+      (rec.id ? storedState[String(rec.id)] : null) ||
+      (rec.title
+        ? Object.values(storedState).find(
+            (s) =>
+              s.title === rec.title ||
+              (typeof rec.supplier === "object" &&
+                typeof s.supplier === "object" &&
+                rec.supplier?.name === s.supplier?.name &&
+                rec.category === s.category)
+          )
+        : null);
 
     if (!stored) {
-      console.log(`[Recommendations] No stored state for recommendation ${rec._id}`);
+      console.log(
+        `[Recommendations] No stored state for recommendation ${rec._id}`
+      );
       return rec;
     }
 
-    console.log(`[Recommendations] Merging stored state for ${rec._id}:`, stored);
+    console.log(
+      `[Recommendations] Merging stored state for ${rec._id}:`,
+      stored
+    );
 
     // Merge stored state, ensuring all action fields are preserved
     const merged: EnhancedRecommendation = {
@@ -287,7 +299,8 @@ const applyStoredActionState = (
       // Preserve stored action state
       action_owner: stored.action_owner ?? rec.action_owner,
       action_started_at: stored.action_started_at ?? rec.action_started_at,
-      action_completed_at: stored.action_completed_at ?? rec.action_completed_at,
+      action_completed_at:
+        stored.action_completed_at ?? rec.action_completed_at,
       action_notes: stored.action_notes ?? rec.action_notes,
       // Preserve stored status if it exists
       status: stored.status ?? rec.status,
@@ -301,7 +314,7 @@ const persistActionStateFromArray = (
   recommendations: EnhancedRecommendation[]
 ) => {
   const stateIndex: Record<string, Partial<EnhancedRecommendation>> = {};
-  
+
   // Load existing state first to preserve any data
   const existingState = loadActionState();
 
@@ -318,9 +331,11 @@ const persistActionStateFromArray = (
     // Update with current values (only if they exist)
     if (rec.action_owner) entry.action_owner = rec.action_owner;
     if (rec.action_started_at) entry.action_started_at = rec.action_started_at;
-    if (rec.action_completed_at) entry.action_completed_at = rec.action_completed_at;
-    if (rec.action_notes && rec.action_notes.length > 0) entry.action_notes = rec.action_notes;
-    
+    if (rec.action_completed_at)
+      entry.action_completed_at = rec.action_completed_at;
+    if (rec.action_notes && rec.action_notes.length > 0)
+      entry.action_notes = rec.action_notes;
+
     // Preserve status if it's in_progress or completed
     if (rec.status === "in_progress" || rec.status === "completed") {
       entry.status = rec.status;
@@ -332,9 +347,14 @@ const persistActionStateFromArray = (
     if (rec.supplier) entry.supplier = rec.supplier;
 
     // Only persist if there's meaningful action state
-    if (entry.action_owner || entry.action_started_at || entry.action_completed_at || 
-        (entry.action_notes && entry.action_notes.length > 0) ||
-        entry.status === "in_progress" || entry.status === "completed") {
+    if (
+      entry.action_owner ||
+      entry.action_started_at ||
+      entry.action_completed_at ||
+      (entry.action_notes && entry.action_notes.length > 0) ||
+      entry.status === "in_progress" ||
+      entry.status === "completed"
+    ) {
       stateIndex[recId] = entry;
       console.log(`[Recommendations] Persisting state for ${recId}:`, entry);
     }
@@ -1289,22 +1309,39 @@ const RecommendationsPage = () => {
         isMock = true;
       }
 
-      const normalized: EnhancedRecommendation[] = fetchedData.map((r) => ({
-        ...r,
-        _id: String(
-          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
-        ),
-      }));
+      // Normalize IDs and ensure consistency
+      const normalized: EnhancedRecommendation[] = fetchedData.map((r) => {
+        const id = String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`);
+        return {
+          ...r,
+          _id: id,
+          id: id, // Also set id field for consistency
+        };
+      });
 
+      console.log("[Recommendations] Normalized recommendations:", normalized.map(r => ({ _id: r._id, title: r.title })));
+
+      // Apply stored action state BEFORE setting recommendations
       const merged = applyStoredActionState(normalized);
+      console.log("[Recommendations] Merged recommendations:", merged.map(r => ({ 
+        _id: r._id, 
+        title: r.title, 
+        status: r.status, 
+        action_started_at: r.action_started_at,
+        action_owner: r.action_owner 
+      })));
+      
       setRecommendations(merged);
+      // Persist AFTER setting to ensure state is saved
       persistActionStateFromArray(merged);
       setUsingMockData(isMock);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
       setError("Failed to fetch recommendations. Using mock data instead.");
       const fallback = generateMockRecommendationsFallback().map((r) => {
-        const id = String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`);
+        const id = String(
+          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
+        );
         return {
           ...r,
           _id: id,
@@ -1353,7 +1390,10 @@ const RecommendationsPage = () => {
     setRecommendations((prev) => {
       const now = new Date().toISOString();
       const updated = prev.map((rec) => {
-        if (rec._id !== activeActionPlan._id) return rec;
+        // Use string comparison for IDs to ensure matching
+        if (String(rec._id) !== String(activeActionPlan._id)) return rec;
+
+        console.log(`[Recommendations] Updating action plan for ${rec._id}, mode: ${mode}`);
 
         let updatedRec: EnhancedRecommendation = {
           ...rec,
@@ -1363,9 +1403,11 @@ const RecommendationsPage = () => {
         if (mode === "start") {
           if (!updatedRec.action_started_at) {
             updatedRec = { ...updatedRec, action_started_at: now };
+            console.log(`[Recommendations] Set action_started_at to ${now}`);
           }
           if (updatedRec.status !== "completed") {
             updatedRec = { ...updatedRec, status: "in_progress" };
+            console.log(`[Recommendations] Set status to in_progress`);
           }
         }
 
@@ -1376,6 +1418,7 @@ const RecommendationsPage = () => {
             status: "completed",
             action_started_at: updatedRec.action_started_at || now,
           };
+          console.log(`[Recommendations] Set status to completed`);
         }
 
         if (notes) {
@@ -1385,10 +1428,20 @@ const RecommendationsPage = () => {
           };
         }
 
+        console.log(`[Recommendations] Updated recommendation:`, {
+          _id: updatedRec._id,
+          status: updatedRec.status,
+          action_started_at: updatedRec.action_started_at,
+          action_owner: updatedRec.action_owner,
+        });
+
         return updatedRec;
       });
 
+      // Persist immediately after update
+      console.log("[Recommendations] Persisting updated recommendations...");
       persistActionStateFromArray(updated);
+      
       return updated;
     });
 
