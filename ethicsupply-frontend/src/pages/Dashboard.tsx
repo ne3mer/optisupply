@@ -162,16 +162,16 @@ const getScoreColor = (score: number | null | undefined, themeColors: any) => {
 };
 
 // Helper to get risk color (consistent with other pages)
-const getRiskColor = (level: string | undefined) => {
+const getRiskColor = (level: string | undefined, themeColors: any) => {
   switch (level?.toLowerCase()) {
     case "low":
-      return colors.success;
+      return themeColors.success;
     case "medium":
-      return colors.warning;
+      return themeColors.warning;
     case "high":
-      return colors.error;
+      return themeColors.error;
     default:
-      return colors.textMuted;
+      return themeColors.textMuted;
   }
 };
 
@@ -261,6 +261,7 @@ const DashboardCard = ({
 };
 
 const KpiIndicator = ({
+  children,
   label,
   value,
   unit = "",
@@ -1824,18 +1825,21 @@ const Dashboard = () => {
           unit="%"
           icon={GlobeAltIcon}
           color={colors.accent}
+          children={null}
         />
         <KpiIndicator
           label={isMobile ? "Renewable Energy" : "Renewable Energy (Avg vs Target)"}
           value={isMobile ? `${Math.round(extraAnalytics.avgRenewable)}%` : `${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`}
           icon={SparklesIcon}
           color={renewableColor}
+          children={null}
         />
         <KpiIndicator
           label={isMobile ? "Injury Rate" : "Injury Rate (Avg vs Target)"}
           value={isMobile ? extraAnalytics.avgInjury.toFixed(1) : `${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`}
           icon={ShieldExclamationIcon}
           color={injuryColor}
+          children={null}
         />
             </>
           );
