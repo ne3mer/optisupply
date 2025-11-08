@@ -122,6 +122,27 @@ exports.createSupplier = async (req, res) => {
   }
 };
 
+// Helper: derive margin_pct from revenue/cost if not provided
+function deriveMarginPct(row) {
+  const toNum = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
+  
+  // If margin_pct is explicitly provided, use it
+  if (row.margin_pct != null) {
+    const m = toNum(row.margin_pct);
+    return Number.isFinite(m) ? m : null;
+  }
+  
+  // Try to derive from revenue_musd/cost_musd
+  const rev = toNum(row.revenue_musd) ?? toNum(row.revenue);
+  const cost = toNum(row.cost_musd) ?? toNum(row.cost);
+  
+  if (rev != null && rev > 0 && cost != null && Number.isFinite(cost) && cost >= 0 && cost <= rev) {
+    return 100 * ((rev - cost) / rev);
+  }
+  
+  return null;
+}
+
 // Bulk import suppliers from array
 exports.bulkImportSuppliers = async (req, res) => {
   try {
@@ -147,6 +168,12 @@ exports.bulkImportSuppliers = async (req, res) => {
         // Validate required fields
         if (!supplierData.name || !supplierData.country) {
           throw new Error("Missing required fields: name and country");
+        }
+
+        // Derive margin_pct if not provided
+        const marginPct = deriveMarginPct(supplierData);
+        if (marginPct != null) {
+          supplierData.margin_pct = marginPct;
         }
 
         // Calculate scores for the supplier
@@ -214,6 +241,14 @@ exports.updateSupplier = async (req, res) => {
 
     // Merge existing data with update data
     const updatedData = { ...existingSupplier.toObject(), ...req.body };
+    
+    // Derive margin_pct if revenue_musd/cost_musd provided but margin_pct not explicitly set
+    if (updatedData.margin_pct == null && (updatedData.revenue_musd != null || updatedData.cost_musd != null)) {
+      const marginPct = deriveMarginPct(updatedData);
+      if (marginPct != null) {
+        updatedData.margin_pct = marginPct;
+      }
+    }
 
     // Calculate scores based on the updated data
     const scores = await calculateSupplierScores(updatedData);

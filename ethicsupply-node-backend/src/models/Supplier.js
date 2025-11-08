@@ -22,6 +22,23 @@ const SupplierSchema = new Schema(
       default: 0,
       description: "Revenue in millions of dollars",
     },
+    revenue_musd: {
+      type: Number,
+      default: null,
+      description: "Revenue in millions of USD (for margin calculation)",
+    },
+    cost_musd: {
+      type: Number,
+      default: null,
+      description: "Cost in millions of USD (for margin calculation)",
+    },
+    margin_pct: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+      description: "Explicitly stored margin percentage (0-100)",
+    },
     employee_count: {
       type: Number,
       default: 0,

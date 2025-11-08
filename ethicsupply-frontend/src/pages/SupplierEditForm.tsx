@@ -591,6 +591,9 @@ const SupplierEditForm = () => {
 
     const numericKeys = [
       "revenue",
+      "revenue_musd",
+      "cost_musd",
+      "margin_pct",
       "employee_count",
       "total_emissions",
       "co2_emissions",

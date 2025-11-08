@@ -83,6 +83,7 @@ router.get(
 router.get("/suppliers", supplierController.getSuppliers);
 router.post("/suppliers", supplierController.createSupplier);
 router.post("/suppliers/bulk", supplierController.bulkImportSuppliers);
+router.post("/suppliers/bulk-margins", supplierController.bulkSetMargins);
 // IMPORTANT: More specific routes must come BEFORE generic /suppliers/:id route
 // Transparency routes (trace endpoints)
 router.get("/suppliers/:supplierId/transparency", transparencyController.getCalculationTrace);

@@ -139,16 +139,16 @@ class ScenarioRunner {
    * 2. Derived from revenue_musd/cost_musd if valid (0 ≤ cost ≤ revenue)
    * 3. Fallback to max(15, minMarginPct || 0)
    */
-  getMarginPct(supplier, minMarginPct = 15) {
-    // 1. Check for direct margin_pct field
+  getMarginPct(supplier) {
+    // 1. Check for direct margin_pct field (prefer stored value)
     if (supplier.margin_pct != null) {
       const m = this.toNum(supplier.margin_pct);
-      if (m != null) {
+      if (m != null && Number.isFinite(m)) {
         return { margin: m, source: "actual" };
       }
     }
     
-    // 2. Try to derive from revenue and cost
+    // 2. Try to derive from revenue and cost (fallback only)
     const revenue = this.toNum(supplier.revenue_musd) ?? this.toNum(supplier.revenue);
     const cost = this.toNum(supplier.cost_musd) ?? this.toNum(supplier.cost);
     
@@ -157,9 +157,8 @@ class ScenarioRunner {
       return { margin: derivedMargin, source: "derived" };
     }
     
-    // 3. Fallback to default
-    const defaultMargin = Math.max(15, minMarginPct || 0);
-    return { margin: defaultMargin, source: "default" };
+    // 3. No margin data available - return null (no defaults)
+    return { margin: null, source: "missing" };
   }
 
   /**
@@ -253,7 +252,7 @@ class ScenarioRunner {
     // Attach EI & Margin info to all rows
     baseRows.forEach(r => {
       r["Emission Intensity"] = this.computeEmissionIntensity(r._raw);
-      const marginInfo = this.getMarginPct(r._raw, minMarginPct);
+      const marginInfo = this.getMarginPct(r._raw);
       r["Margin %"] = marginInfo.margin;
       r._marginSource = marginInfo.source;
     });
@@ -280,16 +279,8 @@ class ScenarioRunner {
     
     // Determine if any supplier has real margin data (actual or derivable)
     const hasRealMargin = withEi.some(r => {
-      const s = r._raw;
-      // Check for actual margin_pct
-      if (s.margin_pct != null) return true;
-      // Check if we can derive from revenue/cost
-      const revenue = this.toNum(s.revenue_musd ?? s.revenue);
-      const cost = this.toNum(s.cost_musd ?? s.cost);
-      if (revenue != null && cost != null && revenue > 0 && cost >= 0 && cost <= revenue) {
-        return true;
-      }
-      return false;
+      const marginSource = r._marginSource;
+      return marginSource === "actual" || marginSource === "derived";
     });
     
     let constrained;
@@ -308,8 +299,8 @@ class ScenarioRunner {
       );
       
       const passed = suppliersWithRealMargin.filter(r => {
-        const m = Number(r["Margin %"]);
-        return Number.isFinite(m) && m >= Number(minMarginPct);
+        const m = r["Margin %"];
+        return m != null && Number.isFinite(m) && m >= Number(minMarginPct);
       });
       
       if (passed.length === 0) {
