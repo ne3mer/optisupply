@@ -426,10 +426,17 @@ exports.runScenario = async (req, res) => {
       const minMarginPct = params.minMarginPct ?? 10;
       const { csv, baselineObjective, s1Objective } = await runner.runS1(minMarginPct);
 
-      res.setHeader("Content-Type", "text/csv");
-      res.setHeader("Content-Disposition", `attachment; filename="s1_ranking_${new Date().toISOString().split("T")[0]}.csv"`);
-      res.setHeader("X-Baseline-Objective", String(baselineObjective));
-      res.setHeader("X-S1-Objective", String(s1Objective));
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="s1_ranking.csv"`);
+      
+      // Set objective headers with 6 decimal precision
+      if (baselineObjective != null && Number.isFinite(baselineObjective)) {
+        res.setHeader("X-Baseline-Objective", baselineObjective.toFixed(6));
+      }
+      if (s1Objective != null && Number.isFinite(s1Objective)) {
+        res.setHeader("X-S1-Objective", s1Objective.toFixed(6));
+      }
+      
       return res.send(csv);
     }
 

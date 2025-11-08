@@ -5,6 +5,7 @@ import { useThemeColors } from "../theme/useThemeColors";
 export default function Scenarios() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [s1Info, setS1Info] = useState<{ base?: string; s1?: string } | null>(null);
   const colors = useThemeColors() as any;
 
   const handleRun = async (
@@ -14,8 +15,45 @@ export default function Scenarios() {
   ) => {
     setLoading(type);
     setError(null);
+    setS1Info(null);
+    
     try {
-      await runScenario(type, params, filename);
+      // For S1, we need to read headers before blob conversion
+      if (type === "s1") {
+        const response = await fetch("/api/scenarios/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ type, params }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to run scenario ${type}: ${response.status} ${errorText}`);
+        }
+
+        // Read headers BEFORE blob()
+        const base = response.headers.get("X-Baseline-Objective");
+        const s1 = response.headers.get("X-S1-Objective");
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename || "s1_ranking.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        // Set S1 info for display
+        if (base || s1) {
+          setS1Info({ base: base ?? undefined, s1: s1 ?? undefined });
+        }
+      } else {
+        // For other scenarios, use the existing runScenario function
+        await runScenario(type, params, filename);
+      }
     } catch (err: any) {
       setError(err.message || `Failed to run ${type}`);
       console.error(`Error running ${type}:`, err);
@@ -73,6 +111,27 @@ export default function Scenarios() {
             >
               {loading === "s1" ? "Running..." : "Run S1 → Download CSV"}
             </button>
+            {s1Info && (
+              <div className="mt-3 text-sm space-y-1" style={{ color: colors.textMuted }}>
+                {s1Info.base && (
+                  <div>
+                    Baseline Objective: <b style={{ color: colors.text }}>{Number(s1Info.base).toFixed(4)}</b>
+                  </div>
+                )}
+                {s1Info.s1 && (
+                  <div>
+                    S1 Objective: <b style={{ color: colors.text }}>{Number(s1Info.s1).toFixed(4)}</b>
+                  </div>
+                )}
+                {s1Info.base && s1Info.s1 && (
+                  <div className="pt-1 border-t" style={{ borderColor: colors.accent + "30" }}>
+                    Δ%: <b style={{ color: colors.primary }}>
+                      {(((Number(s1Info.base) - Number(s1Info.s1)) / Number(s1Info.base)) * 100).toFixed(2)}%
+                    </b>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* S2: Sensitivity */}

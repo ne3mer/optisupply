@@ -106,24 +106,77 @@ class ScenarioRunner {
   }
 
   /**
-   * Get emission intensity from supplier or compute from scores
+   * Helper: Convert value to number or null
    */
-  getEmissionIntensity(supplier, scores) {
-    // Try to get from supplier data
-    if (supplier.emission_intensity !== undefined && supplier.emission_intensity !== null) {
-      return Number(supplier.emission_intensity);
+  toNum(x) {
+    const n = Number(x);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  /**
+   * Compute Emission Intensity = emissions_tco2e / revenue_musd
+   * Fallbacks: if emissions_tco2e missing but co2_tons present, use that
+   * If divisor revenue_musd <= 0 or any part is NaN, mark EI as null
+   */
+  computeEmissionIntensity(supplier) {
+    // Prefer emissions_tco2e; fallback to co2_tons or co2_emissions
+    const em = this.toNum(supplier.emissions_tco2e) ?? 
+               this.toNum(supplier.co2_tons) ?? 
+               this.toNum(supplier.co2_emissions);
+    const rev = this.toNum(supplier.revenue_musd) ?? 
+                this.toNum(supplier.revenue);
+    
+    if (!em || !rev || rev <= 0) return null;
+    return em / rev; // tCO2e per MUSD
+  }
+
+  /**
+   * Get Margin % from supplier
+   * If available directly, use it; otherwise try to derive from revenue/cost
+   */
+  getMarginPct(supplier) {
+    // If available directly
+    if (supplier.margin_pct != null) {
+      const m = this.toNum(supplier.margin_pct);
+      return m;
     }
     
-    // Compute from CO2 emissions and revenue
-    const emissions = supplier.co2_emissions || supplier.total_emissions || 0;
-    const revenue = supplier.revenue || 1; // Avoid division by zero
-    
-    if (emissions > 0 && revenue > 0) {
-      return emissions / revenue; // tons per million USD
+    // Optional: derive if revenue and cost are available
+    const revenue = this.toNum(supplier.revenue_musd) ?? this.toNum(supplier.revenue);
+    const cost = this.toNum(supplier.cost_musd) ?? this.toNum(supplier.cost);
+    if (revenue && cost && revenue > 0) {
+      return 100 * ((revenue - cost) / revenue);
     }
     
-    // Fallback: use average or 0
-    return 0;
+    return null;
+  }
+
+  /**
+   * Impute missing values by industry mean
+   */
+  imputeByIndustryMean(rows, key) {
+    const byInd = {};
+    rows.forEach(r => {
+      const ind = r.Industry || "Unknown";
+      if (!byInd[ind]) byInd[ind] = [];
+      if (r[key] != null && Number.isFinite(r[key])) {
+        byInd[ind].push(r[key]);
+      }
+    });
+    
+    const means = {};
+    Object.keys(byInd).forEach(ind => {
+      const arr = byInd[ind];
+      means[ind] = arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    });
+    
+    rows.forEach(r => {
+      if (r[key] == null || !Number.isFinite(r[key])) {
+        r[key] = means[r.Industry || "Unknown"] ?? null;
+      }
+    });
+    
+    return rows;
   }
 
   /**
@@ -164,39 +217,107 @@ class ScenarioRunner {
    * Constraint: margin_pct >= minMarginPct
    */
   async runS1(minMarginPct = 10) {
-    const baseRows = await this.baseline();
+    const suppliers = await this.getAllSuppliers();
     
-    // Calculate baseline objective (mean emission intensity)
-    const baselineObjective = this.meanObjective(baseRows, "emission_intensity");
-    
-    // Filter by margin constraint
-    // Margin can be calculated as: (Final Score - threshold) or from supplier.margin field
-    const filtered = baseRows.filter((r) => {
-      const finalScore = parseFloat(r["Final Score"]);
-      // If supplier has margin_pct field, use it; otherwise use finalScore as proxy
-      // For now, assume margin constraint means finalScore >= some threshold
-      // Adjust based on your actual margin calculation
-      return finalScore >= minMarginPct; // Simplified: treat minMarginPct as minimum final score
+    // Build baseline rows with all scores
+    const baseRows = suppliers.map((supplier) => {
+      const supplierObj = supplier.toObject ? supplier.toObject() : supplier;
+      const scores = scoreSupplier(supplierObj, this.baseCfg);
+      
+      return {
+        SupplierID: supplier._id?.toString() || supplier.id || supplier.SupplierID || "",
+        Name: supplier.name || supplier.SupplierName || supplier.Name || "",
+        Industry: supplier.industry || supplier.Industry || "Unknown",
+        "Environmental Score": Number(scores.environmental_score || 0).toFixed(2),
+        "Social Score": Number(scores.social_score || 0).toFixed(2),
+        "Governance Score": Number(scores.governance_score || 0).toFixed(2),
+        "Composite Score": Number(scores.composite_score || 0).toFixed(2),
+        "Risk Penalty": Number(scores.risk_penalty || 0).toFixed(2),
+        "Final Score": Number(scores.finalScore || scores.ethical_score || 0).toFixed(2),
+        _raw: supplierObj,
+        _finalScoreNum: Number(scores.finalScore || scores.ethical_score || 0),
+      };
     });
     
-    // Re-rank filtered suppliers by emission intensity (ascending = better)
-    const s1Rows = filtered.map((r) => ({ ...r }));
-    s1Rows.sort((a, b) => {
-      const intensityA = a._raw?.emission_intensity || 0;
-      const intensityB = b._raw?.emission_intensity || 0;
-      // Lower emission intensity is better
-      if (Math.abs(intensityA - intensityB) < 0.001) {
-        // Tie-breaker: higher final score
-        return parseFloat(b["Final Score"]) - parseFloat(a["Final Score"]);
-      }
-      return intensityA - intensityB;
+    // Attach EI & Margin to all rows
+    baseRows.forEach(r => {
+      r["Emission Intensity"] = this.computeEmissionIntensity(r._raw);
+      r["Margin %"] = this.getMarginPct(r._raw);
     });
     
-    s1Rows.forEach((r, i) => {
+    // Compute baseline objective (mean EI on rows that have EI, before constraint)
+    const baseEiArr = baseRows
+      .map(r => r["Emission Intensity"])
+      .filter(v => v != null && Number.isFinite(v));
+    const baselineObjective = baseEiArr.length 
+      ? baseEiArr.reduce((a, b) => a + b, 0) / baseEiArr.length 
+      : null;
+    
+    // Impute missing EI by industry mean
+    this.imputeByIndustryMean(baseRows, "Emission Intensity");
+    
+    // Keep only rows with EI defined (after imputation)
+    const withEi = baseRows.filter(r => 
+      r["Emission Intensity"] != null && Number.isFinite(r["Emission Intensity"])
+    );
+    
+    // Strict margin constraint: keep only rows with known margin >= threshold
+    const constrained = withEi.filter(r => {
+      const m = this.toNum(r["Margin %"]);
+      return m != null && m >= minMarginPct;
+    });
+    
+    if (!constrained.length) {
+      const err = new Error(
+        `S1 produced no rows after applying Margin % ≥ ${minMarginPct}. ` +
+        `Make sure suppliers have margin_pct field. Found ${withEi.length} suppliers with EI, ` +
+        `but ${withEi.length - constrained.length} failed margin constraint.`
+      );
+      err.status = 400;
+      throw err;
+    }
+    
+    // Rank: min EI (ascending), tie-break by higher Final Score (descending)
+    constrained.sort((a, b) => {
+      const eiA = a["Emission Intensity"];
+      const eiB = b["Emission Intensity"];
+      const d = eiA - eiB;
+      if (Math.abs(d) > 0.0001) return d; // EI difference is significant
+      // Tie-breaker: higher Final Score is better
+      return b._finalScoreNum - a._finalScoreNum;
+    });
+    
+    constrained.forEach((r, i) => {
       r.Rank = i + 1;
     });
     
-    const s1Objective = this.meanObjective(s1Rows, "emission_intensity");
+    // S1 objective = mean EI in constrained set
+    const s1EiArr = constrained
+      .map(r => r["Emission Intensity"])
+      .filter(Number.isFinite);
+    const s1Objective = s1EiArr.length 
+      ? s1EiArr.reduce((a, b) => a + b, 0) / s1EiArr.length 
+      : null;
+    
+    // Shape final CSV rows (remove internals, include EI and Margin)
+    const out = constrained.map(r => ({
+      SupplierID: r.SupplierID,
+      Rank: r.Rank,
+      Name: r.Name,
+      Industry: r.Industry,
+      "Environmental Score": r["Environmental Score"],
+      "Social Score": r["Social Score"],
+      "Governance Score": r["Governance Score"],
+      "Composite Score": r["Composite Score"],
+      "Risk Penalty": r["Risk Penalty"],
+      "Final Score": r["Final Score"],
+      "Emission Intensity": r["Emission Intensity"] != null 
+        ? Number(r["Emission Intensity"]).toFixed(6) 
+        : "",
+      "Margin %": r["Margin %"] != null 
+        ? Number(r["Margin %"]).toFixed(2) 
+        : "",
+    }));
     
     const headers = [
       "SupplierID",
@@ -209,10 +330,12 @@ class ScenarioRunner {
       "Composite Score",
       "Risk Penalty",
       "Final Score",
+      "Emission Intensity",
+      "Margin %",
     ];
     
     return {
-      csv: toCSV(s1Rows, headers),
+      csv: toCSV(out, headers),
       baselineObjective,
       s1Objective,
     };
