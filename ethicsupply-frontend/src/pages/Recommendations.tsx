@@ -1311,7 +1311,9 @@ const RecommendationsPage = () => {
 
       // Normalize IDs and ensure consistency
       const normalized: EnhancedRecommendation[] = fetchedData.map((r) => {
-        const id = String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`);
+        const id = String(
+          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
+        );
         return {
           ...r,
           _id: id,
@@ -1319,18 +1321,24 @@ const RecommendationsPage = () => {
         };
       });
 
-      console.log("[Recommendations] Normalized recommendations:", normalized.map(r => ({ _id: r._id, title: r.title })));
+      console.log(
+        "[Recommendations] Normalized recommendations:",
+        normalized.map((r) => ({ _id: r._id, title: r.title }))
+      );
 
       // Apply stored action state BEFORE setting recommendations
       const merged = applyStoredActionState(normalized);
-      console.log("[Recommendations] Merged recommendations:", merged.map(r => ({ 
-        _id: r._id, 
-        title: r.title, 
-        status: r.status, 
-        action_started_at: r.action_started_at,
-        action_owner: r.action_owner 
-      })));
-      
+      console.log(
+        "[Recommendations] Merged recommendations:",
+        merged.map((r) => ({
+          _id: r._id,
+          title: r.title,
+          status: r.status,
+          action_started_at: r.action_started_at,
+          action_owner: r.action_owner,
+        }))
+      );
+
       setRecommendations(merged);
       // Persist AFTER setting to ensure state is saved
       persistActionStateFromArray(merged);
@@ -1393,7 +1401,9 @@ const RecommendationsPage = () => {
         // Use string comparison for IDs to ensure matching
         if (String(rec._id) !== String(activeActionPlan._id)) return rec;
 
-        console.log(`[Recommendations] Updating action plan for ${rec._id}, mode: ${mode}`);
+        console.log(
+          `[Recommendations] Updating action plan for ${rec._id}, mode: ${mode}`
+        );
 
         let updatedRec: EnhancedRecommendation = {
           ...rec,
@@ -1441,7 +1451,7 @@ const RecommendationsPage = () => {
       // Persist immediately after update
       console.log("[Recommendations] Persisting updated recommendations...");
       persistActionStateFromArray(updated);
-      
+
       return updated;
     });
 

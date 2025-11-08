@@ -292,6 +292,7 @@ const KpiIndicator = ({
 const ReportGenerator = ({
   dashboardData,
   year = new Date().getFullYear(),
+  allSuppliers = [] as Supplier[],
 }) => {
   const [generating, setGenerating] = useState(false);
   const [reportType, setReportType] = useState<string | null>(null);
@@ -407,6 +408,17 @@ const ReportGenerator = ({
     if (!reportData) {
       setGenerating(false);
       return;
+    }
+
+    try {
+      // Import the comprehensive PDF generator
+      const { generateComprehensivePDFReport } = await import("./Dashboard_PDF_Enhanced");
+      await generateComprehensivePDFReport(reportData, allSuppliers, year);
+      setGenerating(false);
+      return;
+    } catch (importError) {
+      console.warn("Failed to load enhanced PDF generator, using fallback:", importError);
+      // Fallback to original implementation if import fails
     }
 
     try {
@@ -1798,6 +1810,7 @@ const Dashboard = () => {
               ...data,
               suppliersByCountry,
             }}
+            allSuppliers={allSuppliers}
           />
       </motion.div>
 
