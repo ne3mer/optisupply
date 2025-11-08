@@ -308,8 +308,8 @@ class ScenarioRunner {
       );
       
       const passed = suppliersWithRealMargin.filter(r => {
-        const m = r["Margin %"];
-        return m != null && Number.isFinite(m) && m >= minMarginPct;
+        const m = Number(r["Margin %"]);
+        return Number.isFinite(m) && m >= Number(minMarginPct);
       });
       
       if (passed.length === 0) {
@@ -371,36 +371,19 @@ class ScenarioRunner {
         "Composite Score": r["Composite Score"],
         "Risk Penalty": r["Risk Penalty"],
         "Final Score": r["Final Score"],
-        "Emission Intensity": Number.isFinite(r["Emission Intensity"])
+        "Emission Intensity (tCO2e/MUSD)": Number.isFinite(r["Emission Intensity"])
           ? Number(r["Emission Intensity"]).toFixed(6)
           : "",
         "Margin %": r["Margin %"] != null && Number.isFinite(r["Margin %"])
           ? Number(r["Margin %"]).toFixed(2)
           : "",
         "Margin Source": marginSource,
-        "Constraint Applied": constraintApplied ? "true" : "false",
+        "Constraint Applied": constraintApplied ? String(minMarginPct) : "false",
       };
     });
     
-    const headers = [
-      "SupplierID",
-      "Rank",
-      "Name",
-      "Industry",
-      "Environmental Score",
-      "Social Score",
-      "Governance Score",
-      "Composite Score",
-      "Risk Penalty",
-      "Final Score",
-      "Emission Intensity",
-      "Margin %",
-      "Margin Source",
-      "Constraint Applied",
-    ];
-    
     return {
-      csv: toCSV(out, headers),
+      rows: out,
       baselineObjective,
       s1Objective,
     };

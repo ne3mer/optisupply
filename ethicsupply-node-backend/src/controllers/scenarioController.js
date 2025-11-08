@@ -423,11 +423,27 @@ exports.runScenario = async (req, res) => {
     const runner = new ScenarioRunner(baseCfg);
 
     if (type === "s1") {
-      const minMarginPct = params.minMarginPct ?? 15;
-      const { csv, baselineObjective, s1Objective } = await runner.runS1(minMarginPct);
+      // IMPORTANT: use ?? not || so 0 is not discarded, and Number() to ensure numeric
+      const minMarginPct = Number(params?.minMarginPct ?? 15);
+      const { rows, baselineObjective, s1Objective } = await runner.runS1(minMarginPct);
+
+      // Convert rows to CSV
+      const headers = Object.keys(rows[0] || {});
+      const csvLines = [
+        headers.join(","),
+        ...rows.map((row) =>
+          headers
+            .map((h) => {
+              const value = row[h] ?? "";
+              return `"${String(value).replace(/"/g, '""')}"`;
+            })
+            .join(",")
+        ),
+      ];
+      const csv = csvLines.join("\n");
 
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="s1_ranking.csv"`);
+      res.setHeader("Content-Disposition", `attachment; filename="s1_ranking_margin${minMarginPct}.csv"`);
       
       // Set objective headers with 6 decimal precision
       if (baselineObjective != null && Number.isFinite(baselineObjective)) {
@@ -436,6 +452,7 @@ exports.runScenario = async (req, res) => {
       if (s1Objective != null && Number.isFinite(s1Objective)) {
         res.setHeader("X-S1-Objective", s1Objective.toFixed(6));
       }
+      res.setHeader("X-Margin-Threshold", String(minMarginPct));
       
       return res.send(csv);
     }

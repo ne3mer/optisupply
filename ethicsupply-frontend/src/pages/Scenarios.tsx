@@ -14,7 +14,7 @@ const getApiEndpoint = (path: string) => {
 export default function Scenarios() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [s1Info, setS1Info] = useState<{ base?: string; s1?: string } | null>(null);
+  const [s1Info, setS1Info] = useState<{ base?: number; s1?: number; delta?: number; used?: number } | null>(null);
   const [s1MarginThreshold, setS1MarginThreshold] = useState<number>(15);
   const [dataCoverage, setDataCoverage] = useState<any>(null);
   const [loadingCoverage, setLoadingCoverage] = useState(false);
@@ -72,21 +72,25 @@ export default function Scenarios() {
         // Read headers BEFORE blob()
         const base = response.headers.get("X-Baseline-Objective");
         const s1 = response.headers.get("X-S1-Objective");
+        const used = response.headers.get("X-Margin-Threshold");
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = filename || "s1_ranking.csv";
+        a.download = filename || `s1_ranking_margin${s1MarginThreshold}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
 
         // Set S1 info for display
-        if (base || s1) {
-          setS1Info({ base: base ?? undefined, s1: s1 ?? undefined });
-        }
+        const baseNum = base ? Number(base) : undefined;
+        const s1Num = s1 ? Number(s1) : undefined;
+        const delta = (baseNum && s1Num) ? ((baseNum - s1Num) / baseNum) * 100 : undefined;
+        const usedNum = used ? Number(used) : undefined;
+
+        setS1Info({ base: baseNum, s1: s1Num, delta, used: usedNum });
       } else {
         // For other scenarios, use the existing runScenario function
         await runScenario(type, params, filename);
