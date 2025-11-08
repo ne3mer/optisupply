@@ -209,26 +209,27 @@ export const generateComprehensivePDFReport = async (
     ],
   ];
 
-  autoTable(doc, {
-    head: [riskData[0]],
-    body: riskData.slice(1),
-    startY: textY + 20,
-    styles: {
-      font: "helvetica",
-      fillColor: [25, 28, 43],
-      textColor: [224, 224, 255],
-      lineColor: [77, 91, 255, 0.2],
-      fontSize: 10,
-    },
-    headStyles: {
-      fillColor: [77, 91, 255],
-      textColor: [224, 224, 255],
-      fontStyle: "bold",
-    },
-    alternateRowStyles: {
-      fillColor: [30, 33, 48],
-    },
-  });
+      autoTable(doc, {
+        head: [riskData[0]],
+        body: riskData.slice(1),
+        startY: textY + 20,
+        styles: {
+          font: "helvetica",
+          fillColor: [25, 28, 43],
+          textColor: [224, 224, 255],
+          lineColor: [77, 91, 255],
+          lineWidth: 0.2,
+          fontSize: 10,
+        },
+        headStyles: {
+          fillColor: [77, 91, 255],
+          textColor: [224, 224, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: {
+          fillColor: [30, 33, 48],
+        },
+      } as any);
 
   addPageFooter(doc, year, 2, 0);
 
@@ -341,7 +342,8 @@ export const generateComprehensivePDFReport = async (
           font: "helvetica",
           fillColor: [25, 28, 43],
           textColor: [224, 224, 255],
-          lineColor: [77, 91, 255, 0.2],
+          lineColor: [77, 91, 255],
+          lineWidth: 0.2,
           fontSize: 8,
         },
         headStyles: {
@@ -364,7 +366,7 @@ export const generateComprehensivePDFReport = async (
           7: { cellWidth: 18 },
           8: { cellWidth: 20 },
         },
-      });
+      } as any);
 
       addPageFooter(doc, year, pageNum, 0);
     }
@@ -454,8 +456,8 @@ export const generateComprehensivePDFReport = async (
         yPos += 60;
         if (yPos > 250) {
           doc.addPage();
-          pageNum++;
-          addPageHeader(doc, `Detailed Supplier Metrics (${pageIdx + 1}/${totalDetailPages})`, pageNum, 0);
+          const newPageNum = doc.getNumberOfPages();
+          addPageHeader(doc, `Detailed Supplier Metrics (${pageIdx + 1}/${totalDetailPages})`, newPageNum, 0);
           yPos = 35;
         }
       });
@@ -524,7 +526,8 @@ export const generateComprehensivePDFReport = async (
         font: "helvetica",
         fillColor: [25, 28, 43],
         textColor: [224, 224, 255],
-        lineColor: [77, 91, 255, 0.2],
+        lineColor: [77, 91, 255],
+        lineWidth: 0.2,
         fontSize: 9,
       },
       headStyles: {
@@ -535,7 +538,7 @@ export const generateComprehensivePDFReport = async (
       alternateRowStyles: {
         fillColor: [30, 33, 48],
       },
-    });
+    } as any);
 
     addPageFooter(doc, year, pageNum, 0);
   }
@@ -594,7 +597,8 @@ export const generateComprehensivePDFReport = async (
         font: "helvetica",
         fillColor: [25, 28, 43],
         textColor: [224, 224, 255],
-        lineColor: [77, 91, 255, 0.2],
+        lineColor: [77, 91, 255],
+        lineWidth: 0.2,
         fontSize: 9,
       },
       headStyles: {
@@ -605,7 +609,7 @@ export const generateComprehensivePDFReport = async (
       alternateRowStyles: {
         fillColor: [30, 33, 48],
       },
-    });
+    } as any);
 
     addPageFooter(doc, year, pageNum, 0);
   }
