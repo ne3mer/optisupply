@@ -2,6 +2,15 @@ import React, { useState } from "react";
 import { runScenario } from "../services/api";
 import { useThemeColors } from "../theme/useThemeColors";
 
+// Helper to get API endpoint (same logic as api.ts)
+const getApiEndpoint = (path: string) => {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "https://optisupply.onrender.com/api";
+  const formatUrl = (url: string) => url.replace(/\/+$/, "").replace(/([^:]\/)\/+/g, "$1");
+  const API_URL = formatUrl(API_BASE_URL);
+  const cleanPath = path.replace(/^\/+|\/+$/g, "");
+  return `${API_URL}/${cleanPath}`;
+};
+
 export default function Scenarios() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +29,7 @@ export default function Scenarios() {
     try {
       // For S1, we need to read headers before blob conversion
       if (type === "s1") {
-        const response = await fetch("/api/scenarios/run", {
+        const response = await fetch(getApiEndpoint("scenarios/run"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
