@@ -53,6 +53,17 @@ async function calculateSupplierScores(supplier) {
 // Export the function for use in other modules (e.g., adminController)
 exports.calculateSupplierScores = calculateSupplierScores;
 
+// Store a reference to ensure it's always accessible within this module
+const getCalculateSupplierScores = () => {
+  if (typeof calculateSupplierScores === 'function') {
+    return calculateSupplierScores;
+  }
+  if (typeof exports.calculateSupplierScores === 'function') {
+    return exports.calculateSupplierScores;
+  }
+  throw new Error('calculateSupplierScores function is not available');
+};
+
 // Get all suppliers (with potential filtering/pagination in the future)
 exports.getSuppliers = async (req, res) => {
   try {
@@ -204,6 +215,19 @@ exports.bulkImportSuppliers = async (req, res) => {
       });
     }
 
+    // Get the calculateSupplierScores function - use helper to ensure it's available
+    let scoreFn;
+    try {
+      scoreFn = getCalculateSupplierScores();
+    } catch (err) {
+      console.error('[bulkImport] Failed to get calculateSupplierScores:', err);
+      console.error('[bulkImport] calculateSupplierScores type:', typeof calculateSupplierScores);
+      console.error('[bulkImport] exports.calculateSupplierScores type:', typeof exports.calculateSupplierScores);
+      return res.status(500).json({ 
+        error: `Server error: calculateSupplierScores function not available: ${err.message}` 
+      });
+    }
+
     const results = {
       total: suppliers.length,
       successful: [],
@@ -227,7 +251,13 @@ exports.bulkImportSuppliers = async (req, res) => {
         }
 
         // Calculate scores for the supplier
-        const scores = await calculateSupplierScores(supplierData);
+        let scores;
+        try {
+          scores = await scoreFn(supplierData);
+        } catch (scoreError) {
+          console.error(`[bulkImport] Error calculating scores for ${supplierData.name}:`, scoreError);
+          throw new Error(`Failed to calculate scores: ${scoreError.message}`);
+        }
 
         // Create new supplier with calculated scores
         const newSupplier = new db.Supplier({
