@@ -200,7 +200,10 @@ export default function Scenarios() {
             </div>
 
             <button
-              onClick={() => handleRun("s1", {}, `s1_ranking_margin${s1MarginThreshold}.csv`)}
+              onClick={() => {
+                console.log(`[Scenarios] Button clicked with threshold: ${s1MarginThreshold}`);
+                handleRun("s1", {}, `s1_ranking_margin${s1MarginThreshold}.csv`);
+              }}
               disabled={loading !== null}
               className="w-full px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
@@ -210,30 +213,47 @@ export default function Scenarios() {
             >
               {loading === "s1" ? "Running..." : `Run S1 (≥${s1MarginThreshold}%) → Download CSV`}
             </button>
+            <div className="mt-2 text-xs" style={{ color: colors.textMuted }}>
+              <strong>Note:</strong> Different thresholds will filter suppliers differently. Lower thresholds include more suppliers. Check the downloaded CSV to see which suppliers passed the margin constraint.
+            </div>
             {s1Info && (
-              <div className="mt-3 text-sm space-y-1 p-3 rounded-md" style={{ backgroundColor: colors.panel + "60", color: colors.textMuted }}>
+              <div className="mt-3 text-sm space-y-1 p-3 rounded-md border" style={{ backgroundColor: colors.panel + "60", borderColor: colors.accent + "40", color: colors.textMuted }}>
                 {s1Info.used !== undefined && (
-                  <div className="mb-2">
-                    Threshold used: <b style={{ color: colors.text }}>{s1Info.used}%</b>
+                  <div className="mb-2 font-semibold">
+                    ✓ Threshold Applied: <b style={{ color: colors.primary }}>{s1Info.used}%</b>
+                    <span className="ml-2 text-xs" style={{ color: colors.textMuted }}>
+                      (Downloaded CSV contains suppliers with margin ≥ {s1Info.used}%)
+                    </span>
                   </div>
                 )}
                 {s1Info.base !== undefined && s1Info.s1 !== undefined && (
-                  <div>
-                    Baseline Objective: <b style={{ color: colors.text }}>{s1Info.base.toFixed(4)}</b> — S1 Objective: <b style={{ color: colors.text }}>{s1Info.s1.toFixed(4)}</b>
+                  <div className="space-y-1">
+                    <div>
+                      Baseline Objective (all suppliers): <b style={{ color: colors.text }}>{s1Info.base.toFixed(4)}</b> tCO₂e/MUSD
+                    </div>
+                    <div>
+                      S1 Objective (constrained set): <b style={{ color: colors.text }}>{s1Info.s1.toFixed(4)}</b> tCO₂e/MUSD
+                    </div>
                   </div>
                 )}
                 {s1Info.delta !== undefined && (
-                  <div className="pt-1 border-t" style={{ borderColor: colors.accent + "30" }}>
-                    Δ%: <b style={{ 
-                      color: (s1Info.delta >= 0) ? (colors.success || "#10b981") : (colors.error || "#ef4444")
-                    }}>
-                      {s1Info.delta.toFixed(2)}%
-                    </b>
-                    {s1Info.delta >= 0 ? (
-                      <span className="ml-1 text-xs">✓ Improvement</span>
-                    ) : (
-                      <span className="ml-1 text-xs">⚠ Trade-off</span>
-                    )}
+                  <div className="pt-2 mt-2 border-t" style={{ borderColor: colors.accent + "30" }}>
+                    <div className="font-semibold mb-1" style={{ color: colors.text }}>Impact Analysis:</div>
+                    <div>
+                      Δ%: <b style={{ 
+                        color: (s1Info.delta >= 0) ? (colors.success || "#10b981") : (colors.error || "#ef4444")
+                      }}>
+                        {s1Info.delta >= 0 ? "+" : ""}{s1Info.delta.toFixed(2)}%
+                      </b>
+                      {s1Info.delta >= 0 ? (
+                        <span className="ml-1 text-xs">✓ Improvement (lower EI is better)</span>
+                      ) : (
+                        <span className="ml-1 text-xs">⚠ Trade-off (higher EI)</span>
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs" style={{ color: colors.textMuted }}>
+                      Note: Different thresholds will include/exclude different suppliers. Check the downloaded CSV to see which suppliers passed the margin constraint.
+                    </div>
                   </div>
                 )}
               </div>
