@@ -339,90 +339,123 @@ const getLastUpdatedBadge = (colors: any, dateString: string | undefined) => {
   };
 };
 
-// Enhanced Tooltip component with better positioning and overflow handling
+// Enhanced Tooltip component with robust positioning and overflow prevention
 const Tooltip = ({ children, content, position = "top" }: { children: React.ReactNode; content: string; position?: "top" | "bottom" | "left" | "right" }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
+  const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const tooltipRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const colors = useThemeColors() as any;
 
-  // Smart positioning that adapts to viewport
+  // Robust positioning that ensures tooltip stays within viewport
   useEffect(() => {
     if (isVisible && tooltipRef.current && triggerRef.current) {
       const tooltip = tooltipRef.current;
       const trigger = triggerRef.current;
+      
+      // Force a layout recalculation to get accurate dimensions
+      tooltip.style.visibility = "hidden";
+      tooltip.style.display = "block";
+      
       const tooltipRect = tooltip.getBoundingClientRect();
       const triggerRect = trigger.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const padding = 8;
+      const padding = 12; // Increased padding for better spacing
+      const tooltipWidth = tooltipRect.width;
+      const tooltipHeight = tooltipRect.height;
 
-      // Reset positioning
-      tooltip.style.left = "";
-      tooltip.style.right = "";
-      tooltip.style.top = "";
-      tooltip.style.bottom = "";
-      tooltip.style.transform = "";
-
-      // Determine best position based on available space
+      // Calculate available space in all directions
       const spaceAbove = triggerRect.top;
       const spaceBelow = viewportHeight - triggerRect.bottom;
       const spaceLeft = triggerRect.left;
       const spaceRight = viewportWidth - triggerRect.right;
 
-      // Prefer top if more space, otherwise bottom
-      if (position === "top" || (spaceAbove > spaceBelow && spaceAbove > tooltipRect.height + padding)) {
-        tooltip.style.bottom = "100%";
-        tooltip.style.left = "50%";
-        tooltip.style.transform = "translateX(-50%)";
-        tooltip.style.marginBottom = `${padding}px`;
+      // Determine best vertical position
+      let verticalPos: "top" | "bottom" = "bottom";
+      let verticalOffset = padding;
+      
+      if (position === "top" || (spaceAbove > spaceBelow && spaceAbove > tooltipHeight + padding)) {
+        verticalPos = "top";
+        verticalOffset = padding;
+      } else if (spaceBelow > tooltipHeight + padding) {
+        verticalPos = "bottom";
+        verticalOffset = padding;
       } else {
-        tooltip.style.top = "100%";
-        tooltip.style.left = "50%";
-        tooltip.style.transform = "translateX(-50%)";
-        tooltip.style.marginTop = `${padding}px`;
+        // Not enough space in preferred direction, use whichever has more space
+        verticalPos = spaceAbove > spaceBelow ? "top" : "bottom";
+        verticalOffset = padding;
       }
 
-      // Adjust horizontal position if going off-screen
-      const finalRect = tooltip.getBoundingClientRect();
-      if (finalRect.right > viewportWidth - padding) {
-        tooltip.style.left = "auto";
-        tooltip.style.right = "0";
-        tooltip.style.transform = finalRect.top < triggerRect.bottom ? "translateX(0)" : "translateX(0) translateY(-50%)";
-      }
-      if (finalRect.left < padding) {
-        tooltip.style.left = "0";
-        tooltip.style.right = "auto";
-        tooltip.style.transform = finalRect.top < triggerRect.bottom ? "translateX(0)" : "translateX(0) translateY(-50%)";
+      // Calculate horizontal position (center by default, adjust if needed)
+      let horizontalPos = "50%";
+      let horizontalTransform = "translateX(-50%)";
+      let arrowLeft = "50%";
+
+      // Try to center first
+      const centerX = triggerRect.left + triggerRect.width / 2;
+      const tooltipLeft = centerX - tooltipWidth / 2;
+      const tooltipRight = centerX + tooltipWidth / 2;
+
+      // Adjust if going off-screen horizontally
+      if (tooltipRight > viewportWidth - padding) {
+        // Too far right, align to right edge of viewport
+        horizontalPos = `${viewportWidth - tooltipWidth - padding}px`;
+        horizontalTransform = "none";
+        arrowLeft = `${centerX - (viewportWidth - tooltipWidth - padding)}px`;
+      } else if (tooltipLeft < padding) {
+        // Too far left, align to left edge of viewport
+        horizontalPos = `${padding}px`;
+        horizontalTransform = "none";
+        arrowLeft = `${centerX - padding}px`;
       }
 
-      // Adjust vertical position if going off-screen
-      if (finalRect.top < padding) {
-        tooltip.style.top = "100%";
-        tooltip.style.bottom = "auto";
-        tooltip.style.marginTop = `${padding}px`;
-        tooltip.style.marginBottom = "0";
-      }
-      if (finalRect.bottom > viewportHeight - padding) {
-        tooltip.style.bottom = "100%";
-        tooltip.style.top = "auto";
-        tooltip.style.marginBottom = `${padding}px`;
-        tooltip.style.marginTop = "0";
-      }
+      // Ensure arrow stays within tooltip bounds
+      const arrowLeftNum = parseFloat(arrowLeft);
+      if (arrowLeftNum < 8) arrowLeft = "8px";
+      if (arrowLeftNum > tooltipWidth - 8) arrowLeft = `${tooltipWidth - 8}px`;
+
+      // Apply positioning
+      const newTooltipStyle: React.CSSProperties = {
+        position: "fixed",
+        [verticalPos === "top" ? "bottom" : "top"]: verticalPos === "top" 
+          ? `${viewportHeight - triggerRect.top + verticalOffset}px`
+          : `${triggerRect.bottom + verticalOffset}px`,
+        left: horizontalPos,
+        transform: horizontalTransform,
+        maxWidth: `${Math.min(280, viewportWidth - padding * 2)}px`,
+        minWidth: "200px",
+        zIndex: 9999,
+      };
+
+      const newArrowStyle: React.CSSProperties = {
+        [verticalPos === "top" ? "top" : "bottom"]: verticalPos === "top" ? "-4px" : "-4px",
+        left: arrowLeft,
+        transform: verticalPos === "top" ? "translateX(-50%) rotate(45deg)" : "translateX(-50%) rotate(45deg)",
+      };
+
+      setTooltipStyle(newTooltipStyle);
+      setArrowStyle(newArrowStyle);
+      
+      // Make visible after positioning
+      tooltip.style.visibility = "visible";
     }
-  }, [isVisible, position]);
+  }, [isVisible, position, content]);
 
   return (
-    <div className="relative inline-flex" style={{ zIndex: isVisible ? 50 : 0 }}>
-      <div
-        ref={triggerRef}
-        className="cursor-help inline-flex items-center"
-        onMouseEnter={() => setIsVisible(true)}
-        onMouseLeave={() => setIsVisible(false)}
-        onFocus={() => setIsVisible(true)}
-        onBlur={() => setIsVisible(false)}
-      >
-        {children}
+    <>
+      <div className="relative inline-flex">
+        <div
+          ref={triggerRef}
+          className="cursor-help inline-flex items-center"
+          onMouseEnter={() => setIsVisible(true)}
+          onMouseLeave={() => setIsVisible(false)}
+          onFocus={() => setIsVisible(true)}
+          onBlur={() => setIsVisible(false)}
+        >
+          {children}
+        </div>
       </div>
       <AnimatePresence>
         {isVisible && (
@@ -432,14 +465,17 @@ const Tooltip = ({ children, content, position = "top" }: { children: React.Reac
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-[100] max-w-[280px] min-w-[200px] p-3 rounded-lg shadow-xl pointer-events-none border"
+            className="fixed z-[9999] p-3 rounded-lg shadow-xl pointer-events-none border"
             style={{
+              ...tooltipStyle,
               backgroundColor: colors.panel,
               borderColor: colors.accent + "60",
               color: colors.text,
               boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px ${colors.accent}20`,
               wordWrap: "break-word",
               overflowWrap: "break-word",
+              maxHeight: `${window.innerHeight - 24}px`,
+              overflowY: "auto",
             }}
           >
             <div className="text-xs leading-relaxed" style={{ color: colors.text }}>
@@ -447,19 +483,17 @@ const Tooltip = ({ children, content, position = "top" }: { children: React.Reac
             </div>
             {/* Arrow pointer */}
             <div
-              className="absolute w-2 h-2 rotate-45 border-r border-b"
+              className="absolute w-2 h-2 border-r border-b"
               style={{
+                ...arrowStyle,
                 backgroundColor: colors.panel,
                 borderColor: colors.accent + "60",
-                left: "50%",
-                bottom: "-4px",
-                transform: "translateX(-50%)",
               }}
             />
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 };
 
