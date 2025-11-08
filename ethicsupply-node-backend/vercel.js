@@ -294,13 +294,9 @@ function createMockServer() {
 }
 
 module.exports = async (req, res) => {
-  // Add CORS headers for serverless function
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
-  );
+  // CORS headers are handled by Express middleware in startServer()
+  // Don't set wildcard origin here - let Express CORS middleware handle it properly
+  // The Express app will set the correct origin based on the request
   res.setHeader(
     "Access-Control-Allow-Headers",
     "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization"
