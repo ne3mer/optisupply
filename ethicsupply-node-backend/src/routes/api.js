@@ -161,6 +161,7 @@ router.post("/scenarios/s4", scenarioController.s4Ablation);
 
 // Unified scenario runner endpoint (Chapter 4)
 router.post("/scenarios/run", scenarioController.runScenario);
+router.get("/scenarios/coverage", scenarioController.getDataCoverage);
 
 // Admin routes
 router.post("/admin/recompute-all", adminController.recomputeAllSuppliers);

@@ -15,7 +15,34 @@ export default function Scenarios() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [s1Info, setS1Info] = useState<{ base?: string; s1?: string } | null>(null);
+  const [s1MarginThreshold, setS1MarginThreshold] = useState<number>(15);
+  const [dataCoverage, setDataCoverage] = useState<any>(null);
+  const [loadingCoverage, setLoadingCoverage] = useState(false);
   const colors = useThemeColors() as any;
+
+  // Fetch data coverage statistics
+  const fetchDataCoverage = async () => {
+    setLoadingCoverage(true);
+    try {
+      const response = await fetch(getApiEndpoint("scenarios/coverage"), {
+        method: "GET",
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDataCoverage(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch data coverage:", err);
+    } finally {
+      setLoadingCoverage(false);
+    }
+  };
+
+  // Load coverage on mount
+  React.useEffect(() => {
+    fetchDataCoverage();
+  }, []);
 
   const handleRun = async (
     type: "s1" | "s2" | "s3" | "s4",
@@ -27,13 +54,14 @@ export default function Scenarios() {
     setS1Info(null);
     
     try {
-      // For S1, we need to read headers before blob conversion
+      // For S1, use the margin threshold from state
       if (type === "s1") {
+        const s1Params = { ...params, minMarginPct: s1MarginThreshold };
         const response = await fetch(getApiEndpoint("scenarios/run"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ type, params }),
+          body: JSON.stringify({ type, params: s1Params }),
         });
 
         if (!response.ok) {
@@ -107,10 +135,67 @@ export default function Scenarios() {
               S1: Utility Analysis
             </h2>
             <p className="text-sm mb-4" style={{ color: colors.textMuted }}>
-              Minimize emission intensity with margin constraint (≥15%, skipped if no margin data)
+              Minimize emission intensity with margin constraint
             </p>
+            
+            {/* Margin Threshold Input */}
+            <div className="mb-4">
+              <label className="block text-sm mb-2" style={{ color: colors.text }}>
+                Margin Threshold (%):
+              </label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  value={s1MarginThreshold}
+                  onChange={(e) => setS1MarginThreshold(Number(e.target.value))}
+                  className="flex-1 px-3 py-2 rounded-md border"
+                  style={{
+                    backgroundColor: colors.panel,
+                    borderColor: colors.accent + "40",
+                    color: colors.text,
+                  }}
+                />
+                <button
+                  onClick={() => setS1MarginThreshold(5)}
+                  className="px-3 py-2 text-xs rounded-md border"
+                  style={{
+                    backgroundColor: s1MarginThreshold === 5 ? colors.accent + "20" : colors.panel,
+                    borderColor: colors.accent + "40",
+                    color: colors.text,
+                  }}
+                >
+                  5%
+                </button>
+                <button
+                  onClick={() => setS1MarginThreshold(10)}
+                  className="px-3 py-2 text-xs rounded-md border"
+                  style={{
+                    backgroundColor: s1MarginThreshold === 10 ? colors.accent + "20" : colors.panel,
+                    borderColor: colors.accent + "40",
+                    color: colors.text,
+                  }}
+                >
+                  10%
+                </button>
+                <button
+                  onClick={() => setS1MarginThreshold(15)}
+                  className="px-3 py-2 text-xs rounded-md border"
+                  style={{
+                    backgroundColor: s1MarginThreshold === 15 ? colors.accent + "20" : colors.panel,
+                    borderColor: colors.accent + "40",
+                    color: colors.text,
+                  }}
+                >
+                  15%
+                </button>
+              </div>
+            </div>
+
             <button
-              onClick={() => handleRun("s1", { minMarginPct: 15 }, "s1_ranking.csv")}
+              onClick={() => handleRun("s1", {}, `s1_ranking_margin${s1MarginThreshold}.csv`)}
               disabled={loading !== null}
               className="w-full px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
@@ -118,7 +203,7 @@ export default function Scenarios() {
                 color: "#fff",
               }}
             >
-              {loading === "s1" ? "Running..." : "Run S1 → Download CSV"}
+              {loading === "s1" ? "Running..." : `Run S1 (≥${s1MarginThreshold}%) → Download CSV`}
             </button>
             {s1Info && (
               <div className="mt-3 text-sm space-y-1" style={{ color: colors.textMuted }}>
