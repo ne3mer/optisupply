@@ -477,10 +477,68 @@ exports.runScenario = async (req, res) => {
   }
 };
 
+/**
+ * Get data coverage statistics for S1 diagnostics
+ */
+exports.getDataCoverage = async (req, res) => {
+  try {
+    const suppliers = await db.Supplier.find({});
+    const totalSuppliers = suppliers.length;
+
+    // Count suppliers with emissions data
+    const emissionsCount = suppliers.filter(s => {
+      const emissions = s.total_emissions ?? s.co2_emissions;
+      return emissions != null && Number.isFinite(emissions) && emissions > 0;
+    }).length;
+
+    // Count suppliers with revenue data
+    const revenueCount = suppliers.filter(s => {
+      const revenue = s.revenue_musd ?? s.revenue;
+      return revenue != null && Number.isFinite(revenue) && revenue > 0;
+    }).length;
+
+    // Count suppliers with margin data (actual or derivable)
+    const marginCount = suppliers.filter(s => {
+      // Check for actual margin_pct
+      if (s.margin_pct != null && Number.isFinite(s.margin_pct)) return true;
+      // Check if derivable from revenue/cost
+      const revenue = s.revenue_musd ?? s.revenue;
+      const cost = s.cost_musd ?? s.cost;
+      return revenue != null && cost != null && revenue > 0 && cost >= 0 && cost <= revenue;
+    }).length;
+
+    // Industry distribution
+    const industryCounts = {};
+    suppliers.forEach(s => {
+      const industry = s.industry || "Unknown";
+      industryCounts[industry] = (industryCounts[industry] || 0) + 1;
+    });
+    const industryCount = Object.keys(industryCounts).length;
+    const minIndustrySize = Math.min(...Object.values(industryCounts));
+
+    res.json({
+      totalSuppliers,
+      emissionsCount,
+      emissionsCoverage: totalSuppliers > 0 ? (emissionsCount / totalSuppliers) * 100 : 0,
+      revenueCount,
+      revenueCoverage: totalSuppliers > 0 ? (revenueCount / totalSuppliers) * 100 : 0,
+      marginCount,
+      marginCoverage: totalSuppliers > 0 ? (marginCount / totalSuppliers) * 100 : 0,
+      industryCount,
+      minIndustrySize,
+      industryDistribution: industryCounts,
+    });
+  } catch (error) {
+    console.error("Error getting data coverage:", error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
+};
+
 module.exports = {
   s1Utility: exports.s1Utility,
   s2Sensitivity: exports.s2Sensitivity,
   s3Missingness: exports.s3Missingness,
   s4Ablation: exports.s4Ablation,
   runScenario: exports.runScenario,
+  getDataCoverage: exports.getDataCoverage,
 };
