@@ -310,7 +310,8 @@ const getRelativeTime = (dateString?: string | null) => {
   const diffDays = Math.floor(diffHours / 24);
   const diffMonths = Math.floor(diffDays / 30);
 
-  if (diffMonths > 0) return `${diffMonths} month${diffMonths > 1 ? "s" : ""} ago`;
+  if (diffMonths > 0)
+    return `${diffMonths} month${diffMonths > 1 ? "s" : ""} ago`;
   if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
   if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
   if (diffMins > 0) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
@@ -367,23 +368,23 @@ const AnimatedBadge = ({ children, className = "", style = {} }) => {
 };
 
 // Impact Score Card Component
-const ImpactScoreCard = ({ 
-  label, 
-  value, 
-  trend, 
-  icon, 
-  color, 
-  delay = 0 
-}: { 
-  label: string; 
-  value: string | number; 
+const ImpactScoreCard = ({
+  label,
+  value,
+  trend,
+  icon,
+  color,
+  delay = 0,
+}: {
+  label: string;
+  value: string | number;
   trend?: "up" | "down" | "neutral";
   icon: React.ReactNode;
   color: string;
   delay?: number;
 }) => {
   const colors = useThemeColors() as any;
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -397,13 +398,16 @@ const ImpactScoreCard = ({
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div 
+          <div
             className="p-2 rounded-lg"
             style={{ backgroundColor: color + "25" }}
           >
             {icon}
           </div>
-          <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
+          <span
+            className="text-sm font-medium"
+            style={{ color: colors.textMuted }}
+          >
             {label}
           </span>
         </div>
@@ -413,9 +417,15 @@ const ImpactScoreCard = ({
             transition={{ duration: 0.5, delay: delay + 0.3 }}
           >
             {trend === "up" ? (
-              <ArrowUpRight className="h-4 w-4" style={{ color: colors.success }} />
+              <ArrowUpRight
+                className="h-4 w-4"
+                style={{ color: colors.success }}
+              />
             ) : trend === "down" ? (
-              <ArrowDownRight className="h-4 w-4" style={{ color: colors.error }} />
+              <ArrowDownRight
+                className="h-4 w-4"
+                style={{ color: colors.error }}
+              />
             ) : null}
           </motion.div>
         )}
@@ -428,7 +438,13 @@ const ImpactScoreCard = ({
 };
 
 // Category Distribution Chart Component
-const CategoryDistribution = ({ recommendations, colors }: { recommendations: EnhancedRecommendation[]; colors: any }) => {
+const CategoryDistribution = ({
+  recommendations,
+  colors,
+}: {
+  recommendations: EnhancedRecommendation[];
+  colors: any;
+}) => {
   const categoryCounts = useMemo(() => {
     const counts = { environmental: 0, social: 0, governance: 0 };
     recommendations.forEach((rec) => {
@@ -449,18 +465,29 @@ const CategoryDistribution = ({ recommendations, colors }: { recommendations: En
     <div className="space-y-3">
       {Object.entries(categoryCounts).map(([category, count]) => {
         const percentage = total > 0 ? (count / total) * 100 : 0;
-        const config = categoryConfig[category as keyof typeof categoryConfig] || categoryConfig.governance;
-        
+        const config =
+          categoryConfig[category as keyof typeof categoryConfig] ||
+          categoryConfig.governance;
+
         return (
           <div key={category} className="space-y-1">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
-                <span style={{ color: config.color }}>{React.cloneElement(config.icon, { className: "h-4 w-4" })}</span>
-                <span className="capitalize" style={{ color: colors.text }}>{category}</span>
+                <span style={{ color: config.color }}>
+                  {React.cloneElement(config.icon, { className: "h-4 w-4" })}
+                </span>
+                <span className="capitalize" style={{ color: colors.text }}>
+                  {category}
+                </span>
               </div>
-              <span className="font-semibold" style={{ color: colors.text }}>{count}</span>
+              <span className="font-semibold" style={{ color: colors.text }}>
+                {count}
+              </span>
             </div>
-            <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: colors.background }}>
+            <div
+              className="h-2 rounded-full overflow-hidden"
+              style={{ backgroundColor: colors.background }}
+            >
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${percentage}%` }}
@@ -517,9 +544,12 @@ const RecommendationCard = ({
     : "Date unknown";
 
   const actionStartedAgo = getRelativeTime(recommendation.action_started_at);
-  const actionCompletedAgo = getRelativeTime(recommendation.action_completed_at);
+  const actionCompletedAgo = getRelativeTime(
+    recommendation.action_completed_at
+  );
   const isCompleted = currentStatus === "completed";
-  const hasActivePlan = Boolean(recommendation.action_started_at) && !isCompleted;
+  const hasActivePlan =
+    Boolean(recommendation.action_started_at) && !isCompleted;
 
   const actionButtonLabel = isCompleted
     ? "View Action Record"
@@ -542,11 +572,14 @@ const RecommendationCard = ({
   );
 
   // Extract impact metrics
-  const impactText = typeof recommendation.estimated_impact === "string" 
-    ? recommendation.estimated_impact 
-    : "Impact assessment available";
-  
-  const hasCostSavings = impactText.toLowerCase().includes("$") || impactText.toLowerCase().includes("cost");
+  const impactText =
+    typeof recommendation.estimated_impact === "string"
+      ? recommendation.estimated_impact
+      : "Impact assessment available";
+
+  const hasCostSavings =
+    impactText.toLowerCase().includes("$") ||
+    impactText.toLowerCase().includes("cost");
   const hasTimeframe = recommendation.timeframe;
 
   return (
@@ -646,7 +679,9 @@ const RecommendationCard = ({
             )}
           </div>
 
-          {(recommendation.action_owner || hasActivePlan || actionCompletedAgo) && (
+          {(recommendation.action_owner ||
+            hasActivePlan ||
+            actionCompletedAgo) && (
             <div className="flex flex-wrap gap-2 mb-3">
               {recommendation.action_owner && (
                 <AnimatedBadge
@@ -658,7 +693,9 @@ const RecommendationCard = ({
                   }}
                 >
                   <Users className="h-4 w-4" />
-                  <span className="font-medium">Owner: {recommendation.action_owner}</span>
+                  <span className="font-medium">
+                    Owner: {recommendation.action_owner}
+                  </span>
                 </AnimatedBadge>
               )}
 
@@ -672,7 +709,9 @@ const RecommendationCard = ({
                   }}
                 >
                   <Clock className="h-4 w-4" />
-                  <span className="font-medium">Started {actionStartedAgo}</span>
+                  <span className="font-medium">
+                    Started {actionStartedAgo}
+                  </span>
                 </AnimatedBadge>
               )}
 
@@ -686,7 +725,9 @@ const RecommendationCard = ({
                   }}
                 >
                   <Award className="h-4 w-4" />
-                  <span className="font-medium">Completed {actionCompletedAgo}</span>
+                  <span className="font-medium">
+                    Completed {actionCompletedAgo}
+                  </span>
                 </AnimatedBadge>
               )}
             </div>
@@ -699,7 +740,10 @@ const RecommendationCard = ({
             {recommendation.title || "Untitled Recommendation"}
           </h3>
 
-          <p className="text-sm mb-3 flex items-center gap-4" style={{ color: colors.textMuted }}>
+          <p
+            className="text-sm mb-3 flex items-center gap-4"
+            style={{ color: colors.textMuted }}
+          >
             <span className="inline-flex items-center gap-1.5">
               <Building2 className="h-4 w-4" style={{ color: colors.accent }} />
               <span style={{ color: colors.accent }} className="font-medium">
@@ -764,7 +808,10 @@ const RecommendationCard = ({
                     <FileText className="h-4 w-4" />
                     Description
                   </div>
-                  <p className="pl-6 leading-relaxed" style={{ color: colors.text }}>
+                  <p
+                    className="pl-6 leading-relaxed"
+                    style={{ color: colors.text }}
+                  >
                     {recommendation.description || "No description available."}
                   </p>
                 </div>
@@ -812,20 +859,27 @@ const RecommendationCard = ({
                     />
                     Estimated Impact
                   </div>
-                  <div className="pl-6 p-4 rounded-lg border" style={{ 
-                    backgroundColor: colors.success + "10",
-                    borderColor: colors.success + "30",
-                  }}>
-                    <p className="leading-relaxed font-medium" style={{ color: colors.text }}>
+                  <div
+                    className="pl-6 p-4 rounded-lg border"
+                    style={{
+                      backgroundColor: colors.success + "10",
+                      borderColor: colors.success + "30",
+                    }}
+                  >
+                    <p
+                      className="leading-relaxed font-medium"
+                      style={{ color: colors.text }}
+                    >
                       {typeof recommendation.estimated_impact === "object"
                         ? `Score Improvement: ${
                             recommendation.estimated_impact.score_improvement ||
                             "N/A"
                           }, Cost Savings: $${
-                            recommendation.estimated_impact.cost_savings || "N/A"
-                          }, Time: ${
-                            recommendation.estimated_impact.implementation_time ||
+                            recommendation.estimated_impact.cost_savings ||
                             "N/A"
+                          }, Time: ${
+                            recommendation.estimated_impact
+                              .implementation_time || "N/A"
                           } days`
                         : recommendation.estimated_impact}
                     </p>
@@ -833,7 +887,10 @@ const RecommendationCard = ({
                 </div>
               )}
 
-              <div className="pt-4 flex justify-between items-center border-t" style={{ borderColor: colors.accent + "20" }}>
+              <div
+                className="pt-4 flex justify-between items-center border-t"
+                style={{ borderColor: colors.accent + "20" }}
+              >
                 <div
                   className="text-xs flex items-center gap-1.5"
                   style={{ color: colors.textMuted }}
@@ -890,7 +947,10 @@ const ActionPlanModal = ({
   const [notes, setNotes] = useState("");
   const colors = useThemeColors() as any;
 
-  const steps = useMemo(() => buildActionSteps(recommendation), [recommendation]);
+  const steps = useMemo(
+    () => buildActionSteps(recommendation),
+    [recommendation]
+  );
   const hasActivePlan = Boolean(recommendation.action_started_at);
   const isCompleted = recommendation.status === "completed";
 
@@ -909,7 +969,10 @@ const ActionPlanModal = ({
     >
       <motion.div
         className="w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl"
-        style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}40` }}
+        style={{
+          backgroundColor: colors.panel,
+          border: `1px solid ${colors.accent}40`,
+        }}
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -917,16 +980,25 @@ const ActionPlanModal = ({
       >
         <div
           className="flex items-start justify-between px-6 py-5 border-b"
-          style={{ borderColor: colors.accent + "30", backgroundColor: colors.accent + "10" }}
+          style={{
+            borderColor: colors.accent + "30",
+            backgroundColor: colors.accent + "10",
+          }}
         >
           <div>
-            <p className="text-xs uppercase tracking-wide font-semibold mb-1" style={{ color: colors.textMuted }}>
+            <p
+              className="text-xs uppercase tracking-wide font-semibold mb-1"
+              style={{ color: colors.textMuted }}
+            >
               Action plan for
             </p>
             <h2 className="text-2xl font-bold" style={{ color: colors.text }}>
               {recommendation.title || "Recommendation"}
             </h2>
-            <p className="text-sm mt-2 flex items-center gap-2" style={{ color: colors.textMuted }}>
+            <p
+              className="text-sm mt-2 flex items-center gap-2"
+              style={{ color: colors.textMuted }}
+            >
               <Building2 className="h-4 w-4" />
               {typeof recommendation.supplier === "object"
                 ? recommendation.supplier?.name
@@ -953,7 +1025,10 @@ const ActionPlanModal = ({
         <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide font-semibold" style={{ color: colors.textMuted }}>
+              <p
+                className="text-xs uppercase tracking-wide font-semibold"
+                style={{ color: colors.textMuted }}
+              >
                 Assign owner
               </p>
               <div className="relative">
@@ -981,7 +1056,10 @@ const ActionPlanModal = ({
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide font-semibold" style={{ color: colors.textMuted }}>
+              <p
+                className="text-xs uppercase tracking-wide font-semibold"
+                style={{ color: colors.textMuted }}
+              >
                 Add a kickoff note (optional)
               </p>
               <textarea
@@ -1000,12 +1078,18 @@ const ActionPlanModal = ({
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-wide mb-3 font-semibold" style={{ color: colors.textMuted }}>
+            <p
+              className="text-xs uppercase tracking-wide mb-3 font-semibold"
+              style={{ color: colors.textMuted }}
+            >
               Recommended playbook
             </p>
             <div
               className="rounded-xl border p-4 space-y-3"
-              style={{ borderColor: colors.accent + "25", backgroundColor: colors.background }}
+              style={{
+                borderColor: colors.accent + "25",
+                backgroundColor: colors.background,
+              }}
             >
               {steps.map((step, index) => (
                 <motion.div
@@ -1024,7 +1108,10 @@ const ActionPlanModal = ({
                   >
                     {index + 1}
                   </span>
-                  <p className="text-sm leading-relaxed" style={{ color: colors.text }}>
+                  <p
+                    className="text-sm leading-relaxed"
+                    style={{ color: colors.text }}
+                  >
                     {step}
                   </p>
                 </motion.div>
@@ -1035,7 +1122,10 @@ const ActionPlanModal = ({
 
         <div
           className="px-6 py-4 flex flex-wrap gap-3 justify-end border-t"
-          style={{ borderColor: colors.accent + "30", backgroundColor: colors.background }}
+          style={{
+            borderColor: colors.accent + "30",
+            backgroundColor: colors.background,
+          }}
         >
           <button
             onClick={onClose}
@@ -1063,7 +1153,7 @@ const ActionPlanModal = ({
             {hasActivePlan ? "Update & Continue" : "Launch Action Plan"}
           </motion.button>
 
-          {(!isCompleted && hasActivePlan) && (
+          {!isCompleted && hasActivePlan && (
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
@@ -1131,7 +1221,9 @@ const RecommendationsPage = () => {
       ) {
         fetchedData = response.data;
         isMock =
-          typeof response.isMockData === "boolean" ? response.isMockData : false;
+          typeof response.isMockData === "boolean"
+            ? response.isMockData
+            : false;
         console.log(`API returned object. isMockData: ${isMock}`);
       } else {
         console.warn(
@@ -1143,7 +1235,7 @@ const RecommendationsPage = () => {
 
       const normalized: EnhancedRecommendation[] = fetchedData.map((r) => ({
         ...r,
-        _id: r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
+        _id: String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`),
       }));
 
       const merged = applyStoredActionState(normalized);
@@ -1155,7 +1247,7 @@ const RecommendationsPage = () => {
       setError("Failed to fetch recommendations. Using mock data instead.");
       const fallback = generateMockRecommendationsFallback().map((r) => ({
         ...r,
-        _id: r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
+        _id: String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`),
       }));
       const mergedFallback = applyStoredActionState(fallback);
       setRecommendations(mergedFallback);
@@ -1255,15 +1347,24 @@ const RecommendationsPage = () => {
   // Calculate statistics
   const stats = useMemo(() => {
     const total = recommendations.length;
-    const highPriority = recommendations.filter((r) => r.priority === "high").length;
-    const inProgress = recommendations.filter((r) => r.status === "in_progress").length;
-    const completed = recommendations.filter((r) => r.status === "completed").length;
+    const highPriority = recommendations.filter(
+      (r) => r.priority === "high"
+    ).length;
+    const inProgress = recommendations.filter(
+      (r) => r.status === "in_progress"
+    ).length;
+    const completed = recommendations.filter(
+      (r) => r.status === "completed"
+    ).length;
     const completionRate = total > 0 ? (completed / total) * 100 : 0;
-    
+
     // Calculate average impact score (simplified)
-    const avgImpact = recommendations.length > 0 
-      ? recommendations.filter(r => r.impact === "High").length / recommendations.length * 100
-      : 0;
+    const avgImpact =
+      recommendations.length > 0
+        ? (recommendations.filter((r) => r.impact === "High").length /
+            recommendations.length) *
+          100
+        : 0;
 
     return {
       total,
@@ -1378,13 +1479,16 @@ const RecommendationsPage = () => {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div 
+                <div
                   className="p-3 rounded-xl"
-                  style={{ 
+                  style={{
                     backgroundColor: colors.primary + "20",
                   }}
                 >
-                  <Sparkles className="h-6 w-6" style={{ color: colors.primary }} />
+                  <Sparkles
+                    className="h-6 w-6"
+                    style={{ color: colors.primary }}
+                  />
                 </div>
                 <div>
                   <h1
@@ -1392,10 +1496,16 @@ const RecommendationsPage = () => {
                     style={{ color: colors.text }}
                   >
                     AI-Powered{" "}
-                    <span style={{ color: colors.primary }}>Recommendations</span>
+                    <span style={{ color: colors.primary }}>
+                      Recommendations
+                    </span>
                   </h1>
-                  <p className="mt-1 text-sm" style={{ color: colors.textMuted }}>
-                    Intelligent insights to optimize your supply chain sustainability
+                  <p
+                    className="mt-1 text-sm"
+                    style={{ color: colors.textMuted }}
+                  >
+                    Intelligent insights to optimize your supply chain
+                    sustainability
                   </p>
                 </div>
               </div>
@@ -1405,7 +1515,9 @@ const RecommendationsPage = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setViewMode(viewMode === "list" ? "grid" : "list")}
+                onClick={() =>
+                  setViewMode(viewMode === "list" ? "grid" : "list")
+                }
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border"
                 style={{
                   backgroundColor: colors.panel,
@@ -1413,8 +1525,14 @@ const RecommendationsPage = () => {
                   color: colors.text,
                 }}
               >
-                {viewMode === "list" ? <Layers className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
-                <span className="hidden sm:inline">{viewMode === "list" ? "Grid" : "List"}</span>
+                {viewMode === "list" ? (
+                  <Layers className="h-4 w-4" />
+                ) : (
+                  <ListChecks className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {viewMode === "list" ? "Grid" : "List"}
+                </span>
               </motion.button>
 
               <motion.button
@@ -1437,23 +1555,35 @@ const RecommendationsPage = () => {
                 onClick={() => {
                   // Export functionality
                   const csv = [
-                    ["Title", "Category", "Priority", "Status", "Supplier", "Impact", "Timeframe"],
-                    ...recommendations.map(r => [
+                    [
+                      "Title",
+                      "Category",
+                      "Priority",
+                      "Status",
+                      "Supplier",
+                      "Impact",
+                      "Timeframe",
+                    ],
+                    ...recommendations.map((r) => [
                       r.title || "",
                       r.category || "",
                       r.priority || "",
                       r.status || "",
                       typeof r.supplier === "object" ? r.supplier.name : "",
                       r.impact || "",
-                      r.timeframe || ""
-                    ])
-                  ].map(row => row.join(",")).join("\n");
-                  
+                      r.timeframe || "",
+                    ]),
+                  ]
+                    .map((row) => row.join(","))
+                    .join("\n");
+
                   const blob = new Blob([csv], { type: "text/csv" });
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement("a");
                   a.href = url;
-                  a.download = `recommendations_${new Date().toISOString().split("T")[0]}.csv`;
+                  a.download = `recommendations_${
+                    new Date().toISOString().split("T")[0]
+                  }.csv`;
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
@@ -1530,8 +1660,14 @@ const RecommendationsPage = () => {
             }}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2" style={{ color: colors.text }}>
-                <PieChart className="h-5 w-5" style={{ color: colors.primary }} />
+              <h3
+                className="text-lg font-semibold flex items-center gap-2"
+                style={{ color: colors.text }}
+              >
+                <PieChart
+                  className="h-5 w-5"
+                  style={{ color: colors.primary }}
+                />
                 Category Distribution
               </h3>
               <Link
@@ -1542,7 +1678,10 @@ const RecommendationsPage = () => {
                 View Suppliers <ExternalLink className="h-3 w-3" />
               </Link>
             </div>
-            <CategoryDistribution recommendations={recommendations} colors={colors} />
+            <CategoryDistribution
+              recommendations={recommendations}
+              colors={colors}
+            />
           </motion.div>
 
           {/* Search and Filter Controls */}
@@ -1580,7 +1719,9 @@ const RecommendationsPage = () => {
                   style={{
                     borderColor: colors.accent + "50",
                     color: colors.text,
-                    backgroundColor: filtersVisible ? colors.accent + "20" : "transparent",
+                    backgroundColor: filtersVisible
+                      ? colors.accent + "20"
+                      : "transparent",
                   }}
                 >
                   <Filter className="h-4 w-4" />
@@ -1857,7 +1998,10 @@ const RecommendationsPage = () => {
               >
                 Error Loading Recommendations
               </h2>
-              <p className="mb-6 text-center max-w-md" style={{ color: colors.error }}>
+              <p
+                className="mb-6 text-center max-w-md"
+                style={{ color: colors.error }}
+              >
                 {error}
               </p>
               <button
@@ -1942,7 +2086,10 @@ const RecommendationsPage = () => {
 
               <div className="space-y-2 mb-6">
                 <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium" style={{ color: colors.textMuted }}>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: colors.textMuted }}
+                  >
                     Showing {filteredAndSortedRecommendations.length}{" "}
                     recommendation
                     {filteredAndSortedRecommendations.length !== 1 ? "s" : ""}
@@ -2023,7 +2170,10 @@ const RecommendationsPage = () => {
             }}
           >
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" style={{ color: colors.success }} />
+              <CheckCircle
+                className="h-5 w-5"
+                style={{ color: colors.success }}
+              />
               <span className="font-medium">{actionFeedback}</span>
             </div>
           </motion.div>
