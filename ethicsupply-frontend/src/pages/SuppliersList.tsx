@@ -357,82 +357,76 @@ const Tooltip = ({ children, content, position = "top" }: { children: React.Reac
       // Force a layout recalculation to get accurate dimensions
       tooltip.style.visibility = "hidden";
       tooltip.style.display = "block";
+      tooltip.style.position = "fixed";
+      tooltip.style.top = "0";
+      tooltip.style.left = "0";
       
       const tooltipRect = tooltip.getBoundingClientRect();
       const triggerRect = trigger.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      const padding = 12; // Increased padding for better spacing
-      const tooltipWidth = tooltipRect.width;
-      const tooltipHeight = tooltipRect.height;
+      const padding = 12;
+      const tooltipWidth = tooltipRect.width || 240; // Fallback width
+      const tooltipHeight = tooltipRect.height || 100; // Fallback height
 
-      // Calculate available space in all directions
+      // Calculate available space
       const spaceAbove = triggerRect.top;
       const spaceBelow = viewportHeight - triggerRect.bottom;
-      const spaceLeft = triggerRect.left;
-      const spaceRight = viewportWidth - triggerRect.right;
-
+      
       // Determine best vertical position
-      let verticalPos: "top" | "bottom" = "bottom";
-      let verticalOffset = padding;
+      let topPos: number;
+      let arrowBottom = false;
       
       if (position === "top" || (spaceAbove > spaceBelow && spaceAbove > tooltipHeight + padding)) {
-        verticalPos = "top";
-        verticalOffset = padding;
-      } else if (spaceBelow > tooltipHeight + padding) {
-        verticalPos = "bottom";
-        verticalOffset = padding;
+        // Position above
+        topPos = triggerRect.top - tooltipHeight - padding;
+        arrowBottom = true;
+        // Ensure it doesn't go above viewport
+        if (topPos < padding) {
+          topPos = padding;
+        }
       } else {
-        // Not enough space in preferred direction, use whichever has more space
-        verticalPos = spaceAbove > spaceBelow ? "top" : "bottom";
-        verticalOffset = padding;
+        // Position below
+        topPos = triggerRect.bottom + padding;
+        arrowBottom = false;
+        // Ensure it doesn't go below viewport
+        if (topPos + tooltipHeight > viewportHeight - padding) {
+          topPos = viewportHeight - tooltipHeight - padding;
+          if (topPos < padding) topPos = padding; // If still too tall, stick to top
+        }
       }
 
-      // Calculate horizontal position (center by default, adjust if needed)
-      let horizontalPos = "50%";
-      let horizontalTransform = "translateX(-50%)";
-      let arrowLeft = "50%";
-
-      // Try to center first
-      const centerX = triggerRect.left + triggerRect.width / 2;
-      const tooltipLeft = centerX - tooltipWidth / 2;
-      const tooltipRight = centerX + tooltipWidth / 2;
-
+      // Calculate horizontal position - center on trigger, but keep within viewport
+      const triggerCenterX = triggerRect.left + triggerRect.width / 2;
+      let leftPos = triggerCenterX - tooltipWidth / 2;
+      
       // Adjust if going off-screen horizontally
-      if (tooltipRight > viewportWidth - padding) {
-        // Too far right, align to right edge of viewport
-        horizontalPos = `${viewportWidth - tooltipWidth - padding}px`;
-        horizontalTransform = "none";
-        arrowLeft = `${centerX - (viewportWidth - tooltipWidth - padding)}px`;
-      } else if (tooltipLeft < padding) {
-        // Too far left, align to left edge of viewport
-        horizontalPos = `${padding}px`;
-        horizontalTransform = "none";
-        arrowLeft = `${centerX - padding}px`;
+      if (leftPos + tooltipWidth > viewportWidth - padding) {
+        leftPos = viewportWidth - tooltipWidth - padding;
+      }
+      if (leftPos < padding) {
+        leftPos = padding;
       }
 
-      // Ensure arrow stays within tooltip bounds
-      const arrowLeftNum = parseFloat(arrowLeft);
-      if (arrowLeftNum < 8) arrowLeft = "8px";
-      if (arrowLeftNum > tooltipWidth - 8) arrowLeft = `${tooltipWidth - 8}px`;
+      // Calculate arrow position relative to trigger center
+      const arrowOffset = triggerCenterX - leftPos;
+      const arrowLeft = Math.max(12, Math.min(tooltipWidth - 12, arrowOffset)); // Keep arrow within bounds
 
       // Apply positioning
       const newTooltipStyle: React.CSSProperties = {
         position: "fixed",
-        [verticalPos === "top" ? "bottom" : "top"]: verticalPos === "top" 
-          ? `${viewportHeight - triggerRect.top + verticalOffset}px`
-          : `${triggerRect.bottom + verticalOffset}px`,
-        left: horizontalPos,
-        transform: horizontalTransform,
+        top: `${topPos}px`,
+        left: `${leftPos}px`,
         maxWidth: `${Math.min(280, viewportWidth - padding * 2)}px`,
         minWidth: "200px",
+        maxHeight: `${viewportHeight - padding * 2}px`,
         zIndex: 9999,
       };
 
       const newArrowStyle: React.CSSProperties = {
-        [verticalPos === "top" ? "top" : "bottom"]: verticalPos === "top" ? "-4px" : "-4px",
-        left: arrowLeft,
-        transform: verticalPos === "top" ? "translateX(-50%) rotate(45deg)" : "translateX(-50%) rotate(45deg)",
+        [arrowBottom ? "bottom" : "top"]: arrowBottom ? "-4px" : "-4px",
+        left: `${arrowLeft}px`,
+        transform: "translateX(-50%) rotate(45deg)",
       };
 
       setTooltipStyle(newTooltipStyle);
