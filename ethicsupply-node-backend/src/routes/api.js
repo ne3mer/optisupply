@@ -9,6 +9,7 @@ const recommendationController = require("../controllers/recommendationControlle
 const bandsController = require("../controllers/bandsController");
 const settingsController = require("../controllers/settingsController");
 const scenarioController = require("../controllers/scenarioController");
+const baselineController = require("../controllers/baselineController");
 const exportController = require("../controllers/exportController");
 const transparencyController = require("../controllers/transparencyController");
 const adminController = require("../controllers/adminController");
@@ -163,6 +164,7 @@ router.post("/scenarios/s4", scenarioController.s4Ablation);
 // Unified scenario runner endpoint (Chapter 4)
 router.post("/scenarios/run", scenarioController.runScenario);
 router.get("/scenarios/coverage", scenarioController.getDataCoverage);
+router.get("/scenarios/baseline", baselineController.getBaseline);
 
 // Admin routes
 router.post("/admin/recompute-all", adminController.recomputeAllSuppliers);

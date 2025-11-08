@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { runScenario } from "../services/api";
+import { runScenario, fetchBaseline, downloadBaselineCsv } from "../services/api";
 import { useThemeColors } from "../theme/useThemeColors";
 
 // Helper to get API endpoint (same logic as api.ts)
@@ -18,6 +18,8 @@ export default function Scenarios() {
   const [s1MarginThreshold, setS1MarginThreshold] = useState<number>(15);
   const [dataCoverage, setDataCoverage] = useState<any>(null);
   const [loadingCoverage, setLoadingCoverage] = useState(false);
+  const [baseline, setBaseline] = useState<{ meanEI?: number | null; nSuppliers?: number } | null>(null);
+  const [loadingBaseline, setLoadingBaseline] = useState(false);
   const colors = useThemeColors() as any;
 
   // Fetch data coverage statistics
@@ -39,10 +41,25 @@ export default function Scenarios() {
     }
   };
 
-  // Load coverage on mount
+  // Load coverage and baseline on mount
   React.useEffect(() => {
     fetchDataCoverage();
+    fetchBaselineData();
   }, []);
+
+  // Fetch baseline data
+  const fetchBaselineData = async () => {
+    setLoadingBaseline(true);
+    try {
+      const data = await fetchBaseline();
+      setBaseline({ meanEI: data.meanEI, nSuppliers: data.nSuppliers });
+    } catch (err) {
+      console.error("Failed to fetch baseline:", err);
+      setBaseline(null);
+    } finally {
+      setLoadingBaseline(false);
+    }
+  };
 
   const handleRun = async (
     type: "s1" | "s2" | "s3" | "s4",

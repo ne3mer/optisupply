@@ -3879,3 +3879,50 @@ export const exportIndustryMap = async (apiKey?: string): Promise<void> => {
     throw error;
   }
 };
+
+/**
+ * Fetch baseline mean Emission Intensity
+ */
+export async function fetchBaseline(): Promise<{
+  meanEI: number | null;
+  nSuppliers: number;
+  generatedAt: string;
+}> {
+  try {
+    const response = await fetch(getEndpoint("scenarios/baseline"), {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch baseline");
+    }
+
+    return await response.json();
+  } catch (error) {
+    logger.error("Error fetching baseline:", error);
+    throw error;
+  }
+}
+
+/**
+ * Download baseline CSV
+ */
+export async function downloadBaselineCsv(): Promise<void> {
+  try {
+    const response = await fetch(getEndpoint("scenarios/baseline?format=csv"), {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to download baseline CSV");
+    }
+
+    const blob = await response.blob();
+    downloadCSV(blob, "baseline.csv");
+  } catch (error) {
+    logger.error("Error downloading baseline CSV:", error);
+    throw error;
+  }
+}
