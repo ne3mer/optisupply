@@ -11,6 +11,8 @@
     "dev:mock": "nodemon dev-server.js",
     "seed": "node bin/seed-suppliers.js",
     "seed:legacy": "node src/scripts/seedDatabase.js",
+    "delete-all-suppliers": "node scripts/delete-all-suppliers.js",
+    "backfill-margins": "node scripts/backfill_margin_pct.js",
     "scenario:s1": "node bin/run-s1.js --margin 10",
     "scenario:s2": "node bin/run-s2.js --perturbation +10",
     "scenario:s3": "node bin/run-s3.js --missingPct 5 --imputation industryMean",
