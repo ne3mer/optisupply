@@ -21,6 +21,7 @@ const config = {
           "https://optisupply.vercel.app",
           "https://optisupply-frontend.vercel.app",
           "https://optisupply-backend.vercel.app",
+          "https://optisupp.netlify.app",
         ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [

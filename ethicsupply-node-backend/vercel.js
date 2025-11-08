@@ -10,16 +10,51 @@ function createMockServer() {
   );
   const app = express();
 
-  // CORS middleware - allow all origins for Vercel
+  // CORS middleware - use specific origins (never wildcard with credentials)
+  const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://ethicsupply-frontend.vercel.app",
+        "https://optisupply.vercel.app",
+        "https://optisupply-frontend.vercel.app",
+        "https://optisupply-backend.vercel.app",
+        "https://optisupp.netlify.app",
+      ];
+
   app.use(
     cors({
-      origin: true, // Allow all origins
+      origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+          return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
+        if (allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          console.warn(`CORS blocked origin: ${origin}`);
+          callback(new Error(`Not allowed by CORS: ${origin}`));
+        }
+      },
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
       allowedHeaders: [
         "Content-Type",
         "Authorization",
         "X-Requested-With",
         "X-HTTP-Method-Override",
+        "X-CSRF-Token",
+        "Accept",
+        "Accept-Version",
+        "Content-Length",
+        "Content-MD5",
+        "Date",
+        "X-Api-Version",
+        "X-API-Key",
       ],
       credentials: true,
       maxAge: 86400, // Cache preflight requests for 24 hours
