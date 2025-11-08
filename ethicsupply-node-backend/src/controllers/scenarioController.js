@@ -423,7 +423,7 @@ exports.runScenario = async (req, res) => {
     const runner = new ScenarioRunner(baseCfg);
 
     if (type === "s1") {
-      const minMarginPct = params.minMarginPct ?? 10;
+      const minMarginPct = params.minMarginPct ?? 15;
       const { csv, baselineObjective, s1Objective } = await runner.runS1(minMarginPct);
 
       res.setHeader("Content-Type", "text/csv; charset=utf-8");

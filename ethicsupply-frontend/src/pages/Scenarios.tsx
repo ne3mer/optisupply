@@ -107,10 +107,10 @@ export default function Scenarios() {
               S1: Utility Analysis
             </h2>
             <p className="text-sm mb-4" style={{ color: colors.textMuted }}>
-              Minimize emission intensity with margin constraint (≥10%)
+              Minimize emission intensity with margin constraint (≥15%, skipped if no margin data)
             </p>
             <button
-              onClick={() => handleRun("s1", { minMarginPct: 10 }, "s1_ranking.csv")}
+              onClick={() => handleRun("s1", { minMarginPct: 15 }, "s1_ranking.csv")}
               disabled={loading !== null}
               className="w-full px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{

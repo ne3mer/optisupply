@@ -131,27 +131,35 @@ class ScenarioRunner {
   }
 
   /**
-   * Get Margin % from supplier
-   * If available directly, use it; otherwise try to derive from revenue/cost
-   * If no margin data available, return a default value (e.g., assume all suppliers meet threshold)
+   * Get Margin % from supplier with resilient fallback logic
+   * Returns: { margin: number, source: "actual" | "derived" | "default" }
+   * 
+   * Priority:
+   * 1. supplier.margin_pct if present
+   * 2. Derived from revenue_musd/cost_musd if valid (0 ≤ cost ≤ revenue)
+   * 3. Fallback to max(15, minMarginPct || 0)
    */
-  getMarginPct(supplier, defaultMargin = 15) {
-    // If available directly
+  getMarginPct(supplier, minMarginPct = 15) {
+    // 1. Check for direct margin_pct field
     if (supplier.margin_pct != null) {
       const m = this.toNum(supplier.margin_pct);
-      return m;
+      if (m != null) {
+        return { margin: m, source: "actual" };
+      }
     }
     
-    // Try to derive if revenue and cost are available
+    // 2. Try to derive from revenue and cost
     const revenue = this.toNum(supplier.revenue_musd) ?? this.toNum(supplier.revenue);
     const cost = this.toNum(supplier.cost_musd) ?? this.toNum(supplier.cost);
-    if (revenue && cost && revenue > 0) {
-      return 100 * ((revenue - cost) / revenue);
+    
+    if (revenue != null && cost != null && revenue > 0 && cost >= 0 && cost <= revenue) {
+      const derivedMargin = 100 * ((revenue - cost) / revenue);
+      return { margin: derivedMargin, source: "derived" };
     }
     
-    // If no margin data available, return default (assumes supplier meets threshold)
-    // This allows S1 to run even when margin data is missing
-    return defaultMargin;
+    // 3. Fallback to default
+    const defaultMargin = Math.max(15, minMarginPct || 0);
+    return { margin: defaultMargin, source: "default" };
   }
 
   /**
@@ -217,9 +225,9 @@ class ScenarioRunner {
   /**
    * S1: Utility Analysis
    * Objective: minimize emission_intensity
-   * Constraint: margin_pct >= minMarginPct
+   * Constraint: margin_pct >= minMarginPct (if real margin data exists)
    */
-  async runS1(minMarginPct = 10) {
+  async runS1(minMarginPct = 15) {
     const suppliers = await this.getAllSuppliers();
     
     // Build baseline rows with all scores
@@ -242,12 +250,12 @@ class ScenarioRunner {
       };
     });
     
-    // Attach EI & Margin to all rows
-    // Use a default margin that ensures suppliers pass the constraint if margin data is missing
-    const defaultMarginForMissing = minMarginPct + 5; // Default to 5% above threshold
+    // Attach EI & Margin info to all rows
     baseRows.forEach(r => {
       r["Emission Intensity"] = this.computeEmissionIntensity(r._raw);
-      r["Margin %"] = this.getMarginPct(r._raw, defaultMarginForMissing);
+      const marginInfo = this.getMarginPct(r._raw, minMarginPct);
+      r["Margin %"] = marginInfo.margin;
+      r._marginSource = marginInfo.source;
     });
     
     // Compute baseline objective (mean EI on rows that have EI, before constraint)
@@ -262,103 +270,64 @@ class ScenarioRunner {
     this.imputeByIndustryMean(baseRows, "Emission Intensity");
     
     // Keep only rows with EI defined (after imputation)
-    const withEi = baseRows.filter(r => 
-      r["Emission Intensity"] != null && Number.isFinite(r["Emission Intensity"])
-    );
-    
-    // Apply margin constraint: keep rows with margin >= threshold
-    // Note: If margin data is missing, getMarginPct returns a default value above threshold
-    const constrained = withEi.filter(r => {
-      const m = this.toNum(r["Margin %"]);
-      return m != null && Number.isFinite(m) && m >= minMarginPct;
+    // Missing EI treated as Infinity (will be sorted last)
+    const withEi = baseRows.map(r => {
+      if (r["Emission Intensity"] == null || !Number.isFinite(r["Emission Intensity"])) {
+        r["Emission Intensity"] = Infinity; // De-prioritize missing EI
+      }
+      return r;
     });
     
-    if (!constrained.length) {
-      // Check if any suppliers have actual margin data
-      const suppliersWithMargin = withEi.filter(r => {
-        const s = r._raw;
-        return s.margin_pct != null || 
-               (this.toNum(s.revenue_musd ?? s.revenue) && this.toNum(s.cost_musd ?? s.cost));
+    // Determine if any supplier has real margin data
+    const hasRealMargin = withEi.some(r => {
+      const s = r._raw;
+      return s.margin_pct != null || 
+             (this.toNum(s.revenue_musd ?? s.revenue) != null && 
+              this.toNum(s.cost_musd ?? s.cost) != null &&
+              this.toNum(s.revenue_musd ?? s.revenue) > 0 &&
+              this.toNum(s.cost_musd ?? s.cost) >= 0 &&
+              this.toNum(s.cost_musd ?? s.cost) <= this.toNum(s.revenue_musd ?? s.revenue));
+    });
+    
+    let constrained;
+    let constraintApplied = false;
+    
+    if (!hasRealMargin) {
+      // No real margin data - skip constraint
+      console.warn("⚠️  No real margin data; skipping margin constraint for S1.");
+      constrained = withEi;
+    } else {
+      // Real margin data exists - apply constraint
+      const filtered = withEi.filter(r => {
+        const m = r["Margin %"];
+        return m != null && Number.isFinite(m) && m >= minMarginPct;
       });
       
-      if (suppliersWithMargin.length === 0) {
-        // No suppliers have margin data - skip constraint and use all suppliers
-        console.warn(`⚠️  No suppliers have margin_pct data. Skipping margin constraint for S1.`);
-        const unconstrained = withEi;
-        unconstrained.sort((a, b) => {
-          const eiA = a["Emission Intensity"];
-          const eiB = b["Emission Intensity"];
-          const d = eiA - eiB;
-          if (Math.abs(d) > 0.0001) return d;
-          return b._finalScoreNum - a._finalScoreNum;
-        });
-        unconstrained.forEach((r, i) => {
-          r.Rank = i + 1;
-        });
-        
-        const s1EiArr = unconstrained
-          .map(r => r["Emission Intensity"])
-          .filter(Number.isFinite);
-        const s1Objective = s1EiArr.length 
-          ? s1EiArr.reduce((a, b) => a + b, 0) / s1EiArr.length 
-          : null;
-        
-        const out = unconstrained.map(r => ({
-          SupplierID: r.SupplierID,
-          Rank: r.Rank,
-          Name: r.Name,
-          Industry: r.Industry,
-          "Environmental Score": r["Environmental Score"],
-          "Social Score": r["Social Score"],
-          "Governance Score": r["Governance Score"],
-          "Composite Score": r["Composite Score"],
-          "Risk Penalty": r["Risk Penalty"],
-          "Final Score": r["Final Score"],
-          "Emission Intensity": r["Emission Intensity"] != null 
-            ? Number(r["Emission Intensity"]).toFixed(6) 
-            : "",
-          "Margin %": r["Margin %"] != null 
-            ? Number(r["Margin %"]).toFixed(2) 
-            : "",
-        }));
-        
-        const headers = [
-          "SupplierID",
-          "Rank",
-          "Name",
-          "Industry",
-          "Environmental Score",
-          "Social Score",
-          "Governance Score",
-          "Composite Score",
-          "Risk Penalty",
-          "Final Score",
-          "Emission Intensity",
-          "Margin %",
-        ];
-        
-        return {
-          csv: toCSV(out, headers),
-          baselineObjective,
-          s1Objective,
-        };
+      if (filtered.length === 0) {
+        // All suppliers failed constraint - log warning and continue with full pool
+        console.warn(`⚠️  All suppliers failed margin constraint (≥${minMarginPct}%); skipping constraint for S1.`);
+        constrained = withEi;
+        constraintApplied = false;
       } else {
-        // Some suppliers have margin data but all failed constraint
-        const err = new Error(
-          `S1 produced no rows after applying Margin % ≥ ${minMarginPct}. ` +
-          `Found ${withEi.length} suppliers with EI, ${suppliersWithMargin.length} with margin data, ` +
-          `but all ${suppliersWithMargin.length} failed margin constraint. ` +
-          `Consider lowering minMarginPct or adding margin_pct data to suppliers.`
-        );
-        err.status = 400;
-        throw err;
+        // Some suppliers passed - use only those
+        constrained = filtered;
+        constraintApplied = true;
       }
     }
     
     // Rank: min EI (ascending), tie-break by higher Final Score (descending)
+    // Missing EI (Infinity) will naturally sort last
     constrained.sort((a, b) => {
       const eiA = a["Emission Intensity"];
       const eiB = b["Emission Intensity"];
+      
+      // Handle Infinity (missing EI) - put at end
+      if (!Number.isFinite(eiA) && !Number.isFinite(eiB)) {
+        return b._finalScoreNum - a._finalScoreNum; // Both missing, tie-break by Final Score
+      }
+      if (!Number.isFinite(eiA)) return 1; // a missing, put last
+      if (!Number.isFinite(eiB)) return -1; // b missing, put last
+      
       const d = eiA - eiB;
       if (Math.abs(d) > 0.0001) return d; // EI difference is significant
       // Tie-breaker: higher Final Score is better
@@ -369,15 +338,15 @@ class ScenarioRunner {
       r.Rank = i + 1;
     });
     
-    // S1 objective = mean EI in constrained set
+    // S1 objective = mean EI in constrained set (excluding Infinity)
     const s1EiArr = constrained
       .map(r => r["Emission Intensity"])
-      .filter(Number.isFinite);
+      .filter(v => Number.isFinite(v));
     const s1Objective = s1EiArr.length 
       ? s1EiArr.reduce((a, b) => a + b, 0) / s1EiArr.length 
       : null;
     
-    // Shape final CSV rows (remove internals, include EI and Margin)
+    // Shape final CSV rows (remove internals, include EI, Margin, Margin Source, and Constraint Applied)
     const out = constrained.map(r => ({
       SupplierID: r.SupplierID,
       Rank: r.Rank,
@@ -389,12 +358,14 @@ class ScenarioRunner {
       "Composite Score": r["Composite Score"],
       "Risk Penalty": r["Risk Penalty"],
       "Final Score": r["Final Score"],
-      "Emission Intensity": r["Emission Intensity"] != null 
-        ? Number(r["Emission Intensity"]).toFixed(6) 
+      "Emission Intensity": Number.isFinite(r["Emission Intensity"])
+        ? Number(r["Emission Intensity"]).toFixed(6)
         : "",
-      "Margin %": r["Margin %"] != null 
-        ? Number(r["Margin %"]).toFixed(2) 
+      "Margin %": r["Margin %"] != null && Number.isFinite(r["Margin %"])
+        ? Number(r["Margin %"]).toFixed(2)
         : "",
+      "Margin Source": r._marginSource || "default",
+      "Constraint Applied": constraintApplied ? "true" : "false",
     }));
     
     const headers = [
@@ -410,6 +381,8 @@ class ScenarioRunner {
       "Final Score",
       "Emission Intensity",
       "Margin %",
+      "Margin Source",
+      "Constraint Applied",
     ];
     
     return {
