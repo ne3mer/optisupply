@@ -259,15 +259,41 @@ const applyStoredActionState = (
     return recommendations;
   }
 
-  return recommendations.map((rec) => {
-    const stored = storedState[rec._id];
-    if (!stored) return rec;
+  console.log("[Recommendations] Applying stored action state:", storedState);
+  console.log("[Recommendations] Recommendations IDs:", recommendations.map(r => r._id));
 
-    return {
+  return recommendations.map((rec) => {
+    // Try to match by _id first, then by id, then by title (as fallback)
+    const stored = storedState[String(rec._id)] || 
+                   (rec.id ? storedState[String(rec.id)] : null) ||
+                   (rec.title ? Object.values(storedState).find(s => 
+                     s.title === rec.title || 
+                     (typeof rec.supplier === "object" && 
+                      typeof s.supplier === "object" && 
+                      rec.supplier?.name === s.supplier?.name &&
+                      rec.category === s.category)
+                   ) : null);
+
+    if (!stored) {
+      console.log(`[Recommendations] No stored state for recommendation ${rec._id}`);
+      return rec;
+    }
+
+    console.log(`[Recommendations] Merging stored state for ${rec._id}:`, stored);
+
+    // Merge stored state, ensuring all action fields are preserved
+    const merged: EnhancedRecommendation = {
       ...rec,
-      ...stored,
+      // Preserve stored action state
+      action_owner: stored.action_owner ?? rec.action_owner,
+      action_started_at: stored.action_started_at ?? rec.action_started_at,
+      action_completed_at: stored.action_completed_at ?? rec.action_completed_at,
       action_notes: stored.action_notes ?? rec.action_notes,
+      // Preserve stored status if it exists
+      status: stored.status ?? rec.status,
     };
+
+    return merged;
   });
 };
 
@@ -275,25 +301,55 @@ const persistActionStateFromArray = (
   recommendations: EnhancedRecommendation[]
 ) => {
   const stateIndex: Record<string, Partial<EnhancedRecommendation>> = {};
+  
+  // Load existing state first to preserve any data
+  const existingState = loadActionState();
 
   recommendations.forEach((rec) => {
     const entry: Partial<EnhancedRecommendation> = {};
+    const recId = String(rec._id);
 
+    // Start with existing state for this recommendation if it exists
+    const existing = existingState[recId];
+    if (existing) {
+      Object.assign(entry, existing);
+    }
+
+    // Update with current values (only if they exist)
     if (rec.action_owner) entry.action_owner = rec.action_owner;
     if (rec.action_started_at) entry.action_started_at = rec.action_started_at;
-    if (rec.action_completed_at)
-      entry.action_completed_at = rec.action_completed_at;
-    if (rec.action_notes && rec.action_notes.length > 0)
-      entry.action_notes = rec.action_notes;
-    if (rec.status === "in_progress" || rec.status === "completed")
+    if (rec.action_completed_at) entry.action_completed_at = rec.action_completed_at;
+    if (rec.action_notes && rec.action_notes.length > 0) entry.action_notes = rec.action_notes;
+    
+    // Preserve status if it's in_progress or completed
+    if (rec.status === "in_progress" || rec.status === "completed") {
       entry.status = rec.status;
+    }
 
-    if (Object.keys(entry).length > 0) {
-      stateIndex[rec._id] = entry;
+    // Also store title and category for better matching on refresh
+    if (rec.title) entry.title = rec.title;
+    if (rec.category) entry.category = rec.category;
+    if (rec.supplier) entry.supplier = rec.supplier;
+
+    // Only persist if there's meaningful action state
+    if (entry.action_owner || entry.action_started_at || entry.action_completed_at || 
+        (entry.action_notes && entry.action_notes.length > 0) ||
+        entry.status === "in_progress" || entry.status === "completed") {
+      stateIndex[recId] = entry;
+      console.log(`[Recommendations] Persisting state for ${recId}:`, entry);
+    }
+  });
+
+  // Merge with any existing state that might not be in current recommendations
+  Object.keys(existingState).forEach((key) => {
+    if (!stateIndex[key] && existingState[key]) {
+      // Keep old state for recommendations that might come back later
+      stateIndex[key] = existingState[key];
     }
   });
 
   persistActionState(stateIndex);
+  console.log("[Recommendations] Persisted action state:", stateIndex);
 };
 
 const getRelativeTime = (dateString?: string | null) => {
@@ -1235,7 +1291,9 @@ const RecommendationsPage = () => {
 
       const normalized: EnhancedRecommendation[] = fetchedData.map((r) => ({
         ...r,
-        _id: String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`),
+        _id: String(
+          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
+        ),
       }));
 
       const merged = applyStoredActionState(normalized);
@@ -1245,10 +1303,14 @@ const RecommendationsPage = () => {
     } catch (error) {
       console.error("Error fetching recommendations:", error);
       setError("Failed to fetch recommendations. Using mock data instead.");
-      const fallback = generateMockRecommendationsFallback().map((r) => ({
-        ...r,
-        _id: String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`),
-      }));
+      const fallback = generateMockRecommendationsFallback().map((r) => {
+        const id = String(r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`);
+        return {
+          ...r,
+          _id: id,
+          id: id, // Also set id field for consistency
+        };
+      });
       const mergedFallback = applyStoredActionState(fallback);
       setRecommendations(mergedFallback);
       persistActionStateFromArray(mergedFallback);
