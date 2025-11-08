@@ -1464,3 +1464,49 @@ async function calculateSupplierScores(supplier) {
     };
   }
 }
+
+// Bulk update margins for multiple suppliers
+exports.bulkSetMargins = async (req, res) => {
+  try {
+    const updates = Array.isArray(req.body?.updates) ? req.body.updates : [];
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ ok: false, error: "No updates provided" });
+    }
+
+    let ok = 0;
+    let fail = 0;
+    const errors = [];
+
+    for (const u of updates) {
+      try {
+        const marginPct = Number(u.margin_pct);
+        if (!Number.isFinite(marginPct) || marginPct < 0 || marginPct > 100) {
+          fail++;
+          errors.push({ id: u.SupplierID || u._id, msg: "Invalid margin_pct (must be 0-100)" });
+          continue;
+        }
+
+        const result = await db.Supplier.updateOne(
+          { $or: [{ SupplierID: u.SupplierID }, { _id: u.SupplierID }, { _id: u._id }] },
+          { $set: { margin_pct: marginPct } }
+        );
+
+        if (result.matchedCount > 0) {
+          ok++;
+        } else {
+          fail++;
+          errors.push({ id: u.SupplierID || u._id, msg: "Supplier not found" });
+        }
+      } catch (e) {
+        fail++;
+        errors.push({ id: u.SupplierID || u._id, msg: e.message });
+      }
+    }
+
+    res.json({ ok, fail, errors, total: updates.length });
+  } catch (error) {
+    console.error("Error in bulkSetMargins:", error);
+    res.status(500).json({ ok: false, error: String(error) });
+  }
+};
