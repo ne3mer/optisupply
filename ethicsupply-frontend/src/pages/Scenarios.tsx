@@ -233,7 +233,7 @@ export default function Scenarios() {
             <li>• <strong>All Scenarios:</strong> SupplierID, Rank, Name, Industry</li>
             <li>• Environmental Score, Social Score, Governance Score</li>
             <li>• Composite Score, Risk Penalty, Final Score</li>
-            <li>• <strong>S1 Only:</strong> Emission Intensity, Margin %</li>
+            <li>• <strong>S1 Only:</strong> Emission Intensity, Margin %, Margin Source, Constraint Applied</li>
           </ul>
         </div>
       </div>
