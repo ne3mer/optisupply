@@ -210,25 +210,25 @@ export default function Scenarios() {
               {loading === "s1" ? "Running..." : `Run S1 (≥${s1MarginThreshold}%) → Download CSV`}
             </button>
             {s1Info && (
-              <div className="mt-3 text-sm space-y-1" style={{ color: colors.textMuted }}>
-                {s1Info.base && (
-                  <div>
-                    Baseline Objective: <b style={{ color: colors.text }}>{Number(s1Info.base).toFixed(4)}</b>
+              <div className="mt-3 text-sm space-y-1 p-3 rounded-md" style={{ backgroundColor: colors.panel + "60", color: colors.textMuted }}>
+                {s1Info.used !== undefined && (
+                  <div className="mb-2">
+                    Threshold used: <b style={{ color: colors.text }}>{s1Info.used}%</b>
                   </div>
                 )}
-                {s1Info.s1 && (
+                {s1Info.base !== undefined && s1Info.s1 !== undefined && (
                   <div>
-                    S1 Objective: <b style={{ color: colors.text }}>{Number(s1Info.s1).toFixed(4)}</b>
+                    Baseline Objective: <b style={{ color: colors.text }}>{s1Info.base.toFixed(4)}</b> — S1 Objective: <b style={{ color: colors.text }}>{s1Info.s1.toFixed(4)}</b>
                   </div>
                 )}
-                {s1Info.base && s1Info.s1 && (
+                {s1Info.delta !== undefined && (
                   <div className="pt-1 border-t" style={{ borderColor: colors.accent + "30" }}>
                     Δ%: <b style={{ 
-                      color: Number(s1Info.base) > Number(s1Info.s1) ? (colors.success || "#10b981") : (colors.error || "#ef4444")
+                      color: (s1Info.delta >= 0) ? (colors.success || "#10b981") : (colors.error || "#ef4444")
                     }}>
-                      {(((Number(s1Info.base) - Number(s1Info.s1)) / Number(s1Info.base)) * 100).toFixed(2)}%
+                      {s1Info.delta.toFixed(2)}%
                     </b>
-                    {Number(s1Info.base) > Number(s1Info.s1) ? (
+                    {s1Info.delta >= 0 ? (
                       <span className="ml-1 text-xs">✓ Improvement</span>
                     ) : (
                       <span className="ml-1 text-xs">⚠ Trade-off</span>
