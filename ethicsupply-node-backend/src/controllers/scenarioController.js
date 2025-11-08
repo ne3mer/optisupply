@@ -425,7 +425,9 @@ exports.runScenario = async (req, res) => {
     if (type === "s1") {
       // IMPORTANT: use ?? not || so 0 is not discarded, and Number() to ensure numeric
       const minMarginPct = Number(params?.minMarginPct ?? 15);
+      console.log(`[scenarioController] S1 request received with minMarginPct: ${minMarginPct} (from params: ${JSON.stringify(params)})`);
       const { rows, baselineObjective, s1Objective } = await runner.runS1(minMarginPct);
+      console.log(`[scenarioController] S1 returned ${rows.length} rows, baselineObjective: ${baselineObjective}, s1Objective: ${s1Objective}`);
 
       // Convert rows to CSV
       const headers = Object.keys(rows[0] || {});

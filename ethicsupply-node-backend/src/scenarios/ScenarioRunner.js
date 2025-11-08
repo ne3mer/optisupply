@@ -227,6 +227,7 @@ class ScenarioRunner {
    * Constraint: margin_pct >= minMarginPct (if real margin data exists)
    */
   async runS1(minMarginPct = 15) {
+    console.log(`[S1] Running with minMarginPct = ${minMarginPct}`);
     const suppliers = await this.getAllSuppliers();
     
     // Build baseline rows with all scores
@@ -300,8 +301,11 @@ class ScenarioRunner {
       
       const passed = suppliersWithRealMargin.filter(r => {
         const m = r["Margin %"];
-        return m != null && Number.isFinite(m) && m >= Number(minMarginPct);
+        const passes = m != null && Number.isFinite(m) && m >= Number(minMarginPct);
+        return passes;
       });
+      
+      console.log(`[S1] Suppliers with real margin: ${suppliersWithRealMargin.length}, Passed threshold (≥${minMarginPct}%): ${passed.length}`);
       
       if (passed.length === 0) {
         // All suppliers with real margins failed constraint - skip constraint, use full pool
@@ -312,6 +316,7 @@ class ScenarioRunner {
         // Some suppliers passed - use only those (constraint applied)
         constrained = passed;
         constraintApplied = true;
+        console.log(`[S1] Constraint applied: ${constrained.length} suppliers passed margin threshold ≥${minMarginPct}%`);
       }
     }
     

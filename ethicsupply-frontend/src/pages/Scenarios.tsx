@@ -57,6 +57,7 @@ export default function Scenarios() {
       // For S1, use the margin threshold from state
       if (type === "s1") {
         const s1Params = { ...params, minMarginPct: s1MarginThreshold };
+        console.log(`[Scenarios] S1 request: threshold=${s1MarginThreshold}, params=`, s1Params);
         const response = await fetch(getApiEndpoint("scenarios/run"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
