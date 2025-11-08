@@ -3,6 +3,56 @@ const { generateRecommendations } = require("./recommendationController");
 const db = require("../models");
 const { scoreSupplier, scoreSupplierWithBreakdown } = require("../utils/esgScoring");
 
+// Helper function to calculate supplier scores
+// Defined early so it can be used throughout this file
+async function calculateSupplierScores(supplier) {
+  try {
+    // Get current settings
+    const settings = await db.ScoringSettings.getDefault();
+    const scores = scoreSupplier(supplier, settings);
+
+    const roundToTwo = (value) =>
+      Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
+
+    const result = {
+      ethical_score: roundToTwo(scores.ethical_score),
+      environmental_score: roundToTwo(scores.environmental_score),
+      social_score: roundToTwo(scores.social_score),
+      governance_score: roundToTwo(scores.governance_score),
+      risk_level: scores.risk_level,
+      risk_factor: roundToTwo(scores.risk_factor),
+      risk_penalty: scores.risk_penalty !== null ? roundToTwo(scores.risk_penalty) : null, // 0-100 or null
+      completeness_ratio: roundToTwo(scores.completeness_ratio),
+      composite_score: roundToTwo(scores.composite_score),
+      // Use camelCase consistently in API (finalScore)
+      // Store as both camelCase and snake_case for compatibility
+      finalScore: roundToTwo(scores.finalScore ?? scores.ethical_score), // Final score (post-penalty)
+    };
+
+    try {
+      const name = supplier?.name || supplier?._id || 'unknown-supplier';
+      console.log(`[scoring] completeness_ratio for ${name}: ${result.completeness_ratio}`);
+    } catch {}
+
+    return result;
+  } catch (error) {
+    console.error("Error calculating supplier scores:", error);
+    return {
+      ethical_score: 50,
+      environmental_score: 50,
+      social_score: 50,
+      governance_score: 50,
+      risk_level: "medium",
+      risk_factor: 0.5,
+      completeness_ratio: 0,
+      composite_score: 50,
+    };
+  }
+}
+
+// Export the function for use in other modules (e.g., adminController)
+exports.calculateSupplierScores = calculateSupplierScores;
+
 // Get all suppliers (with potential filtering/pagination in the future)
 exports.getSuppliers = async (req, res) => {
   try {
@@ -1419,52 +1469,8 @@ function calculateConfidenceScores(mlScores) {
   };
 }
 
-// Helper function to calculate supplier scores
-// Exported for use in adminController
-exports.calculateSupplierScores = async function calculateSupplierScores(supplier) {
-  try {
-    // Get current settings
-    const settings = await db.ScoringSettings.getDefault();
-    const scores = scoreSupplier(supplier, settings);
-
-    const roundToTwo = (value) =>
-      Number.isFinite(value) ? Math.round(value * 100) / 100 : 0;
-
-    const result = {
-      ethical_score: roundToTwo(scores.ethical_score),
-      environmental_score: roundToTwo(scores.environmental_score),
-      social_score: roundToTwo(scores.social_score),
-      governance_score: roundToTwo(scores.governance_score),
-      risk_level: scores.risk_level,
-      risk_factor: roundToTwo(scores.risk_factor),
-      risk_penalty: scores.risk_penalty !== null ? roundToTwo(scores.risk_penalty) : null, // 0-100 or null
-      completeness_ratio: roundToTwo(scores.completeness_ratio),
-      composite_score: roundToTwo(scores.composite_score),
-      // Use camelCase consistently in API (finalScore)
-      // Store as both camelCase and snake_case for compatibility
-      finalScore: roundToTwo(scores.finalScore ?? scores.ethical_score), // Final score (post-penalty)
-    };
-
-    try {
-      const name = supplier?.name || supplier?._id || 'unknown-supplier';
-      console.log(`[scoring] completeness_ratio for ${name}: ${result.completeness_ratio}`);
-    } catch {}
-
-    return result;
-  } catch (error) {
-    console.error("Error calculating supplier scores:", error);
-    return {
-      ethical_score: 50,
-      environmental_score: 50,
-      social_score: 50,
-      governance_score: 50,
-      risk_level: "medium",
-      risk_factor: 0.5,
-      completeness_ratio: 0,
-      composite_score: 50,
-    };
-  }
-}
+// calculateSupplierScores is now defined at the top of the file
+// This duplicate definition has been removed - see top of file
 
 // Bulk update margins for multiple suppliers
 exports.bulkSetMargins = async (req, res) => {
