@@ -302,40 +302,24 @@ class ScenarioRunner {
       constraintApplied = false; // Explicitly set to false
     } else {
       // Real margin data exists - apply constraint
-      // Filter by actual margin value (not default), checking source
-      const filtered = withEi.filter(r => {
-        // Only apply constraint if margin source is "actual" or "derived"
-        if (r._marginSource !== "actual" && r._marginSource !== "derived") {
-          return true; // Include default margins (they're fallbacks)
-        }
+      // Filter to only suppliers with actual/derived margins that pass threshold
+      const suppliersWithRealMargin = withEi.filter(r => 
+        r._marginSource === "actual" || r._marginSource === "derived"
+      );
+      
+      const passed = suppliersWithRealMargin.filter(r => {
         const m = r["Margin %"];
         return m != null && Number.isFinite(m) && m >= minMarginPct;
       });
       
-      if (filtered.length === 0 || filtered.length === withEi.length) {
-        // All suppliers failed constraint OR all passed (unlikely but handle it)
-        // Check if any actually failed
-        const failed = withEi.filter(r => {
-          if (r._marginSource !== "actual" && r._marginSource !== "derived") {
-            return false; // Default margins don't count as failures
-          }
-          const m = r["Margin %"];
-          return m == null || !Number.isFinite(m) || m < minMarginPct;
-        });
-        
-        if (failed.length > 0 && failed.length === withEi.length) {
-          // All suppliers with real margins failed constraint
-          console.warn(`⚠️  All suppliers failed margin constraint (≥${minMarginPct}%); skipping constraint for S1.`);
-          constrained = withEi;
-          constraintApplied = false;
-        } else {
-          // Some passed - use filtered set
-          constrained = filtered;
-          constraintApplied = true;
-        }
+      if (passed.length === 0) {
+        // All suppliers with real margins failed constraint - skip constraint, use full pool
+        console.warn(`⚠️  All suppliers failed margin constraint (≥${minMarginPct}%); skipping constraint for S1.`);
+        constrained = withEi;
+        constraintApplied = false;
       } else {
-        // Some suppliers passed - use only those
-        constrained = filtered;
+        // Some suppliers passed - use only those (constraint applied)
+        constrained = passed;
         constraintApplied = true;
       }
     }
