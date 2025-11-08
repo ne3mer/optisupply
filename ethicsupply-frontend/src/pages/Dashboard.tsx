@@ -1672,21 +1672,23 @@ const Dashboard = () => {
         </div>
       </motion.div>
 
-      {/* Data Quality Card */}
-      <div className="grid grid-cols-1 gap-6 mb-8">
-        <DataQualityCard
-          suppliers={allSuppliers}
-          bands={dqBands}
-          colors={{
-            panel: colors.card,
-            accent: colors.accent,
-            text: colors.text,
-            textMuted: colors.textMuted,
-            success: colors.success,
-            warning: colors.warning,
-            error: colors.error,
-          }}
-        />
+      {/* Data Quality Card - Compact */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="lg:col-span-1">
+          <DataQualityCard
+            suppliers={allSuppliers}
+            bands={dqBands}
+            colors={{
+              panel: colors.card,
+              accent: colors.accent,
+              text: colors.text,
+              textMuted: colors.textMuted,
+              success: colors.success,
+              warning: colors.warning,
+              error: colors.error,
+            }}
+          />
+        </div>
       </div>
 
       {pillarCards.length > 0 && (

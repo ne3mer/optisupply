@@ -48,19 +48,24 @@ const formatPercent = (value: any, decimals: number = 1): string => {
 };
 
 // Helper function to add page header
-const addPageHeader = (doc: jsPDF, title: string, pageNum: number, totalPages: number) => {
+const addPageHeader = (
+  doc: jsPDF,
+  title: string,
+  pageNum: number,
+  totalPages: number
+) => {
   doc.setFillColor(13, 15, 26);
   doc.rect(0, 0, 210, 297, "F");
-  
+
   // Header bar
   doc.setFillColor(77, 91, 255);
   doc.rect(0, 0, 210, 15, "F");
-  
+
   doc.setTextColor(224, 224, 255);
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.text(title, 105, 10, { align: "center" });
-  
+
   // Page number
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
@@ -68,11 +73,16 @@ const addPageHeader = (doc: jsPDF, title: string, pageNum: number, totalPages: n
 };
 
 // Helper function to add page footer
-const addPageFooter = (doc: jsPDF, year: number, pageNum: number, totalPages: number) => {
+const addPageFooter = (
+  doc: jsPDF,
+  year: number,
+  pageNum: number,
+  totalPages: number
+) => {
   // Footer separator
   doc.setDrawColor(77, 91, 255, 0.3);
   doc.line(20, 280, 190, 280);
-  
+
   // Footer text
   doc.setTextColor(138, 148, 200);
   doc.setFontSize(8);
@@ -109,7 +119,9 @@ export const generateComprehensivePDFReport = async (
   doc.setTextColor(224, 224, 255);
   doc.setFontSize(14);
   doc.setFont("helvetica", "normal");
-  doc.text(`Generated on: ${reportData.summary.date}`, 105, 65, { align: "center" });
+  doc.text(`Generated on: ${reportData.summary.date}`, 105, 65, {
+    align: "center",
+  });
 
   // Logo placeholder
   doc.setFillColor(77, 91, 255);
@@ -131,10 +143,22 @@ export const generateComprehensivePDFReport = async (
   const metrics = [
     ["Total Suppliers", reportData.summary.totalSuppliers.toString()],
     ["Average ESG Score", `${Math.round(reportData.summary.avgEthicalScore)}%`],
-    ["Average Composite Score", `${Math.round(reportData.summary.avgCompositeScore)}%`],
-    ["Average CO₂ Emissions", `${formatValue(reportData.summary.avgCO2Emissions, 1)} tons`],
-    ["Average Risk Factor", `${formatPercent(reportData.summary.avgRiskFactor)}`],
-    ["Data Completeness", `${formatPercent(reportData.summary.avgCompletenessRatio)}`],
+    [
+      "Average Composite Score",
+      `${Math.round(reportData.summary.avgCompositeScore)}%`,
+    ],
+    [
+      "Average CO₂ Emissions",
+      `${formatValue(reportData.summary.avgCO2Emissions, 1)} tons`,
+    ],
+    [
+      "Average Risk Factor",
+      `${formatPercent(reportData.summary.avgRiskFactor)}`,
+    ],
+    [
+      "Data Completeness",
+      `${formatPercent(reportData.summary.avgCompletenessRatio)}`,
+    ],
   ];
 
   let metricsYPos = 195;
@@ -190,46 +214,62 @@ export const generateComprehensivePDFReport = async (
     [
       "Low Risk",
       (reportData.summary.riskBreakdown.low || 0).toString(),
-      `${(((reportData.summary.riskBreakdown.low || 0) / reportData.summary.totalSuppliers) * 100).toFixed(1)}%`,
+      `${(
+        ((reportData.summary.riskBreakdown.low || 0) /
+          reportData.summary.totalSuppliers) *
+        100
+      ).toFixed(1)}%`,
     ],
     [
       "Medium Risk",
       (reportData.summary.riskBreakdown.medium || 0).toString(),
-      `${(((reportData.summary.riskBreakdown.medium || 0) / reportData.summary.totalSuppliers) * 100).toFixed(1)}%`,
+      `${(
+        ((reportData.summary.riskBreakdown.medium || 0) /
+          reportData.summary.totalSuppliers) *
+        100
+      ).toFixed(1)}%`,
     ],
     [
       "High Risk",
       (reportData.summary.riskBreakdown.high || 0).toString(),
-      `${(((reportData.summary.riskBreakdown.high || 0) / reportData.summary.totalSuppliers) * 100).toFixed(1)}%`,
+      `${(
+        ((reportData.summary.riskBreakdown.high || 0) /
+          reportData.summary.totalSuppliers) *
+        100
+      ).toFixed(1)}%`,
     ],
     [
       "Critical Risk",
       (reportData.summary.riskBreakdown.critical || 0).toString(),
-      `${(((reportData.summary.riskBreakdown.critical || 0) / reportData.summary.totalSuppliers) * 100).toFixed(1)}%`,
+      `${(
+        ((reportData.summary.riskBreakdown.critical || 0) /
+          reportData.summary.totalSuppliers) *
+        100
+      ).toFixed(1)}%`,
     ],
   ];
 
-      autoTable(doc, {
-        head: [riskData[0]],
-        body: riskData.slice(1),
-        startY: textY + 20,
-        styles: {
-          font: "helvetica",
-          fillColor: [25, 28, 43],
-          textColor: [224, 224, 255],
-          lineColor: [77, 91, 255],
-          lineWidth: 0.2,
-          fontSize: 10,
-        },
-        headStyles: {
-          fillColor: [77, 91, 255],
-          textColor: [224, 224, 255],
-          fontStyle: "bold",
-        },
-        alternateRowStyles: {
-          fillColor: [30, 33, 48],
-        },
-      } as any);
+  autoTable(doc, {
+    head: [riskData[0]],
+    body: riskData.slice(1),
+    startY: textY + 20,
+    styles: {
+      font: "helvetica",
+      fillColor: [25, 28, 43],
+      textColor: [224, 224, 255],
+      lineColor: [77, 91, 255],
+      lineWidth: 0.2,
+      fontSize: 10,
+    },
+    headStyles: {
+      fillColor: [77, 91, 255],
+      textColor: [224, 224, 255],
+      fontStyle: "bold",
+    },
+    alternateRowStyles: {
+      fillColor: [30, 33, 48],
+    },
+  } as any);
 
   addPageFooter(doc, year, 2, 0);
 
@@ -280,22 +320,34 @@ export const generateComprehensivePDFReport = async (
   if (allSuppliers && allSuppliers.length > 0) {
     // Sort suppliers by final score (descending)
     const sortedSuppliers = [...allSuppliers].sort((a, b) => {
-      const scoreA = (a as any).finalScore ?? a.composite_score ?? a.ethical_score ?? 0;
-      const scoreB = (b as any).finalScore ?? b.composite_score ?? b.ethical_score ?? 0;
+      const scoreA =
+        (a as any).finalScore ?? a.composite_score ?? a.ethical_score ?? 0;
+      const scoreB =
+        (b as any).finalScore ?? b.composite_score ?? b.ethical_score ?? 0;
       return scoreB - scoreA;
     });
 
     // Split suppliers into pages (20 per page)
     const suppliersPerPage = 20;
-    const totalSupplierPages = Math.ceil(sortedSuppliers.length / suppliersPerPage);
+    const totalSupplierPages = Math.ceil(
+      sortedSuppliers.length / suppliersPerPage
+    );
 
     for (let pageIdx = 0; pageIdx < totalSupplierPages; pageIdx++) {
       if (pageIdx > 0) doc.addPage();
       const pageNum = 4 + pageIdx;
-      addPageHeader(doc, `Complete Supplier Listing (${pageIdx + 1}/${totalSupplierPages})`, pageNum, 0);
+      addPageHeader(
+        doc,
+        `Complete Supplier Listing (${pageIdx + 1}/${totalSupplierPages})`,
+        pageNum,
+        0
+      );
 
       const startIdx = pageIdx * suppliersPerPage;
-      const endIdx = Math.min(startIdx + suppliersPerPage, sortedSuppliers.length);
+      const endIdx = Math.min(
+        startIdx + suppliersPerPage,
+        sortedSuppliers.length
+      );
       const pageSuppliers = sortedSuppliers.slice(startIdx, endIdx);
 
       // Comprehensive supplier table
@@ -315,7 +367,13 @@ export const generateComprehensivePDFReport = async (
 
       pageSuppliers.forEach((supplier, idx) => {
         const rank = startIdx + idx + 1;
-        const finalScore = formatValue((supplier as any).finalScore ?? supplier.composite_score ?? supplier.ethical_score ?? 0, 1);
+        const finalScore = formatValue(
+          (supplier as any).finalScore ??
+            supplier.composite_score ??
+            supplier.ethical_score ??
+            0,
+          1
+        );
         const envScore = formatValue(supplier.environmental_score ?? 0, 1);
         const socScore = formatValue(supplier.social_score ?? 0, 1);
         const govScore = formatValue(supplier.governance_score ?? 0, 1);
@@ -379,10 +437,18 @@ export const generateComprehensivePDFReport = async (
     for (let pageIdx = 0; pageIdx < totalDetailPages; pageIdx++) {
       doc.addPage();
       const pageNum = 4 + totalSupplierPages + pageIdx;
-      addPageHeader(doc, `Detailed Supplier Metrics (${pageIdx + 1}/${totalDetailPages})`, pageNum, 0);
+      addPageHeader(
+        doc,
+        `Detailed Supplier Metrics (${pageIdx + 1}/${totalDetailPages})`,
+        pageNum,
+        0
+      );
 
       const startIdx = pageIdx * detailsPerPage;
-      const endIdx = Math.min(startIdx + detailsPerPage, sortedSuppliers.length);
+      const endIdx = Math.min(
+        startIdx + detailsPerPage,
+        sortedSuppliers.length
+      );
       const detailSuppliers = sortedSuppliers.slice(startIdx, endIdx);
 
       let yPos = 35;
@@ -399,11 +465,24 @@ export const generateComprehensivePDFReport = async (
         doc.setTextColor(138, 148, 200);
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
-        doc.text(`${supplier.country || "N/A"} | ${supplier.industry || "N/A"}`, 25, yPos + 6);
+        doc.text(
+          `${supplier.country || "N/A"} | ${supplier.industry || "N/A"}`,
+          25,
+          yPos + 6
+        );
 
         // Key metrics
         const metrics = [
-          ["Final Score", formatValue((supplier as any).finalScore ?? supplier.composite_score ?? supplier.ethical_score ?? 0, 1)],
+          [
+            "Final Score",
+            formatValue(
+              (supplier as any).finalScore ??
+                supplier.composite_score ??
+                supplier.ethical_score ??
+                0,
+              1
+            ),
+          ],
           ["Environmental", formatValue(supplier.environmental_score ?? 0, 1)],
           ["Social", formatValue(supplier.social_score ?? 0, 1)],
           ["Governance", formatValue(supplier.governance_score ?? 0, 1)],
@@ -457,7 +536,12 @@ export const generateComprehensivePDFReport = async (
         if (yPos > 250) {
           doc.addPage();
           const newPageNum = doc.getNumberOfPages();
-          addPageHeader(doc, `Detailed Supplier Metrics (${pageIdx + 1}/${totalDetailPages})`, newPageNum, 0);
+          addPageHeader(
+            doc,
+            `Detailed Supplier Metrics (${pageIdx + 1}/${totalDetailPages})`,
+            newPageNum,
+            0
+          );
           yPos = 35;
         }
       });
@@ -484,14 +568,27 @@ export const generateComprehensivePDFReport = async (
 
     const industryData = Array.from(industryMap.entries())
       .map(([industry, suppliers]) => {
-        const avgFinal = suppliers.reduce((sum, s) => {
-          const score = (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? 0;
-          return sum + score;
-        }, 0) / suppliers.length;
-        const avgEnv = suppliers.reduce((sum, s) => sum + (s.environmental_score ?? 0), 0) / suppliers.length;
-        const avgSoc = suppliers.reduce((sum, s) => sum + (s.social_score ?? 0), 0) / suppliers.length;
-        const avgGov = suppliers.reduce((sum, s) => sum + (s.governance_score ?? 0), 0) / suppliers.length;
-        const avgRisk = suppliers.reduce((sum, s) => sum + (s.risk_factor ?? 0), 0) / suppliers.length;
+        const avgFinal =
+          suppliers.reduce((sum, s) => {
+            const score =
+              (s as any).finalScore ??
+              s.composite_score ??
+              s.ethical_score ??
+              0;
+            return sum + score;
+          }, 0) / suppliers.length;
+        const avgEnv =
+          suppliers.reduce((sum, s) => sum + (s.environmental_score ?? 0), 0) /
+          suppliers.length;
+        const avgSoc =
+          suppliers.reduce((sum, s) => sum + (s.social_score ?? 0), 0) /
+          suppliers.length;
+        const avgGov =
+          suppliers.reduce((sum, s) => sum + (s.governance_score ?? 0), 0) /
+          suppliers.length;
+        const avgRisk =
+          suppliers.reduce((sum, s) => sum + (s.risk_factor ?? 0), 0) /
+          suppliers.length;
 
         return {
           industry,
@@ -506,7 +603,15 @@ export const generateComprehensivePDFReport = async (
       .sort((a, b) => b.count - a.count);
 
     const industryTableData = [
-      ["Industry", "Count", "Avg Final", "Avg Env", "Avg Soc", "Avg Gov", "Avg Risk"],
+      [
+        "Industry",
+        "Count",
+        "Avg Final",
+        "Avg Env",
+        "Avg Soc",
+        "Avg Gov",
+        "Avg Risk",
+      ],
       ...industryData.map((d) => [
         d.industry.substring(0, 25),
         d.count.toString(),
@@ -561,11 +666,18 @@ export const generateComprehensivePDFReport = async (
 
     const countryData = Array.from(countryMap.entries())
       .map(([country, suppliers]) => {
-        const avgFinal = suppliers.reduce((sum, s) => {
-          const score = (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? 0;
-          return sum + score;
-        }, 0) / suppliers.length;
-        const highRisk = suppliers.filter((s) => s.risk_level === "high" || s.risk_level === "critical").length;
+        const avgFinal =
+          suppliers.reduce((sum, s) => {
+            const score =
+              (s as any).finalScore ??
+              s.composite_score ??
+              s.ethical_score ??
+              0;
+            return sum + score;
+          }, 0) / suppliers.length;
+        const highRisk = suppliers.filter(
+          (s) => s.risk_level === "high" || s.risk_level === "critical"
+        ).length;
 
         return {
           country,
@@ -579,7 +691,13 @@ export const generateComprehensivePDFReport = async (
       .slice(0, 30); // Top 30 countries
 
     const countryTableData = [
-      ["Country", "Suppliers", "Avg Final Score", "High Risk Count", "High Risk %"],
+      [
+        "Country",
+        "Suppliers",
+        "Avg Final Score",
+        "High Risk Count",
+        "High Risk %",
+      ],
       ...countryData.map((d) => [
         d.country.substring(0, 25),
         d.count.toString(),
@@ -670,6 +788,9 @@ export const generateComprehensivePDFReport = async (
   }
 
   // Save the PDF
-  doc.save(`OptiSupply_ESG_Report_${year}_${new Date().toISOString().split("T")[0]}.pdf`);
+  doc.save(
+    `OptiSupply_ESG_Report_${year}_${
+      new Date().toISOString().split("T")[0]
+    }.pdf`
+  );
 };
-
