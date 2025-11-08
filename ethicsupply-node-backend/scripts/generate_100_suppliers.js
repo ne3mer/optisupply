@@ -3,21 +3,81 @@
  * Output: CSV file ready for import
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // Industries and their typical characteristics
 const industries = [
-  { name: "Technology", baseEmissions: 50000, baseWater: 20000, baseWaste: 500, renewableBase: 60 },
-  { name: "Manufacturing", baseEmissions: 150000, baseWater: 40000, baseWaste: 1200, renewableBase: 30 },
-  { name: "Textiles & Apparel", baseEmissions: 80000, baseWater: 30000, baseWaste: 800, renewableBase: 25 },
-  { name: "Electronics", baseEmissions: 120000, baseWater: 35000, baseWaste: 1000, renewableBase: 40 },
-  { name: "Food & Beverage", baseEmissions: 100000, baseWater: 50000, baseWaste: 1500, renewableBase: 35 },
-  { name: "Automotive", baseEmissions: 200000, baseWater: 60000, baseWaste: 2000, renewableBase: 25 },
-  { name: "Pharmaceuticals", baseEmissions: 90000, baseWater: 25000, baseWaste: 700, renewableBase: 45 },
-  { name: "Energy", baseEmissions: 300000, baseWater: 80000, baseWaste: 2500, renewableBase: 50 },
-  { name: "Chemicals", baseEmissions: 180000, baseWater: 45000, baseWaste: 1800, renewableBase: 20 },
-  { name: "Construction", baseEmissions: 110000, baseWater: 40000, baseWaste: 1300, renewableBase: 15 },
+  {
+    name: "Technology",
+    baseEmissions: 50000,
+    baseWater: 20000,
+    baseWaste: 500,
+    renewableBase: 60,
+  },
+  {
+    name: "Manufacturing",
+    baseEmissions: 150000,
+    baseWater: 40000,
+    baseWaste: 1200,
+    renewableBase: 30,
+  },
+  {
+    name: "Textiles & Apparel",
+    baseEmissions: 80000,
+    baseWater: 30000,
+    baseWaste: 800,
+    renewableBase: 25,
+  },
+  {
+    name: "Electronics",
+    baseEmissions: 120000,
+    baseWater: 35000,
+    baseWaste: 1000,
+    renewableBase: 40,
+  },
+  {
+    name: "Food & Beverage",
+    baseEmissions: 100000,
+    baseWater: 50000,
+    baseWaste: 1500,
+    renewableBase: 35,
+  },
+  {
+    name: "Automotive",
+    baseEmissions: 200000,
+    baseWater: 60000,
+    baseWaste: 2000,
+    renewableBase: 25,
+  },
+  {
+    name: "Pharmaceuticals",
+    baseEmissions: 90000,
+    baseWater: 25000,
+    baseWaste: 700,
+    renewableBase: 45,
+  },
+  {
+    name: "Energy",
+    baseEmissions: 300000,
+    baseWater: 80000,
+    baseWaste: 2500,
+    renewableBase: 50,
+  },
+  {
+    name: "Chemicals",
+    baseEmissions: 180000,
+    baseWater: 45000,
+    baseWaste: 1800,
+    renewableBase: 20,
+  },
+  {
+    name: "Construction",
+    baseEmissions: 110000,
+    baseWater: 40000,
+    baseWaste: 1300,
+    renewableBase: 15,
+  },
 ];
 
 const countries = [
@@ -34,8 +94,40 @@ const countries = [
 ];
 
 // Company name generators
-const companyPrefixes = ["Global", "Advanced", "Sustainable", "Eco", "Green", "Premium", "Elite", "Prime", "Superior", "Innovative", "Modern", "Future", "Next", "Pro", "Ultra"];
-const companySuffixes = ["Solutions", "Industries", "Corp", "Group", "Enterprises", "Systems", "Technologies", "Manufacturing", "Services", "Network", "Partners", "Holdings", "International", "Limited", "Inc"];
+const companyPrefixes = [
+  "Global",
+  "Advanced",
+  "Sustainable",
+  "Eco",
+  "Green",
+  "Premium",
+  "Elite",
+  "Prime",
+  "Superior",
+  "Innovative",
+  "Modern",
+  "Future",
+  "Next",
+  "Pro",
+  "Ultra",
+];
+const companySuffixes = [
+  "Solutions",
+  "Industries",
+  "Corp",
+  "Group",
+  "Enterprises",
+  "Systems",
+  "Technologies",
+  "Manufacturing",
+  "Services",
+  "Network",
+  "Partners",
+  "Holdings",
+  "International",
+  "Limited",
+  "Inc",
+];
 
 function randomElement(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -64,53 +156,84 @@ function generateCompanyName(index) {
 function calculateScores(supplier) {
   // Environmental Score (0-100)
   const envFactors = [
-    supplier.renewable_energy_percent / 100 * 30,
+    (supplier.renewable_energy_percent / 100) * 30,
     (1 - supplier.energy_efficiency) * 20 + supplier.energy_efficiency * 20,
-    (1 - supplier.waste_management_score) * 15 + supplier.waste_management_score * 15,
+    (1 - supplier.waste_management_score) * 15 +
+      supplier.waste_management_score * 15,
     (1 - supplier.pollution_control) * 15 + supplier.pollution_control * 15,
-    Math.min(100, (supplier.total_emissions / supplier.revenue_musd) < 100 ? 20 : 10),
+    Math.min(
+      100,
+      supplier.total_emissions / supplier.revenue_musd < 100 ? 20 : 10
+    ),
   ];
-  const environmental_score = Math.min(100, Math.max(0, envFactors.reduce((a, b) => a + b, 0)));
+  const environmental_score = Math.min(
+    100,
+    Math.max(
+      0,
+      envFactors.reduce((a, b) => a + b, 0)
+    )
+  );
 
   // Social Score (0-100)
   const socialFactors = [
     supplier.living_wage_ratio * 20,
-    supplier.gender_diversity_percent / 100 * 15,
+    (supplier.gender_diversity_percent / 100) * 15,
     supplier.worker_safety * 15,
     supplier.community_engagement * 15,
     supplier.diversity_inclusion_score * 15,
     Math.max(0, 20 - supplier.injury_rate * 10),
-    supplier.training_hours / 50 * 10,
+    (supplier.training_hours / 50) * 10,
   ];
-  const social_score = Math.min(100, Math.max(0, socialFactors.reduce((a, b) => a + b, 0)));
+  const social_score = Math.min(
+    100,
+    Math.max(
+      0,
+      socialFactors.reduce((a, b) => a + b, 0)
+    )
+  );
 
   // Governance Score (0-100)
   const govFactors = [
-    supplier.transparency_score / 100 * 25,
-    supplier.board_diversity / 100 * 15,
-    supplier.board_independence / 100 * 15,
+    (supplier.transparency_score / 100) * 25,
+    (supplier.board_diversity / 100) * 15,
+    (supplier.board_independence / 100) * 15,
     supplier.ethics_program * 15,
     supplier.compliance_systems * 15,
-    (supplier.anti_corruption_policy ? 15 : 0),
+    supplier.anti_corruption_policy ? 15 : 0,
     (1 - supplier.corruption_risk) * 10,
   ];
-  const governance_score = Math.min(100, Math.max(0, govFactors.reduce((a, b) => a + b, 0)));
+  const governance_score = Math.min(
+    100,
+    Math.max(
+      0,
+      govFactors.reduce((a, b) => a + b, 0)
+    )
+  );
 
   // Composite Score (weighted average: E=0.4, S=0.3, G=0.3)
-  const composite_score = round(environmental_score * 0.4 + social_score * 0.3 + governance_score * 0.3, 1);
+  const composite_score = round(
+    environmental_score * 0.4 + social_score * 0.3 + governance_score * 0.3,
+    1
+  );
 
   // Risk Factor (weighted average of risk scores)
   const risk_factor = round(
-    (supplier.geopolitical_risk * 0.33 + supplier.climate_risk * 0.33 + supplier.labor_dispute_risk * 0.34),
+    supplier.geopolitical_risk * 0.33 +
+      supplier.climate_risk * 0.33 +
+      supplier.labor_dispute_risk * 0.34,
     2
   );
 
   // Risk Penalty (if risk_factor > 0.5)
   const risk_excess = Math.max(0, risk_factor - 0.5);
-  const risk_penalty = risk_excess > 0 ? round(15 * risk_excess * 100, 1) : null;
+  const risk_penalty =
+    risk_excess > 0 ? round(15 * risk_excess * 100, 1) : null;
 
   // Final Score (composite - penalty, clamped 0-100)
-  const finalScore = Math.max(0, Math.min(100, round(composite_score - (risk_penalty || 0), 1)));
+  const finalScore = Math.max(
+    0,
+    Math.min(100, round(composite_score - (risk_penalty || 0), 1))
+  );
 
   // Risk Level
   let risk_level = "low";
@@ -123,7 +246,9 @@ function calculateScores(supplier) {
 
   // Completeness Ratio (estimate based on filled fields)
   const totalFields = 48;
-  const filledFields = Object.values(supplier).filter(v => v !== null && v !== undefined && v !== "").length;
+  const filledFields = Object.values(supplier).filter(
+    (v) => v !== null && v !== undefined && v !== ""
+  ).length;
   const completeness_ratio = round(filledFields / totalFields, 2);
 
   return {
@@ -143,16 +268,19 @@ function calculateScores(supplier) {
 function generateSupplier(index) {
   const industry = randomElement(industries);
   const country = randomElement(countries);
-  
+
   // Revenue and cost (realistic ranges)
   const revenue_musd = round(randomBetween(100, 5000), 1);
   const margin_pct = round(randomBetween(5, 35), 1);
   const cost_musd = round(revenue_musd * (1 - margin_pct / 100), 1);
   const revenue = revenue_musd; // Legacy field
-  
+
   // Employee count (scales with revenue)
-  const employee_count = randomInt(Math.floor(revenue_musd * 2), Math.floor(revenue_musd * 8));
-  
+  const employee_count = randomInt(
+    Math.floor(revenue_musd * 2),
+    Math.floor(revenue_musd * 8)
+  );
+
   // Environmental metrics (industry-based)
   const total_emissions = randomInt(
     Math.floor(industry.baseEmissions * 0.7),
@@ -171,12 +299,12 @@ function generateSupplier(index) {
     randomBetween(industry.renewableBase - 20, industry.renewableBase + 30),
     1
   );
-  
+
   // Scores (0-1 range)
   const energy_efficiency = round(randomBetween(0.4, 0.95), 2);
   const waste_management_score = round(randomBetween(0.4, 0.95), 2);
   const pollution_control = round(randomBetween(0.4, 0.95), 2);
-  
+
   // Social metrics
   const injury_rate = round(randomBetween(0.2, 2.5), 2);
   const training_hours = round(randomBetween(10, 50), 1);
@@ -187,7 +315,7 @@ function generateSupplier(index) {
   const community_engagement = round(randomBetween(0.4, 0.9), 2);
   const worker_safety = round(randomBetween(0.5, 0.95), 2);
   const diversity_inclusion_score = round(randomBetween(0.4, 0.9), 2);
-  
+
   // Governance metrics
   const board_diversity = round(randomBetween(20, 60), 1);
   const board_independence = round(randomBetween(40, 80), 1);
@@ -196,13 +324,13 @@ function generateSupplier(index) {
   const ethics_program = round(randomBetween(0.5, 0.95), 2);
   const compliance_systems = round(randomBetween(0.5, 0.95), 2);
   const corruption_risk = round(randomBetween(0.2, 0.6), 2);
-  
+
   // Supply chain metrics
   const delivery_efficiency = round(randomBetween(0.6, 0.95), 2);
   const quality_control_score = round(randomBetween(0.5, 0.95), 2);
   const supplier_diversity = round(randomBetween(0.4, 0.9), 2);
   const traceability = round(randomBetween(0.5, 0.95), 2);
-  
+
   // Risk factors (country-based with variation)
   const geopolitical_risk = round(
     randomBetween(
@@ -225,7 +353,7 @@ function generateSupplier(index) {
     ),
     2
   );
-  
+
   const supplier = {
     name: generateCompanyName(index),
     country: country.name,
@@ -267,10 +395,10 @@ function generateSupplier(index) {
     ethics_program: ethics_program,
     compliance_systems: compliance_systems,
   };
-  
+
   // Calculate scores
   const scores = calculateScores(supplier);
-  
+
   return {
     ...supplier,
     ...scores,
@@ -285,17 +413,55 @@ for (let i = 0; i < 40; i++) {
 
 // CSV Headers (all 48 fields)
 const headers = [
-  "name", "country", "industry", "revenue", "revenue_musd", "cost_musd", "margin_pct", "employee_count",
-  "co2_emissions", "total_emissions", "water_usage", "waste_generated", "renewable_energy_percent",
-  "injury_rate", "training_hours", "living_wage_ratio", "gender_diversity_percent",
-  "board_diversity", "board_independence", "transparency_score", "anti_corruption_policy",
-  "delivery_efficiency", "energy_efficiency", "waste_management_score", "pollution_control",
-  "community_engagement", "worker_safety", "diversity_inclusion_score", "supplier_diversity",
-  "traceability", "quality_control_score", "wage_fairness", "human_rights_index",
-  "geopolitical_risk", "climate_risk", "labor_dispute_risk", "corruption_risk",
-  "ethics_program", "compliance_systems", "risk_factor", "risk_penalty",
-  "ethical_score", "environmental_score", "social_score", "governance_score",
-  "risk_level", "composite_score", "finalScore", "completeness_ratio"
+  "name",
+  "country",
+  "industry",
+  "revenue",
+  "revenue_musd",
+  "cost_musd",
+  "margin_pct",
+  "employee_count",
+  "co2_emissions",
+  "total_emissions",
+  "water_usage",
+  "waste_generated",
+  "renewable_energy_percent",
+  "injury_rate",
+  "training_hours",
+  "living_wage_ratio",
+  "gender_diversity_percent",
+  "board_diversity",
+  "board_independence",
+  "transparency_score",
+  "anti_corruption_policy",
+  "delivery_efficiency",
+  "energy_efficiency",
+  "waste_management_score",
+  "pollution_control",
+  "community_engagement",
+  "worker_safety",
+  "diversity_inclusion_score",
+  "supplier_diversity",
+  "traceability",
+  "quality_control_score",
+  "wage_fairness",
+  "human_rights_index",
+  "geopolitical_risk",
+  "climate_risk",
+  "labor_dispute_risk",
+  "corruption_risk",
+  "ethics_program",
+  "compliance_systems",
+  "risk_factor",
+  "risk_penalty",
+  "ethical_score",
+  "environmental_score",
+  "social_score",
+  "governance_score",
+  "risk_level",
+  "composite_score",
+  "finalScore",
+  "completeness_ratio",
 ];
 
 // Convert to CSV
@@ -310,13 +476,15 @@ function escapeCSV(value) {
 
 const csvRows = [
   headers.join(","),
-  ...suppliers.map(supplier => 
-    headers.map(header => {
-      const value = supplier[header];
-      if (typeof value === "boolean") return value ? "true" : "false";
-      return escapeCSV(value);
-    }).join(",")
-  )
+  ...suppliers.map((supplier) =>
+    headers
+      .map((header) => {
+        const value = supplier[header];
+        if (typeof value === "boolean") return value ? "true" : "false";
+        return escapeCSV(value);
+      })
+      .join(",")
+  ),
 ];
 
 const csvContent = csvRows.join("\n");
@@ -325,11 +493,16 @@ const csvContent = csvRows.join("\n");
 const outputPath = path.join(__dirname, "../data/40_suppliers.csv");
 fs.writeFileSync(outputPath, csvContent, "utf8");
 
-console.log(`✅ Generated ${suppliers.length} suppliers with all fields filled`);
+console.log(
+  `✅ Generated ${suppliers.length} suppliers with all fields filled`
+);
 console.log(`📁 Saved to: ${outputPath}`);
 console.log(`📊 Total fields per supplier: ${headers.length}`);
 console.log(`📈 Sample suppliers:`);
 suppliers.slice(0, 3).forEach((s, i) => {
-  console.log(`   ${i + 1}. ${s.name} (${s.country}, ${s.industry}) - Score: ${s.finalScore}`);
+  console.log(
+    `   ${i + 1}. ${s.name} (${s.country}, ${s.industry}) - Score: ${
+      s.finalScore
+    }`
+  );
 });
-

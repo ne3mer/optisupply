@@ -1420,7 +1420,8 @@ function calculateConfidenceScores(mlScores) {
 }
 
 // Helper function to calculate supplier scores
-async function calculateSupplierScores(supplier) {
+// Exported for use in adminController
+exports.calculateSupplierScores = async function calculateSupplierScores(supplier) {
   try {
     // Get current settings
     const settings = await db.ScoringSettings.getDefault();
