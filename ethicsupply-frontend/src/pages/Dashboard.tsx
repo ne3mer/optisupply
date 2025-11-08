@@ -1559,19 +1559,19 @@ const Dashboard = () => {
         }).length / suppliers.length) * 100
       : 0;
 
-    // Quick insights
+    // Quick insights (use local variables, not extraAnalytics object)
     const insights = [];
-    if (extraAnalytics.watchHighRisk.length > 0) {
+    if (watchHighRisk.length > 0) {
       insights.push({
         type: 'error',
-        title: `${extraAnalytics.watchHighRisk.length} High-Risk Supplier${extraAnalytics.watchHighRisk.length > 1 ? 's' : ''}`,
+        title: `${watchHighRisk.length} High-Risk Supplier${watchHighRisk.length > 1 ? 's' : ''}`,
         message: 'Immediate attention required',
       });
     }
-    if (extraAnalytics.watchLowDisclosure.length > 0) {
+    if (watchLowDisclosure.length > 0) {
       insights.push({
         type: 'warning',
-        title: `${extraAnalytics.watchLowDisclosure.length} Low Disclosure Supplier${extraAnalytics.watchLowDisclosure.length > 1 ? 's' : ''}`,
+        title: `${watchLowDisclosure.length} Low Disclosure Supplier${watchLowDisclosure.length > 1 ? 's' : ''}`,
         message: 'Data completeness below 70%',
       });
     }
