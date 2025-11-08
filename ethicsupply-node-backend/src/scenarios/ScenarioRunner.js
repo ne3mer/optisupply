@@ -278,15 +278,18 @@ class ScenarioRunner {
       return r;
     });
     
-    // Determine if any supplier has real margin data
+    // Determine if any supplier has real margin data (actual or derivable)
     const hasRealMargin = withEi.some(r => {
       const s = r._raw;
-      return s.margin_pct != null || 
-             (this.toNum(s.revenue_musd ?? s.revenue) != null && 
-              this.toNum(s.cost_musd ?? s.cost) != null &&
-              this.toNum(s.revenue_musd ?? s.revenue) > 0 &&
-              this.toNum(s.cost_musd ?? s.cost) >= 0 &&
-              this.toNum(s.cost_musd ?? s.cost) <= this.toNum(s.revenue_musd ?? s.revenue));
+      // Check for actual margin_pct
+      if (s.margin_pct != null) return true;
+      // Check if we can derive from revenue/cost
+      const revenue = this.toNum(s.revenue_musd ?? s.revenue);
+      const cost = this.toNum(s.cost_musd ?? s.cost);
+      if (revenue != null && cost != null && revenue > 0 && cost >= 0 && cost <= revenue) {
+        return true;
+      }
+      return false;
     });
     
     let constrained;
@@ -296,18 +299,40 @@ class ScenarioRunner {
       // No real margin data - skip constraint
       console.warn("⚠️  No real margin data; skipping margin constraint for S1.");
       constrained = withEi;
+      constraintApplied = false; // Explicitly set to false
     } else {
       // Real margin data exists - apply constraint
+      // Filter by actual margin value (not default), checking source
       const filtered = withEi.filter(r => {
+        // Only apply constraint if margin source is "actual" or "derived"
+        if (r._marginSource !== "actual" && r._marginSource !== "derived") {
+          return true; // Include default margins (they're fallbacks)
+        }
         const m = r["Margin %"];
         return m != null && Number.isFinite(m) && m >= minMarginPct;
       });
       
-      if (filtered.length === 0) {
-        // All suppliers failed constraint - log warning and continue with full pool
-        console.warn(`⚠️  All suppliers failed margin constraint (≥${minMarginPct}%); skipping constraint for S1.`);
-        constrained = withEi;
-        constraintApplied = false;
+      if (filtered.length === 0 || filtered.length === withEi.length) {
+        // All suppliers failed constraint OR all passed (unlikely but handle it)
+        // Check if any actually failed
+        const failed = withEi.filter(r => {
+          if (r._marginSource !== "actual" && r._marginSource !== "derived") {
+            return false; // Default margins don't count as failures
+          }
+          const m = r["Margin %"];
+          return m == null || !Number.isFinite(m) || m < minMarginPct;
+        });
+        
+        if (failed.length > 0 && failed.length === withEi.length) {
+          // All suppliers with real margins failed constraint
+          console.warn(`⚠️  All suppliers failed margin constraint (≥${minMarginPct}%); skipping constraint for S1.`);
+          constrained = withEi;
+          constraintApplied = false;
+        } else {
+          // Some passed - use filtered set
+          constrained = filtered;
+          constraintApplied = true;
+        }
       } else {
         // Some suppliers passed - use only those
         constrained = filtered;
@@ -347,26 +372,31 @@ class ScenarioRunner {
       : null;
     
     // Shape final CSV rows (remove internals, include EI, Margin, Margin Source, and Constraint Applied)
-    const out = constrained.map(r => ({
-      SupplierID: r.SupplierID,
-      Rank: r.Rank,
-      Name: r.Name,
-      Industry: r.Industry,
-      "Environmental Score": r["Environmental Score"],
-      "Social Score": r["Social Score"],
-      "Governance Score": r["Governance Score"],
-      "Composite Score": r["Composite Score"],
-      "Risk Penalty": r["Risk Penalty"],
-      "Final Score": r["Final Score"],
-      "Emission Intensity": Number.isFinite(r["Emission Intensity"])
-        ? Number(r["Emission Intensity"]).toFixed(6)
-        : "",
-      "Margin %": r["Margin %"] != null && Number.isFinite(r["Margin %"])
-        ? Number(r["Margin %"]).toFixed(2)
-        : "",
-      "Margin Source": r._marginSource || "default",
-      "Constraint Applied": constraintApplied ? "true" : "false",
-    }));
+    const out = constrained.map(r => {
+      // Ensure margin source is set (should be set earlier, but add safety check)
+      const marginSource = r._marginSource || "default";
+      
+      return {
+        SupplierID: r.SupplierID,
+        Rank: r.Rank,
+        Name: r.Name,
+        Industry: r.Industry,
+        "Environmental Score": r["Environmental Score"],
+        "Social Score": r["Social Score"],
+        "Governance Score": r["Governance Score"],
+        "Composite Score": r["Composite Score"],
+        "Risk Penalty": r["Risk Penalty"],
+        "Final Score": r["Final Score"],
+        "Emission Intensity": Number.isFinite(r["Emission Intensity"])
+          ? Number(r["Emission Intensity"]).toFixed(6)
+          : "",
+        "Margin %": r["Margin %"] != null && Number.isFinite(r["Margin %"])
+          ? Number(r["Margin %"]).toFixed(2)
+          : "",
+        "Margin Source": marginSource,
+        "Constraint Applied": constraintApplied ? "true" : "false",
+      };
+    });
     
     const headers = [
       "SupplierID",
