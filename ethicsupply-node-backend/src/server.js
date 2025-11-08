@@ -30,55 +30,53 @@ async function startServer() {
       }
     }
 
-    // CORS configuration - more permissive for production
-    let corsOptions;
-
-    if (process.env.NODE_ENV === "production") {
-      // In production, use a more permissive CORS policy
-      corsOptions = {
-        origin: true, // Allow all origins
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allowedHeaders: [
-          "Content-Type",
-          "Authorization",
-          "X-Requested-With",
-          "X-HTTP-Method-Override",
-        ],
-        credentials: true,
-        maxAge: 86400, // 24 hours
-      };
-      console.log("Using production CORS policy (all origins allowed)");
-    } else {
-      // In development, use the config-based CORS
-      corsOptions = {
-        origin: function (origin, callback) {
-          // Allow requests with no origin (like mobile apps or curl requests) or from allowed origins
-          if (
-            !origin ||
-            (config.cors.origins && config.cors.origins.indexOf(origin) !== -1)
-          ) {
-            callback(null, true);
-          } else {
-            callback(new Error("Not allowed by CORS"));
-          }
-        },
-        methods: config.cors.methods || [
-          "GET",
-          "POST",
-          "PUT",
-          "DELETE",
-          "OPTIONS",
-        ],
-        allowedHeaders: config.cors.allowedHeaders || [
-          "Content-Type",
-          "Authorization",
-        ],
-        credentials: true,
-        preflightContinue: false,
-        optionsSuccessStatus: 204,
-      };
-      console.log("Using development CORS policy with restricted origins");
-    }
+    // CORS configuration - must use specific origins when credentials are included
+    // Never use wildcard (*) or origin: true when credentials: true
+    const corsOptions = {
+      origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) {
+          return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
+        if (config.cors.origins && config.cors.origins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          // Log for debugging
+          console.warn(`CORS blocked origin: ${origin}. Allowed origins:`, config.cors.origins);
+          callback(new Error(`Not allowed by CORS: ${origin}`));
+        }
+      },
+      methods: config.cors.methods || [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+        "PATCH",
+      ],
+      allowedHeaders: [
+        ...(config.cors.allowedHeaders || []),
+        "X-CSRF-Token",
+        "X-Requested-With",
+        "Accept",
+        "Accept-Version",
+        "Content-Length",
+        "Content-MD5",
+        "Content-Type",
+        "Date",
+        "X-Api-Version",
+        "Authorization",
+        "X-API-Key",
+      ],
+      credentials: true,
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+      maxAge: 86400, // Cache preflight requests for 24 hours
+    };
+    
+    console.log("Using CORS policy with allowed origins:", config.cors.origins);
 
     // Apply CORS middleware
     app.use(cors(corsOptions));
