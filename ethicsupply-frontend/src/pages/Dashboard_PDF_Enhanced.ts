@@ -137,17 +137,17 @@ export const generateComprehensivePDFReport = async (
     ["Data Completeness", `${formatPercent(reportData.summary.avgCompletenessRatio)}`],
   ];
 
-  let yPos = 195;
+  let metricsYPos = 195;
   metrics.forEach(([label, value]) => {
     doc.setTextColor(138, 148, 200);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(label, 30, yPos);
+    doc.text(label, 30, metricsYPos);
     doc.setTextColor(0, 240, 255);
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(value, 150, yPos, { align: "right" });
-    yPos += 12;
+    doc.text(value, 150, metricsYPos, { align: "right" });
+    metricsYPos += 12;
   });
 
   addPageFooter(doc, year, 1, 0); // Will update total pages later
@@ -635,19 +635,19 @@ export const generateComprehensivePDFReport = async (
     "Develop supplier training programs on ESG best practices",
   ];
 
-  let yPos = 50;
+  let recYPos = 50;
   recommendations.forEach((rec, idx) => {
     doc.setFillColor(0, 240, 255);
-    doc.circle(25, yPos - 3, 2, "F");
+    doc.circle(25, recYPos - 3, 2, "F");
     doc.setTextColor(224, 224, 255);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     const lines = doc.splitTextToSize(`${idx + 1}. ${rec}`, 160);
     lines.forEach((line: string) => {
-      doc.text(line, 30, yPos);
-      yPos += 5;
+      doc.text(line, 30, recYPos);
+      recYPos += 5;
     });
-    yPos += 3;
+    recYPos += 3;
   });
 
   addPageFooter(doc, year, pageNum, 0);
