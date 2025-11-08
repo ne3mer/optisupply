@@ -36,6 +36,9 @@ export interface Supplier {
   country: string;
   industry?: string;
   revenue?: number;
+  revenue_musd?: number;
+  cost_musd?: number;
+  margin_pct?: number;
   employee_count?: number;
   co2_emissions: number;
   total_emissions?: number;

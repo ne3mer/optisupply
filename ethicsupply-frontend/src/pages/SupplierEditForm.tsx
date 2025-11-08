@@ -1243,6 +1243,40 @@ const SupplierEditForm = () => {
                     helper="Used to normalize emission and resource intensities."
                   />
                   <InputField
+                    name="revenue_musd"
+                    label="Revenue (M USD) - for margin calculation"
+                    type="number"
+                    value={formData.revenue_musd ?? ""}
+                    onChange={handleChange}
+                    placeholder="e.g., 1250.5"
+                    min={0}
+                    step={0.01}
+                    helper="Revenue in millions USD (used with cost to calculate margin)."
+                  />
+                  <InputField
+                    name="cost_musd"
+                    label="Cost (M USD) - for margin calculation"
+                    type="number"
+                    value={formData.cost_musd ?? ""}
+                    onChange={handleChange}
+                    placeholder="e.g., 1000.2"
+                    min={0}
+                    step={0.01}
+                    helper="Cost in millions USD (used with revenue to calculate margin)."
+                  />
+                  <InputField
+                    name="margin_pct"
+                    label="Margin % (0-100)"
+                    type="number"
+                    value={formData.margin_pct ?? ""}
+                    onChange={handleChange}
+                    placeholder="e.g., 20.5"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    helper="Explicit margin percentage. Leave empty to auto-calculate from Revenue & Cost."
+                  />
+                  <InputField
                     name="employee_count"
                     label="Employee Count"
                     type="number"
