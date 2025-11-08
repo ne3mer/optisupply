@@ -1179,7 +1179,21 @@ const Dashboard = () => {
   const [topMovers, setTopMovers] = useState<{
     increases: Array<{ id: string | number; name: string; delta: number }>;
     decreases: Array<{ id: string | number; name: string; delta: number }>;
-  }>({ increases: [], decreases: [] });
+  }>(() => {
+    // Load persisted Top Movers on initial mount
+    try {
+      const saved = localStorage.getItem("dashboardTopMovers:v1");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.increases) && Array.isArray(parsed.decreases)) {
+          return { increases: parsed.increases, decreases: parsed.decreases };
+        }
+      }
+    } catch (e) {
+      logger.warn("Failed to load persisted Top Movers:", e);
+    }
+    return { increases: [], decreases: [] };
+  });
 
   // Check API connection status
   const checkConnection = async () => {
@@ -1318,23 +1332,32 @@ const Dashboard = () => {
         .sort((a, b) => a.delta - b.delta)
         .slice(0, 5);
       
-      // Only update if we have meaningful changes
+      // Update Top Movers if we have new changes, otherwise preserve existing
       if (diffs.length > 0) {
-        setTopMovers({ increases, decreases });
+        const newMovers = { increases, decreases };
+        setTopMovers(newMovers);
+        // Persist Top Movers to localStorage
+        try {
+          localStorage.setItem("dashboardTopMovers:v1", JSON.stringify(newMovers));
+        } catch (e) {
+          logger.warn("Failed to persist Top Movers:", e);
+        }
       }
       
       // Save current snapshot for next comparison
-      // Only save if we have valid data
-      const toSave: Record<string, { rf?: number; esg?: number }> = {};
-      Object.entries(curr).forEach(([id, v]) => {
-        if (v.rf !== undefined || v.esg !== undefined) {
-          toSave[id] = { rf: v.rf, esg: v.esg };
+      // Only save if we have valid data AND if there were changes (to avoid overwriting on every load)
+      if (Object.keys(prev).length === 0 || diffs.length > 0) {
+        const toSave: Record<string, { rf?: number; esg?: number }> = {};
+        Object.entries(curr).forEach(([id, v]) => {
+          if (v.rf !== undefined || v.esg !== undefined) {
+            toSave[id] = { rf: v.rf, esg: v.esg };
+          }
+        });
+        
+        // Only update localStorage if we have data to save
+        if (Object.keys(toSave).length > 0) {
+          localStorage.setItem("dashboardSnapshot:v1", JSON.stringify(toSave));
         }
-      });
-      
-      // Only update localStorage if we have data to save
-      if (Object.keys(toSave).length > 0) {
-        localStorage.setItem("dashboardSnapshot:v1", JSON.stringify(toSave));
       }
     } catch (e) {
       logger.warn("Top movers calculation failed:", e);
