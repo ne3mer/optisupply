@@ -218,12 +218,13 @@ export default function Scenarios() {
 
         <div className="mt-8 p-4 rounded-lg" style={{ backgroundColor: colors.panel + "80" }}>
           <h3 className="font-semibold mb-2" style={{ color: colors.text }}>
-            CSV Columns (All Scenarios)
+            CSV Columns
           </h3>
           <ul className="text-sm space-y-1" style={{ color: colors.textMuted }}>
-            <li>• SupplierID, Rank, Name, Industry</li>
+            <li>• <strong>All Scenarios:</strong> SupplierID, Rank, Name, Industry</li>
             <li>• Environmental Score, Social Score, Governance Score</li>
             <li>• Composite Score, Risk Penalty, Final Score</li>
+            <li>• <strong>S1 Only:</strong> Emission Intensity, Margin %</li>
           </ul>
         </div>
       </div>
