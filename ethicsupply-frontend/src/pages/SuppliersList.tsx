@@ -351,89 +351,110 @@ const Tooltip = ({ children, content, position = "top" }: { children: React.Reac
   // Robust positioning that ensures tooltip stays within viewport
   useEffect(() => {
     if (isVisible && tooltipRef.current && triggerRef.current) {
-      const tooltip = tooltipRef.current;
-      const trigger = triggerRef.current;
-      
-      // Force a layout recalculation to get accurate dimensions
-      tooltip.style.visibility = "hidden";
-      tooltip.style.display = "block";
-      tooltip.style.position = "fixed";
-      tooltip.style.top = "0";
-      tooltip.style.left = "0";
-      
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const triggerRect = trigger.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const padding = 12;
-      const tooltipWidth = tooltipRect.width || 240; // Fallback width
-      const tooltipHeight = tooltipRect.height || 100; // Fallback height
+      const updatePosition = () => {
+        const tooltip = tooltipRef.current;
+        const trigger = triggerRef.current;
+        if (!tooltip || !trigger) return;
+        
+        // Force a layout recalculation to get accurate dimensions
+        tooltip.style.visibility = "hidden";
+        tooltip.style.display = "block";
+        tooltip.style.position = "fixed";
+        tooltip.style.top = "0";
+        tooltip.style.left = "0";
+        tooltip.style.maxWidth = "280px";
+        tooltip.style.width = "auto";
+        
+      // Wait for next frame to ensure dimensions are calculated
+      requestAnimationFrame(() => {
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const triggerRect = trigger.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const padding = 16; // Increased padding for better spacing
+        const tooltipWidth = Math.min(tooltipRect.width || 240, viewportWidth - padding * 2);
+        const tooltipHeight = Math.min(tooltipRect.height || 100, viewportHeight - padding * 2);
 
-      // Calculate available space
-      const spaceAbove = triggerRect.top;
-      const spaceBelow = viewportHeight - triggerRect.bottom;
-      
-      // Determine best vertical position
-      let topPos: number;
-      let arrowBottom = false;
-      
-      if (position === "top" || (spaceAbove > spaceBelow && spaceAbove > tooltipHeight + padding)) {
-        // Position above
-        topPos = triggerRect.top - tooltipHeight - padding;
-        arrowBottom = true;
-        // Ensure it doesn't go above viewport
-        if (topPos < padding) {
-          topPos = padding;
+        // Calculate available space
+        const spaceAbove = triggerRect.top;
+        const spaceBelow = viewportHeight - triggerRect.bottom;
+        
+        // Determine best vertical position
+        let topPos: number;
+        let arrowBottom = false;
+        
+        if (position === "top" || (spaceAbove > spaceBelow && spaceAbove > tooltipHeight + padding)) {
+          // Position above
+          topPos = triggerRect.top - tooltipHeight - padding;
+          arrowBottom = true;
+          // Ensure it doesn't go above viewport
+          if (topPos < padding) {
+            topPos = padding;
+            arrowBottom = false; // Arrow on top if tooltip is at top of screen
+          }
+        } else {
+          // Position below
+          topPos = triggerRect.bottom + padding;
+          arrowBottom = false;
+          // Ensure it doesn't go below viewport
+          if (topPos + tooltipHeight > viewportHeight - padding) {
+            topPos = Math.max(padding, viewportHeight - tooltipHeight - padding);
+            arrowBottom = true; // Arrow on bottom if tooltip is at bottom of screen
+          }
         }
-      } else {
-        // Position below
-        topPos = triggerRect.bottom + padding;
-        arrowBottom = false;
-        // Ensure it doesn't go below viewport
-        if (topPos + tooltipHeight > viewportHeight - padding) {
-          topPos = viewportHeight - tooltipHeight - padding;
-          if (topPos < padding) topPos = padding; // If still too tall, stick to top
+
+        // Calculate horizontal position - center on trigger, but keep within viewport
+        const triggerCenterX = triggerRect.left + triggerRect.width / 2;
+        let leftPos = triggerCenterX - tooltipWidth / 2;
+        
+        // Adjust if going off-screen horizontally
+        if (leftPos + tooltipWidth > viewportWidth - padding) {
+          leftPos = viewportWidth - tooltipWidth - padding;
         }
-      }
+        if (leftPos < padding) {
+          leftPos = padding;
+        }
 
-      // Calculate horizontal position - center on trigger, but keep within viewport
-      const triggerCenterX = triggerRect.left + triggerRect.width / 2;
-      let leftPos = triggerCenterX - tooltipWidth / 2;
-      
-      // Adjust if going off-screen horizontally
-      if (leftPos + tooltipWidth > viewportWidth - padding) {
-        leftPos = viewportWidth - tooltipWidth - padding;
-      }
-      if (leftPos < padding) {
-        leftPos = padding;
-      }
+        // Calculate arrow position relative to trigger center
+        const arrowOffset = triggerCenterX - leftPos;
+        const arrowLeft = Math.max(16, Math.min(tooltipWidth - 16, arrowOffset)); // Keep arrow within bounds with more margin
 
-      // Calculate arrow position relative to trigger center
-      const arrowOffset = triggerCenterX - leftPos;
-      const arrowLeft = Math.max(12, Math.min(tooltipWidth - 12, arrowOffset)); // Keep arrow within bounds
+        // Apply positioning
+        const newTooltipStyle: React.CSSProperties = {
+          position: "fixed",
+          top: `${topPos}px`,
+          left: `${leftPos}px`,
+          width: `${tooltipWidth}px`,
+          maxWidth: `${Math.min(280, viewportWidth - padding * 2)}px`,
+          minWidth: "200px",
+          maxHeight: `${Math.min(viewportHeight - padding * 2, 300)}px`,
+          zIndex: 9999,
+        };
 
-      // Apply positioning
-      const newTooltipStyle: React.CSSProperties = {
-        position: "fixed",
-        top: `${topPos}px`,
-        left: `${leftPos}px`,
-        maxWidth: `${Math.min(280, viewportWidth - padding * 2)}px`,
-        minWidth: "200px",
-        maxHeight: `${viewportHeight - padding * 2}px`,
-        zIndex: 9999,
+        const newArrowStyle: React.CSSProperties = {
+          [arrowBottom ? "bottom" : "top"]: arrowBottom ? "-4px" : "-4px",
+          left: `${arrowLeft}px`,
+          transform: "translateX(-50%) rotate(45deg)",
+        };
+
+        setTooltipStyle(newTooltipStyle);
+        setArrowStyle(newArrowStyle);
+        
+        // Make visible after positioning
+        tooltip.style.visibility = "visible";
+      });
       };
-
-      const newArrowStyle: React.CSSProperties = {
-        [arrowBottom ? "bottom" : "top"]: arrowBottom ? "-4px" : "-4px",
-        left: `${arrowLeft}px`,
-        transform: "translateX(-50%) rotate(45deg)",
-      };
-
-      setTooltipStyle(newTooltipStyle);
-      setArrowStyle(newArrowStyle);
       
-      // Make visible after positioning
-      tooltip.style.visibility = "visible";
+      updatePosition();
+      
+      // Update on scroll/resize
+      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener("resize", updatePosition);
+      
+      return () => {
+        window.removeEventListener("scroll", updatePosition, true);
+        window.removeEventListener("resize", updatePosition);
+      };
     }
   }, [isVisible, position, content]);
 
@@ -468,8 +489,9 @@ const Tooltip = ({ children, content, position = "top" }: { children: React.Reac
               boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px ${colors.accent}20`,
               wordWrap: "break-word",
               overflowWrap: "break-word",
-              maxHeight: `${window.innerHeight - 24}px`,
               overflowY: "auto",
+              overflowX: "hidden",
+              WebkitOverflowScrolling: "touch",
             }}
           >
             <div className="text-xs leading-relaxed" style={{ color: colors.text }}>
