@@ -1,0 +1,5 @@
+name,country,industry,revenue_musd,cost_musd,employee_count,total_emissions,water_usage,renewable_energy_percent,transparency_score,anti_corruption_policy
+"GreenTech Solutions Inc.","United States","Technology",1250.5,1000.2,5400,185000,50000,45.5,75.0,true
+"Sustainable Manufacturing Co.","Germany","Manufacturing",850.2,680.1,3200,125000,35000,30.0,70.0,true
+"EcoFriendly Textiles Ltd.","India","Textiles & Apparel",450.8,360.6,1800,95000,25000,25.0,65.0,false
+
