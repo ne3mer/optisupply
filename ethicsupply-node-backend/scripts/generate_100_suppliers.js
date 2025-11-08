@@ -277,9 +277,9 @@ function generateSupplier(index) {
   };
 }
 
-// Generate 100 suppliers
+// Generate 40 suppliers (reduced from 100 to avoid "request entity too large" error)
 const suppliers = [];
-for (let i = 0; i < 100; i++) {
+for (let i = 0; i < 40; i++) {
   suppliers.push(generateSupplier(i));
 }
 
@@ -322,10 +322,10 @@ const csvRows = [
 const csvContent = csvRows.join("\n");
 
 // Write to file
-const outputPath = path.join(__dirname, "../data/100_suppliers.csv");
+const outputPath = path.join(__dirname, "../data/40_suppliers.csv");
 fs.writeFileSync(outputPath, csvContent, "utf8");
 
-console.log(`✅ Generated 100 suppliers with all fields filled`);
+console.log(`✅ Generated ${suppliers.length} suppliers with all fields filled`);
 console.log(`📁 Saved to: ${outputPath}`);
 console.log(`📊 Total fields per supplier: ${headers.length}`);
 console.log(`📈 Sample suppliers:`);
