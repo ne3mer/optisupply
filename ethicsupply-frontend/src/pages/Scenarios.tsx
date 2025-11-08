@@ -219,11 +219,58 @@ export default function Scenarios() {
                 )}
                 {s1Info.base && s1Info.s1 && (
                   <div className="pt-1 border-t" style={{ borderColor: colors.accent + "30" }}>
-                    Δ%: <b style={{ color: colors.primary }}>
+                    Δ%: <b style={{ 
+                      color: Number(s1Info.base) > Number(s1Info.s1) ? (colors.success || "#10b981") : (colors.error || "#ef4444")
+                    }}>
                       {(((Number(s1Info.base) - Number(s1Info.s1)) / Number(s1Info.base)) * 100).toFixed(2)}%
                     </b>
+                    {Number(s1Info.base) > Number(s1Info.s1) ? (
+                      <span className="ml-1 text-xs">✓ Improvement</span>
+                    ) : (
+                      <span className="ml-1 text-xs">⚠ Trade-off</span>
+                    )}
                   </div>
                 )}
+              </div>
+            )}
+            
+            {/* Data Coverage Info */}
+            {dataCoverage && (
+              <div className="mt-4 p-3 rounded-md text-xs" style={{ backgroundColor: colors.panel + "40" }}>
+                <div className="font-semibold mb-2" style={{ color: colors.text }}>Data Coverage:</div>
+                <div className="space-y-1">
+                  <div>
+                    Emissions: <b style={{ color: dataCoverage.emissionsCoverage >= 90 ? (colors.success || "#10b981") : (colors.warning || "#f59e0b") }}>
+                      {dataCoverage.emissionsCoverage.toFixed(1)}%
+                    </b> ({dataCoverage.emissionsCount}/{dataCoverage.totalSuppliers})
+                  </div>
+                  <div>
+                    Revenue: <b style={{ color: dataCoverage.revenueCoverage >= 90 ? (colors.success || "#10b981") : (colors.warning || "#f59e0b") }}>
+                      {dataCoverage.revenueCoverage.toFixed(1)}%
+                    </b> ({dataCoverage.revenueCount}/{dataCoverage.totalSuppliers})
+                  </div>
+                  <div>
+                    Margin: <b style={{ color: dataCoverage.marginCoverage >= 90 ? (colors.success || "#10b981") : (colors.warning || "#f59e0b") }}>
+                      {dataCoverage.marginCoverage.toFixed(1)}%
+                    </b> ({dataCoverage.marginCount}/{dataCoverage.totalSuppliers})
+                  </div>
+                  <div className="pt-1 border-t" style={{ borderColor: colors.accent + "20" }}>
+                    Industries: <b style={{ color: colors.text }}>{dataCoverage.industryCount}</b> 
+                    {dataCoverage.minIndustrySize < 15 && (
+                      <span className="ml-1" style={{ color: colors.warning || "#f59e0b" }}>
+                        (min: {dataCoverage.minIndustrySize} suppliers)
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={fetchDataCoverage}
+                  disabled={loadingCoverage}
+                  className="mt-2 text-xs underline"
+                  style={{ color: colors.accent }}
+                >
+                  {loadingCoverage ? "Refreshing..." : "Refresh"}
+                </button>
               </div>
             )}
           </div>
