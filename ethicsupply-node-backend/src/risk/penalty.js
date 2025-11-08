@@ -105,8 +105,10 @@ function computeRiskPenalty(supplier, settings = null) {
   }, 0);
 
   // Get threshold T and lambda λ from settings
+  // Default threshold is 0.3 (30% in 0-1 scale), default lambda is 1.0
+  // But if lambda is too low, penalties will be small. Use 15.0 for more visible penalties.
   const threshold = settings?.threshold ?? settings?.riskThreshold ?? 0.3;
-  const lambda = settings?.lambda ?? settings?.riskLambda ?? 1.0;
+  const lambda = settings?.lambda ?? settings?.riskLambda ?? 15.0; // Increased from 1.0 to 15.0 for more visible penalties
 
   // Compute excess risk above threshold
   const riskExcess = Math.max(0, riskRaw - threshold);

@@ -89,7 +89,7 @@ const ScoringSettingsSchema = new Schema(
     // Risk penalty lambda (scaling factor, > 0)
     riskLambda: {
       type: Number,
-      default: 1.0,
+      default: 15.0, // Increased from 1.0 to make penalties more visible
       min: 0.01,
     },
 
@@ -140,7 +140,7 @@ ScoringSettingsSchema.statics.getDefault = async function () {
       riskWeightClimate: 0.33,
       riskWeightLabor: 0.34,
       riskThreshold: 0.3,
-      riskLambda: 1.0,
+      riskLambda: 15.0, // Increased from 1.0 to make penalties more visible
       updatedBy: "system",
     });
   }

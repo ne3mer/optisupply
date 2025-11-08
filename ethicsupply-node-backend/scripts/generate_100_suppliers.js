@@ -224,10 +224,13 @@ function calculateScores(supplier) {
     2
   );
 
-  // Risk Penalty (if risk_factor > 0.5)
-  const risk_excess = Math.max(0, risk_factor - 0.5);
-  const risk_penalty =
-    risk_excess > 0 ? round(15 * risk_excess * 100, 1) : null;
+  // Risk Penalty calculation (matches backend penalty module logic)
+  // Threshold T = 0.3, Lambda = 15.0
+  // penalty = lambda * max(0, risk_factor - threshold) * 100
+  const risk_threshold = 0.3;
+  const risk_lambda = 15.0;
+  const risk_excess = Math.max(0, risk_factor - risk_threshold);
+  const risk_penalty = round(risk_lambda * risk_excess * 100, 1);
 
   // Final Score (composite - penalty, clamped 0-100)
   const finalScore = Math.max(
@@ -331,26 +334,33 @@ function generateSupplier(index) {
   const supplier_diversity = round(randomBetween(0.4, 0.9), 2);
   const traceability = round(randomBetween(0.5, 0.95), 2);
 
-  // Risk factors (country-based with variation)
+  // Risk factors - create varying risk levels across suppliers
+  // Distribute: 30% low risk (< 0.3), 40% medium risk (0.3-0.6), 30% high risk (> 0.6)
+  const riskTier = index % 10;
+  let baseRiskValue;
+  if (riskTier < 3) {
+    // Low risk: 0.1 - 0.25 (below threshold, no penalty)
+    baseRiskValue = randomBetween(0.1, 0.25);
+  } else if (riskTier < 7) {
+    // Medium risk: 0.35 - 0.55 (some penalty: 0.05-0.25 excess * 15 * 100 = 75-375)
+    baseRiskValue = randomBetween(0.35, 0.55);
+  } else {
+    // High risk: 0.65 - 0.85 (significant penalty: 0.35-0.55 excess * 15 * 100 = 525-825)
+    baseRiskValue = randomBetween(0.65, 0.85);
+  }
+  
+  // Apply variation around base risk value (±10%)
+  const variation = randomBetween(-0.1, 0.1);
   const geopolitical_risk = round(
-    randomBetween(
-      Math.max(0.1, country.riskGeo - 0.1),
-      Math.min(0.9, country.riskGeo + 0.2)
-    ),
+    Math.max(0.05, Math.min(0.95, baseRiskValue + variation + (country.riskGeo - 0.25) * 0.3)),
     2
   );
   const climate_risk = round(
-    randomBetween(
-      Math.max(0.1, country.riskClimate - 0.1),
-      Math.min(0.9, country.riskClimate + 0.2)
-    ),
+    Math.max(0.05, Math.min(0.95, baseRiskValue + variation + (country.riskClimate - 0.25) * 0.3)),
     2
   );
   const labor_dispute_risk = round(
-    randomBetween(
-      Math.max(0.1, country.riskLabor - 0.1),
-      Math.min(0.9, country.riskLabor + 0.2)
-    ),
+    Math.max(0.05, Math.min(0.95, baseRiskValue + variation + (country.riskLabor - 0.25) * 0.3)),
     2
   );
 
