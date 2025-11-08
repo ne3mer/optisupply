@@ -90,3 +90,41 @@ exports.recomputeAllSuppliers = async (req, res) => {
   }
 };
 
+/**
+ * Delete all suppliers
+ * POST /api/admin/delete-all-suppliers
+ * WARNING: This permanently deletes ALL suppliers!
+ */
+exports.deleteAllSuppliers = async (req, res) => {
+  try {
+    // Optional: require authentication in production
+    // Uncomment to enable:
+    // const authHeader = req.headers['authorization'];
+    // const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    // if (!token || token !== process.env.ADMIN_TOKEN) {
+    //   return res.status(401).json({ error: 'Unauthorized' });
+    // }
+
+    const count = await db.Supplier.countDocuments();
+    
+    if (count === 0) {
+      return res.status(200).json({
+        message: 'No suppliers to delete. Database is already empty.',
+        deletedCount: 0,
+      });
+    }
+
+    const result = await db.Supplier.deleteMany({});
+
+    console.log(`[admin] Deleted ${result.deletedCount} suppliers`);
+
+    res.status(200).json({
+      message: `Successfully deleted ${result.deletedCount} suppliers`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error('Error deleting all suppliers:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+

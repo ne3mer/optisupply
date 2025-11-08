@@ -166,5 +166,6 @@ router.get("/scenarios/coverage", scenarioController.getDataCoverage);
 
 // Admin routes
 router.post("/admin/recompute-all", adminController.recomputeAllSuppliers);
+router.post("/admin/delete-all-suppliers", adminController.deleteAllSuppliers);
 
 module.exports = router;
