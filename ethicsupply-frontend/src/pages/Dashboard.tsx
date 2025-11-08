@@ -20,6 +20,10 @@ import {
   PresentationChartLineIcon,
   CalendarIcon,
   SparklesIcon,
+  TrophyIcon,
+  LightBulbIcon,
+  CheckBadgeIcon,
+  FireIcon,
 } from "@heroicons/react/24/outline";
 import {
   ResponsiveContainer,
@@ -1486,7 +1490,122 @@ const Dashboard = () => {
       const ethical = links.filter((l: any) => l && l.ethical !== false).length;
       ethicalRatio = Math.round((ethical / total) * 100);
     }
-    return { avgRenewable, avgInjury, targets: targetsCfg, watchHighRisk, watchLowDisclosure, riskLeaders, topMissing, ethicalRatio };
+    // Top performers by pillar
+    const topPerformers = {
+      environmental: suppliers
+        .filter(s => typeof s.environmental_score === 'number')
+        .sort((a, b) => (b.environmental_score || 0) - (a.environmental_score || 0))
+        .slice(0, 5)
+        .map(s => ({ id: (s as any)._id || s.id, name: s.name || 'Unknown', score: s.environmental_score || 0 })),
+      social: suppliers
+        .filter(s => typeof s.social_score === 'number')
+        .sort((a, b) => (b.social_score || 0) - (a.social_score || 0))
+        .slice(0, 5)
+        .map(s => ({ id: (s as any)._id || s.id, name: s.name || 'Unknown', score: s.social_score || 0 })),
+      governance: suppliers
+        .filter(s => typeof s.governance_score === 'number')
+        .sort((a, b) => (b.governance_score || 0) - (a.governance_score || 0))
+        .slice(0, 5)
+        .map(s => ({ id: (s as any)._id || s.id, name: s.name || 'Unknown', score: s.governance_score || 0 })),
+      overall: suppliers
+        .filter(s => {
+          const final = (s as any).finalScore ?? s.composite_score ?? s.ethical_score;
+          return typeof final === 'number';
+        })
+        .sort((a, b) => {
+          const aScore = (a as any).finalScore ?? a.composite_score ?? a.ethical_score ?? 0;
+          const bScore = (b as any).finalScore ?? b.composite_score ?? b.ethical_score ?? 0;
+          return bScore - aScore;
+        })
+        .slice(0, 5)
+        .map(s => {
+          const final = (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? 0;
+          return { id: (s as any)._id || s.id, name: s.name || 'Unknown', score: final };
+        }),
+    };
+
+    // Environmental impact summary
+    const envSummary = {
+      totalCO2: suppliers.reduce((sum, s) => sum + (byNumber(s.co2_emissions) || 0), 0),
+      totalWater: suppliers.reduce((sum, s) => sum + (byNumber(s.water_usage) || 0), 0),
+      totalWaste: suppliers.reduce((sum, s) => sum + (byNumber((s as any).waste_generated) || 0), 0),
+      avgRenewable: avgRenewable,
+      suppliersWithRenewable: suppliers.filter(s => byNumber((s as any).renewable_energy_percent) !== null).length,
+    };
+
+    // Social metrics summary
+    const socialSummary = {
+      avgDiversity: avg(suppliers.map(s => byNumber((s as any).gender_diversity_percent)).filter((v): v is number => v !== null)),
+      avgTraining: avg(suppliers.map(s => byNumber((s as any).training_hours)).filter((v): v is number => v !== null)),
+      avgLivingWage: avg(suppliers.map(s => byNumber((s as any).living_wage_ratio)).filter((v): v is number => v !== null)),
+      avgInjury: avgInjury,
+      suppliersWithTraining: suppliers.filter(s => byNumber((s as any).training_hours) !== null).length,
+    };
+
+    // Governance metrics summary
+    const govSummary = {
+      avgTransparency: avg(suppliers.map(s => byNumber((s as any).transparency_score)).filter((v): v is number => v !== null)),
+      avgBoardDiversity: avg(suppliers.map(s => byNumber((s as any).board_diversity)).filter((v): v is number => v !== null)),
+      avgBoardIndependence: avg(suppliers.map(s => byNumber((s as any).board_independence)).filter((v): v is number => v !== null)),
+      suppliersWithAntiCorruption: suppliers.filter(s => (s as any).anti_corruption_policy === true).length,
+      antiCorruptionRate: suppliers.length > 0 ? (suppliers.filter(s => (s as any).anti_corruption_policy === true).length / suppliers.length) * 100 : 0,
+    };
+
+    // Compliance status
+    const complianceRate = suppliers.length > 0
+      ? (suppliers.filter(s => {
+          const final = (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? 0;
+          return typeof final === 'number' && final >= 60; // 60% threshold
+        }).length / suppliers.length) * 100
+      : 0;
+
+    // Quick insights
+    const insights = [];
+    if (extraAnalytics.watchHighRisk.length > 0) {
+      insights.push({
+        type: 'error',
+        title: `${extraAnalytics.watchHighRisk.length} High-Risk Supplier${extraAnalytics.watchHighRisk.length > 1 ? 's' : ''}`,
+        message: 'Immediate attention required',
+      });
+    }
+    if (extraAnalytics.watchLowDisclosure.length > 0) {
+      insights.push({
+        type: 'warning',
+        title: `${extraAnalytics.watchLowDisclosure.length} Low Disclosure Supplier${extraAnalytics.watchLowDisclosure.length > 1 ? 's' : ''}`,
+        message: 'Data completeness below 70%',
+      });
+    }
+    if (complianceRate < 80) {
+      insights.push({
+        type: 'warning',
+        title: 'Compliance Rate Below Target',
+        message: `${complianceRate.toFixed(1)}% of suppliers meet 60%+ threshold`,
+      });
+    }
+    if (envSummary.avgRenewable < targetsCfg.renewablePct) {
+      insights.push({
+        type: 'info',
+        title: 'Renewable Energy Below Target',
+        message: `Average ${envSummary.avgRenewable.toFixed(1)}% vs target ${targetsCfg.renewablePct}%`,
+      });
+    }
+
+    return { 
+      avgRenewable, 
+      avgInjury, 
+      targets: targetsCfg, 
+      watchHighRisk, 
+      watchLowDisclosure, 
+      riskLeaders, 
+      topMissing, 
+      ethicalRatio,
+      topPerformers,
+      envSummary,
+      socialSummary,
+      govSummary,
+      complianceRate,
+      insights,
+    };
   }, [allSuppliers, graphData, targets]);
 
   // Responsive flag must be declared before any early returns to keep hooks order stable
@@ -1922,8 +2041,250 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Quick Insights & Alerts */}
+      {extraAnalytics.insights && extraAnalytics.insights.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="lg:col-span-3 mt-6"
+        >
+          <DashboardCard title="Quick Insights & Alerts" icon={LightBulbIcon} gridSpan="col-span-1">
+            <div className="space-y-2">
+              {extraAnalytics.insights.map((insight, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 p-3 rounded-lg border"
+                  style={{
+                    backgroundColor: insight.type === 'error' ? colors.error + '10' :
+                                   insight.type === 'warning' ? colors.warning + '10' :
+                                   colors.primary + '10',
+                    borderColor: insight.type === 'error' ? colors.error + '40' :
+                                insight.type === 'warning' ? colors.warning + '40' :
+                                colors.primary + '40',
+                  }}
+                >
+                  {insight.type === 'error' && <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.error }} />}
+                  {insight.type === 'warning' && <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.warning }} />}
+                  {insight.type === 'info' && <InformationCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.primary }} />}
+                  <div className="flex-1">
+                    <div className="font-medium text-sm" style={{ color: colors.text }}>{insight.title}</div>
+                    <div className="text-xs mt-0.5" style={{ color: colors.textMuted }}>{insight.message}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DashboardCard>
+        </motion.div>
+      )}
+
+      {/* Top Performers & Compliance */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="lg:col-span-3 mt-6"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <DashboardCard title="Top Performers: Overall" icon={TrophyIcon} gridSpan="col-span-1">
+            {extraAnalytics.topPerformers.overall.length > 0 ? (
+              <div className="space-y-2">
+                {extraAnalytics.topPerformers.overall.map((p, idx) => (
+                  <div key={p.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-xs font-bold" style={{ color: colors.primary }}>#{idx + 1}</span>
+                      <span className="truncate" style={{ color: colors.text }} title={p.name}>{p.name}</span>
+                    </div>
+                    <span className="font-mono text-xs whitespace-nowrap ml-2" style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: colors.textMuted }}>No data available.</p>
+            )}
+          </DashboardCard>
+
+          <DashboardCard title="Top Performers: Environmental" icon={CloudIcon} gridSpan="col-span-1">
+            {extraAnalytics.topPerformers.environmental.length > 0 ? (
+              <div className="space-y-2">
+                {extraAnalytics.topPerformers.environmental.map((p, idx) => (
+                  <div key={p.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-xs font-bold" style={{ color: colors.primary }}>#{idx + 1}</span>
+                      <span className="truncate" style={{ color: colors.text }} title={p.name}>{p.name}</span>
+                    </div>
+                    <span className="font-mono text-xs whitespace-nowrap ml-2" style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: colors.textMuted }}>No data available.</p>
+            )}
+          </DashboardCard>
+
+          <DashboardCard title="Top Performers: Social" icon={UsersIcon} gridSpan="col-span-1">
+            {extraAnalytics.topPerformers.social.length > 0 ? (
+              <div className="space-y-2">
+                {extraAnalytics.topPerformers.social.map((p, idx) => (
+                  <div key={p.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-xs font-bold" style={{ color: colors.primary }}>#{idx + 1}</span>
+                      <span className="truncate" style={{ color: colors.text }} title={p.name}>{p.name}</span>
+                    </div>
+                    <span className="font-mono text-xs whitespace-nowrap ml-2" style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm" style={{ color: colors.textMuted }}>No data available.</p>
+            )}
+          </DashboardCard>
+
+          <DashboardCard title="Compliance Status" icon={CheckBadgeIcon} gridSpan="col-span-1">
+            <div className="flex flex-col items-center justify-center py-4">
+              <div className="text-4xl font-bold mb-2" style={{ 
+                color: extraAnalytics.complianceRate >= 80 ? colors.success : 
+                       extraAnalytics.complianceRate >= 60 ? colors.warning : colors.error 
+              }}>
+                {extraAnalytics.complianceRate.toFixed(1)}%
+              </div>
+              <p className="text-xs text-center" style={{ color: colors.textMuted }}>
+                Suppliers meeting 60%+ threshold
+              </p>
+              <div className="mt-3 w-full bg-opacity-20 rounded-full h-2" style={{ backgroundColor: colors.accent + '20' }}>
+                <div
+                  className="h-2 rounded-full transition-all"
+                  style={{
+                    width: `${Math.min(100, extraAnalytics.complianceRate)}%`,
+                    backgroundColor: extraAnalytics.complianceRate >= 80 ? colors.success : 
+                                    extraAnalytics.complianceRate >= 60 ? colors.warning : colors.error,
+                  }}
+                />
+              </div>
+            </div>
+          </DashboardCard>
+        </div>
+      </motion.div>
+
+      {/* Environmental, Social & Governance Summaries */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45 }}
+        className="lg:col-span-3 mt-6"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <DashboardCard title="Environmental Impact Summary" icon={FireIcon} gridSpan="col-span-1">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Total CO₂ Emissions</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.envSummary.totalCO2.toFixed(1)}t
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Total Water Usage</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.envSummary.totalWater.toFixed(0)}m³
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Total Waste Generated</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.envSummary.totalWaste.toFixed(1)}t
+                </span>
+              </div>
+              <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
+                <div className="flex justify-between items-center mb-1">
+                  <span style={{ color: colors.textMuted }}>Avg Renewable Energy</span>
+                  <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                    {extraAnalytics.envSummary.avgRenewable.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="text-xs" style={{ color: colors.textMuted }}>
+                  {extraAnalytics.envSummary.suppliersWithRenewable} suppliers reporting
+                </div>
+              </div>
+            </div>
+          </DashboardCard>
+
+          <DashboardCard title="Social Metrics Summary" icon={UsersIcon} gridSpan="col-span-1">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Avg Gender Diversity</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.socialSummary.avgDiversity.toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Avg Training Hours</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.socialSummary.avgTraining.toFixed(0)}h
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Avg Living Wage Ratio</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.socialSummary.avgLivingWage.toFixed(2)}x
+                </span>
+              </div>
+              <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
+                <div className="flex justify-between items-center mb-1">
+                  <span style={{ color: colors.textMuted }}>Avg Injury Rate</span>
+                  <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                    {extraAnalytics.socialSummary.avgInjury.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-xs" style={{ color: colors.textMuted }}>
+                  {extraAnalytics.socialSummary.suppliersWithTraining} suppliers with training data
+                </div>
+              </div>
+            </div>
+          </DashboardCard>
+
+          <DashboardCard title="Governance Metrics Summary" icon={PresentationChartLineIcon} gridSpan="col-span-1">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Avg Transparency</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.govSummary.avgTransparency.toFixed(1)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Avg Board Diversity</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.govSummary.avgBoardDiversity.toFixed(1)}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span style={{ color: colors.textMuted }}>Avg Board Independence</span>
+                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  {extraAnalytics.govSummary.avgBoardIndependence.toFixed(1)}%
+                </span>
+              </div>
+              <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
+                <div className="flex justify-between items-center mb-1">
+                  <span style={{ color: colors.textMuted }}>Anti-Corruption Policy</span>
+                  <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                    {extraAnalytics.govSummary.antiCorruptionRate.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="text-xs" style={{ color: colors.textMuted }}>
+                  {extraAnalytics.govSummary.suppliersWithAntiCorruption} suppliers with policy
+                </div>
+              </div>
+            </div>
+          </DashboardCard>
+        </div>
+      </motion.div>
+
       {/* Recent Activity & Top Movers */}
-      <div className="lg:col-span-3 mt-6">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="lg:col-span-3 mt-6"
+      >
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <DashboardCard title="Recent Activity" icon={CalendarIcon} gridSpan="col-span-1">
             {allSuppliers.length ? (
@@ -1993,7 +2354,7 @@ const Dashboard = () => {
             )}
           </DashboardCard>
         </div>
-      </div>
+      </motion.div>
         {/* Add more charts here based on available data */}
         {/* e.g., Water Usage Trend, Renewable Energy, etc. */}
       </div>
