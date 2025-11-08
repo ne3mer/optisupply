@@ -261,13 +261,12 @@ const DashboardCard = ({
 };
 
 const KpiIndicator = ({
-  children,
+  children = null,
   label,
   value,
   unit = "",
   icon: Icon,
   color,
-  children,
 }) => {
   const colors = useColors();
   return (
@@ -1825,21 +1824,18 @@ const Dashboard = () => {
           unit="%"
           icon={GlobeAltIcon}
           color={colors.accent}
-          children={null}
         />
         <KpiIndicator
           label={isMobile ? "Renewable Energy" : "Renewable Energy (Avg vs Target)"}
           value={isMobile ? `${Math.round(extraAnalytics.avgRenewable)}%` : `${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`}
           icon={SparklesIcon}
           color={renewableColor}
-          children={null}
         />
         <KpiIndicator
           label={isMobile ? "Injury Rate" : "Injury Rate (Avg vs Target)"}
           value={isMobile ? extraAnalytics.avgInjury.toFixed(1) : `${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`}
           icon={ShieldExclamationIcon}
           color={injuryColor}
-          children={null}
         />
             </>
           );
