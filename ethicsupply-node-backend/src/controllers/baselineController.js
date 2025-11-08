@@ -1,5 +1,4 @@
 const db = require("../models");
-const { Parser } = require("json2csv");
 
 /**
  * Compute Emission Intensity = emissions / revenue_musd
@@ -78,32 +77,43 @@ async function getBaseline(req, res) {
         ? rows.reduce((a, r) => a + Number(r["Emission Intensity"]), 0) / n
         : null;
 
-    // CSV format requested
-    if ((req.query.format || "").toLowerCase() === "csv") {
-      if (rows.length === 0) {
-        return res
-          .status(200)
-          .send(
-            "SupplierID,Name,Industry,Revenue(MUSD),Emissions(tCO2e),Emission Intensity\n"
-          );
+      // CSV format requested
+      if ((req.query.format || "").toLowerCase() === "csv") {
+        if (rows.length === 0) {
+          return res
+            .status(200)
+            .send(
+              "SupplierID,Name,Industry,Revenue(MUSD),Emissions(tCO2e),Emission Intensity\n"
+            );
+        }
+
+        // Generate CSV manually (no external dependency needed)
+        const headers = Object.keys(rows[0]);
+        const csvLines = [
+          headers.join(","),
+          ...rows.map((row) =>
+            headers
+              .map((h) => {
+                const value = row[h] ?? "";
+                return `"${String(value).replace(/"/g, '""')}"`;
+              })
+              .join(",")
+          ),
+        ];
+        const csv = csvLines.join("\n");
+
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          'attachment; filename="baseline.csv"'
+        );
+
+        if (meanEI != null) {
+          res.setHeader("X-Baseline-Objective", meanEI.toFixed(6));
+        }
+
+        return res.status(200).send(csv);
       }
-
-      const csv = new Parser({
-        fields: Object.keys(rows[0]),
-      }).parse(rows);
-
-      res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader(
-        "Content-Disposition",
-        'attachment; filename="baseline.csv"'
-      );
-
-      if (meanEI != null) {
-        res.setHeader("X-Baseline-Objective", meanEI.toFixed(6));
-      }
-
-      return res.status(200).send(csv);
-    }
 
     // JSON format (default)
     return res.json({
