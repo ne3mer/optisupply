@@ -34,9 +34,27 @@ import {
   Tags,
   Sliders,
   X,
+  Download,
+  Sparkles,
+  Activity,
+  PieChart,
+  LineChart,
+  DollarSign,
+  Timer,
+  CheckCircle2,
+  PlayCircle,
+  PauseCircle,
+  Layers,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  Percent,
+  Building2,
+  MapPin,
 } from "lucide-react";
 import { useInView } from "react-intersection-observer";
 import { useThemeColors } from "../theme/useThemeColors";
+import { Link } from "react-router-dom";
 
 // --- MOCK DATA for Fallback ---
 const generateMockRecommendationsFallback = (): Recommendation[] => [
@@ -348,7 +366,116 @@ const AnimatedBadge = ({ children, className = "", style = {} }) => {
   );
 };
 
-// Recommendation Card Component (Dark Theme Adjustments)
+// Impact Score Card Component
+const ImpactScoreCard = ({ 
+  label, 
+  value, 
+  trend, 
+  icon, 
+  color, 
+  delay = 0 
+}: { 
+  label: string; 
+  value: string | number; 
+  trend?: "up" | "down" | "neutral";
+  icon: React.ReactNode;
+  color: string;
+  delay?: number;
+}) => {
+  const colors = useThemeColors() as any;
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      className="p-4 rounded-xl border backdrop-blur-sm"
+      style={{
+        backgroundColor: color + "15",
+        borderColor: color + "40",
+      }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div 
+            className="p-2 rounded-lg"
+            style={{ backgroundColor: color + "25" }}
+          >
+            {icon}
+          </div>
+          <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
+            {label}
+          </span>
+        </div>
+        {trend && (
+          <motion.div
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 0.5, delay: delay + 0.3 }}
+          >
+            {trend === "up" ? (
+              <ArrowUpRight className="h-4 w-4" style={{ color: colors.success }} />
+            ) : trend === "down" ? (
+              <ArrowDownRight className="h-4 w-4" style={{ color: colors.error }} />
+            ) : null}
+          </motion.div>
+        )}
+      </div>
+      <div className="text-2xl font-bold" style={{ color: color }}>
+        {value}
+      </div>
+    </motion.div>
+  );
+};
+
+// Category Distribution Chart Component
+const CategoryDistribution = ({ recommendations, colors }: { recommendations: EnhancedRecommendation[]; colors: any }) => {
+  const categoryCounts = useMemo(() => {
+    const counts = { environmental: 0, social: 0, governance: 0 };
+    recommendations.forEach((rec) => {
+      const cat = rec.category || "governance";
+      if (cat in counts) {
+        counts[cat as keyof typeof counts]++;
+      }
+    });
+    return counts;
+  }, [recommendations]);
+
+  const total = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+  if (total === 0) return null;
+
+  const categoryConfig = buildCategoryConfig(colors);
+
+  return (
+    <div className="space-y-3">
+      {Object.entries(categoryCounts).map(([category, count]) => {
+        const percentage = total > 0 ? (count / total) * 100 : 0;
+        const config = categoryConfig[category as keyof typeof categoryConfig] || categoryConfig.governance;
+        
+        return (
+          <div key={category} className="space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <span style={{ color: config.color }}>{React.cloneElement(config.icon, { className: "h-4 w-4" })}</span>
+                <span className="capitalize" style={{ color: colors.text }}>{category}</span>
+              </div>
+              <span className="font-semibold" style={{ color: colors.text }}>{count}</span>
+            </div>
+            <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: colors.background }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${percentage}%` }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                style={{ backgroundColor: config.color, height: "100%" }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Recommendation Card Component (Enhanced)
 const RecommendationCard = ({
   recommendation,
   isExpanded,
@@ -414,6 +541,14 @@ const RecommendationCard = ({
     <ArrowRightCircle className="h-4 w-4" />
   );
 
+  // Extract impact metrics
+  const impactText = typeof recommendation.estimated_impact === "string" 
+    ? recommendation.estimated_impact 
+    : "Impact assessment available";
+  
+  const hasCostSavings = impactText.toLowerCase().includes("$") || impactText.toLowerCase().includes("cost");
+  const hasTimeframe = recommendation.timeframe;
+
   return (
     <motion.div
       ref={ref}
@@ -427,7 +562,7 @@ const RecommendationCard = ({
         stiffness: 100,
         damping: 15,
       }}
-      className={`border ${categoryInfo.border} rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 mb-6`}
+      className={`border ${categoryInfo.border} rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 mb-6 group`}
       style={{
         backgroundColor: colors.panel,
         borderColor: categoryInfo.border,
@@ -436,26 +571,18 @@ const RecommendationCard = ({
       <div
         className={`h-1.5 w-full bg-gradient-to-r ${categoryInfo.gradient}`}
         style={{
-          background: `linear-gradient(to right, ${categoryInfo.gradient
-            .split(" ")[0]
-            .replace("from-", "")
-            .replace("[", "")
-            .replace("]", "")}, ${categoryInfo.gradient
-            .split(" ")[1]
-            .replace("to-", "")
-            .replace("[", "")
-            .replace("]", "")})`,
+          background: `linear-gradient(to right, ${categoryInfo.color}40, ${categoryInfo.color}80)`,
         }}
       />
 
       <button
         onClick={onToggleExpand}
-        className="flex items-start justify-between w-full p-5 text-left hover:bg-gray-700/20 transition-colors focus:outline-none"
+        className="flex items-start justify-between w-full p-6 text-left hover:bg-gray-700/10 transition-colors focus:outline-none"
       >
         <div className="flex-1 pr-4">
           <div className="flex flex-wrap gap-2 mb-3">
             <AnimatedBadge
-              className={`${categoryInfo.bgLight} ${categoryInfo.bgDark} ${categoryInfo.border} px-2.5 py-0.5`}
+              className={`${categoryInfo.bgLight} ${categoryInfo.bgDark} ${categoryInfo.border} px-3 py-1`}
               style={{
                 color: categoryInfo.color,
                 backgroundColor: categoryInfo.bgLight,
@@ -463,11 +590,11 @@ const RecommendationCard = ({
               }}
             >
               {categoryInfo.icon}
-              <span className="capitalize">{currentCategory}</span>
+              <span className="capitalize font-medium">{currentCategory}</span>
             </AnimatedBadge>
 
             <AnimatedBadge
-              className={`${priorityInfo.bgLight} ${priorityInfo.bgDark} ${priorityInfo.border} px-2.5 py-0.5`}
+              className={`${priorityInfo.bgLight} ${priorityInfo.bgDark} ${priorityInfo.border} px-3 py-1`}
               style={{
                 color: priorityInfo.color,
                 backgroundColor: priorityInfo.bgLight,
@@ -475,11 +602,11 @@ const RecommendationCard = ({
               }}
             >
               {priorityInfo.icon}
-              <span>{priorityInfo.label}</span>
+              <span className="font-medium">{priorityInfo.label}</span>
             </AnimatedBadge>
 
             <AnimatedBadge
-              className={`${statusInfo.bgLight} ${statusInfo.bgDark} ${statusInfo.border} px-2.5 py-0.5`}
+              className={`${statusInfo.bgLight} ${statusInfo.bgDark} ${statusInfo.border} px-3 py-1`}
               style={{
                 color: statusInfo.color,
                 backgroundColor: statusInfo.bgLight,
@@ -487,15 +614,43 @@ const RecommendationCard = ({
               }}
             >
               {statusInfo.icon}
-              <span>{statusInfo.label}</span>
+              <span className="font-medium">{statusInfo.label}</span>
             </AnimatedBadge>
+
+            {hasCostSavings && (
+              <AnimatedBadge
+                className="px-3 py-1 border"
+                style={{
+                  color: colors.success,
+                  backgroundColor: colors.success + "15",
+                  borderColor: colors.success + "40",
+                }}
+              >
+                <DollarSign className="h-4 w-4" />
+                <span className="font-medium">Cost Savings</span>
+              </AnimatedBadge>
+            )}
+
+            {hasTimeframe && (
+              <AnimatedBadge
+                className="px-3 py-1 border"
+                style={{
+                  color: colors.primary,
+                  backgroundColor: colors.primary + "15",
+                  borderColor: colors.primary + "40",
+                }}
+              >
+                <Timer className="h-4 w-4" />
+                <span className="font-medium">{recommendation.timeframe}</span>
+              </AnimatedBadge>
+            )}
           </div>
 
           {(recommendation.action_owner || hasActivePlan || actionCompletedAgo) && (
             <div className="flex flex-wrap gap-2 mb-3">
               {recommendation.action_owner && (
                 <AnimatedBadge
-                  className="px-2.5 py-0.5 border"
+                  className="px-3 py-1 border"
                   style={{
                     color: colors.accent,
                     backgroundColor: colors.accent + "15",
@@ -503,58 +658,58 @@ const RecommendationCard = ({
                   }}
                 >
                   <Users className="h-4 w-4" />
-                  Owner: {recommendation.action_owner}
+                  <span className="font-medium">Owner: {recommendation.action_owner}</span>
                 </AnimatedBadge>
               )}
 
               {hasActivePlan && actionStartedAgo && (
                 <AnimatedBadge
-                  className="px-2.5 py-0.5 border"
+                  className="px-3 py-1 border"
                   style={{
                     color: colors.primary,
                     backgroundColor: colors.primary + "15",
-                    borderColor: colors.primary + "35",
+                    borderColor: colors.primary + "40",
                   }}
                 >
                   <Clock className="h-4 w-4" />
-                  Started {actionStartedAgo}
+                  <span className="font-medium">Started {actionStartedAgo}</span>
                 </AnimatedBadge>
               )}
 
               {actionCompletedAgo && (
                 <AnimatedBadge
-                  className="px-2.5 py-0.5 border"
+                  className="px-3 py-1 border"
                   style={{
                     color: colors.success,
                     backgroundColor: colors.success + "15",
-                    borderColor: colors.success + "35",
+                    borderColor: colors.success + "40",
                   }}
                 >
                   <Award className="h-4 w-4" />
-                  Completed {actionCompletedAgo}
+                  <span className="font-medium">Completed {actionCompletedAgo}</span>
                 </AnimatedBadge>
               )}
             </div>
           )}
 
           <h3
-            className="text-xl font-semibold group-hover:text-blue-400 transition-colors mb-2"
+            className="text-xl font-bold group-hover:text-blue-400 transition-colors mb-2"
             style={{ color: colors.text }}
           >
             {recommendation.title || "Untitled Recommendation"}
           </h3>
 
-          <p className="text-sm mb-3" style={{ color: colors.textMuted }}>
+          <p className="text-sm mb-3 flex items-center gap-4" style={{ color: colors.textMuted }}>
             <span className="inline-flex items-center gap-1.5">
-              <Globe className="h-4 w-4" style={{ color: colors.accent }} />
-              <span style={{ color: colors.accent }}>
+              <Building2 className="h-4 w-4" style={{ color: colors.accent }} />
+              <span style={{ color: colors.accent }} className="font-medium">
                 {typeof recommendation.supplier === "object"
                   ? recommendation.supplier.name
                   : "Unknown Supplier"}
               </span>
             </span>
 
-            <span className="ml-4 inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5">
               <Calendar
                 className="h-4 w-4"
                 style={{ color: colors.textMuted }}
@@ -577,7 +732,7 @@ const RecommendationCard = ({
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.3, type: "spring" }}
-            className={`p-1.5 rounded-full ${categoryInfo.bgLight}`}
+            className={`p-2 rounded-full ${categoryInfo.bgLight} hover:scale-110 transition-transform`}
             style={{
               color: categoryInfo.color,
               backgroundColor: categoryInfo.bgLight,
@@ -596,54 +751,59 @@ const RecommendationCard = ({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden border-t border-gray-700"
+            className="overflow-hidden border-t"
+            style={{ borderColor: colors.accent + "20" }}
           >
-            <div className="p-5 space-y-4">
-              <div className="space-y-2">
-                <div
-                  className="flex items-center gap-2 text-sm font-medium"
-                  style={{ color: colors.textMuted }}
-                >
-                  <FileText className="h-4 w-4 text-gray-500" />
-                  Description
-                </div>
-                <p className="pl-6" style={{ color: colors.text }}>
-                  {recommendation.description || "No description available."}
-                </p>
-              </div>
-
-              {recommendation.ai_explanation && (
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div
-                    className="flex items-center gap-2 text-sm font-medium"
+                    className="flex items-center gap-2 text-sm font-semibold"
                     style={{ color: colors.textMuted }}
                   >
-                    <Lightbulb
-                      className="h-4 w-4"
-                      style={{ color: colors.warning }}
-                    />
-                    AI Insights
+                    <FileText className="h-4 w-4" />
+                    Description
                   </div>
-                  <div
-                    className={`pl-6 p-3 rounded-lg border ${categoryInfo.border}`}
-                    style={{
-                      backgroundColor: categoryInfo.bgLight,
-                      borderColor: categoryInfo.border,
-                      color: colors.text,
-                    }}
-                  >
-                    {typeof recommendation.ai_explanation === "object"
-                      ? recommendation.ai_explanation.reasoning ||
-                        "No AI explanation available."
-                      : recommendation.ai_explanation}
-                  </div>
+                  <p className="pl-6 leading-relaxed" style={{ color: colors.text }}>
+                    {recommendation.description || "No description available."}
+                  </p>
                 </div>
-              )}
+
+                {recommendation.ai_explanation && (
+                  <div className="space-y-2">
+                    <div
+                      className="flex items-center gap-2 text-sm font-semibold"
+                      style={{ color: colors.textMuted }}
+                    >
+                      <Sparkles
+                        className="h-4 w-4"
+                        style={{ color: colors.warning }}
+                      />
+                      AI Insights
+                    </div>
+                    <div
+                      className={`pl-6 p-4 rounded-lg border ${categoryInfo.border} backdrop-blur-sm`}
+                      style={{
+                        backgroundColor: categoryInfo.bgLight,
+                        borderColor: categoryInfo.border,
+                        color: colors.text,
+                      }}
+                    >
+                      <p className="leading-relaxed">
+                        {typeof recommendation.ai_explanation === "object"
+                          ? recommendation.ai_explanation.reasoning ||
+                            "No AI explanation available."
+                          : recommendation.ai_explanation}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {recommendation.estimated_impact && (
                 <div className="space-y-2">
                   <div
-                    className="flex items-center gap-2 text-sm font-medium"
+                    className="flex items-center gap-2 text-sm font-semibold"
                     style={{ color: colors.textMuted }}
                   >
                     <TrendingUp
@@ -652,23 +812,28 @@ const RecommendationCard = ({
                     />
                     Estimated Impact
                   </div>
-                  <p className="pl-6" style={{ color: colors.text }}>
-                    {typeof recommendation.estimated_impact === "object"
-                      ? `Score Improvement: ${
-                          recommendation.estimated_impact.score_improvement ||
-                          "N/A"
-                        }, Cost Savings: $${
-                          recommendation.estimated_impact.cost_savings || "N/A"
-                        }, Time: ${
-                          recommendation.estimated_impact.implementation_time ||
-                          "N/A"
-                        } days`
-                      : recommendation.estimated_impact}
-                  </p>
+                  <div className="pl-6 p-4 rounded-lg border" style={{ 
+                    backgroundColor: colors.success + "10",
+                    borderColor: colors.success + "30",
+                  }}>
+                    <p className="leading-relaxed font-medium" style={{ color: colors.text }}>
+                      {typeof recommendation.estimated_impact === "object"
+                        ? `Score Improvement: ${
+                            recommendation.estimated_impact.score_improvement ||
+                            "N/A"
+                          }, Cost Savings: $${
+                            recommendation.estimated_impact.cost_savings || "N/A"
+                          }, Time: ${
+                            recommendation.estimated_impact.implementation_time ||
+                            "N/A"
+                          } days`
+                        : recommendation.estimated_impact}
+                    </p>
+                  </div>
                 </div>
               )}
 
-              <div className="pt-3 flex justify-between items-center border-t border-gray-700">
+              <div className="pt-4 flex justify-between items-center border-t" style={{ borderColor: colors.accent + "20" }}>
                 <div
                   className="text-xs flex items-center gap-1.5"
                   style={{ color: colors.textMuted }}
@@ -684,7 +849,7 @@ const RecommendationCard = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onActionClick}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full border transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all shadow-sm hover:shadow-md"
                   style={{
                     color: colors.background,
                     backgroundColor: actionButtonColor,
@@ -736,59 +901,66 @@ const ActionPlanModal = ({
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-3xl rounded-2xl overflow-hidden"
+        className="w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl"
         style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}40` }}
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="flex items-start justify-between px-6 py-4 border-b"
-          style={{ borderColor: colors.accent + "30" }}
+          className="flex items-start justify-between px-6 py-5 border-b"
+          style={{ borderColor: colors.accent + "30", backgroundColor: colors.accent + "10" }}
         >
           <div>
-            <p className="text-xs uppercase tracking-wide" style={{ color: colors.textMuted }}>
+            <p className="text-xs uppercase tracking-wide font-semibold mb-1" style={{ color: colors.textMuted }}>
               Action plan for
             </p>
-            <h2 className="text-2xl font-semibold" style={{ color: colors.text }}>
+            <h2 className="text-2xl font-bold" style={{ color: colors.text }}>
               {recommendation.title || "Recommendation"}
             </h2>
-            <p className="text-sm mt-1" style={{ color: colors.textMuted }}>
+            <p className="text-sm mt-2 flex items-center gap-2" style={{ color: colors.textMuted }}>
+              <Building2 className="h-4 w-4" />
               {typeof recommendation.supplier === "object"
                 ? recommendation.supplier?.name
                 : "Unnamed supplier"}
-              {recommendation.timeframe && ` • Target: ${recommendation.timeframe}`}
+              {recommendation.timeframe && (
+                <>
+                  <span>•</span>
+                  <Timer className="h-4 w-4" />
+                  <span>Target: {recommendation.timeframe}</span>
+                </>
+              )}
             </p>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-white/10 transition"
+            className="p-2 rounded-full hover:bg-white/10 transition"
             style={{ color: colors.textMuted }}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide" style={{ color: colors.textMuted }}>
+              <p className="text-xs uppercase tracking-wide font-semibold" style={{ color: colors.textMuted }}>
                 Assign owner
               </p>
               <div className="relative">
                 <select
                   value={owner}
                   onChange={(e) => setOwner(e.target.value)}
-                  className="w-full appearance-none px-3 py-2 rounded-lg pr-10 text-sm"
+                  className="w-full appearance-none px-3 py-2.5 rounded-lg pr-10 text-sm font-medium"
                   style={{
                     backgroundColor: colors.background,
                     color: colors.text,
@@ -802,14 +974,14 @@ const ActionPlanModal = ({
                   ))}
                 </select>
                 <Users
-                  className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2"
+                  className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
                   style={{ color: colors.textMuted }}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide" style={{ color: colors.textMuted }}>
+              <p className="text-xs uppercase tracking-wide font-semibold" style={{ color: colors.textMuted }}>
                 Add a kickoff note (optional)
               </p>
               <textarea
@@ -828,7 +1000,7 @@ const ActionPlanModal = ({
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-wide mb-2" style={{ color: colors.textMuted }}>
+            <p className="text-xs uppercase tracking-wide mb-3 font-semibold" style={{ color: colors.textMuted }}>
               Recommended playbook
             </p>
             <div
@@ -836,20 +1008,26 @@ const ActionPlanModal = ({
               style={{ borderColor: colors.accent + "25", backgroundColor: colors.background }}
             >
               {steps.map((step, index) => (
-                <div key={index} className="flex items-start gap-3">
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="flex items-start gap-3"
+                >
                   <span
-                    className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold"
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold flex-shrink-0"
                     style={{
-                      backgroundColor: colors.primary + "20",
+                      backgroundColor: colors.primary + "25",
                       color: colors.primary,
                     }}
                   >
                     {index + 1}
                   </span>
-                  <p className="text-sm" style={{ color: colors.text }}>
+                  <p className="text-sm leading-relaxed" style={{ color: colors.text }}>
                     {step}
                   </p>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -857,13 +1035,13 @@ const ActionPlanModal = ({
 
         <div
           className="px-6 py-4 flex flex-wrap gap-3 justify-end border-t"
-          style={{ borderColor: colors.accent + "30" }}
+          style={{ borderColor: colors.accent + "30", backgroundColor: colors.background }}
         >
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-full text-sm font-medium"
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             style={{
-              backgroundColor: colors.background,
+              backgroundColor: colors.panel,
               color: colors.textMuted,
               border: `1px solid ${colors.accent}30`,
             }}
@@ -875,7 +1053,7 @@ const ActionPlanModal = ({
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => handleConfirm("start")}
-            className="px-4 py-2 rounded-full text-sm font-medium"
+            className="px-5 py-2 rounded-lg text-sm font-semibold shadow-sm"
             style={{
               backgroundColor: hasActivePlan ? colors.primary : colors.accent,
               color: colors.background,
@@ -890,7 +1068,7 @@ const ActionPlanModal = ({
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => handleConfirm("complete")}
-              className="px-4 py-2 rounded-full text-sm font-medium"
+              className="px-5 py-2 rounded-lg text-sm font-semibold shadow-sm"
               style={{
                 backgroundColor: colors.success,
                 color: colors.background,
@@ -906,7 +1084,7 @@ const ActionPlanModal = ({
   );
 };
 
-// Main Page Component (Dark Theme Adjustments)
+// Main Page Component (Enhanced)
 const RecommendationsPage = () => {
   const colors = useThemeColors() as any;
   const categoryConfig = buildCategoryConfig(colors);
@@ -928,6 +1106,7 @@ const RecommendationsPage = () => {
   const [activeActionPlan, setActiveActionPlan] =
     useState<EnhancedRecommendation | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   const fetchRecommendations = useCallback(async () => {
     setIsLoading(true);
@@ -996,7 +1175,6 @@ const RecommendationsPage = () => {
     setExpandedCardId(expandedCardId === id ? null : id);
   };
 
-  // NEW: Function to handle "Take Action" click
   const handleTakeAction = (id: string | undefined) => {
     if (!id) return;
     const target = recommendations.find((rec) => rec._id === id);
@@ -1073,6 +1251,29 @@ const RecommendationsPage = () => {
     const timeout = setTimeout(() => setActionFeedback(null), 3500);
     return () => clearTimeout(timeout);
   }, [actionFeedback]);
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const total = recommendations.length;
+    const highPriority = recommendations.filter((r) => r.priority === "high").length;
+    const inProgress = recommendations.filter((r) => r.status === "in_progress").length;
+    const completed = recommendations.filter((r) => r.status === "completed").length;
+    const completionRate = total > 0 ? (completed / total) * 100 : 0;
+    
+    // Calculate average impact score (simplified)
+    const avgImpact = recommendations.length > 0 
+      ? recommendations.filter(r => r.impact === "High").length / recommendations.length * 100
+      : 0;
+
+    return {
+      total,
+      highPriority,
+      inProgress,
+      completed,
+      completionRate: Math.round(completionRate),
+      avgImpact: Math.round(avgImpact),
+    };
+  }, [recommendations]);
 
   // Filtering and Sorting Logic
   const filteredAndSortedRecommendations = useMemo(() => {
@@ -1160,14 +1361,14 @@ const RecommendationsPage = () => {
     sortBy,
   ]);
 
-  // Component Renderer (Dark Theme)
+  // Component Renderer
   return (
     <div
       className="min-h-screen p-4 md:p-8"
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
       <div className="max-w-7xl mx-auto">
-        {/* Page Header */}
+        {/* Enhanced Page Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1176,110 +1377,173 @@ const RecommendationsPage = () => {
         >
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
-              <h1
-                className="text-3xl font-bold tracking-tight"
-                style={{ color: colors.text }}
-              >
-                Smart{" "}
-                <span style={{ color: colors.primary }}>Recommendations</span>
-              </h1>
-              <p className="mt-1 max-w-3xl" style={{ color: colors.textMuted }}>
-                AI-powered recommendations to improve ethical scores and
-                sustainability across your supply chain.
-              </p>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={fetchRecommendations}
-              className="flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-colors"
-              style={{
-                backgroundColor: colors.accent,
-                color: colors.background,
-              }}
-            >
-              <RefreshCcw className="h-4 w-4" />
-              <span>Refresh</span>
-            </motion.button>
-          </div>
-
-          {/* Stats Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {[
-              {
-                label: "High Priority",
-                count: recommendations.filter((r) => r.priority === "high")
-                  .length,
-                icon: (
-                  <AlertCircle
-                    className="h-5 w-5"
-                    style={{ color: colors.error }}
-                  />
-                ),
-                bgColor: colors.error + "20",
-                borderColor: colors.error + "80",
-                textColor: colors.error,
-              },
-              {
-                label: "In Progress",
-                count: recommendations.filter((r) => r.status === "in_progress")
-                  .length,
-                icon: (
-                  <Loader2
-                    className="h-5 w-5 animate-spin"
-                    style={{ color: colors.accent }}
-                  />
-                ),
-                bgColor: colors.accent + "20",
-                borderColor: colors.accent + "80",
-                textColor: colors.accent,
-              },
-              {
-                label: "Total Recommendations",
-                count: recommendations.length,
-                icon: (
-                  <BarChart2
-                    className="h-5 w-5"
-                    style={{ color: colors.primary }}
-                  />
-                ),
-                bgColor: colors.primary + "20",
-                borderColor: colors.primary + "80",
-                textColor: colors.primary,
-              },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className={`flex items-center p-4 rounded-xl border`}
-                style={{
-                  backgroundColor: stat.bgColor,
-                  borderColor: stat.borderColor,
-                }}
-              >
-                <div
-                  className={`rounded-full p-3 mr-4`}
-                  style={{ backgroundColor: stat.bgColor }}
+              <div className="flex items-center gap-3 mb-2">
+                <div 
+                  className="p-3 rounded-xl"
+                  style={{ 
+                    backgroundColor: colors.primary + "20",
+                  }}
                 >
-                  {stat.icon}
+                  <Sparkles className="h-6 w-6" style={{ color: colors.primary }} />
                 </div>
                 <div>
-                  <p className="text-sm" style={{ color: colors.textMuted }}>
-                    {stat.label}
-                  </p>
-                  <p
-                    className={`text-2xl font-bold`}
-                    style={{ color: stat.textColor }}
+                  <h1
+                    className="text-4xl font-bold tracking-tight"
+                    style={{ color: colors.text }}
                   >
-                    {stat.count}
+                    AI-Powered{" "}
+                    <span style={{ color: colors.primary }}>Recommendations</span>
+                  </h1>
+                  <p className="mt-1 text-sm" style={{ color: colors.textMuted }}>
+                    Intelligent insights to optimize your supply chain sustainability
                   </p>
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setViewMode(viewMode === "list" ? "grid" : "list")}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border"
+                style={{
+                  backgroundColor: colors.panel,
+                  borderColor: colors.accent + "40",
+                  color: colors.text,
+                }}
+              >
+                {viewMode === "list" ? <Layers className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
+                <span className="hidden sm:inline">{viewMode === "list" ? "Grid" : "List"}</span>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={fetchRecommendations}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm"
+                style={{
+                  backgroundColor: colors.accent,
+                  color: colors.background,
+                }}
+              >
+                <RefreshCcw className="h-4 w-4" />
+                <span>Refresh</span>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  // Export functionality
+                  const csv = [
+                    ["Title", "Category", "Priority", "Status", "Supplier", "Impact", "Timeframe"],
+                    ...recommendations.map(r => [
+                      r.title || "",
+                      r.category || "",
+                      r.priority || "",
+                      r.status || "",
+                      typeof r.supplier === "object" ? r.supplier.name : "",
+                      r.impact || "",
+                      r.timeframe || ""
+                    ])
+                  ].map(row => row.join(",")).join("\n");
+                  
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `recommendations_${new Date().toISOString().split("T")[0]}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors border shadow-sm"
+                style={{
+                  backgroundColor: colors.panel,
+                  borderColor: colors.accent + "40",
+                  color: colors.accent,
+                }}
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Export</span>
+              </motion.button>
+            </div>
           </div>
+
+          {/* Enhanced Stats Dashboard */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+            <ImpactScoreCard
+              label="Total"
+              value={stats.total}
+              icon={<BarChart2 className="h-5 w-5" />}
+              color={colors.primary}
+              delay={0}
+            />
+            <ImpactScoreCard
+              label="High Priority"
+              value={stats.highPriority}
+              trend="up"
+              icon={<AlertCircle className="h-5 w-5" />}
+              color={colors.error}
+              delay={0.1}
+            />
+            <ImpactScoreCard
+              label="In Progress"
+              value={stats.inProgress}
+              icon={<Activity className="h-5 w-5" />}
+              color={colors.accent}
+              delay={0.2}
+            />
+            <ImpactScoreCard
+              label="Completed"
+              value={stats.completed}
+              trend="up"
+              icon={<CheckCircle2 className="h-5 w-5" />}
+              color={colors.success}
+              delay={0.3}
+            />
+            <ImpactScoreCard
+              label="Completion"
+              value={`${stats.completionRate}%`}
+              icon={<Percent className="h-5 w-5" />}
+              color={colors.primary}
+              delay={0.4}
+            />
+            <ImpactScoreCard
+              label="High Impact"
+              value={`${stats.avgImpact}%`}
+              icon={<TrendingUp className="h-5 w-5" />}
+              color={colors.warning}
+              delay={0.5}
+            />
+          </div>
+
+          {/* Category Distribution */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mb-6 p-5 rounded-xl border"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "30",
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2" style={{ color: colors.text }}>
+                <PieChart className="h-5 w-5" style={{ color: colors.primary }} />
+                Category Distribution
+              </h3>
+              <Link
+                to="/suppliers"
+                className="text-sm font-medium flex items-center gap-1 hover:underline"
+                style={{ color: colors.accent }}
+              >
+                View Suppliers <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+            <CategoryDistribution recommendations={recommendations} colors={colors} />
+          </motion.div>
 
           {/* Search and Filter Controls */}
           <div
@@ -1297,10 +1561,10 @@ const RecommendationsPage = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Search recommendations..."
+                  placeholder="Search recommendations, suppliers, or insights..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border focus:ring-2 focus:outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-lg border focus:ring-2 focus:outline-none transition-all"
                   style={{
                     backgroundColor: colors.inputBg,
                     borderColor: colors.accent + "50",
@@ -1312,10 +1576,11 @@ const RecommendationsPage = () => {
               <div className="flex-1 flex items-center gap-2">
                 <button
                   onClick={() => setFiltersVisible(!filtersVisible)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
                   style={{
                     borderColor: colors.accent + "50",
-                    color: colors.textMuted,
+                    color: colors.text,
+                    backgroundColor: filtersVisible ? colors.accent + "20" : "transparent",
                   }}
                 >
                   <Filter className="h-4 w-4" />
@@ -1333,10 +1598,10 @@ const RecommendationsPage = () => {
                     const [field, dir] = sortBy.split("_");
                     setSortBy(`${field}_${dir === "asc" ? "desc" : "asc"}`);
                   }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
                   style={{
                     borderColor: colors.accent + "50",
-                    color: colors.textMuted,
+                    color: colors.text,
                   }}
                 >
                   <ArrowDownUp className="h-4 w-4" />
@@ -1360,13 +1625,14 @@ const RecommendationsPage = () => {
                       setFilterPriority("all");
                       setFilterStatus("all");
                     }}
-                    className="ml-auto flex items-center gap-1 px-3 py-2 rounded-lg border font-medium hover:bg-red-900/50 transition-colors"
+                    className="ml-auto flex items-center gap-1 px-4 py-2.5 rounded-lg border font-medium hover:bg-red-900/50 transition-colors"
                     style={{
                       borderColor: colors.error + "80",
                       backgroundColor: colors.error + "20",
                       color: colors.error,
                     }}
                   >
+                    <X className="h-4 w-4" />
                     <span>Clear Filters</span>
                   </motion.button>
                 )}
@@ -1381,13 +1647,14 @@ const RecommendationsPage = () => {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="overflow-hidden pt-4 mt-4 border-t border-gray-700"
+                  className="overflow-hidden pt-4 mt-4 border-t"
+                  style={{ borderColor: colors.accent + "20" }}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Category Filter */}
                     <div>
                       <label
-                        className="block text-sm font-medium mb-1"
+                        className="block text-sm font-semibold mb-2"
                         style={{ color: colors.textMuted }}
                       >
                         Category
@@ -1442,7 +1709,7 @@ const RecommendationsPage = () => {
                     {/* Priority Filter */}
                     <div>
                       <label
-                        className="block text-sm font-medium mb-1"
+                        className="block text-sm font-semibold mb-2"
                         style={{ color: colors.textMuted }}
                       >
                         Priority
@@ -1492,7 +1759,7 @@ const RecommendationsPage = () => {
                     {/* Status Filter */}
                     <div>
                       <label
-                        className="block text-sm font-medium mb-1"
+                        className="block text-sm font-semibold mb-2"
                         style={{ color: colors.textMuted }}
                       >
                         Status
@@ -1551,48 +1818,51 @@ const RecommendationsPage = () => {
         <div>
           {/* Loading State */}
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-20">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="flex flex-col items-center"
               >
                 <Loader2
-                  className="h-12 w-12 animate-spin mb-4"
+                  className="h-16 w-16 animate-spin mb-4"
                   style={{ color: colors.primary }}
                 />
                 <p
-                  className="text-lg font-medium"
+                  className="text-lg font-semibold"
                   style={{ color: colors.textMuted }}
                 >
                   Loading recommendations...
+                </p>
+                <p className="text-sm mt-2" style={{ color: colors.textMuted }}>
+                  Analyzing your supply chain data
                 </p>
               </motion.div>
             </div>
           ) : error ? (
             <div
-              className="flex flex-col items-center justify-center py-16 rounded-xl border"
+              className="flex flex-col items-center justify-center py-20 rounded-xl border"
               style={{
                 backgroundColor: colors.error + "20",
                 borderColor: colors.error + "80",
               }}
             >
               <AlertTriangle
-                className="h-12 w-12 mb-4"
+                className="h-16 w-16 mb-4"
                 style={{ color: colors.error }}
               />
               <h2
-                className="text-xl font-semibold mb-2"
+                className="text-2xl font-bold mb-2"
                 style={{ color: colors.error }}
               >
                 Error Loading Recommendations
               </h2>
-              <p className="mb-4" style={{ color: colors.error }}>
+              <p className="mb-6 text-center max-w-md" style={{ color: colors.error }}>
                 {error}
               </p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 rounded-lg font-medium transition-colors"
+                className="px-6 py-3 rounded-lg font-semibold transition-colors shadow-sm"
                 style={{
                   backgroundColor: colors.error,
                   color: colors.background,
@@ -1603,7 +1873,7 @@ const RecommendationsPage = () => {
             </div>
           ) : filteredAndSortedRecommendations.length === 0 ? (
             <div
-              className="flex flex-col items-center justify-center py-16 rounded-xl border"
+              className="flex flex-col items-center justify-center py-20 rounded-xl border"
               style={{
                 backgroundColor: colors.panel,
                 borderColor: colors.accent + "30",
@@ -1616,16 +1886,16 @@ const RecommendationsPage = () => {
                 className="flex flex-col items-center max-w-md text-center"
               >
                 <Search
-                  className="h-12 w-12 mb-4"
+                  className="h-16 w-16 mb-4"
                   style={{ color: colors.textMuted }}
                 />
                 <h2
-                  className="text-xl font-semibold mb-2"
+                  className="text-2xl font-bold mb-2"
                   style={{ color: colors.text }}
                 >
                   No Recommendations Found
                 </h2>
-                <p className="mb-4" style={{ color: colors.textMuted }}>
+                <p className="mb-6" style={{ color: colors.textMuted }}>
                   {searchQuery
                     ? `No recommendations match your search for "${searchQuery}"`
                     : "No recommendations match your current filters"}
@@ -1637,7 +1907,7 @@ const RecommendationsPage = () => {
                     setFilterPriority("all");
                     setFilterStatus("all");
                   }}
-                  className="px-4 py-2 rounded-lg font-medium transition-colors"
+                  className="px-6 py-3 rounded-lg font-semibold transition-colors shadow-sm"
                   style={{
                     backgroundColor: colors.accent,
                     color: colors.background,
@@ -1670,9 +1940,9 @@ const RecommendationsPage = () => {
                 </motion.div>
               )}
 
-              <div className="space-y-2">
+              <div className="space-y-2 mb-6">
                 <div className="flex justify-between items-center">
-                  <p className="text-sm" style={{ color: colors.textMuted }}>
+                  <p className="text-sm font-medium" style={{ color: colors.textMuted }}>
                     Showing {filteredAndSortedRecommendations.length}{" "}
                     recommendation
                     {filteredAndSortedRecommendations.length !== 1 ? "s" : ""}
@@ -1680,7 +1950,7 @@ const RecommendationsPage = () => {
 
                   <div className="flex items-center gap-2">
                     <label
-                      className="text-sm"
+                      className="text-sm font-medium"
                       style={{ color: colors.textMuted }}
                     >
                       Sort by:
@@ -1688,7 +1958,7 @@ const RecommendationsPage = () => {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="rounded border text-sm p-1 focus:ring-2 focus:outline-none"
+                      className="rounded-lg border text-sm p-2 focus:ring-2 focus:outline-none font-medium"
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.accent + "50",
@@ -1742,17 +2012,20 @@ const RecommendationsPage = () => {
       <AnimatePresence>
         {actionFeedback && (
           <motion.div
-            className="fixed top-6 right-6 z-50 px-4 py-3 rounded-xl border shadow-lg"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 right-6 z-50 px-5 py-3 rounded-xl border shadow-xl backdrop-blur-sm"
+            initial={{ opacity: 0, y: -20, x: 20 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: -20, x: 20 }}
             style={{
               backgroundColor: colors.background,
               borderColor: colors.primary + "40",
               color: colors.text,
             }}
           >
-            {actionFeedback}
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" style={{ color: colors.success }} />
+              <span className="font-medium">{actionFeedback}</span>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
