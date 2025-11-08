@@ -367,7 +367,7 @@ class ScenarioRunner {
         "Composite Score": r["Composite Score"],
         "Risk Penalty": r["Risk Penalty"],
         "Final Score": r["Final Score"],
-        "Emission Intensity (tCO2e/MUSD)": Number.isFinite(r["Emission Intensity"])
+        "Emission Intensity": Number.isFinite(r["Emission Intensity"])
           ? Number(r["Emission Intensity"]).toFixed(6)
           : "",
         "Margin %": r["Margin %"] != null && Number.isFinite(r["Margin %"])

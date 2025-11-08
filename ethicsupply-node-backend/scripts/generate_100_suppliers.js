@@ -348,19 +348,34 @@ function generateSupplier(index) {
     // High risk: 0.65 - 0.85 (significant penalty: 0.35-0.55 excess * 15 * 100 = 525-825)
     baseRiskValue = randomBetween(0.65, 0.85);
   }
-  
+
   // Apply variation around base risk value (±10%)
   const variation = randomBetween(-0.1, 0.1);
   const geopolitical_risk = round(
-    Math.max(0.05, Math.min(0.95, baseRiskValue + variation + (country.riskGeo - 0.25) * 0.3)),
+    Math.max(
+      0.05,
+      Math.min(0.95, baseRiskValue + variation + (country.riskGeo - 0.25) * 0.3)
+    ),
     2
   );
   const climate_risk = round(
-    Math.max(0.05, Math.min(0.95, baseRiskValue + variation + (country.riskClimate - 0.25) * 0.3)),
+    Math.max(
+      0.05,
+      Math.min(
+        0.95,
+        baseRiskValue + variation + (country.riskClimate - 0.25) * 0.3
+      )
+    ),
     2
   );
   const labor_dispute_risk = round(
-    Math.max(0.05, Math.min(0.95, baseRiskValue + variation + (country.riskLabor - 0.25) * 0.3)),
+    Math.max(
+      0.05,
+      Math.min(
+        0.95,
+        baseRiskValue + variation + (country.riskLabor - 0.25) * 0.3
+      )
+    ),
     2
   );
 
