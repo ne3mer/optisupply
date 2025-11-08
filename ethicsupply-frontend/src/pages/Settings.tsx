@@ -8,6 +8,7 @@ import {
   updateScoringSettings,
   resetScoringSettings,
   exportSuppliersCSV,
+  recomputeAllSuppliers,
   type ScoringSettings,
 } from "../services/api";
 
@@ -20,6 +21,7 @@ const Settings: React.FC = () => {
   const [settings, setSettings] = useState<ScoringSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [recomputing, setRecomputing] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -627,6 +629,67 @@ const Settings: React.FC = () => {
                       }}
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Admin Actions Section */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <span style={{ color: colors.primary }}>⚙️ Admin Actions</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-sm mb-3" style={{ color: colors.textMuted }}>
+                    Recalculate all supplier scores with current settings. This will update all suppliers' ESG scores, composite scores, risk penalties, and final scores.
+                  </p>
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Recalculate all supplier scores? This may take a few moments.")) return;
+                      try {
+                        setRecomputing(true);
+                        const result = await recomputeAllSuppliers();
+                        alert(`Success! Recomputed ${result.results.successful} suppliers. ${result.results.failed > 0 ? `${result.results.failed} failed.` : ""}`);
+                      } catch (error: any) {
+                        alert(`Error: ${error.message || "Failed to recompute suppliers"}`);
+                      } finally {
+                        setRecomputing(false);
+                      }
+                    }}
+                    disabled={recomputing || saving}
+                    className="w-full px-4 py-3 rounded-md font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{
+                      backgroundColor: recomputing ? colors.accent + "80" : colors.accent,
+                      color: "#fff",
+                    }}
+                  >
+                    {recomputing ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        Recalculating...
+                      </>
+                    ) : (
+                      <>
+                        🔄 Recalculate All Suppliers
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="pt-2 border-t" style={{ borderColor: colors.accent + "20" }}>
+                  <Link
+                    to="/scenarios"
+                    className="block w-full px-4 py-3 rounded-md font-medium transition-all text-center"
+                    style={{
+                      backgroundColor: colors.accent + "20",
+                      color: colors.accent,
+                    }}
+                  >
+                    🧪 Run Scenarios (S1-S4) →
+                  </Link>
                 </div>
               </CardContent>
             </Card>

@@ -2869,6 +2869,34 @@ function subtractDays(date: Date, days: number): Date {
   return result;
 }
 
+/**
+ * Recompute all supplier scores (admin endpoint)
+ * POST /api/admin/recompute-all
+ */
+export const recomputeAllSuppliers = async (): Promise<{ message: string; results: any; idempotent: boolean }> => {
+  try {
+    const response = await fetch(getEndpoint("admin/recompute-all"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to recompute all suppliers: ${response.status} ${errorText}`);
+    }
+
+    const data = await response.json();
+    logger.log("All suppliers recomputed:", data);
+    return data;
+  } catch (error) {
+    logger.error("Error recomputing all suppliers:", error);
+    throw error;
+  }
+};
+
 // Recompute supplier scores with current settings
 export const recomputeSupplierScores = async (id: string | number): Promise<Supplier> => {
   try {
