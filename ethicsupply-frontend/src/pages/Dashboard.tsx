@@ -1677,18 +1677,17 @@ const Dashboard = () => {
         className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold tracking-tight`}>
             Supplier ESG{" "}
             <span style={{ color: colors.primary }}>Dashboard</span>
           </h1>
-          <p className="text-lg mt-1" style={{ color: colors.textMuted }}>
-            Overview of your supply chain's ethical and sustainability
-            performance.
+          <p className={`${isMobile ? 'text-sm' : 'text-lg'} mt-1`} style={{ color: colors.textMuted }}>
+            {isMobile ? "Supply chain ESG overview" : "Overview of your supply chain's ethical and sustainability performance."}
           </p>
           {datasetMeta && (
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <span
-                className="px-2.5 py-1 rounded-full text-xs border"
+                className="px-2 py-1 rounded-full text-xs border whitespace-nowrap"
                 style={{
                   backgroundColor: colors.panel,
                   color: colors.text,
@@ -1696,32 +1695,32 @@ const Dashboard = () => {
                 }}
                 title={`Generated: ${datasetMeta.generatedAt || "n/a"} | Bands: ${datasetMeta.bandsVersion || "v1"}`}
               >
-                Data Source: {formatVersionLabel(datasetMeta.version)}
-                {datasetMeta.seed ? ` (seed: ${datasetMeta.seed})` : ""}
+                {isMobile ? "Data: " : "Data Source: "}{formatVersionLabel(datasetMeta.version)}
+                {datasetMeta.seed && !isMobile && ` (seed: ${datasetMeta.seed})`}
               </span>
               <button
                 onClick={() => setShowMethodology(true)}
-                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded"
+                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded whitespace-nowrap"
                 style={{ color: colors.textMuted }}
                 title="View dataset generation methodology"
               >
-                <InformationCircleIcon className="h-4 w-4" /> Methodology
+                {!isMobile && <InformationCircleIcon className="h-4 w-4" />} {isMobile ? "Method" : "Methodology"}
               </button>
               <Link
                 to="/methodology"
-                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded"
+                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded whitespace-nowrap"
                 style={{ color: colors.textMuted }}
                 title="View scoring formulas and weights"
               >
-                <BeakerIcon className="h-4 w-4" /> Scoring Methodology
+                {!isMobile && <BeakerIcon className="h-4 w-4" />} {isMobile ? "Scoring" : "Scoring Methodology"}
               </Link>
               <button
                 onClick={() => setShowEditTargets(true)}
-                className="text-xs underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded"
+                className="text-xs underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded whitespace-nowrap"
                 style={{ color: colors.textMuted }}
                 title="Edit KPI/threshold targets (local only)"
               >
-                Edit Targets
+                {isMobile ? "Targets" : "Edit Targets"}
               </button>
             </div>
           )}
@@ -1760,7 +1759,7 @@ const Dashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8"
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-6 md:mb-8"
       >
         <KpiIndicator
           label="Total Suppliers"
@@ -1809,9 +1808,9 @@ const Dashboard = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.25, duration: 0.5 }}
-        className="mb-8"
+        className="mb-6 md:mb-8"
       >
-        <div className="flex md:grid md:grid-cols-3 gap-4 overflow-x-auto snap-x -mx-1 px-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         {(() => {
           const renewableOk = Math.round(extraAnalytics.avgRenewable) >= targets.renewablePct;
           const injuryOk = Number.isFinite(extraAnalytics.avgInjury) && extraAnalytics.avgInjury <= targets.injuryRate;
@@ -1819,31 +1818,25 @@ const Dashboard = () => {
           const injuryColor = injuryOk ? colors.success : colors.error;
           return (
             <>
-        <div className="min-w-[220px] md:min-w-0 snap-start">
         <KpiIndicator
-          label="Ethical Paths (Supply Graph)"
+          label={isMobile ? "Ethical Paths" : "Ethical Paths (Supply Graph)"}
           value={extraAnalytics.ethicalRatio !== null ? extraAnalytics.ethicalRatio.toString() : 'N/A'}
           unit="%"
           icon={GlobeAltIcon}
           color={colors.accent}
         />
-        </div>
-        <div className="min-w-[220px] md:min-w-0 snap-start">
         <KpiIndicator
-          label="Renewable Energy (Avg vs Target)"
-          value={`${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`}
+          label={isMobile ? "Renewable Energy" : "Renewable Energy (Avg vs Target)"}
+          value={isMobile ? `${Math.round(extraAnalytics.avgRenewable)}%` : `${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`}
           icon={SparklesIcon}
           color={renewableColor}
         />
-        </div>
-        <div className="min-w-[220px] md:min-w-0 snap-start">
         <KpiIndicator
-          label="Injury Rate (Avg vs Target)"
-          value={`${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`}
+          label={isMobile ? "Injury Rate" : "Injury Rate (Avg vs Target)"}
+          value={isMobile ? extraAnalytics.avgInjury.toFixed(1) : `${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`}
           icon={ShieldExclamationIcon}
           color={injuryColor}
         />
-        </div>
             </>
           );
         })()}
@@ -1851,7 +1844,7 @@ const Dashboard = () => {
       </motion.div>
 
       {/* Data Quality Card - Compact */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <div className="lg:col-span-1">
           <DataQualityCard
             suppliers={allSuppliers}
@@ -1905,7 +1898,7 @@ const Dashboard = () => {
       )}
 
       {/* Main Grid: Charts & Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* Ethical Score Distribution */}
         <MetricCard
           title="Ethical Score Distribution"
@@ -1996,7 +1989,7 @@ const Dashboard = () => {
 
       {/* Watchlist & Alerts */}
       <div className="lg:col-span-3">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
         <DashboardCard title="Watchlist: High Risk" icon={ShieldExclamationIcon} gridSpan="col-span-1">
           {extraAnalytics.watchHighRisk.length ? (
             <div className="space-y-2">
@@ -2031,7 +2024,7 @@ const Dashboard = () => {
 
       {/* Data Quality Panel & Risk Penalties */}
       <div className="lg:col-span-3">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
           <DashboardCard title="Data Quality: Top Missing Metrics" icon={ListBulletIcon} gridSpan="col-span-1">
           {extraAnalytics.topMissing.length ? (
             <div className="text-sm">
@@ -2070,14 +2063,14 @@ const Dashboard = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className="lg:col-span-3 mt-6"
+          className="lg:col-span-3 mt-4 sm:mt-6"
         >
-          <DashboardCard title="Quick Insights & Alerts" icon={LightBulbIcon} gridSpan="col-span-1">
+          <DashboardCard title={isMobile ? "Insights" : "Quick Insights & Alerts"} icon={LightBulbIcon} gridSpan="col-span-1">
             <div className="space-y-2">
               {extraAnalytics.insights.map((insight, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-3 rounded-lg border"
+                  className={`flex items-start gap-2 sm:gap-3 ${isMobile ? 'p-2' : 'p-3'} rounded-lg border`}
                   style={{
                     backgroundColor: insight.type === 'error' ? colors.error + '10' :
                                    insight.type === 'warning' ? colors.warning + '10' :
@@ -2087,12 +2080,12 @@ const Dashboard = () => {
                                 colors.primary + '40',
                   }}
                 >
-                  {insight.type === 'error' && <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.error }} />}
-                  {insight.type === 'warning' && <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.warning }} />}
-                  {insight.type === 'info' && <InformationCircleIcon className="h-5 w-5 flex-shrink-0 mt-0.5" style={{ color: colors.primary }} />}
-                  <div className="flex-1">
-                    <div className="font-medium text-sm" style={{ color: colors.text }}>{insight.title}</div>
-                    <div className="text-xs mt-0.5" style={{ color: colors.textMuted }}>{insight.message}</div>
+                  {insight.type === 'error' && <ExclamationTriangleIcon className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0 mt-0.5`} style={{ color: colors.error }} />}
+                  {insight.type === 'warning' && <ExclamationTriangleIcon className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0 mt-0.5`} style={{ color: colors.warning }} />}
+                  {insight.type === 'info' && <InformationCircleIcon className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0 mt-0.5`} style={{ color: colors.primary }} />}
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: colors.text }}>{insight.title}</div>
+                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} mt-0.5`} style={{ color: colors.textMuted }}>{insight.message}</div>
                   </div>
                 </div>
               ))}
@@ -2108,26 +2101,26 @@ const Dashboard = () => {
         transition={{ delay: 0.4 }}
         className="lg:col-span-3 mt-6"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          <DashboardCard title="Top Performers: Overall" icon={TrophyIcon} gridSpan="col-span-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <DashboardCard title={isMobile ? "Top: Overall" : "Top Performers: Overall"} icon={TrophyIcon} gridSpan="col-span-1">
             {extraAnalytics.topPerformers.overall.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 {extraAnalytics.topPerformers.overall.map((p, idx) => (
-                  <div key={p.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-xs font-bold" style={{ color: colors.primary }}>#{idx + 1}</span>
+                  <div key={p.id} className={`flex items-center justify-between ${isMobile ? 'text-xs' : 'text-sm'} py-1 border-b`} style={{ borderColor: colors.accent + '20' }}>
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+                      <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-bold`} style={{ color: colors.primary }}>#{idx + 1}</span>
                       <span className="truncate" style={{ color: colors.text }} title={p.name}>{p.name}</span>
                     </div>
-                    <span className="font-mono text-xs whitespace-nowrap ml-2" style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
+                    <span className={`font-mono ${isMobile ? 'text-[10px]' : 'text-xs'} whitespace-nowrap ml-2`} style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-sm" style={{ color: colors.textMuted }}>No data available.</p>
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: colors.textMuted }}>No data available.</p>
             )}
           </DashboardCard>
 
-          <DashboardCard title="Top Performers: Environmental" icon={CloudIcon} gridSpan="col-span-1">
+          <DashboardCard title={isMobile ? "Top: Environmental" : "Top Performers: Environmental"} icon={CloudIcon} gridSpan="col-span-1">
             {extraAnalytics.topPerformers.environmental.length > 0 ? (
               <div className="space-y-2">
                 {extraAnalytics.topPerformers.environmental.map((p, idx) => (
@@ -2145,7 +2138,7 @@ const Dashboard = () => {
             )}
           </DashboardCard>
 
-          <DashboardCard title="Top Performers: Social" icon={UsersIcon} gridSpan="col-span-1">
+          <DashboardCard title={isMobile ? "Top: Social" : "Top Performers: Social"} icon={UsersIcon} gridSpan="col-span-1">
             {extraAnalytics.topPerformers.social.length > 0 ? (
               <div className="space-y-2">
                 {extraAnalytics.topPerformers.social.map((p, idx) => (
@@ -2163,16 +2156,16 @@ const Dashboard = () => {
             )}
           </DashboardCard>
 
-          <DashboardCard title="Compliance Status" icon={CheckBadgeIcon} gridSpan="col-span-1">
-            <div className="flex flex-col items-center justify-center py-4">
-              <div className="text-4xl font-bold mb-2" style={{ 
+          <DashboardCard title={isMobile ? "Compliance" : "Compliance Status"} icon={CheckBadgeIcon} gridSpan="col-span-1">
+            <div className="flex flex-col items-center justify-center py-3 sm:py-4">
+              <div className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold mb-2`} style={{ 
                 color: extraAnalytics.complianceRate >= 80 ? colors.success : 
                        extraAnalytics.complianceRate >= 60 ? colors.warning : colors.error 
               }}>
                 {extraAnalytics.complianceRate.toFixed(1)}%
               </div>
-              <p className="text-xs text-center" style={{ color: colors.textMuted }}>
-                Suppliers meeting 60%+ threshold
+              <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-center px-1`} style={{ color: colors.textMuted }}>
+                {isMobile ? "60%+ threshold" : "Suppliers meeting 60%+ threshold"}
               </p>
               <div className="mt-3 w-full bg-opacity-20 rounded-full h-2" style={{ backgroundColor: colors.accent + '20' }}>
                 <div
@@ -2196,104 +2189,104 @@ const Dashboard = () => {
         transition={{ delay: 0.45 }}
         className="lg:col-span-3 mt-6"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <DashboardCard title="Environmental Impact Summary" icon={FireIcon} gridSpan="col-span-1">
-            <div className="space-y-3 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <DashboardCard title={isMobile ? "Environmental Summary" : "Environmental Impact Summary"} icon={FireIcon} gridSpan="col-span-1">
+            <div className={`space-y-2 sm:space-y-3 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Total CO₂ Emissions</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'CO₂' : 'Total CO₂ Emissions'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.envSummary.totalCO2.toFixed(1)}t
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Total Water Usage</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Water' : 'Total Water Usage'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.envSummary.totalWater.toFixed(0)}m³
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Total Waste Generated</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Waste' : 'Total Waste Generated'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.envSummary.totalWaste.toFixed(1)}t
                 </span>
               </div>
               <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
                 <div className="flex justify-between items-center mb-1">
-                  <span style={{ color: colors.textMuted }}>Avg Renewable Energy</span>
-                  <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Renewable' : 'Avg Renewable Energy'}</span>
+                  <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                     {extraAnalytics.envSummary.avgRenewable.toFixed(1)}%
                   </span>
                 </div>
-                <div className="text-xs" style={{ color: colors.textMuted }}>
-                  {extraAnalytics.envSummary.suppliersWithRenewable} suppliers reporting
+                <div className={`${isMobile ? 'text-[10px]' : 'text-xs'}`} style={{ color: colors.textMuted }}>
+                  {extraAnalytics.envSummary.suppliersWithRenewable} {isMobile ? 'suppliers' : 'suppliers reporting'}
                 </div>
               </div>
             </div>
           </DashboardCard>
 
-          <DashboardCard title="Social Metrics Summary" icon={UsersIcon} gridSpan="col-span-1">
-            <div className="space-y-3 text-sm">
+          <DashboardCard title={isMobile ? "Social Summary" : "Social Metrics Summary"} icon={UsersIcon} gridSpan="col-span-1">
+            <div className={`space-y-2 sm:space-y-3 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Avg Gender Diversity</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Diversity' : 'Avg Gender Diversity'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.socialSummary.avgDiversity.toFixed(1)}%
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Avg Training Hours</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Training' : 'Avg Training Hours'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.socialSummary.avgTraining.toFixed(0)}h
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Avg Living Wage Ratio</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Wage Ratio' : 'Avg Living Wage Ratio'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.socialSummary.avgLivingWage.toFixed(2)}x
                 </span>
               </div>
               <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
                 <div className="flex justify-between items-center mb-1">
-                  <span style={{ color: colors.textMuted }}>Avg Injury Rate</span>
-                  <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Injury Rate' : 'Avg Injury Rate'}</span>
+                  <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                     {extraAnalytics.socialSummary.avgInjury.toFixed(2)}
                   </span>
                 </div>
-                <div className="text-xs" style={{ color: colors.textMuted }}>
-                  {extraAnalytics.socialSummary.suppliersWithTraining} suppliers with training data
+                <div className={`${isMobile ? 'text-[10px]' : 'text-xs'}`} style={{ color: colors.textMuted }}>
+                  {extraAnalytics.socialSummary.suppliersWithTraining} {isMobile ? 'with training' : 'suppliers with training data'}
                 </div>
               </div>
             </div>
           </DashboardCard>
 
-          <DashboardCard title="Governance Metrics Summary" icon={PresentationChartLineIcon} gridSpan="col-span-1">
-            <div className="space-y-3 text-sm">
+          <DashboardCard title={isMobile ? "Governance Summary" : "Governance Metrics Summary"} icon={PresentationChartLineIcon} gridSpan="col-span-1">
+            <div className={`space-y-2 sm:space-y-3 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Avg Transparency</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Transparency' : 'Avg Transparency'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.govSummary.avgTransparency.toFixed(1)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Avg Board Diversity</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Board Diversity' : 'Avg Board Diversity'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.govSummary.avgBoardDiversity.toFixed(1)}%
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span style={{ color: colors.textMuted }}>Avg Board Independence</span>
-                <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Board Independence' : 'Avg Board Independence'}</span>
+                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                   {extraAnalytics.govSummary.avgBoardIndependence.toFixed(1)}%
                 </span>
               </div>
               <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
                 <div className="flex justify-between items-center mb-1">
-                  <span style={{ color: colors.textMuted }}>Anti-Corruption Policy</span>
-                  <span className="font-mono font-semibold" style={{ color: colors.text }}>
+                  <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Anti-Corruption' : 'Anti-Corruption Policy'}</span>
+                  <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
                     {extraAnalytics.govSummary.antiCorruptionRate.toFixed(1)}%
                   </span>
                 </div>
-                <div className="text-xs" style={{ color: colors.textMuted }}>
-                  {extraAnalytics.govSummary.suppliersWithAntiCorruption} suppliers with policy
+                <div className={`${isMobile ? 'text-[10px]' : 'text-xs'}`} style={{ color: colors.textMuted }}>
+                  {extraAnalytics.govSummary.suppliersWithAntiCorruption} {isMobile ? 'with policy' : 'suppliers with policy'}
                 </div>
               </div>
             </div>
@@ -2306,9 +2299,9 @@ const Dashboard = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="lg:col-span-3 mt-6"
+        className="lg:col-span-3 mt-4 sm:mt-6"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           <DashboardCard title="Recent Activity" icon={CalendarIcon} gridSpan="col-span-1">
             {allSuppliers.length ? (
               <div className="text-sm">
@@ -2335,9 +2328,9 @@ const Dashboard = () => {
             )}
           </DashboardCard>
 
-          <DashboardCard title="Top Movers (Risk Penalty Δ)" icon={ArrowTrendingUpIcon} gridSpan="col-span-1">
+          <DashboardCard title={isMobile ? "Top Movers" : "Top Movers (Risk Penalty Δ)"} icon={ArrowTrendingUpIcon} gridSpan="col-span-1">
             {(topMovers.increases.length || topMovers.decreases.length) ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-3 sm:gap-4 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                 <div>
                   <div className="text-xs mb-1 font-medium" style={{ color: colors.textMuted }}>Increases</div>
                   {topMovers.increases.length > 0 ? (
