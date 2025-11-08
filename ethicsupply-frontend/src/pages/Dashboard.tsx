@@ -1245,48 +1245,6 @@ const Dashboard = () => {
       try {
         const suppliers = await getSuppliers();
         setAllSuppliers(suppliers || []);
-
-        // Compute movers using localStorage snapshot of risk_factor
-        try {
-          const prevRaw = localStorage.getItem("dashboardSnapshot:v1");
-          const prev: Record<string, { rf?: number; esg?: number }> = prevRaw
-            ? JSON.parse(prevRaw)
-            : {};
-          const curr: Record<string, { rf?: number; esg?: number; name: string }> = {};
-          const diffs: Array<{ id: string | number; name: string; delta: number }> = [];
-          (suppliers || []).forEach((s) => {
-            const id = (s as any)._id || s.id;
-            curr[id] = {
-              rf: typeof s.risk_factor === "number" ? s.risk_factor : undefined,
-              esg: typeof s.ethical_score === "number" ? s.ethical_score : undefined,
-              name: s.name || String(id),
-            };
-            const prevRf = prev[id]?.rf;
-            const currRf = curr[id].rf;
-            if (typeof prevRf === "number" && typeof currRf === "number") {
-              const delta = currRf - prevRf;
-              diffs.push({ id, name: curr[id].name, delta });
-            }
-          });
-          diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
-          const increases = diffs
-            .filter((d) => d.delta > 0)
-            .sort((a, b) => b.delta - a.delta)
-            .slice(0, 5);
-          const decreases = diffs
-            .filter((d) => d.delta < 0)
-            .sort((a, b) => a.delta - b.delta)
-            .slice(0, 5);
-          setTopMovers({ increases, decreases });
-          // Save current snapshot
-          const toSave: Record<string, { rf?: number; esg?: number }> = {};
-          Object.entries(curr).forEach(([id, v]) => {
-            toSave[id] = { rf: v.rf, esg: v.esg };
-          });
-          localStorage.setItem("dashboardSnapshot:v1", JSON.stringify(toSave));
-        } catch (e) {
-          logger.warn("Top movers snapshot failed:", e);
-        }
       } catch (e) {
         logger.warn("Suppliers fetch failed for dashboard extras:", e);
         setAllSuppliers([]);
@@ -1300,6 +1258,84 @@ const Dashboard = () => {
       }
     })();
   }, []);
+
+  // Calculate Top Movers whenever allSuppliers changes
+  useEffect(() => {
+    if (!allSuppliers || allSuppliers.length === 0) {
+      // If no suppliers, try to preserve existing movers or clear them
+      return;
+    }
+
+    try {
+      // Get previous snapshot from localStorage
+      const prevRaw = localStorage.getItem("dashboardSnapshot:v1");
+      const prev: Record<string, { rf?: number; esg?: number }> = prevRaw
+        ? JSON.parse(prevRaw)
+        : {};
+      
+      // Build current snapshot
+      const curr: Record<string, { rf?: number; esg?: number; name: string }> = {};
+      const diffs: Array<{ id: string | number; name: string; delta: number }> = [];
+      
+      allSuppliers.forEach((s) => {
+        const id = String((s as any)._id || s.id);
+        const riskFactor = typeof s.risk_factor === "number" ? s.risk_factor : 
+                          typeof s.risk_penalty === "number" ? s.risk_penalty / 100 : 
+                          undefined;
+        const finalScore = (s as any).finalScore ?? s.composite_score ?? s.ethical_score;
+        
+        curr[id] = {
+          rf: riskFactor,
+          esg: typeof finalScore === "number" ? finalScore : undefined,
+          name: s.name || String(id),
+        };
+        
+        // Compare with previous snapshot
+        const prevRf = prev[id]?.rf;
+        const currRf = curr[id].rf;
+        
+        if (typeof prevRf === "number" && typeof currRf === "number" && prevRf !== currRf) {
+          const delta = currRf - prevRf;
+          // Only include significant changes (at least 0.01 or 1%)
+          if (Math.abs(delta) >= 0.01) {
+            diffs.push({ id, name: curr[id].name, delta });
+          }
+        }
+      });
+      
+      // Sort by absolute delta and get top movers
+      diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+      const increases = diffs
+        .filter((d) => d.delta > 0)
+        .sort((a, b) => b.delta - a.delta)
+        .slice(0, 5);
+      const decreases = diffs
+        .filter((d) => d.delta < 0)
+        .sort((a, b) => a.delta - b.delta)
+        .slice(0, 5);
+      
+      // Only update if we have meaningful changes
+      if (diffs.length > 0) {
+        setTopMovers({ increases, decreases });
+      }
+      
+      // Save current snapshot for next comparison
+      // Only save if we have valid data
+      const toSave: Record<string, { rf?: number; esg?: number }> = {};
+      Object.entries(curr).forEach(([id, v]) => {
+        if (v.rf !== undefined || v.esg !== undefined) {
+          toSave[id] = { rf: v.rf, esg: v.esg };
+        }
+      });
+      
+      // Only update localStorage if we have data to save
+      if (Object.keys(toSave).length > 0) {
+        localStorage.setItem("dashboardSnapshot:v1", JSON.stringify(toSave));
+      }
+    } catch (e) {
+      logger.warn("Top movers calculation failed:", e);
+    }
+  }, [allSuppliers]);
 
   // --- Derived Data for KPIs and Charts ---
   const kpiData = useMemo(() => {
@@ -1919,26 +1955,41 @@ const Dashboard = () => {
             {(topMovers.increases.length || topMovers.decreases.length) ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <div className="text-xs mb-1" style={{ color: colors.textMuted }}>Increases</div>
-                  {topMovers.increases.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                      <span style={{ color: colors.text }}>{m.name}</span>
-                      <span className="font-mono" style={{ color: colors.error }}>+{Math.round(m.delta * 100)}%</span>
-                    </div>
-                  ))}
+                  <div className="text-xs mb-1 font-medium" style={{ color: colors.textMuted }}>Increases</div>
+                  {topMovers.increases.length > 0 ? (
+                    topMovers.increases.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: colors.accent + '20' }}>
+                        <span className="truncate flex-1 mr-2" style={{ color: colors.text }} title={m.name}>{m.name}</span>
+                        <span className="font-mono text-xs whitespace-nowrap" style={{ color: colors.error }}>
+                          +{Math.abs(m.delta) >= 0.01 ? (m.delta * 100).toFixed(1) : '<0.1'}%
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs py-1" style={{ color: colors.textMuted }}>No increases</p>
+                  )}
                 </div>
                 <div>
-                  <div className="text-xs mb-1" style={{ color: colors.textMuted }}>Decreases</div>
-                  {topMovers.decreases.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                      <span style={{ color: colors.text }}>{m.name}</span>
-                      <span className="font-mono" style={{ color: colors.success }}>{Math.round(m.delta * -100)}%</span>
-                    </div>
-                  ))}
+                  <div className="text-xs mb-1 font-medium" style={{ color: colors.textMuted }}>Decreases</div>
+                  {topMovers.decreases.length > 0 ? (
+                    topMovers.decreases.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: colors.accent + '20' }}>
+                        <span className="truncate flex-1 mr-2" style={{ color: colors.text }} title={m.name}>{m.name}</span>
+                        <span className="font-mono text-xs whitespace-nowrap" style={{ color: colors.success }}>
+                          {Math.abs(m.delta) >= 0.01 ? (Math.abs(m.delta) * 100).toFixed(1) : '<0.1'}%
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs py-1" style={{ color: colors.textMuted }}>No decreases</p>
+                  )}
                 </div>
               </div>
             ) : (
-              <p className="text-sm" style={{ color: colors.textMuted }}>No mover data yet. Metrics build after first and next load.</p>
+              <div className="text-sm" style={{ color: colors.textMuted }}>
+                <p className="mb-2">No mover data yet.</p>
+                <p className="text-xs">Edit a supplier and refresh to see risk penalty changes tracked over time.</p>
+              </div>
             )}
           </DashboardCard>
         </div>
