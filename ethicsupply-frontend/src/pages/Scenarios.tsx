@@ -144,6 +144,51 @@ export default function Scenarios() {
           </div>
         )}
 
+        {/* Baseline Panel */}
+        <div
+          className="mb-6 p-6 rounded-lg border flex items-center justify-between"
+          style={{
+            backgroundColor: colors.panel,
+            borderColor: colors.accent + "40",
+          }}
+        >
+          <div>
+            <div className="text-sm mb-1" style={{ color: colors.textMuted }}>
+              Baseline Objective (mean Emission Intensity)
+            </div>
+            <div className="text-2xl font-semibold" style={{ color: colors.text }}>
+              {loadingBaseline ? (
+                <span style={{ color: colors.textMuted }}>Loading...</span>
+              ) : baseline?.meanEI != null ? (
+                baseline.meanEI.toFixed(4)
+              ) : (
+                "—"
+              )}
+            </div>
+            <div className="text-xs mt-1" style={{ color: colors.textMuted }}>
+              From {baseline?.nSuppliers ?? 0} suppliers with valid EI
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              try {
+                await downloadBaselineCsv();
+              } catch (err) {
+                console.error("Failed to download baseline CSV:", err);
+                setError("Failed to download baseline CSV");
+              }
+            }}
+            disabled={loadingBaseline}
+            className="px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: colors.accent,
+              color: "#fff",
+            }}
+          >
+            {loadingBaseline ? "Loading..." : "Download baseline.csv"}
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* S1: Utility */}
           <div

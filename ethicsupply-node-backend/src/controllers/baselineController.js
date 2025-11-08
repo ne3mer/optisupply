@@ -7,16 +7,17 @@ const { Parser } = require("json2csv");
  * Returns null if either value is missing, zero, or invalid
  */
 function computeEI(supplier) {
-  const toNum = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
-  
+  const toNum = (v) =>
+    v === null || v === undefined || v === "" ? null : Number(v);
+
   // Prefer emissions_tco2e; fallback to co2_tons or co2_emissions or total_emissions
-  const em = toNum(supplier.emissions_tco2e) ?? 
-             toNum(supplier.co2_tons) ?? 
-             toNum(supplier.co2_emissions) ??
-             toNum(supplier.total_emissions);
-  const rev = toNum(supplier.revenue_musd) ?? 
-              toNum(supplier.revenue);
-  
+  const em =
+    toNum(supplier.emissions_tco2e) ??
+    toNum(supplier.co2_tons) ??
+    toNum(supplier.co2_emissions) ??
+    toNum(supplier.total_emissions);
+  const rev = toNum(supplier.revenue_musd) ?? toNum(supplier.revenue);
+
   if (!em || !rev || rev <= 0) return null;
   return em / rev; // tCO2e per MUSD
 }
@@ -45,19 +46,21 @@ async function getBaseline(req, res) {
     ).lean();
 
     const rows = [];
-    
+
     for (const s of suppliers) {
       const ei = computeEI(s);
-      
+
       if (ei != null) {
         // Get the actual emissions value used for display
-        const toNum = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
-        const em = toNum(s.emissions_tco2e) ?? 
-                   toNum(s.co2_tons) ?? 
-                   toNum(s.co2_emissions) ??
-                   toNum(s.total_emissions);
+        const toNum = (v) =>
+          v === null || v === undefined || v === "" ? null : Number(v);
+        const em =
+          toNum(s.emissions_tco2e) ??
+          toNum(s.co2_tons) ??
+          toNum(s.co2_emissions) ??
+          toNum(s.total_emissions);
         const rev = toNum(s.revenue_musd) ?? toNum(s.revenue);
-        
+
         rows.push({
           SupplierID: s.SupplierID ?? s._id?.toString() ?? "",
           Name: s.name ?? "",
@@ -70,27 +73,35 @@ async function getBaseline(req, res) {
     }
 
     const n = rows.length;
-    const meanEI = n > 0 
-      ? rows.reduce((a, r) => a + Number(r["Emission Intensity"]), 0) / n 
-      : null;
+    const meanEI =
+      n > 0
+        ? rows.reduce((a, r) => a + Number(r["Emission Intensity"]), 0) / n
+        : null;
 
     // CSV format requested
     if ((req.query.format || "").toLowerCase() === "csv") {
       if (rows.length === 0) {
-        return res.status(200).send("SupplierID,Name,Industry,Revenue(MUSD),Emissions(tCO2e),Emission Intensity\n");
+        return res
+          .status(200)
+          .send(
+            "SupplierID,Name,Industry,Revenue(MUSD),Emissions(tCO2e),Emission Intensity\n"
+          );
       }
-      
-      const csv = new Parser({ 
-        fields: Object.keys(rows[0])
+
+      const csv = new Parser({
+        fields: Object.keys(rows[0]),
       }).parse(rows);
-      
+
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader("Content-Disposition", 'attachment; filename="baseline.csv"');
-      
+      res.setHeader(
+        "Content-Disposition",
+        'attachment; filename="baseline.csv"'
+      );
+
       if (meanEI != null) {
         res.setHeader("X-Baseline-Objective", meanEI.toFixed(6));
       }
-      
+
       return res.status(200).send(csv);
     }
 
@@ -107,4 +118,3 @@ async function getBaseline(req, res) {
 }
 
 module.exports = { getBaseline };
-
