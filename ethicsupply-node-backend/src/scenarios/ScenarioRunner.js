@@ -89,7 +89,7 @@ class ScenarioRunner {
         "Final Score": Number(scores.finalScore || scores.ethical_score || 0).toFixed(2),
         // Store raw values for ranking and objective calculation
         _raw: {
-          emission_intensity: this.getEmissionIntensity(supplierObj, scores),
+          emission_intensity: this.computeEmissionIntensity(supplierObj),
           finalScore: scores.finalScore || scores.ethical_score || 0,
           composite: scores.composite_score || 0,
         },
@@ -117,12 +117,14 @@ class ScenarioRunner {
    * Compute Emission Intensity = emissions_tco2e / revenue_musd
    * Fallbacks: if emissions_tco2e missing but co2_tons present, use that
    * If divisor revenue_musd <= 0 or any part is NaN, mark EI as null
+   * Matches baselineController logic for consistency
    */
   computeEmissionIntensity(supplier) {
-    // Prefer emissions_tco2e; fallback to co2_tons or co2_emissions
+    // Prefer emissions_tco2e; fallback to co2_tons or co2_emissions or total_emissions
     const em = this.toNum(supplier.emissions_tco2e) ?? 
                this.toNum(supplier.co2_tons) ?? 
-               this.toNum(supplier.co2_emissions);
+               this.toNum(supplier.co2_emissions) ??
+               this.toNum(supplier.total_emissions);
     const rev = this.toNum(supplier.revenue_musd) ?? 
                 this.toNum(supplier.revenue);
     
