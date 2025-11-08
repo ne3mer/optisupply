@@ -67,7 +67,7 @@ const LoadingIndicator = ({ message = "Loading Data..." }) => {
   );
 };
 
-const ErrorDisplay = ({ message }) => {
+const ErrorDisplay = ({ message }: { message: string }) => {
   const colors = useThemeColors();
   return (
     <div className="bg-red-900/30 border border-red-600 p-4 rounded-lg text-center my-6">
@@ -1154,26 +1154,6 @@ const SupplierEditForm = () => {
                 </span>
               </div>
 
-              {/* Data Completeness Indicator */}
-              <div className="mb-4 p-3 rounded-lg border flex items-center justify-between" style={{ borderColor: colors.accent + '40', backgroundColor: colors.panel }}>
-                <div>
-                  <div className="text-sm font-medium" style={{ color: colors.text }}>Estimated Data Completeness</div>
-                  <div className="text-xs" style={{ color: colors.textMuted }}>
-                    {estimatedCompleteness.present}/{estimatedCompleteness.total} key metrics provided
-                    {estimatedCompleteness.ratio < 0.7 && (
-                      <span className="ml-2" style={{ color: colors.warning }}>• Scores may be capped at 50 if below 70%</span>
-                    )}
-                  </div>
-                </div>
-                <span className="px-2 py-1 rounded text-sm font-mono" style={{
-                  color: estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error,
-                  backgroundColor: (estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error) + '20',
-                  border: `1px solid ${(estimatedCompleteness.ratio >= 0.85 ? colors.success : estimatedCompleteness.ratio >= 0.7 ? colors.warning : colors.error)}40`,
-                }}>
-                  {(estimatedCompleteness.ratio * 100).toFixed(0)}%
-                </span>
-              </div>
-
               {/* Form Sections (Simplified for Editing - adjust as needed) */}
               <h2
                 className="text-xl font-bold mb-6 pb-2 relative"
@@ -1198,7 +1178,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+              <div className="backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border mb-8" style={{ backgroundColor: colors.panel + '90', borderColor: colors.accent + '30' }}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
                     name="name"
@@ -1246,7 +1226,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+              <div className="backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border mb-8" style={{ backgroundColor: colors.panel + '90', borderColor: colors.accent + '30' }}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
                     name="revenue"
@@ -1309,7 +1289,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+              <div className="backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border mb-8" style={{ backgroundColor: colors.panel + '90', borderColor: colors.accent + '30' }}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <InputField
                     name="co2_emissions"
@@ -1381,7 +1361,7 @@ const SupplierEditForm = () => {
                   />
                 </div>
               </h2>
-              <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 mb-8">
+              <div className="backdrop-blur-sm rounded-lg p-4 md:p-6 shadow-sm border mb-8" style={{ backgroundColor: colors.panel + '90', borderColor: colors.accent + '30' }}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <SliderField
                     name="injury_rate"
@@ -1546,7 +1526,7 @@ const SupplierEditForm = () => {
                 className="text-xl font-bold mb-6 pb-2 relative"
                 id="supply-chain"
                 style={{
-                  borderBottom: `2px solid ${colors.blue}40`,
+                  borderBottom: `2px solid ${colors.accent}40`,
                   display: "inline-block",
                   paddingRight: "50px",
                 }}
@@ -1554,13 +1534,13 @@ const SupplierEditForm = () => {
                 <div className="flex items-center">
                   <TruckIcon
                     className="w-5 h-5 mr-2"
-                    style={{ color: colors.blue }}
+                    style={{ color: colors.accent }}
                   />
                   <span>Supply Chain Metrics</span>
                   <div
                     className="absolute bottom-0 left-0 h-[2px] w-20"
                     style={{
-                      background: `linear-gradient(90deg, ${colors.blue}, transparent)`,
+                      background: `linear-gradient(90deg, ${colors.accent}, transparent)`,
                     }}
                   />
                 </div>
