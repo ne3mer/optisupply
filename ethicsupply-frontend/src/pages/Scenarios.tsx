@@ -1,15 +1,9 @@
 import React, { useState } from "react";
+import { apiEndpoint } from "../config";
 import { runScenario, fetchBaseline, downloadBaselineCsv } from "../services/api";
 import { useThemeColors } from "../theme/useThemeColors";
 
-// Helper to get API endpoint (same logic as api.ts)
-const getApiEndpoint = (path: string) => {
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "https://optisupply.onrender.com/api";
-  const formatUrl = (url: string) => url.replace(/\/+$/, "").replace(/([^:]\/)\/+/g, "$1");
-  const API_URL = formatUrl(API_BASE_URL);
-  const cleanPath = path.replace(/^\/+|\/+$/g, "");
-  return `${API_URL}/${cleanPath}`;
-};
+const getApiEndpoint = apiEndpoint;
 
 export default function Scenarios() {
   const [loading, setLoading] = useState<string | null>(null);

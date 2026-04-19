@@ -1,22 +1,8 @@
 // API URL and service functions for the application
+import { apiEndpoint } from "../config";
 import logger from "../utils/log";
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "https://optisupply.onrender.com/api";
 
-// Ensure proper URL formatting
-const formatUrl = (url: string) => {
-  // Remove trailing slashes and ensure single slashes
-  return url.replace(/\/+$/, "").replace(/([^:]\/)\/+/g, "$1");
-};
-
-const API_URL = formatUrl(API_BASE_URL);
-
-// Helper function to construct API endpoints
-const getEndpoint = (path: string) => {
-  // Remove leading and trailing slashes from path
-  const cleanPath = path.replace(/^\/+|\/+$/g, ""); // Corrected regex
-  return `${API_URL}/${cleanPath}`;
-};
+const getEndpoint = apiEndpoint;
 
 // Helper function to download CSV from blob
 const downloadCSV = (blob: Blob, filename: string) => {
@@ -1125,7 +1111,7 @@ function generateComplianceGaps(data: SupplierEvaluation): string[] {
 export const getRecommendations = async () => {
   try {
     console.log("Fetching AI-powered recommendations from API...");
-    const response = await fetch(`${API_BASE_URL}/suppliers/recommendations/`);
+    const response = await fetch(getEndpoint("suppliers/recommendations"));
 
     if (!response.ok) {
       console.warn(
@@ -2214,7 +2200,7 @@ export const getSupplierAnalytics = async (
   try {
     console.log(`Fetching analytics for supplier ${supplierId}...`);
     const response = await fetch(
-      `${API_URL}/suppliers/${supplierId}/analytics`
+      getEndpoint(`suppliers/${supplierId}/analytics`)
     );
 
     if (!response.ok) {
