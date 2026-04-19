@@ -183,6 +183,65 @@ function setupMockRoutes(app) {
     ]);
   });
 
+  // IMPORTANT: define specific suppliers routes before /api/suppliers/:id
+  // to avoid "recommendations" being treated as :id
+  app.get("/api/suppliers/recommendations", (req, res) => {
+    const now = new Date().toISOString();
+    res.json([
+      {
+        _id: "rec1",
+        title: "Improve renewable sourcing for GreenTech Components",
+        description:
+          "Increase renewable electricity contracts to reduce emissions exposure and improve environmental scoring.",
+        category: "Environmental",
+        priority: "High",
+        status: "pending",
+        created_at: now,
+        updated_at: now,
+        supplier: {
+          name: "GreenTech Components",
+          country: "USA",
+          industry: "Technology",
+          ethical_score: 92,
+        },
+      },
+      {
+        _id: "rec2",
+        title: "Strengthen labor safeguards for Nordic Textiles",
+        description:
+          "Add quarterly worker safety audits and corrective-action closure tracking across tier-2 facilities.",
+        category: "Social",
+        priority: "Medium",
+        status: "in_progress",
+        created_at: now,
+        updated_at: now,
+        supplier: {
+          name: "Nordic Textiles",
+          country: "Sweden",
+          industry: "Sustainable Materials",
+          ethical_score: 89,
+        },
+      },
+      {
+        _id: "rec3",
+        title: "Boost traceability controls for EcoWood Partners",
+        description:
+          "Require monthly chain-of-custody evidence to improve governance reliability and disclosure quality.",
+        category: "Governance",
+        priority: "Medium",
+        status: "pending",
+        created_at: now,
+        updated_at: now,
+        supplier: {
+          name: "EcoWood Partners",
+          country: "Denmark",
+          industry: "Furniture",
+          ethical_score: 87,
+        },
+      },
+    ]);
+  });
+
   // Get individual supplier
   app.get("/api/suppliers/:id", (req, res) => {
     const supplierId = req.params.id;
@@ -351,64 +410,6 @@ function setupMockRoutes(app) {
     });
   });
 
-  // Mock recommendations endpoint used by Recommendations page
-  app.get("/api/suppliers/recommendations", (req, res) => {
-    const now = new Date().toISOString();
-    res.json([
-      {
-        _id: "rec1",
-        title: "Improve renewable sourcing for GreenTech Components",
-        description:
-          "Increase renewable electricity contracts to reduce emissions exposure and improve environmental scoring.",
-        category: "Environmental",
-        priority: "High",
-        status: "pending",
-        created_at: now,
-        updated_at: now,
-        supplier: {
-          name: "GreenTech Components",
-          country: "USA",
-          industry: "Technology",
-          ethical_score: 92,
-        },
-      },
-      {
-        _id: "rec2",
-        title: "Strengthen labor safeguards for Nordic Textiles",
-        description:
-          "Add quarterly worker safety audits and corrective-action closure tracking across tier-2 facilities.",
-        category: "Social",
-        priority: "Medium",
-        status: "in_progress",
-        created_at: now,
-        updated_at: now,
-        supplier: {
-          name: "Nordic Textiles",
-          country: "Sweden",
-          industry: "Sustainable Materials",
-          ethical_score: 89,
-        },
-      },
-      {
-        _id: "rec3",
-        title: "Boost traceability controls for EcoWood Partners",
-        description:
-          "Require monthly chain-of-custody evidence to improve governance reliability and disclosure quality.",
-        category: "Governance",
-        priority: "Medium",
-        status: "pending",
-        created_at: now,
-        updated_at: now,
-        supplier: {
-          name: "EcoWood Partners",
-          country: "Denmark",
-          industry: "Furniture",
-          ethical_score: 87,
-        },
-      },
-    ]);
-  });
-
   // Mock geo-risk alerts endpoint used by GeoRiskMapping page
   app.get("/api/geo-risk-alerts", (req, res) => {
     const now = Date.now();
@@ -466,6 +467,40 @@ function setupMockRoutes(app) {
         France: 1,
         China: 1,
       },
+    });
+  });
+
+  // Mock supply-chain graph endpoint used by Supply Chain Graph page
+  app.get("/api/supply-chain-graph", (req, res) => {
+    res.json({
+      nodes: [
+        {
+          id: 1,
+          name: "GreenTech Components",
+          country: "USA",
+          ethical_score: 92,
+          industry: "Technology",
+        },
+        {
+          id: 2,
+          name: "Nordic Textiles",
+          country: "Sweden",
+          ethical_score: 89,
+          industry: "Sustainable Materials",
+        },
+        {
+          id: 3,
+          name: "EcoWood Partners",
+          country: "Denmark",
+          ethical_score: 87,
+          industry: "Furniture",
+        },
+      ],
+      links: [
+        { source: 1, target: 2, type: "Primary", strength: 0.8, ethical: true },
+        { source: 2, target: 3, type: "Secondary", strength: 0.6, ethical: true },
+      ],
+      isMockData: true,
     });
   });
 
