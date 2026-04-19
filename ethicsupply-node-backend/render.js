@@ -351,6 +351,104 @@ function setupMockRoutes(app) {
     });
   });
 
+  // Mock recommendations endpoint used by Recommendations page
+  app.get("/api/suppliers/recommendations", (req, res) => {
+    const now = new Date().toISOString();
+    res.json([
+      {
+        _id: "rec1",
+        title: "Improve renewable sourcing for GreenTech Components",
+        description:
+          "Increase renewable electricity contracts to reduce emissions exposure and improve environmental scoring.",
+        category: "Environmental",
+        priority: "High",
+        status: "pending",
+        created_at: now,
+        updated_at: now,
+        supplier: {
+          name: "GreenTech Components",
+          country: "USA",
+          industry: "Technology",
+          ethical_score: 92,
+        },
+      },
+      {
+        _id: "rec2",
+        title: "Strengthen labor safeguards for Nordic Textiles",
+        description:
+          "Add quarterly worker safety audits and corrective-action closure tracking across tier-2 facilities.",
+        category: "Social",
+        priority: "Medium",
+        status: "in_progress",
+        created_at: now,
+        updated_at: now,
+        supplier: {
+          name: "Nordic Textiles",
+          country: "Sweden",
+          industry: "Sustainable Materials",
+          ethical_score: 89,
+        },
+      },
+      {
+        _id: "rec3",
+        title: "Boost traceability controls for EcoWood Partners",
+        description:
+          "Require monthly chain-of-custody evidence to improve governance reliability and disclosure quality.",
+        category: "Governance",
+        priority: "Medium",
+        status: "pending",
+        created_at: now,
+        updated_at: now,
+        supplier: {
+          name: "EcoWood Partners",
+          country: "Denmark",
+          industry: "Furniture",
+          ethical_score: 87,
+        },
+      },
+    ]);
+  });
+
+  // Mock geo-risk alerts endpoint used by GeoRiskMapping page
+  app.get("/api/geo-risk-alerts", (req, res) => {
+    const now = Date.now();
+    const toISO = (daysAgo) =>
+      new Date(now - daysAgo * 24 * 60 * 60 * 1000).toISOString();
+
+    res.json([
+      {
+        id: 1,
+        date: toISO(0),
+        title: "Port congestion risk in Southeast Asia",
+        description:
+          "Congestion in major transshipment hubs may impact supplier lead times this week.",
+        type: "logistics",
+        country: "Singapore",
+        read: false,
+      },
+      {
+        id: 2,
+        date: toISO(1),
+        title: "Flooding alert affecting Northern Italy",
+        description:
+          "Heavy rain warnings raise transport disruption risk for inbound raw materials.",
+        type: "environmental",
+        country: "Italy",
+        read: false,
+      },
+      {
+        id: 3,
+        date: toISO(2),
+        title: "Labor action watch in Mexico",
+        description:
+          "Potential labor disruptions reported near key manufacturing clusters; monitor continuity plans.",
+        type: "labor",
+        country: "Mexico",
+        read: false,
+      },
+    ]);
+  });
+
   // Mock dashboard data
   app.get("/api/dashboard", (req, res) => {
     res.json({
@@ -481,6 +579,8 @@ function setupMockRoutes(app) {
         "/api/suppliers",
         "/api/suppliers/:id",
         "/api/suppliers/:id/analytics",
+        "/api/suppliers/recommendations",
+        "/api/geo-risk-alerts",
         "/api/dashboard",
         "/api/settings",
         "/api/bands",
