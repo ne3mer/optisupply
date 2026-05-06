@@ -5,86 +5,74 @@ A full-stack application for managing and analyzing ethical supply chains.
 ## Project Structure
 
 - **ethicsupply-frontend**: React frontend built with Vite, TypeScript, and Tailwind CSS
-- **ethicsupply-backend**: Django REST API backend
+- **ethicsupply-node-backend**: Node.js/Express REST API backed by MongoDB
 
-## Deployment Guide for Render.com
+## Deployment Guide (Render + MongoDB Atlas)
 
-### Set Up Your Render Account
+### 1) Set Up Accounts
 
-1. Sign up for a free account at [Render.com](https://render.com)
-2. Connect your GitHub repository
+1. Sign up at [Render.com](https://render.com) and [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Connect this GitHub repository to Render
 
-### Deploy the Backend API
+### 2) Deploy Backend API (Render Web Service)
 
-1. In your Render dashboard, click "New" and select "Web Service"
-2. Connect your GitHub repository
-3. Configure the service:
-
-   - **Name**: optiethic-backend
-   - **Runtime**: Python
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn ethicsupply.wsgi:application`
-   - **Root Directory**: `ethicsupply-backend`
-
+1. In Render, click **New > Web Service**
+2. Select this repository
+3. Configure:
+   - **Name**: `optiethic-backend`
+   - **Runtime**: `Node`
+   - **Root Directory**: `ethicsupply-node-backend`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm run start:render` (or `npm start`)
 4. Add environment variables:
+   - `NODE_ENV=production`
+   - `PORT=8000`
+   - `MONGODB_URI=<your-atlas-connection-string>`
+   - `CORS_ALLOWED_ORIGINS=https://your-frontend-domain.onrender.com`
+   - `JWT_SECRET=<strong-random-secret>`
 
-   - `DEBUG`: False
-   - `SECRET_KEY`: (generate a secure random string)
-   - `ALLOWED_HOSTS`: your-backend-app.onrender.com
-   - `CORS_ALLOWED_ORIGINS`: https://your-frontend-app.onrender.com
+### 3) Deploy Frontend (Render Static Site)
 
-5. Create a PostgreSQL database:
-
-   - In your Render dashboard, click "New" and select "PostgreSQL"
-   - Name it "optiethic-db"
-   - After creation, copy the "Internal Database URL"
-   - Add it as an environment variable for your Web Service:
-     - `DATABASE_URL`: (the copied PostgreSQL URL)
-
-6. Deploy the service
-
-### Deploy the Frontend
-
-1. In your Render dashboard, click "New" and select "Static Site"
-2. Connect your GitHub repository
-3. Configure the service:
-
-   - **Name**: optiethic-frontend
+1. In Render, click **New > Static Site**
+2. Select this repository
+3. Configure:
+   - **Name**: `optiethic-frontend`
+   - **Root Directory**: `ethicsupply-frontend`
    - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
-   - **Root Directory**: `ethicsupply-frontend`
-
-4. Add environment variables:
-
-   - `VITE_API_URL`: https://your-backend-app.onrender.com/api
-   - `VITE_ENABLE_MOCK_DATA`: false
-
-5. Add a redirect rule to handle client-side routing:
-
-   - In the "Redirects/Rewrites" section, add a rule:
+4. Add environment variable:
+   - `VITE_API_URL=https://your-backend-domain.onrender.com/api`
+5. Add rewrite rule for SPA routing:
    - Source: `/*`
    - Destination: `/index.html`
-   - Type: Rewrite
+   - Type: `Rewrite`
 
-6. Deploy the service
+### 4) Verify Deployment
 
-### Verify Deployment
-
-1. Wait for both deployments to complete (this may take a few minutes)
-2. Visit your frontend URL (e.g., https://optiethic-frontend.onrender.com)
-3. The application should connect to the backend API and function properly
+1. Wait for both services to finish deployment
+2. Open the frontend URL
+3. Confirm frontend requests succeed against `/api/health-check` and other endpoints
 
 ## Local Development
 
 ### Backend Setup
 
 ```bash
-cd ethicsupply-backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
+cd ethicsupply-node-backend
+npm install
+npm run dev
+```
+
+The backend runs on `http://localhost:8000` by default.
+
+Create `ethicsupply-node-backend/.env` with:
+
+```bash
+NODE_ENV=development
+PORT=8000
+MONGODB_URI=mongodb://localhost:27017/ethicsupply
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174
+JWT_SECRET=change-me-in-production
 ```
 
 ### Frontend Setup
@@ -95,43 +83,44 @@ npm install
 npm run dev
 ```
 
+Set `ethicsupply-frontend/.env`:
+
+```bash
+VITE_API_URL=http://localhost:8000/api
+```
+
 ## Features
 
-- **Dashboard**: View key metrics on supplier performance, including ethical scores, CO₂ emissions, and industry breakdowns
-- **Supplier Evaluation**: Assess suppliers based on multiple ethical and environmental criteria
-- **Supplier List**: Browse, sort, and filter your supplier network with visual indicators of performance
-- **AI Recommendations**: Receive tailored recommendations to improve your supply chain's sustainability
+- Dashboard metrics for supplier ethical performance
+- Supplier evaluation and scoring workflows
+- Supplier list, detail views, and analytics pages
+- Recommendations and scenario analysis tools
+- Supply chain graph and geo-risk views
 
 ## Tech Stack
 
 ### Backend
 
-- Django (Python)
-- Django REST Framework
-- SQLite database (for development)
+- Node.js + Express
+- MongoDB + Mongoose
+- Authentication/security with JWT, bcrypt, CORS, Helmet
+- Built-in ML helpers for scoring and analytics
 
 ### Frontend
 
-- React with Vite
-- Tailwind CSS for styling
-- Recharts for data visualization
-- Heroicons for UI icons
+- React 18 + TypeScript + Vite
+- Tailwind CSS + Radix UI
+- Recharts, React Flow, Three.js ecosystem
+- React Router + Recoil
 
-## API Endpoints
+## Example API Endpoints
 
-- `GET /api/suppliers/`: List all suppliers
-- `POST /api/suppliers/`: Create a new supplier
-- `POST /api/suppliers/evaluate/`: Evaluate a supplier
-- `GET /api/dashboard/`: Get dashboard statistics
-
-## Screenshots
-
-(Screenshots will be added here)
+- `GET /api/health-check`: API health check
+- `GET /api/suppliers`: List suppliers
+- `POST /api/suppliers`: Create supplier
+- `POST /api/suppliers/evaluate`: Evaluate supplier
+- `GET /api/dashboard`: Dashboard data
 
 ## License
 
 MIT License
-
-## Contact
-
-For inquiries, please contact [your-email@example.com](mailto:your-email@example.com)
