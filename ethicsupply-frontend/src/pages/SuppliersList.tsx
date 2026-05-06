@@ -1486,7 +1486,7 @@ const SuppliersList = () => {
 
   return (
     <div
-      className="min-h-screen p-4 md:p-6 lg:p-8"
+      className="min-h-screen p-3 sm:p-4 md:p-6 lg:p-8"
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
       <div className="mx-auto w-full max-w-[1600px]">
@@ -1495,19 +1495,19 @@ const SuppliersList = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="mb-8"
+        className="mb-6 md:mb-8"
       >
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 sm:gap-4 mb-5 md:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Supplier <span style={{ color: colors.primary }}>Registry</span>
           </h1>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full lg:w-auto">
             {/* Export Menu */}
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center justify-center w-full sm:w-auto px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                 style={{
                   backgroundColor: showExportMenu
                     ? colors.primary
@@ -1627,9 +1627,9 @@ const SuppliersList = () => {
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center justify-center w-full sm:w-auto px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
               style={{
                 backgroundColor: showAdvancedFilters
                   ? colors.primary
@@ -1641,20 +1641,25 @@ const SuppliersList = () => {
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
             >
               <AdjustmentsHorizontalIcon className="h-5 w-5 mr-1" />
-              {getFilterButtonLabel()}
+              <span className="truncate">{getFilterButtonLabel()}</span>
             </motion.button>
 
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="col-span-2 sm:col-span-1"
+            >
               <Link
                 to="/suppliers/add"
-                className="flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                className="flex items-center justify-center w-full sm:w-auto px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
                 style={{
                   backgroundColor: colors.accent,
                   color: colors.background,
                 }}
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
-                Register New Supplier
+                <span className="hidden sm:inline">Register New Supplier</span>
+                <span className="sm:hidden">New Supplier</span>
               </Link>
             </motion.div>
           </div>
@@ -1662,13 +1667,13 @@ const SuppliersList = () => {
 
         {/* Filters and Search */}
         <div
-          className="mb-6 rounded-2xl border p-4 md:p-5"
+          className="mb-5 md:mb-6 rounded-2xl border p-3 sm:p-4 md:p-5"
           style={{
             backgroundColor: colors.panel + "99",
             borderColor: colors.accent + "25",
           }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-3.5 mb-3 sm:mb-4">
             {/* Search */}
             <div className="relative">
               <MagnifyingGlassIcon
@@ -1825,20 +1830,21 @@ const SuppliersList = () => {
 
       {/* Sorting Controls */}
       <div
-        className="mb-6 p-4 rounded-2xl border"
+        className="mb-5 md:mb-6 p-3 sm:p-4 rounded-2xl border"
         style={{
           backgroundColor: colors.panel + "cc",
           borderColor: colors.accent + "25",
         }}
       >
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm mr-2" style={{ color: colors.textMuted }}>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
+          <span className="text-xs sm:text-sm sm:mr-2" style={{ color: colors.textMuted }}>
             Sort by:
           </span>
+        <div className="flex flex-nowrap sm:flex-wrap gap-2 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
 
           <button
             onClick={() => handleSort("name")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md ${
+            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
               sortField === "name" ? "font-medium" : ""
             }`}
             style={{
@@ -1854,7 +1860,7 @@ const SuppliersList = () => {
 
           <button
             onClick={() => handleSort("ethical_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md ${
+            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
               sortField === "ethical_score" ? "font-medium" : ""
             }`}
             style={{
@@ -1871,7 +1877,7 @@ const SuppliersList = () => {
 
           <button
             onClick={() => handleSort("environmental_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md ${
+            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
               sortField === "environmental_score" ? "font-medium" : ""
             }`}
             style={{
@@ -1890,7 +1896,7 @@ const SuppliersList = () => {
 
           <button
             onClick={() => handleSort("social_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md ${
+            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
               sortField === "social_score" ? "font-medium" : ""
             }`}
             style={{
@@ -1907,7 +1913,7 @@ const SuppliersList = () => {
 
           <button
             onClick={() => handleSort("governance_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md ${
+            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
               sortField === "governance_score" ? "font-medium" : ""
             }`}
             style={{
@@ -1926,7 +1932,7 @@ const SuppliersList = () => {
 
           <button
             onClick={() => handleSort("risk_level")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md ${
+            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
               sortField === "risk_level" ? "font-medium" : ""
             }`}
             style={{
@@ -1941,6 +1947,7 @@ const SuppliersList = () => {
             Risk Level <SortIcon field="risk_level" />
           </button>
         </div>
+        </div>
       </div>
 
       {/* Supplier List/Grid */}
@@ -1949,7 +1956,7 @@ const SuppliersList = () => {
       {!loading && !error && (
         <>
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5 xl:gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 xl:gap-6"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -1964,6 +1971,10 @@ const SuppliersList = () => {
                   supplier.ethical_score !== undefined
                     ? supplier.ethical_score
                     : null;
+                const scorePercent = Math.max(
+                  0,
+                  Math.min(100, normalizeScoreTo100(riskAdjustedScore) ?? 0)
+                );
                 const compositeScore =
                   supplier.composite_score !== undefined
                     ? supplier.composite_score
@@ -1978,6 +1989,11 @@ const SuppliersList = () => {
                 const recommendation = getRecommendation(colors, supplier);
                 const lastUpdatedBadge = getLastUpdatedBadge(colors, supplier.last_updated);
 
+                const formatPillar = (val: number | null | undefined) => {
+                  if (val === null || val === undefined || Number.isNaN(val)) return "N/A";
+                  return (val > 0 && val <= 1 ? val * 100 : val).toFixed(0);
+                };
+
                 return (
                   <motion.div
                     key={supplierId}
@@ -1988,12 +2004,21 @@ const SuppliersList = () => {
                     style={{
                       backgroundColor: colors.panel,
                       borderColor: colors.accent + "40",
+                      boxShadow: `0 10px 30px ${colors.accent}10`,
                       ...(isSelected && { ringColor: colors.primary }),
                     }}
                     whileHover={{ y: -4 }}
                   >
-                    {/* Selection Checkbox - Top Right */}
-                    <div className="absolute top-3 right-3 z-10">
+                    {/* Top accent bar */}
+                    <div
+                      className="absolute inset-x-0 top-0 h-1"
+                      style={{
+                        background: `linear-gradient(90deg, ${riskColor} 0%, ${colors.primary} 50%, ${colors.accent} 100%)`,
+                      }}
+                    />
+
+                    {/* Selection checkbox */}
+                    <div className="absolute top-4 right-4 z-10">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -2006,6 +2031,7 @@ const SuppliersList = () => {
                             : colors.panel + "80",
                           backdropFilter: "blur(4px)",
                         }}
+                        aria-label={isSelected ? "Deselect supplier" : "Select supplier"}
                       >
                         {isSelected ? (
                           <CheckCircleIcon
@@ -2021,45 +2047,44 @@ const SuppliersList = () => {
                       </button>
                     </div>
 
-                    {/* Card Header - Cleaner Design */}
+                    {/* === HEADER === */}
                     <div
-                      className="p-5 pb-4 border-b relative"
-                      style={{ 
-                        borderColor: colors.accent + "20",
-                        background: `linear-gradient(135deg, ${colors.panel} 0%, ${colors.background}22 100%)`,
+                      className="px-5 pt-6 pb-5 border-b"
+                      style={{
+                        borderColor: colors.accent + "1f",
+                        background: `radial-gradient(circle at 0% 0%, ${colors.primary}10 0%, transparent 50%), radial-gradient(circle at 100% 0%, ${colors.accent}10 0%, transparent 50%), ${colors.panel}`,
                       }}
                     >
-                      {/* Supplier Name & Location */}
-                      <div className="pr-8">
+                      <div className="pr-9">
                         <Tooltip content={sectionHelp.header}>
                           <h2
-                            className="text-xl font-bold truncate mb-2"
+                            className="text-lg font-semibold leading-tight tracking-tight truncate"
                             style={{ color: colors.text }}
                           >
                             {supplier.name}
                           </h2>
                         </Tooltip>
                         <div
-                          className="flex items-center text-xs gap-3 flex-wrap"
+                          className="mt-1.5 flex items-center text-xs gap-2 flex-wrap"
                           style={{ color: colors.textMuted }}
                         >
-                          <span className="flex items-center">
-                            <MapPinIcon className="h-3.5 w-3.5 mr-1.5" />
+                          <span className="flex items-center gap-1">
+                            <MapPinIcon className="h-3.5 w-3.5" />
                             {supplier.country || "N/A"}
                           </span>
-                          <span className="text-accent">•</span>
-                          <span className="flex items-center">
-                            <BuildingOfficeIcon className="h-3.5 w-3.5 mr-1.5" />
+                          <span aria-hidden style={{ color: colors.textMuted + "66" }}>·</span>
+                          <span className="flex items-center gap-1">
+                            <BuildingOfficeIcon className="h-3.5 w-3.5" />
                             {supplier.industry || "N/A"}
                           </span>
                         </div>
                       </div>
 
-                      {/* Status Badges - Compact Row */}
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                      {/* Status / meta pills */}
+                      <div className="mt-4 flex flex-wrap gap-1.5">
                         <Tooltip content={sectionHelp.statusBar}>
                           <span
-                            className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                             style={{
                               color: statusStyles.color,
                               backgroundColor: statusStyles.bgColor,
@@ -2072,25 +2097,37 @@ const SuppliersList = () => {
                         </Tooltip>
 
                         {typeof supplier.risk_factor === "number" && (
-                          <Tooltip content={`Risk penalty applied to final score: ${formatPercent(supplier.risk_factor, 1)}`}>
+                          <Tooltip
+                            content={`Risk penalty applied to final score: ${formatPercent(
+                              supplier.risk_factor,
+                              1
+                            )}`}
+                          >
                             <span
-                              className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                               style={{
                                 color: riskColor,
                                 backgroundColor: riskColor + "15",
                                 border: `1px solid ${riskColor}30`,
                               }}
                             >
-                              {riskIcon}
-                              <span className="ml-1">{formatPercent(supplier.risk_factor, 0)}</span>
+                              <span aria-hidden>{riskIcon}</span>
+                              <span className="ml-1">
+                                {formatPercent(supplier.risk_factor, 0)}
+                              </span>
                             </span>
                           </Tooltip>
                         )}
 
                         {typeof supplier.completeness_ratio === "number" && (
-                          <Tooltip content={`Data completeness: ${formatPercent(supplier.completeness_ratio, 1)} of key metrics reported`}>
+                          <Tooltip
+                            content={`Data completeness: ${formatPercent(
+                              supplier.completeness_ratio,
+                              1
+                            )} of key metrics reported`}
+                          >
                             <span
-                              className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                               style={{
                                 color: colors.primary,
                                 backgroundColor: colors.primary + "15",
@@ -2098,16 +2135,17 @@ const SuppliersList = () => {
                               }}
                             >
                               <SparklesIcon className="h-3 w-3" />
-                              <span className="ml-1">{formatPercent(supplier.completeness_ratio, 0)}</span>
+                              <span className="ml-1">
+                                {formatPercent(supplier.completeness_ratio, 0)}
+                              </span>
                             </span>
                           </Tooltip>
                         )}
 
-                        {/* AI Recommendation Tag */}
                         {recommendation && (
                           <Tooltip content={recommendation.description}>
-                            <div
-                              className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                               style={{
                                 backgroundColor: recommendation.bgColor,
                                 color: recommendation.color,
@@ -2116,150 +2154,222 @@ const SuppliersList = () => {
                             >
                               {recommendation.icon}
                               <span className="ml-1">{recommendation.label}</span>
-                            </div>
+                            </span>
                           </Tooltip>
                         )}
                       </div>
                     </div>
 
-                    {/* Card Body - Key Metrics - Cleaner Layout */}
-                    <div className="p-5 flex-grow space-y-4">
-                      {/* Main ESG Score - Prominent */}
-                      <div className="rounded-xl p-4 border" style={{ borderColor: colors.accent + "20", backgroundColor: colors.background + "40" }}>
-                        <Tooltip content={sectionHelp.esgRiskAdjusted}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <ScaleIcon className="h-5 w-5" style={{ color: colors.primary }} />
-                              <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
+                    {/* === BODY === */}
+                    <div className="px-5 py-5 flex-grow flex flex-col gap-5">
+                      {/* Hero ESG score */}
+                      <div>
+                        <div className="flex items-end justify-between gap-3">
+                          <div>
+                            <Tooltip content={sectionHelp.esgRiskAdjusted}>
+                              <span
+                                className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider"
+                                style={{ color: colors.textMuted }}
+                              >
+                                <ScaleIcon className="h-3.5 w-3.5" />
                                 ESG Score
+                                <InformationCircleIcon
+                                  className="h-3.5 w-3.5 opacity-60 cursor-help"
+                                />
                               </span>
-                              <Tooltip content={sectionHelp.esgRiskAdjusted}>
-                                <InformationCircleIcon className="h-4 w-4 cursor-help" style={{ color: colors.textMuted + "80" }} />
-                              </Tooltip>
+                            </Tooltip>
+                            <div
+                              className="mt-1 text-[11px]"
+                              style={{ color: colors.textMuted + "cc" }}
+                            >
+                              Risk-adjusted performance
                             </div>
+                          </div>
+                          <div className="flex items-baseline gap-1.5">
                             <span
-                              className="text-2xl font-bold font-mono"
+                              className="text-3xl font-bold font-mono leading-none tracking-tight"
                               style={{ color: scoreColor }}
                             >
                               {riskAdjustedScore !== null
                                 ? riskAdjustedScore.toFixed(1)
                                 : "N/A"}
                             </span>
-                          </div>
-                        </Tooltip>
-                        
-                        {/* Secondary Metrics - Compact Grid */}
-                        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t" style={{ borderColor: colors.accent + "15" }}>
-                          <Tooltip content={sectionHelp.esgComposite}>
-                            <div className="flex flex-col">
-                              <span className="text-xs mb-0.5" style={{ color: colors.textMuted }}>Composite</span>
-                              <span className="text-sm font-semibold" style={{ color: colors.text }}>
-                                {compositeScore !== null ? compositeScore.toFixed(1) : "N/A"}
-                              </span>
-                            </div>
-                          </Tooltip>
-                          <div className="flex flex-col">
-                            <span className="text-xs mb-0.5" style={{ color: colors.textMuted }}>Completeness</span>
-                            <span className="text-sm font-semibold" style={{ color: colors.text }}>
-                              {completenessRatio !== null ? formatPercent(completenessRatio, 0) : "N/A"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Risk Level - Prominent Badge */}
-                      <Tooltip content={sectionHelp.riskExposure}>
-                        <div className="flex items-center justify-between p-3 rounded-lg border" style={{ 
-                          borderColor: riskColor + "30",
-                          backgroundColor: riskColor + "10",
-                        }}>
-                          <div className="flex items-center gap-2">
-                            <ShieldExclamationIcon className="h-5 w-5" style={{ color: riskColor }} />
-                            <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
-                              Risk Level
-                            </span>
-                            <Tooltip content={sectionHelp.riskExposure}>
-                              <InformationCircleIcon className="h-4 w-4 cursor-help" style={{ color: colors.textMuted + "80" }} />
-                            </Tooltip>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">{riskIcon}</span>
                             <span
-                              className="px-3 py-1 rounded-md text-sm font-semibold capitalize"
-                              style={{
-                                backgroundColor: riskColor + "20",
-                                color: riskColor,
-                                border: `1px solid ${riskColor}40`,
-                              }}
+                              className="text-xs font-medium"
+                              style={{ color: colors.textMuted }}
                             >
-                              {supplier.risk_level || "Unknown"}
+                              / 100
                             </span>
                           </div>
                         </div>
-                      </Tooltip>
 
-                      {/* ESG Pillars - Compact Visual Grid */}
-                      <div className="grid grid-cols-3 gap-2">
-                        <Tooltip content={sectionHelp.pillarEnv}>
-                          <div className="flex flex-col items-center p-2.5 rounded-lg border hover:scale-105 transition-transform" style={{ 
-                            borderColor: colors.primary + "30",
-                            backgroundColor: colors.primary + "08",
-                          }}>
-                            <span className="text-xs font-medium mb-1" style={{ color: colors.textMuted }}>
-                              Environmental
-                            </span>
-                            <span className="text-base font-bold" style={{ color: colors.primary }}>
-                              {supplier.environmental_score !== null && supplier.environmental_score !== undefined
-                                ? supplier.environmental_score > 0 && supplier.environmental_score <= 1
-                                  ? (supplier.environmental_score * 100).toFixed(0)
-                                  : supplier.environmental_score.toFixed(0)
+                        <div
+                          className="mt-3 h-1.5 rounded-full overflow-hidden"
+                          style={{ backgroundColor: colors.background + "80" }}
+                        >
+                          <motion.div
+                            className="h-full rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${scorePercent}%` }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                            style={{
+                              background: `linear-gradient(90deg, ${colors.primary} 0%, ${colors.success} 100%)`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Pillars: E / S / G */}
+                      <div>
+                        <div
+                          className="text-[11px] font-medium uppercase tracking-wider mb-2"
+                          style={{ color: colors.textMuted }}
+                        >
+                          ESG Pillars
+                        </div>
+                        <div
+                          className="grid grid-cols-3 rounded-xl overflow-hidden border"
+                          style={{
+                            borderColor: colors.accent + "20",
+                            backgroundColor: colors.background + "30",
+                          }}
+                        >
+                          {[
+                            {
+                              key: "E",
+                              label: "Environmental",
+                              value: supplier.environmental_score,
+                              color: colors.primary,
+                              tooltip: sectionHelp.pillarEnv,
+                            },
+                            {
+                              key: "S",
+                              label: "Social",
+                              value: supplier.social_score,
+                              color: colors.accent,
+                              tooltip: sectionHelp.pillarSoc,
+                            },
+                            {
+                              key: "G",
+                              label: "Governance",
+                              value: supplier.governance_score,
+                              color: colors.secondary,
+                              tooltip: sectionHelp.pillarGov,
+                            },
+                          ].map((pillar, idx) => (
+                            <Tooltip key={pillar.key} content={pillar.tooltip}>
+                              <div
+                                className="flex flex-col items-center justify-center py-3 px-2"
+                                style={{
+                                  borderLeft:
+                                    idx === 0
+                                      ? "none"
+                                      : `1px solid ${colors.accent}20`,
+                                }}
+                              >
+                                <span
+                                  className="text-[10px] font-semibold tracking-wider mb-1"
+                                  style={{ color: colors.textMuted }}
+                                >
+                                  {pillar.label.toUpperCase()}
+                                </span>
+                                <span
+                                  className="text-lg font-bold font-mono leading-none"
+                                  style={{ color: pillar.color }}
+                                >
+                                  {formatPillar(pillar.value)}
+                                </span>
+                              </div>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Stats row: Composite / Completeness / Risk */}
+                      <div className="grid grid-cols-3 gap-2.5">
+                        <Tooltip content={sectionHelp.esgComposite}>
+                          <div
+                            className="rounded-lg px-3 py-2.5 border"
+                            style={{
+                              borderColor: colors.accent + "20",
+                              backgroundColor: colors.background + "30",
+                            }}
+                          >
+                            <div
+                              className="text-[10px] font-medium uppercase tracking-wider"
+                              style={{ color: colors.textMuted }}
+                            >
+                              Composite
+                            </div>
+                            <div
+                              className="mt-1 text-sm font-semibold font-mono"
+                              style={{ color: colors.text }}
+                            >
+                              {compositeScore !== null
+                                ? compositeScore.toFixed(1)
                                 : "N/A"}
-                            </span>
+                            </div>
                           </div>
                         </Tooltip>
 
-                        <Tooltip content={sectionHelp.pillarSoc}>
-                          <div className="flex flex-col items-center p-2.5 rounded-lg border hover:scale-105 transition-transform" style={{ 
-                            borderColor: colors.accent + "30",
-                            backgroundColor: colors.accent + "08",
-                          }}>
-                            <span className="text-xs font-medium mb-1" style={{ color: colors.textMuted }}>
-                              Social
-                            </span>
-                            <span className="text-base font-bold" style={{ color: colors.accent }}>
-                              {supplier.social_score !== null && supplier.social_score !== undefined
-                                ? supplier.social_score > 0 && supplier.social_score <= 1
-                                  ? (supplier.social_score * 100).toFixed(0)
-                                  : supplier.social_score.toFixed(0)
-                                : "N/A"}
-                            </span>
+                        <div
+                          className="rounded-lg px-3 py-2.5 border"
+                          style={{
+                            borderColor: colors.accent + "20",
+                            backgroundColor: colors.background + "30",
+                          }}
+                        >
+                          <div
+                            className="text-[10px] font-medium uppercase tracking-wider"
+                            style={{ color: colors.textMuted }}
+                          >
+                            Coverage
                           </div>
-                        </Tooltip>
+                          <div
+                            className="mt-1 text-sm font-semibold font-mono"
+                            style={{ color: colors.text }}
+                          >
+                            {completenessRatio !== null
+                              ? formatPercent(completenessRatio, 0)
+                              : "N/A"}
+                          </div>
+                        </div>
 
-                        <Tooltip content={sectionHelp.pillarGov}>
-                          <div className="flex flex-col items-center p-2.5 rounded-lg border hover:scale-105 transition-transform" style={{ 
-                            borderColor: colors.secondary + "30",
-                            backgroundColor: colors.secondary + "08",
-                          }}>
-                            <span className="text-xs font-medium mb-1" style={{ color: colors.textMuted }}>
-                              Governance
-                            </span>
-                            <span className="text-base font-bold" style={{ color: colors.secondary }}>
-                              {supplier.governance_score !== null && supplier.governance_score !== undefined
-                                ? supplier.governance_score > 0 && supplier.governance_score <= 1
-                                  ? (supplier.governance_score * 100).toFixed(0)
-                                  : supplier.governance_score.toFixed(0)
-                                : "N/A"}
-                            </span>
+                        <Tooltip content={sectionHelp.riskExposure}>
+                          <div
+                            className="rounded-lg px-3 py-2.5 border"
+                            style={{
+                              borderColor: riskColor + "40",
+                              backgroundColor: riskColor + "12",
+                            }}
+                          >
+                            <div
+                              className="text-[10px] font-medium uppercase tracking-wider"
+                              style={{ color: colors.textMuted }}
+                            >
+                              Risk
+                            </div>
+                            <div
+                              className="mt-1 text-sm font-semibold capitalize flex items-center gap-1"
+                              style={{ color: riskColor }}
+                            >
+                              <span aria-hidden className="text-xs">
+                                {riskIcon}
+                              </span>
+                              {supplier.risk_level || "Unknown"}
+                            </div>
                           </div>
                         </Tooltip>
                       </div>
 
-                      {/* Last Updated - Subtle Footer */}
+                      {/* Last updated */}
                       <Tooltip content={sectionHelp.lastUpdated}>
-                        <div className="flex items-center justify-end pt-2 border-t" style={{ borderColor: colors.accent + "15" }}>
+                        <div
+                          className="flex items-center justify-end pt-3 mt-auto border-t"
+                          style={{ borderColor: colors.accent + "15" }}
+                        >
                           <span
-                            className="text-xs flex items-center px-2 py-1 rounded-md"
+                            className="text-[11px] flex items-center px-2 py-0.5 rounded-md"
                             style={lastUpdatedBadge.style}
                           >
                             {lastUpdatedBadge.icon}
@@ -2269,9 +2379,9 @@ const SuppliersList = () => {
                       </Tooltip>
                     </div>
 
-                    {/* Card Footer - Actions - Cleaner Design */}
+                    {/* === FOOTER / ACTIONS === */}
                     <div
-                      className="p-4 border-t flex flex-col sm:flex-row gap-2"
+                      className="px-5 py-4 border-t flex gap-2"
                       style={{
                         borderColor: colors.accent + "20",
                         backgroundColor: colors.panel + "dd",
@@ -2279,24 +2389,24 @@ const SuppliersList = () => {
                     >
                       <button
                         onClick={() => handleQuickView(supplier)}
-                        className="flex-1 flex items-center justify-center text-sm py-2.5 rounded-lg font-medium hover:opacity-90 transition-all hover:scale-[1.02]"
+                        className="flex-1 flex items-center justify-center text-sm py-2.5 rounded-lg font-medium transition-all hover:opacity-95"
                         style={{
-                          backgroundColor: colors.panel,
+                          backgroundColor: "transparent",
                           color: colors.primary,
                           border: `1.5px solid ${colors.primary}40`,
                         }}
                       >
-                        <EyeIcon className="h-4 w-4 mr-1.5" /> View
+                        <EyeIcon className="h-4 w-4 mr-1.5" /> Quick View
                       </button>
                       <button
                         onClick={() => handleViewDetails(supplierId)}
-                        className="flex-1 flex items-center justify-center text-sm py-2.5 rounded-lg font-semibold hover:opacity-90 transition-all hover:scale-[1.02]"
+                        className="flex-[1.4] flex items-center justify-center text-sm py-2.5 rounded-lg font-semibold transition-all hover:opacity-95"
                         style={{
-                          backgroundColor: colors.accent,
-                          color: colors.background,
+                          background: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.primary} 100%)`,
+                          color: "#ffffff",
                         }}
                       >
-                        Details <ArrowRightIcon className="h-4 w-4 ml-1.5" />
+                        Open Profile <ArrowRightIcon className="h-4 w-4 ml-1.5" />
                       </button>
                     </div>
                   </motion.div>
@@ -2367,17 +2477,17 @@ const SuppliersList = () => {
                     setItemsPerPage(Number(e.target.value));
                     setCurrentPage(1); // Reset to first page when changing items per page
                   }}
-                  className="ml-4 py-1.5 pl-3 pr-8 rounded-md appearance-none"
+                  className="sm:ml-4 py-1.5 pl-3 pr-8 rounded-md appearance-none text-sm"
                   style={{
                     backgroundColor: colors.panel,
                     color: colors.text,
                     border: `1px solid ${colors.accent}30`,
                   }}
                 >
-                  <option value={9}>9 per page</option>
-                  <option value={18}>18 per page</option>
-                  <option value={27}>27 per page</option>
-                  <option value={36}>36 per page</option>
+                  <option value={9}>9 / page</option>
+                  <option value={18}>18 / page</option>
+                  <option value={27}>27 / page</option>
+                  <option value={36}>36 / page</option>
                 </select>
               </div>
             </div>
@@ -2387,7 +2497,7 @@ const SuppliersList = () => {
           <AnimatePresence>
             {selectedSuppliers.length > 0 && (
               <motion.div
-                className="fixed bottom-4 right-4 z-30 p-4 rounded-xl shadow-xl border"
+                className="fixed bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-4 sm:max-w-sm z-30 p-3 sm:p-4 rounded-xl shadow-xl border"
                 style={{
                   backgroundColor: colors.panel,
                   borderLeft: `4px solid ${colors.primary}`,
