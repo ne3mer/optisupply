@@ -271,23 +271,65 @@ const KpiIndicator = ({
   const colors = useColors();
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="flex flex-col items-center justify-center text-center p-4 rounded-lg border"
-      style={{ borderColor: color + "40", backgroundColor: color + "10" }}
+      whileHover={{ y: -3 }}
+      className="relative rounded-2xl border overflow-hidden flex flex-col p-4 sm:p-5"
+      style={{
+        borderColor: color + "30",
+        background: `linear-gradient(135deg, ${color}10 0%, ${colors.panel}cc 60%, ${colors.panel}cc 100%)`,
+        boxShadow: `0 6px 24px ${color}10`,
+      }}
     >
-      <Icon className="h-8 w-8 mb-3" style={{ color: color }} />
-      <span className="text-sm font-medium" style={{ color: colors.textMuted }}>
-        {label}
-      </span>
-      {value !== undefined && value !== null && (
-        <span className="text-3xl font-bold mt-1" style={{ color: colors.text }}>
-          {value}
-          {unit}
-        </span>
-      )}
-      {children}
+      {/* accent bar */}
+      <div
+        className="absolute inset-x-0 top-0 h-[3px]"
+        style={{
+          background: `linear-gradient(90deg, ${color} 0%, ${color}66 100%)`,
+        }}
+      />
+
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span
+            className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider truncate block"
+            style={{ color: colors.textMuted }}
+          >
+            {label}
+          </span>
+          {value !== undefined && value !== null && (
+            <div className="mt-1.5 flex items-baseline gap-1">
+              <span
+                className="text-2xl sm:text-3xl font-bold font-mono leading-none tracking-tight"
+                style={{ color: colors.text }}
+              >
+                {value}
+              </span>
+              {unit && (
+                <span
+                  className="text-xs font-semibold"
+                  style={{ color: colors.textMuted }}
+                >
+                  {unit}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div
+          className="shrink-0 h-9 w-9 rounded-xl flex items-center justify-center"
+          style={{
+            color,
+            backgroundColor: color + "20",
+            border: `1px solid ${color}35`,
+          }}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+
+      {children && <div className="mt-2">{children}</div>}
     </motion.div>
   );
 };
@@ -1670,74 +1712,144 @@ const Dashboard = () => {
           "radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.03) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(77, 91, 255, 0.04) 0%, transparent 40%)",
       }}
     >
-      {/* Header */}
+      {/* Hero Command Center Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8"
+        className="relative mb-6 md:mb-8 rounded-3xl border overflow-hidden"
+        style={{
+          borderColor: colors.accent + "30",
+          background: `radial-gradient(circle at 0% 0%, ${colors.primary}1f 0%, transparent 55%), radial-gradient(circle at 100% 0%, ${colors.accent}24 0%, transparent 55%), linear-gradient(180deg, ${colors.panel} 0%, ${colors.background}cc 100%)`,
+        }}
       >
-        <div>
-          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold tracking-tight`}>
-            Supplier ESG{" "}
-            <span style={{ color: colors.primary }}>Dashboard</span>
-          </h1>
-          <p className={`${isMobile ? 'text-sm' : 'text-lg'} mt-1`} style={{ color: colors.textMuted }}>
-            {isMobile ? "Supply chain ESG overview" : "Overview of your supply chain's ethical and sustainability performance."}
-          </p>
-          {datasetMeta && (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span
-                className="px-2 py-1 rounded-full text-xs border whitespace-nowrap"
+        {/* subtle grid pattern */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage: `linear-gradient(${colors.text} 1px, transparent 1px), linear-gradient(90deg, ${colors.text} 1px, transparent 1px)`,
+            backgroundSize: "32px 32px",
+          }}
+        />
+
+        <div className="relative p-5 sm:p-6 lg:p-7">
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
+                  style={{
+                    color: colors.primary,
+                    backgroundColor: colors.primary + "15",
+                    border: `1px solid ${colors.primary}30`,
+                  }}
+                >
+                  <PresentationChartLineIcon className="h-3.5 w-3.5" />
+                  ESG Command Center
+                </span>
+                {usingMockData && (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
+                    style={{
+                      color: colors.warning,
+                      backgroundColor: colors.warning + "15",
+                      border: `1px solid ${colors.warning}30`,
+                    }}
+                  >
+                    <InformationCircleIcon className="h-3.5 w-3.5" />
+                    Demo Data
+                  </span>
+                )}
+              </div>
+              <h1
+                className={`mt-3 ${
+                  isMobile ? "text-3xl" : "text-4xl lg:text-5xl"
+                } font-bold tracking-tight leading-tight`}
                 style={{
-                  backgroundColor: colors.panel,
-                  color: colors.text,
-                  borderColor: colors.accent + "40",
+                  background: `linear-gradient(120deg, ${colors.text} 0%, ${colors.primary} 60%, ${colors.accent} 100%)`,
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
                 }}
-                title={`Generated: ${datasetMeta.generatedAt || "n/a"} | Bands: ${datasetMeta.bandsVersion || "v1"}`}
               >
-                {isMobile ? "Data: " : "Data Source: "}{formatVersionLabel(datasetMeta.version)}
-                {datasetMeta.seed && !isMobile && ` (seed: ${datasetMeta.seed})`}
-              </span>
+                Supplier ESG Dashboard
+              </h1>
+              <p
+                className={`mt-2 ${
+                  isMobile ? "text-sm" : "text-base"
+                } max-w-2xl`}
+                style={{ color: colors.textMuted }}
+              >
+                {isMobile
+                  ? "Live ESG, risk and sustainability intelligence for your supply chain."
+                  : "Live ethical, environmental, social and governance intelligence across your entire supply chain — risk-adjusted scores, real performance signals and AI-driven recommendations in one command center."}
+              </p>
+            </div>
+
+            {/* Quick controls */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {datasetMeta && (
+                <span
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border whitespace-nowrap"
+                  style={{
+                    backgroundColor: colors.panel + "cc",
+                    color: colors.text,
+                    borderColor: colors.accent + "40",
+                  }}
+                  title={`Generated: ${
+                    datasetMeta.generatedAt || "n/a"
+                  } | Bands: ${datasetMeta.bandsVersion || "v1"}`}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: colors.success }}
+                  />
+                  {isMobile ? "Data: " : "Data Source: "}
+                  {formatVersionLabel(datasetMeta.version)}
+                  {datasetMeta.seed && !isMobile && ` · seed ${datasetMeta.seed}`}
+                </span>
+              )}
               <button
                 onClick={() => setShowMethodology(true)}
-                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded whitespace-nowrap"
-                style={{ color: colors.textMuted }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 whitespace-nowrap transition-colors"
+                style={{
+                  color: colors.text,
+                  backgroundColor: colors.panel + "cc",
+                  borderColor: colors.accent + "30",
+                }}
                 title="View dataset generation methodology"
               >
-                {!isMobile && <InformationCircleIcon className="h-4 w-4" />} {isMobile ? "Method" : "Methodology"}
+                <InformationCircleIcon className="h-4 w-4" />
+                {isMobile ? "Method" : "Methodology"}
               </button>
               <Link
                 to="/methodology"
-                className="text-xs underline flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded whitespace-nowrap"
-                style={{ color: colors.textMuted }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 whitespace-nowrap transition-colors"
+                style={{
+                  color: colors.text,
+                  backgroundColor: colors.panel + "cc",
+                  borderColor: colors.accent + "30",
+                }}
                 title="View scoring formulas and weights"
               >
-                {!isMobile && <BeakerIcon className="h-4 w-4" />} {isMobile ? "Scoring" : "Scoring Methodology"}
+                <BeakerIcon className="h-4 w-4" />
+                {isMobile ? "Scoring" : "Scoring"}
               </Link>
               <button
                 onClick={() => setShowEditTargets(true)}
-                className="text-xs underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 rounded whitespace-nowrap"
-                style={{ color: colors.textMuted }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 whitespace-nowrap transition-all hover:opacity-95"
+                style={{
+                  color: "#fff",
+                  background: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.primary} 100%)`,
+                }}
                 title="Edit KPI/threshold targets (local only)"
               >
+                <SparklesIcon className="h-4 w-4" />
                 {isMobile ? "Targets" : "Edit Targets"}
               </button>
             </div>
-          )}
-        </div>
-        {usingMockData && (
-          <div
-            className="mt-4 md:mt-0 px-3 py-1 rounded-full text-xs flex items-center border"
-            style={{
-              backgroundColor: colors.warning + "10",
-              color: colors.warning,
-              borderColor: colors.warning + "30",
-            }}
-          >
-            <InformationCircleIcon className="h-4 w-4 mr-2" />
-            Displaying Demo Data
           </div>
-        )}
+        </div>
       </motion.div>
       <MethodologyModal
         open={showMethodology}
