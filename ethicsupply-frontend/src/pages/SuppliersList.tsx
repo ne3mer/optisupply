@@ -1486,9 +1486,10 @@ const SuppliersList = () => {
 
   return (
     <div
-      className="min-h-screen p-4 md:p-8"
+      className="min-h-screen p-4 md:p-6 lg:p-8"
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
+      <div className="mx-auto w-full max-w-[1600px]">
       {/* Header and Controls */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -1496,11 +1497,11 @@ const SuppliersList = () => {
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
           <h1 className="text-3xl font-bold tracking-tight">
             Supplier <span style={{ color: colors.primary }}>Registry</span>
           </h1>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Export Menu */}
             <div className="relative">
               <motion.button
@@ -1660,8 +1661,14 @@ const SuppliersList = () => {
         </div>
 
         {/* Filters and Search */}
-        <div className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div
+          className="mb-6 rounded-2xl border p-4 md:p-5"
+          style={{
+            backgroundColor: colors.panel + "99",
+            borderColor: colors.accent + "25",
+          }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 mb-4">
             {/* Search */}
             <div className="relative">
               <MagnifyingGlassIcon
@@ -1772,8 +1779,11 @@ const SuppliersList = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="p-4 rounded-md mb-4"
-              style={{ backgroundColor: colors.panel }}
+              className="p-4 rounded-xl mb-1 border"
+              style={{
+                backgroundColor: colors.background + "66",
+                borderColor: colors.accent + "25",
+              }}
             >
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-lg font-semibold">
@@ -1815,8 +1825,11 @@ const SuppliersList = () => {
 
       {/* Sorting Controls */}
       <div
-        className="mb-6 p-4 rounded-md"
-        style={{ backgroundColor: colors.panel }}
+        className="mb-6 p-4 rounded-2xl border"
+        style={{
+          backgroundColor: colors.panel + "cc",
+          borderColor: colors.accent + "25",
+        }}
       >
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-sm mr-2" style={{ color: colors.textMuted }}>
@@ -1936,7 +1949,7 @@ const SuppliersList = () => {
       {!loading && !error && (
         <>
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5 xl:gap-6"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -1969,7 +1982,7 @@ const SuppliersList = () => {
                   <motion.div
                     key={supplierId}
                     variants={itemVariants}
-                    className={`rounded-xl border backdrop-blur-sm overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl relative ${
+                    className={`rounded-2xl border overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl relative ${
                       isSelected ? "ring-2 ring-offset-2" : ""
                     }`}
                     style={{
@@ -1977,7 +1990,7 @@ const SuppliersList = () => {
                       borderColor: colors.accent + "40",
                       ...(isSelected && { ringColor: colors.primary }),
                     }}
-                    whileHover={{ y: -4, scale: 1.01 }}
+                    whileHover={{ y: -4 }}
                   >
                     {/* Selection Checkbox - Top Right */}
                     <div className="absolute top-3 right-3 z-10">
@@ -2013,7 +2026,7 @@ const SuppliersList = () => {
                       className="p-5 pb-4 border-b relative"
                       style={{ 
                         borderColor: colors.accent + "20",
-                        background: `linear-gradient(135deg, ${colors.panel} 0%, ${colors.panel}dd 100%)`,
+                        background: `linear-gradient(135deg, ${colors.panel} 0%, ${colors.background}22 100%)`,
                       }}
                     >
                       {/* Supplier Name & Location */}
@@ -2043,7 +2056,7 @@ const SuppliersList = () => {
                       </div>
 
                       {/* Status Badges - Compact Row */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-3">
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
                         <Tooltip content={sectionHelp.statusBar}>
                           <span
                             className="px-2 py-1 rounded-md flex items-center text-xs font-medium"
@@ -2112,7 +2125,7 @@ const SuppliersList = () => {
                     {/* Card Body - Key Metrics - Cleaner Layout */}
                     <div className="p-5 flex-grow space-y-4">
                       {/* Main ESG Score - Prominent */}
-                      <div className="bg-gradient-to-br from-accent/10 to-primary/5 rounded-lg p-4 border" style={{ borderColor: colors.accent + "20" }}>
+                      <div className="rounded-xl p-4 border" style={{ borderColor: colors.accent + "20", backgroundColor: colors.background + "40" }}>
                         <Tooltip content={sectionHelp.esgRiskAdjusted}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -2258,7 +2271,7 @@ const SuppliersList = () => {
 
                     {/* Card Footer - Actions - Cleaner Design */}
                     <div
-                      className="p-4 border-t flex gap-2"
+                      className="p-4 border-t flex flex-col sm:flex-row gap-2"
                       style={{
                         borderColor: colors.accent + "20",
                         backgroundColor: colors.panel + "dd",
@@ -2300,13 +2313,13 @@ const SuppliersList = () => {
 
           {/* Pagination Controls */}
           {filteredSuppliers.length > 0 && (
-            <div className="mt-8 flex justify-between items-center">
-              <div style={{ color: colors.textMuted }}>
+            <div className="mt-8 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
+              <div className="text-sm" style={{ color: colors.textMuted }}>
                 Showing {Math.min(itemsPerPage, filteredSuppliers.length)} of{" "}
                 {filteredSuppliers.length} suppliers
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
@@ -2374,10 +2387,11 @@ const SuppliersList = () => {
           <AnimatePresence>
             {selectedSuppliers.length > 0 && (
               <motion.div
-                className="fixed bottom-4 right-4 z-30 p-4 rounded-lg shadow-lg"
+                className="fixed bottom-4 right-4 z-30 p-4 rounded-xl shadow-xl border"
                 style={{
                   backgroundColor: colors.panel,
                   borderLeft: `4px solid ${colors.primary}`,
+                  borderColor: colors.accent + "30",
                 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -3428,6 +3442,7 @@ const SuppliersList = () => {
           </AnimatePresence>
         </>
       )}
+      </div>
     </div>
   );
 };
