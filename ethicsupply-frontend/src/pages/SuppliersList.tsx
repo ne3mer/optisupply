@@ -968,6 +968,52 @@ const SuppliersList = () => {
   // Calculate total pages
   const totalPages = Math.ceil(filteredSuppliers.length / itemsPerPage);
 
+  // Portfolio-level KPIs computed from filtered suppliers (live)
+  const portfolioStats = useMemo(() => {
+    const total = filteredSuppliers.length;
+    const scores: number[] = [];
+    const coverages: number[] = [];
+    let highRisk = 0;
+
+    filteredSuppliers.forEach((s) => {
+      const raw = s.ethical_score;
+      if (raw !== null && raw !== undefined && !Number.isNaN(raw)) {
+        scores.push(raw > 0 && raw <= 1 ? raw * 100 : raw);
+      }
+      if (
+        s.completeness_ratio !== null &&
+        s.completeness_ratio !== undefined &&
+        !Number.isNaN(s.completeness_ratio)
+      ) {
+        coverages.push(s.completeness_ratio);
+      }
+      const lvl = s.risk_level?.toLowerCase();
+      if (lvl === "high" || lvl === "critical") highRisk += 1;
+    });
+
+    const avgEsg = scores.length
+      ? scores.reduce((a, b) => a + b, 0) / scores.length
+      : null;
+    const avgCoverage = coverages.length
+      ? coverages.reduce((a, b) => a + b, 0) / coverages.length
+      : null;
+
+    const topPerformer = filteredSuppliers
+      .filter(
+        (s) => s.ethical_score !== null && s.ethical_score !== undefined
+      )
+      .reduce<{ name: string; score: number } | null>((best, s) => {
+        const v =
+          s.ethical_score && s.ethical_score <= 1
+            ? s.ethical_score * 100
+            : (s.ethical_score as number);
+        if (!best || v > best.score) return { name: s.name || "—", score: v };
+        return best;
+      }, null);
+
+    return { total, avgEsg, avgCoverage, highRisk, topPerformer };
+  }, [filteredSuppliers]);
+
   // Pagination controls
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -1497,11 +1543,57 @@ const SuppliersList = () => {
         transition={{ duration: 0.5 }}
         className="mb-6 md:mb-8"
       >
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 sm:gap-4 mb-5 md:mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Supplier <span style={{ color: colors.primary }}>Registry</span>
-          </h1>
-          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full lg:w-auto">
+        {/* Hero header */}
+        <div
+          className="relative mb-5 md:mb-6 rounded-3xl border overflow-hidden"
+          style={{
+            borderColor: colors.accent + "30",
+            background: `radial-gradient(circle at 0% 0%, ${colors.primary}1f 0%, transparent 55%), radial-gradient(circle at 100% 0%, ${colors.accent}24 0%, transparent 55%), linear-gradient(180deg, ${colors.panel} 0%, ${colors.background}cc 100%)`,
+          }}
+        >
+          {/* subtle grid pattern */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: `linear-gradient(${colors.text} 1px, transparent 1px), linear-gradient(90deg, ${colors.text} 1px, transparent 1px)`,
+              backgroundSize: "32px 32px",
+            }}
+          />
+
+          <div className="relative p-5 sm:p-6 lg:p-7">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4">
+              <div>
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
+                  style={{
+                    color: colors.primary,
+                    backgroundColor: colors.primary + "15",
+                    border: `1px solid ${colors.primary}30`,
+                  }}
+                >
+                  <SparklesIcon className="h-3.5 w-3.5" />
+                  Supplier Intelligence
+                </span>
+                <h1
+                  className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
+                  style={{
+                    background: `linear-gradient(120deg, ${colors.text} 0%, ${colors.primary} 60%, ${colors.accent} 100%)`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  Supplier Registry
+                </h1>
+                <p
+                  className="mt-2 text-sm max-w-xl"
+                  style={{ color: colors.textMuted }}
+                >
+                  Track, evaluate and act on every supplier in your network — risk-adjusted ESG scores, live coverage and AI-driven recommendations in one command center.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full lg:w-auto">
             {/* Export Menu */}
             <div className="relative w-full sm:w-auto">
               <motion.button
@@ -1662,6 +1754,107 @@ const SuppliersList = () => {
                 <span className="sm:hidden">New Supplier</span>
               </Link>
             </motion.div>
+              </div>
+            </div>
+
+            {/* KPI Strip */}
+            <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                {
+                  label: "Suppliers in View",
+                  value: portfolioStats.total.toLocaleString(),
+                  hint:
+                    portfolioStats.total === suppliers.length
+                      ? "Full network"
+                      : `of ${suppliers.length} total`,
+                  icon: <BuildingOfficeIcon className="h-4 w-4" />,
+                  color: colors.primary,
+                },
+                {
+                  label: "Avg ESG (Risk-adj.)",
+                  value:
+                    portfolioStats.avgEsg !== null
+                      ? portfolioStats.avgEsg.toFixed(1)
+                      : "—",
+                  hint:
+                    portfolioStats.avgEsg !== null
+                      ? portfolioStats.avgEsg >= 70
+                        ? "Strong portfolio"
+                        : portfolioStats.avgEsg >= 50
+                        ? "Mixed performance"
+                        : "Needs attention"
+                      : "No data",
+                  icon: <ScaleIcon className="h-4 w-4" />,
+                  color: colors.success,
+                },
+                {
+                  label: "High / Critical Risk",
+                  value: portfolioStats.highRisk.toLocaleString(),
+                  hint:
+                    portfolioStats.total > 0
+                      ? `${(
+                          (portfolioStats.highRisk / portfolioStats.total) *
+                          100
+                        ).toFixed(0)}% of view`
+                      : "—",
+                  icon: <ShieldExclamationIcon className="h-4 w-4" />,
+                  color: colors.error,
+                },
+                {
+                  label: "Avg Data Coverage",
+                  value:
+                    portfolioStats.avgCoverage !== null
+                      ? `${(portfolioStats.avgCoverage * 100).toFixed(0)}%`
+                      : "—",
+                  hint:
+                    portfolioStats.topPerformer
+                      ? `Top: ${portfolioStats.topPerformer.name}`
+                      : "Disclosure quality",
+                  icon: <SparklesIcon className="h-4 w-4" />,
+                  color: colors.accent,
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-xl border px-4 py-3 backdrop-blur-sm flex items-start justify-between gap-3"
+                  style={{
+                    borderColor: colors.accent + "25",
+                    backgroundColor: colors.panel + "cc",
+                  }}
+                >
+                  <div className="min-w-0">
+                    <div
+                      className="text-[10px] font-semibold uppercase tracking-wider"
+                      style={{ color: colors.textMuted }}
+                    >
+                      {stat.label}
+                    </div>
+                    <div
+                      className="mt-1 text-2xl font-bold font-mono leading-none"
+                      style={{ color: colors.text }}
+                    >
+                      {stat.value}
+                    </div>
+                    <div
+                      className="mt-1 text-[11px] truncate"
+                      style={{ color: colors.textMuted }}
+                    >
+                      {stat.hint}
+                    </div>
+                  </div>
+                  <div
+                    className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
+                    style={{
+                      color: stat.color,
+                      backgroundColor: stat.color + "18",
+                      border: `1px solid ${stat.color}30`,
+                    }}
+                  >
+                    {stat.icon}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -1962,7 +2155,9 @@ const SuppliersList = () => {
             animate="visible"
           >
             {sortedAndPaginatedSuppliers.length > 0 ? (
-              sortedAndPaginatedSuppliers.map((supplier) => {
+              sortedAndPaginatedSuppliers.map((supplier, idx) => {
+                const absoluteRank =
+                  (currentPage - 1) * itemsPerPage + idx + 1;
                 const riskColor = getRiskColor(colors, supplier.risk_level);
                 const riskIcon = getRiskIcon(supplier.risk_level);
                 const scoreColor = getScoreColor(colors, supplier.ethical_score);
@@ -2055,28 +2250,59 @@ const SuppliersList = () => {
                         background: `radial-gradient(circle at 0% 0%, ${colors.primary}10 0%, transparent 50%), radial-gradient(circle at 100% 0%, ${colors.accent}10 0%, transparent 50%), ${colors.panel}`,
                       }}
                     >
-                      <div className="pr-9">
-                        <Tooltip content={sectionHelp.header}>
-                          <h2
-                            className="text-lg font-semibold leading-tight tracking-tight truncate"
-                            style={{ color: colors.text }}
-                          >
-                            {supplier.name}
-                          </h2>
-                        </Tooltip>
-                        <div
-                          className="mt-1.5 flex items-center text-xs gap-2 flex-wrap"
-                          style={{ color: colors.textMuted }}
+                      <div className="pr-9 flex items-start gap-3">
+                        <Tooltip
+                          content={`Rank #${absoluteRank} in current view (sort: ${sortField} ${sortDirection})`}
                         >
-                          <span className="flex items-center gap-1">
-                            <MapPinIcon className="h-3.5 w-3.5" />
-                            {supplier.country || "N/A"}
-                          </span>
-                          <span aria-hidden style={{ color: colors.textMuted + "66" }}>·</span>
-                          <span className="flex items-center gap-1">
-                            <BuildingOfficeIcon className="h-3.5 w-3.5" />
-                            {supplier.industry || "N/A"}
-                          </span>
+                          <div
+                            className="shrink-0 h-9 w-9 rounded-lg flex items-center justify-center text-xs font-bold font-mono tracking-tight"
+                            style={{
+                              backgroundColor:
+                                absoluteRank <= 3
+                                  ? colors.primary + "20"
+                                  : colors.background + "60",
+                              color:
+                                absoluteRank <= 3
+                                  ? colors.primary
+                                  : colors.textMuted,
+                              border: `1px solid ${
+                                absoluteRank <= 3
+                                  ? colors.primary + "50"
+                                  : colors.accent + "30"
+                              }`,
+                            }}
+                          >
+                            #{absoluteRank}
+                          </div>
+                        </Tooltip>
+                        <div className="min-w-0 flex-1">
+                          <Tooltip content={sectionHelp.header}>
+                            <h2
+                              className="text-lg font-semibold leading-tight tracking-tight truncate"
+                              style={{ color: colors.text }}
+                            >
+                              {supplier.name}
+                            </h2>
+                          </Tooltip>
+                          <div
+                            className="mt-1.5 flex items-center text-xs gap-2 flex-wrap"
+                            style={{ color: colors.textMuted }}
+                          >
+                            <span className="flex items-center gap-1">
+                              <MapPinIcon className="h-3.5 w-3.5" />
+                              {supplier.country || "N/A"}
+                            </span>
+                            <span
+                              aria-hidden
+                              style={{ color: colors.textMuted + "66" }}
+                            >
+                              ·
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <BuildingOfficeIcon className="h-3.5 w-3.5" />
+                              {supplier.industry || "N/A"}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
@@ -2162,60 +2388,130 @@ const SuppliersList = () => {
 
                     {/* === BODY === */}
                     <div className="px-5 py-5 flex-grow flex flex-col gap-5">
-                      {/* Hero ESG score */}
-                      <div>
-                        <div className="flex items-end justify-between gap-3">
-                          <div>
-                            <Tooltip content={sectionHelp.esgRiskAdjusted}>
+                      {/* Hero ESG score with gauge ring */}
+                      <div
+                        className="relative rounded-xl border p-4 flex items-center gap-4"
+                        style={{
+                          borderColor: colors.accent + "20",
+                          background: `linear-gradient(135deg, ${colors.background}66 0%, ${colors.panel}cc 100%)`,
+                        }}
+                      >
+                        {/* Score Gauge */}
+                        <Tooltip content={sectionHelp.esgRiskAdjusted}>
+                          <div className="relative shrink-0 h-[88px] w-[88px]">
+                            <svg
+                              viewBox="0 0 100 100"
+                              className="absolute inset-0 -rotate-90"
+                            >
+                              <circle
+                                cx="50"
+                                cy="50"
+                                r="42"
+                                fill="none"
+                                stroke={colors.background}
+                                strokeWidth="8"
+                                opacity={0.6}
+                              />
+                              <motion.circle
+                                cx="50"
+                                cy="50"
+                                r="42"
+                                fill="none"
+                                stroke={`url(#gauge-gradient-${supplierId})`}
+                                strokeWidth="8"
+                                strokeLinecap="round"
+                                strokeDasharray={2 * Math.PI * 42}
+                                initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
+                                animate={{
+                                  strokeDashoffset:
+                                    2 * Math.PI * 42 * (1 - scorePercent / 100),
+                                }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                              />
+                              <defs>
+                                <linearGradient
+                                  id={`gauge-gradient-${supplierId}`}
+                                  x1="0%"
+                                  y1="0%"
+                                  x2="100%"
+                                  y2="0%"
+                                >
+                                  <stop offset="0%" stopColor={colors.primary} />
+                                  <stop offset="100%" stopColor={colors.success} />
+                                </linearGradient>
+                              </defs>
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
                               <span
-                                className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider"
+                                className="text-xl font-bold font-mono leading-none tracking-tight"
+                                style={{ color: scoreColor }}
+                              >
+                                {riskAdjustedScore !== null
+                                  ? riskAdjustedScore.toFixed(1)
+                                  : "N/A"}
+                              </span>
+                              <span
+                                className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider"
                                 style={{ color: colors.textMuted }}
                               >
-                                <ScaleIcon className="h-3.5 w-3.5" />
-                                ESG Score
-                                <InformationCircleIcon
-                                  className="h-3.5 w-3.5 opacity-60 cursor-help"
-                                />
+                                / 100
                               </span>
-                            </Tooltip>
-                            <div
-                              className="mt-1 text-[11px]"
-                              style={{ color: colors.textMuted + "cc" }}
-                            >
-                              Risk-adjusted performance
                             </div>
                           </div>
-                          <div className="flex items-baseline gap-1.5">
+                        </Tooltip>
+
+                        {/* Score meta */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span
-                              className="text-3xl font-bold font-mono leading-none tracking-tight"
-                              style={{ color: scoreColor }}
-                            >
-                              {riskAdjustedScore !== null
-                                ? riskAdjustedScore.toFixed(1)
-                                : "N/A"}
-                            </span>
-                            <span
-                              className="text-xs font-medium"
+                              className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider"
                               style={{ color: colors.textMuted }}
                             >
-                              / 100
+                              <ScaleIcon className="h-3 w-3" />
+                              ESG Score
+                            </span>
+                            <span
+                              className="px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                              style={{
+                                backgroundColor: scoreColor + "20",
+                                color: scoreColor,
+                              }}
+                            >
+                              {scorePercent >= 80
+                                ? "EXCELLENT"
+                                : scorePercent >= 60
+                                ? "STRONG"
+                                : scorePercent >= 40
+                                ? "AVERAGE"
+                                : "AT RISK"}
                             </span>
                           </div>
-                        </div>
-
-                        <div
-                          className="mt-3 h-1.5 rounded-full overflow-hidden"
-                          style={{ backgroundColor: colors.background + "80" }}
-                        >
-                          <motion.div
-                            className="h-full rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${scorePercent}%` }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
-                            style={{
-                              background: `linear-gradient(90deg, ${colors.primary} 0%, ${colors.success} 100%)`,
-                            }}
-                          />
+                          <div
+                            className="mt-1 text-[12px] font-medium leading-tight"
+                            style={{ color: colors.text }}
+                          >
+                            Risk-adjusted ESG performance
+                          </div>
+                          <div
+                            className="mt-2 h-1 rounded-full overflow-hidden"
+                            style={{ backgroundColor: colors.background + "80" }}
+                          >
+                            <motion.div
+                              className="h-full rounded-full"
+                              initial={{ width: 0 }}
+                              animate={{ width: `${scorePercent}%` }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              style={{
+                                background: `linear-gradient(90deg, ${colors.primary} 0%, ${colors.success} 100%)`,
+                              }}
+                            />
+                          </div>
+                          <div
+                            className="mt-1 text-[10px]"
+                            style={{ color: colors.textMuted + "cc" }}
+                          >
+                            {Math.round(scorePercent)}% of max
+                          </div>
                         </div>
                       </div>
 
