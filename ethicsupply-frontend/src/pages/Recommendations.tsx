@@ -205,6 +205,93 @@ type EnhancedRecommendation = Recommendation & {
   action_completed_at?: string;
 };
 
+type RecCategory = "environmental" | "social" | "governance";
+type RecPriority = "high" | "medium" | "low";
+type RecStatus = "pending" | "in_progress" | "completed";
+
+const inferCategory = (r: Recommendation): RecCategory => {
+  const hay = `${r.title || ""} ${r.description || ""} ${r.action || ""}`.toLowerCase();
+  if (/(co2|carbon|emission|water|waste|energy|renewable|pollution|climate)/.test(hay)) return "environmental";
+  if (/(worker|labor|safety|wage|human rights|diversity|dei|community)/.test(hay)) return "social";
+  return "governance";
+};
+
+const inferPriority = (r: Recommendation): RecPriority => {
+  const hay = `${r.priority || ""} ${r.title || ""} ${r.description || ""} ${r.ai_explanation || ""}`.toLowerCase();
+  if (/(critical|immediate|severe|high risk|violation|urgent)/.test(hay)) return "high";
+  if (/(medium|moderate|gap|improve|reduce|mitigate)/.test(hay)) return "medium";
+  return "low";
+};
+
+const inferImpact = (p: RecPriority) => (p === "high" ? "High" : p === "medium" ? "Medium" : "Low");
+const inferDifficulty = (c: RecCategory, p: RecPriority) =>
+  p === "high" ? "Medium" : c === "governance" ? "Low" : "Medium";
+const inferTimeframe = (p: RecPriority) => (p === "high" ? "3 months" : p === "medium" ? "6 months" : "12 months");
+
+const enrichRecommendation = (r: EnhancedRecommendation): EnhancedRecommendation => {
+  const category = (r.category as RecCategory) || inferCategory(r);
+  const priority = (r.priority as RecPriority) || inferPriority(r);
+  const status = (r.status as RecStatus) || "pending";
+
+  const supplierName =
+    typeof r.supplier === "object" && r.supplier?.name
+      ? r.supplier.name
+      : typeof r.supplier === "string"
+      ? r.supplier
+      : "Unknown Supplier";
+
+  const title =
+    r.title ||
+    (r.action ? `${r.action}` : null) ||
+    `Action plan for ${supplierName}`;
+
+  const description =
+    r.description ||
+    (typeof r.ai_explanation === "string" ? r.ai_explanation : null) ||
+    "Recommendation generated from supplier signals. Open the card for the rationale and playbook.";
+
+  const ai_explanation =
+    r.ai_explanation ||
+    `Derived from the supplier’s recent disclosures, risk indicators, and category benchmarks. This action is prioritized as ${priority.toUpperCase()} due to expected impact and feasibility.`;
+
+  const impact = r.impact || inferImpact(priority);
+  const difficulty = r.difficulty || inferDifficulty(category, priority);
+  const timeframe = r.timeframe || inferTimeframe(priority);
+  const created_at = r.created_at || new Date().toISOString();
+
+  const estimated_impact =
+    r.estimated_impact ||
+    (impact === "High"
+      ? "High expected upside: measurable risk reduction and a clear ESG score lift within one reporting cycle."
+      : impact === "Medium"
+      ? "Moderate expected upside: improves compliance confidence and trend stability over the next quarter."
+      : "Low expected upside: strengthens governance hygiene and keeps reporting consistent.");
+
+  const details =
+    r.details ||
+    (category === "environmental"
+      ? "Start with the top-emitting process line. Verify baselines before rolling out changes."
+      : category === "social"
+      ? "Start with training + incident reporting. Then audit compliance quarterly."
+      : "Start with policy + controls. Then publish a lightweight evidence pack for audits.");
+
+  return {
+    ...r,
+    title,
+    description,
+    category,
+    priority,
+    status,
+    ai_explanation,
+    impact,
+    difficulty,
+    timeframe,
+    created_at,
+    estimated_impact,
+    details,
+  };
+};
+
 const actionOwners = [
   "Sustainability Office",
   "Operations",
@@ -1264,9 +1351,7 @@ const RecommendationsPage = () => {
     setUsingMockData(false);
 
     try {
-      console.log("Fetching recommendations from API...");
       const response = await getRecommendations();
-      console.log("Recommendations API raw response:", response);
 
       let fetchedData: Recommendation[];
       let isMock = false;
@@ -1293,39 +1378,25 @@ const RecommendationsPage = () => {
         isMock = true;
       }
 
-      // Normalize IDs and ensure consistency
+      // Normalize IDs and enrich missing fields for a complete UI
       const normalized: EnhancedRecommendation[] = fetchedData.map((r) => {
         const id = String(
           r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
         );
-        return {
+        return enrichRecommendation({
           ...r,
           _id: id,
           id: id, // Also set id field for consistency
-        };
+        } as EnhancedRecommendation);
       });
-
-      console.log(
-        "[Recommendations] Normalized recommendations:",
-        normalized.map((r) => ({ _id: r._id, title: r.title }))
-      );
 
       // Apply stored action state BEFORE setting recommendations
       const merged = applyStoredActionState(normalized);
-      console.log(
-        "[Recommendations] Merged recommendations:",
-        merged.map((r) => ({
-          _id: r._id,
-          title: r.title,
-          status: r.status,
-          action_started_at: r.action_started_at,
-          action_owner: r.action_owner,
-        }))
-      );
+      const enrichedMerged = merged.map(enrichRecommendation);
 
-      setRecommendations(merged);
+      setRecommendations(enrichedMerged);
       // Persist AFTER setting to ensure state is saved
-      persistActionStateFromArray(merged);
+      persistActionStateFromArray(enrichedMerged);
       setUsingMockData(isMock);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
@@ -1341,8 +1412,9 @@ const RecommendationsPage = () => {
         };
       });
       const mergedFallback = applyStoredActionState(fallback);
-      setRecommendations(mergedFallback);
-      persistActionStateFromArray(mergedFallback);
+      const enrichedFallback = mergedFallback.map(enrichRecommendation);
+      setRecommendations(enrichedFallback);
+      persistActionStateFromArray(enrichedFallback);
       setUsingMockData(true);
     } finally {
       setIsLoading(false);
@@ -1577,21 +1649,38 @@ const RecommendationsPage = () => {
       className="min-h-screen p-4 md:p-8"
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
+      {/* Subtle texture */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 opacity-[0.12]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 20% 10%, rgba(200,240,90,0.12), transparent 35%), radial-gradient(circle at 85% 25%, rgba(232,69,69,0.10), transparent 40%), linear-gradient(to bottom, rgba(255,255,255,0.02), transparent 30%)",
+          mixBlendMode: "screen",
+        }}
+      />
       <div className="max-w-7xl mx-auto">
         {/* Enhanced Page Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-10"
+          className="mb-8"
         >
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div
+            className="rounded-xl border p-5 md:p-6 mb-6"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "25",
+            }}
+          >
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div
-                  className="p-3 rounded-xl"
+                  className="p-3 rounded-lg"
                   style={{
                     backgroundColor: colors.primary + "20",
+                    border: `1px solid ${colors.primary}25`,
                   }}
                 >
                   <Sparkles
@@ -1601,33 +1690,30 @@ const RecommendationsPage = () => {
                 </div>
                 <div>
                   <h1
-                    className="text-4xl font-bold tracking-tight"
-                    style={{ color: colors.text }}
+                    className="text-3xl md:text-4xl font-display font-bold tracking-tight"
+                    style={{ color: colors.text, letterSpacing: "-0.03em" }}
                   >
-                    AI-Powered{" "}
-                    <span style={{ color: colors.primary }}>
-                      Recommendations
-                    </span>
+                    Recommendations{" "}
+                    <span style={{ color: colors.primary }}>Command</span>
                   </h1>
                   <p
                     className="mt-1 text-sm"
                     style={{ color: colors.textMuted }}
                   >
-                    Intelligent insights to optimize your supply chain
-                    sustainability
+                    Editorial-grade action briefs generated from your supplier signals.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 mt-4 flex-wrap">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() =>
                   setViewMode(viewMode === "list" ? "grid" : "list")
                 }
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors border"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-md font-medium transition-colors border"
                 style={{
                   backgroundColor: colors.panel,
                   borderColor: colors.accent + "40",
@@ -1648,10 +1734,10 @@ const RecommendationsPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={fetchRecommendations}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-md font-semibold transition-colors shadow-sm"
                 style={{
-                  backgroundColor: colors.accent,
-                  color: colors.background,
+                  backgroundColor: colors.primary,
+                  color: "#0A0A0A",
                 }}
               >
                 <RefreshCcw className="h-4 w-4" />
@@ -1696,11 +1782,11 @@ const RecommendationsPage = () => {
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors border shadow-sm"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-md font-semibold transition-colors border shadow-sm"
                 style={{
                   backgroundColor: colors.panel,
                   borderColor: colors.accent + "40",
-                  color: colors.accent,
+                  color: colors.textMuted,
                 }}
               >
                 <Download className="h-4 w-4" />
@@ -1710,7 +1796,7 @@ const RecommendationsPage = () => {
           </div>
 
           {/* Enhanced Stats Dashboard */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
             <ImpactScoreCard
               label="Total"
               value={stats.total}
@@ -2229,20 +2315,24 @@ const RecommendationsPage = () => {
 
               {/* Recommendation Cards */}
               <div className="mt-6">
-                {filteredAndSortedRecommendations.map(
-                  (recommendation, index) => (
+                <div
+                  className={
+                    viewMode === "grid"
+                      ? "grid grid-cols-1 md:grid-cols-2 gap-4"
+                      : "space-y-0"
+                  }
+                >
+                  {filteredAndSortedRecommendations.map((recommendation, index) => (
                     <RecommendationCard
                       key={recommendation._id}
                       recommendation={recommendation}
                       isExpanded={expandedCardId === recommendation._id}
-                      onToggleExpand={() =>
-                        handleToggleExpand(recommendation._id)
-                      }
+                      onToggleExpand={() => handleToggleExpand(recommendation._id)}
                       onActionClick={() => handleTakeAction(recommendation._id)}
                       index={index}
                     />
-                  )
-                )}
+                  ))}
+                </div>
               </div>
             </>
           )}
