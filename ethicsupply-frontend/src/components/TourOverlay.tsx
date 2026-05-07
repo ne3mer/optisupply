@@ -13,37 +13,53 @@ type Props = {
   onFinish: () => void;
 };
 
-const CARD_W = 390;
-const CARD_H_APPROX = 460;
 const PAD = 12;
 
-function getCardPosition(rect: Rect): { top: number; left: number } {
+function getCardMetrics() {
+  const vw = window.innerWidth;
+  const isMobile = vw < 640;
+  const cardW = isMobile ? Math.min(vw - PAD * 2, 340) : 390;
+  const cardHApprox = isMobile ? 380 : 460;
+  return { cardW, cardHApprox, isMobile };
+}
+
+function getCardPosition(rect: Rect): { top: number; left: number; width: number } {
+  const { cardW, cardHApprox, isMobile } = getCardMetrics();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+
+  // On mobile: always pin to bottom of viewport, full width minus padding
+  if (isMobile) {
+    return {
+      top: Math.max(PAD, vh - cardHApprox - 72), // leave room for tour button
+      left: PAD,
+      width: vw - PAD * 2,
+    };
+  }
 
   // Vertical: prefer below, fallback above
   let top: number;
   const spaceBelow = vh - rect.bottom - PAD;
   const spaceAbove = rect.top - PAD;
-  if (spaceBelow >= CARD_H_APPROX || spaceBelow >= spaceAbove) {
+  if (spaceBelow >= cardHApprox || spaceBelow >= spaceAbove) {
     top = rect.bottom + PAD;
   } else {
-    top = Math.max(PAD, rect.top - CARD_H_APPROX - PAD);
+    top = Math.max(PAD, rect.top - cardHApprox - PAD);
   }
-  top = Math.min(top, vh - CARD_H_APPROX - PAD);
+  top = Math.min(top, vh - cardHApprox - PAD);
   top = Math.max(top, PAD);
 
   // Horizontal: align with element, keep in viewport
   let left = rect.left;
-  if (left + CARD_W > vw - PAD) left = vw - CARD_W - PAD;
+  if (left + cardW > vw - PAD) left = vw - cardW - PAD;
   if (left < PAD) left = PAD;
 
-  return { top, left };
+  return { top, left, width: cardW };
 }
 
 export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onExit, onFinish }: Props) {
   const [highlight, setHighlight] = useState<Rect | null>(null);
-  const [cardPos, setCardPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [cardPos, setCardPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 390 });
   const [animKey, setAnimKey] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -103,6 +119,7 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
   const step = steps[currentStep];
   const progress = ((currentStep + 1) / steps.length) * 100;
   const isLast = currentStep === steps.length - 1;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
   const gx = highlight.left - 8;
   const gy = highlight.top - 8;
@@ -155,7 +172,7 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
           position: "fixed",
           top: cardPos.top,
           left: cardPos.left,
-          width: CARD_W,
+          width: cardPos.width,
           background: "#111111",
           border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 6,
@@ -182,7 +199,7 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
           }} />
         </div>
 
-        <div style={{ padding: "20px 22px 22px" }}>
+        <div style={{ padding: isMobile ? "14px 16px 16px" : "20px 22px 22px" }}>
           {/* Step counter */}
           <div style={{
             fontFamily: "'Geist Mono','DM Mono',monospace",
@@ -208,14 +225,15 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
 
           {/* Title */}
           <div style={{
-            fontSize: 17, fontWeight: 600, color: "#FAFAF7",
-            lineHeight: 1.32, marginBottom: 18,
+            fontSize: isMobile ? 15 : 17, fontWeight: 600, color: "#FAFAF7",
+            lineHeight: 1.32, marginBottom: isMobile ? 12 : 18,
             fontFamily: "'Geist','Inter',system-ui,sans-serif",
           }}>
             {step.icon}&nbsp;&nbsp;{step.title}
           </div>
 
-          {/* Where from */}
+          {/* Where from — hidden on mobile to save space */}
+          {!isMobile && (
           <div style={{ marginBottom: 14 }}>
             <div style={{
               fontFamily: "'Geist Mono','DM Mono',monospace",
@@ -226,14 +244,15 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
             </div>
             <div style={{
               fontSize: 12.5, color: "#888",
-              lineHeight: 1.72, fontFamily: "'Geist','Inter',system-ui,sans-serif",
+              lineHeight: 1.65, fontFamily: "'Geist','Inter',system-ui,sans-serif",
             }}>
               {step.whereFrom}
             </div>
           </div>
+          )}
 
           {/* Why matters */}
-          <div style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: isMobile ? 10 : 14 }}>
             <div style={{
               fontFamily: "'Geist Mono','DM Mono',monospace",
               fontSize: 9, letterSpacing: "0.13em", textTransform: "uppercase",
@@ -242,8 +261,8 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
               🎯&nbsp; Why it matters
             </div>
             <div style={{
-              fontSize: 12.5, color: "#BBBBBB",
-              lineHeight: 1.72, fontFamily: "'Geist','Inter',system-ui,sans-serif",
+              fontSize: isMobile ? 11.5 : 12.5, color: "#BBBBBB",
+              lineHeight: 1.65, fontFamily: "'Geist','Inter',system-ui,sans-serif",
             }}>
               {step.whyMatters}
             </div>
@@ -253,7 +272,7 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
           <div style={{
             background: "rgba(200,240,90,0.06)",
             border: "1px solid rgba(200,240,90,0.14)",
-            borderRadius: 4, padding: "11px 14px", marginBottom: 20,
+            borderRadius: 4, padding: isMobile ? "9px 11px" : "11px 14px", marginBottom: isMobile ? 14 : 20,
           }}>
             <div style={{
               fontFamily: "'Geist Mono','DM Mono',monospace",
@@ -263,8 +282,8 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
               ✅&nbsp; What to do
             </div>
             <div style={{
-              fontSize: 12.5, color: "#E8E8E8",
-              lineHeight: 1.72, fontFamily: "'Geist','Inter',system-ui,sans-serif",
+              fontSize: isMobile ? 11.5 : 12.5, color: "#E8E8E8",
+              lineHeight: 1.65, fontFamily: "'Geist','Inter',system-ui,sans-serif",
             }}>
               {step.whatToDo}
             </div>

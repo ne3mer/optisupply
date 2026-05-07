@@ -46,8 +46,8 @@ const useColors = () => {
   const base = getThemeColors(darkMode) as any;
   return {
     ...base,
-    gradientStart: darkMode ? "#05D3FB" : base.primary,
-    gradientEnd: darkMode ? "#FF00FF" : base.accent,
+    gradientStart: darkMode ? "#C8F05A" : base.primary,
+    gradientEnd: darkMode ? "#4ADE80" : base.accent,
   } as any;
 };
 

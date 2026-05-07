@@ -958,7 +958,7 @@ const EvaluateSupplier = () => {
       id: "supply",
       label: "Supply Chain",
       icon: TruckIcon,
-      color: colors.blue,
+      color: colors.accent,
     },
     {
       id: "risk",
@@ -1652,7 +1652,7 @@ const EvaluateSupplier = () => {
                           label="Supply Chain"
                           score={result.supply_chain_score}
                           icon={TruckIcon}
-                          color={colors.blue}
+                          color={colors.accent}
                         />
                       )}
                       {result.risk_score !== undefined && (

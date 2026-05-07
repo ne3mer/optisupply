@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import useIsMobile from "../hooks/useIsMobile";
 
 type Props = {
   isActive: boolean;
@@ -8,6 +9,7 @@ type Props = {
 
 export function TourButton({ isActive, onStart, onExit }: Props) {
   const [hovered, setHovered] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <button
@@ -17,16 +19,16 @@ export function TourButton({ isActive, onStart, onExit }: Props) {
       title={isActive ? "Exit guided tour (Esc)" : "Start guided tour — explains what every metric means"}
       style={{
         position: "fixed",
-        bottom: 32,
-        right: 32,
+        bottom: isMobile ? 16 : 32,
+        right: isMobile ? 16 : 32,
         zIndex: 9999,
         background: isActive ? "#111111" : "#C8F05A",
         color: isActive ? "#C8F05A" : "#0A0A0A",
         border: isActive ? "1px solid rgba(200,240,90,0.4)" : "none",
-        padding: "11px 20px",
+        padding: isMobile ? "9px 14px" : "11px 20px",
         borderRadius: 4,
         fontWeight: 700,
-        fontSize: 13,
+        fontSize: isMobile ? 12 : 13,
         cursor: "pointer",
         fontFamily: "'Geist','Inter',system-ui,sans-serif",
         letterSpacing: "0.02em",
@@ -39,19 +41,20 @@ export function TourButton({ isActive, onStart, onExit }: Props) {
         transition: "all 0.2s cubic-bezier(0.16,1,0.3,1)",
         display: "flex",
         alignItems: "center",
-        gap: 8,
+        gap: isMobile ? 6 : 8,
         whiteSpace: "nowrap",
+        maxWidth: isMobile ? "calc(100vw - 32px)" : "none",
       }}
     >
       {isActive ? (
         <>
-          <span style={{ fontSize: 15, lineHeight: 1 }}>✕</span>
-          Exit Tour
+          <span style={{ fontSize: isMobile ? 13 : 15, lineHeight: 1 }}>✕</span>
+          {isMobile ? "Exit" : "Exit Tour"}
         </>
       ) : (
         <>
-          <span style={{ fontSize: 13, lineHeight: 1 }}>▶</span>
-          Show me what matters
+          <span style={{ fontSize: isMobile ? 11 : 13, lineHeight: 1 }}>▶</span>
+          {isMobile ? "Show me what matters" : "Show me what matters"}
         </>
       )}
     </button>

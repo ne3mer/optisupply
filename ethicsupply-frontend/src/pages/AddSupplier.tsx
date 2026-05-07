@@ -2424,7 +2424,7 @@ const AddSupplier = () => {
                 >
                   <TruckIcon
                     className="h-4 w-4 mr-2"
-                    style={{ color: colors.blue }}
+                    style={{ color: colors.accent }}
                   />
                   Supply Chain Metrics
                 </a>
@@ -2846,7 +2846,7 @@ const AddSupplier = () => {
                     className="text-xl font-bold mb-6 pb-2 relative"
                     id="supply-chain"
                     style={{
-                      borderBottom: `2px solid ${colors.blue}40`,
+                      borderBottom: `2px solid ${colors.accent}40`,
                       display: "inline-block",
                       paddingRight: "50px",
                     }}
@@ -2854,13 +2854,13 @@ const AddSupplier = () => {
                     <div className="flex items-center">
                       <TruckIcon
                         className="w-5 h-5 mr-2"
-                        style={{ color: colors.blue }}
+                        style={{ color: colors.accent }}
                       />
                       <span>Supply Chain Metrics</span>
                       <div
                         className="absolute bottom-0 left-0 h-[2px] w-20"
                         style={{
-                          background: `linear-gradient(90deg, ${colors.blue}, transparent)`,
+                          background: `linear-gradient(90deg, ${colors.accent}, transparent)`,
                         }}
                       />
                     </div>
