@@ -93,15 +93,15 @@ const getRiskColor = (colors: any, riskLevel: string | undefined) => {
 const getRiskIcon = (riskLevel: string | undefined) => {
   switch (riskLevel?.toLowerCase()) {
     case "low":
-      return "🟢"; // Green circle
+      return "🟢";
     case "medium":
-      return "🟡"; // Yellow circle
+      return "🟡";
     case "high":
-      return "🔶"; // Orange diamond
+      return "🔶";
     case "critical":
-      return "🔴"; // Red circle
+      return "🔴";
     default:
-      return "⚪"; // White circle
+      return null;
   }
 };
 
@@ -215,9 +215,9 @@ const getStatusStyles = (colors: any, status: string | undefined) => {
     default:
       return {
         color: colors.textMuted,
-        bgColor: colors.panel,
-        icon: <InformationCircleIcon className="h-4 w-4 mr-1" />,
-        border: `1px solid ${colors.accent}30`,
+        bgColor: "transparent",
+        icon: null,
+        border: `1px dashed ${colors.textMuted}40`,
       };
   }
 };
@@ -2278,20 +2278,24 @@ const SuppliersList = () => {
                             }}
                           >
                             {statusStyles.icon}
-                            {supplier.status || "Unknown"}
+                            {supplier.status || "Unverified"}
                           </span>
                         </Tooltip>
                         <span
                           className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase"
                           style={{
                             borderRadius: "4px",
-                            color: riskColor,
-                            backgroundColor: riskColor + "15",
-                            border: `1px solid ${riskColor}30`,
+                            color: supplier.risk_level ? riskColor : colors.textMuted,
+                            backgroundColor: supplier.risk_level ? riskColor + "15" : "transparent",
+                            border: supplier.risk_level ? `1px solid ${riskColor}30` : `1px dashed ${colors.textMuted}40`,
                             letterSpacing: "0.05em",
                           }}
                         >
-                          {supplier.risk_level || "Unknown"} risk
+                          {supplier.risk_level ? (
+                            <>{getRiskIcon(supplier.risk_level)} {supplier.risk_level} risk</>
+                          ) : (
+                            "No Risk Data"
+                          )}
                         </span>
                         {recommendation && (
                           <Tooltip content={recommendation.description}>
@@ -2807,10 +2811,10 @@ const SuppliersList = () => {
                                   )}40`,
                                 }}
                               >
-                                <span className="mr-1">
-                                  {getRiskIcon(supplier.risk_level)}
-                                </span>
-                                {supplier.risk_level || "Risk N/A"}
+                                {getRiskIcon(supplier.risk_level) && (
+                                  <span className="mr-1">{getRiskIcon(supplier.risk_level)}</span>
+                                )}
+                                {supplier.risk_level || "No Risk Data"}
                               </span>
                               <span
                                 className="px-2 py-1 rounded-full flex items-center"
@@ -2821,7 +2825,7 @@ const SuppliersList = () => {
                                 }}
                               >
                                 {statusStyles.icon}
-                                {supplier.status || "Status Unknown"}
+                                {supplier.status || "Unverified"}
                               </span>
                             </div>
                           </div>
@@ -3049,7 +3053,7 @@ const SuppliersList = () => {
                           }}
                         >
                           {getStatusStyles(colors, selectedSupplier.status).icon}
-                          {selectedSupplier.status || "Status Unknown"}
+                          {selectedSupplier.status || "Unverified"}
                         </span>
 
                         {/* Last Updated in Modal */}
@@ -3394,7 +3398,7 @@ const SuppliersList = () => {
                                   )}40`,
                                 }}
                               >
-                                {selectedSupplier.risk_level || "Unknown"}
+                                {selectedSupplier.risk_level || "No Data"}
                               </span>
                             </div>
                           </div>
