@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRecommendations, Recommendation } from "../services/api";
+import { getRecommendations, getSuppliers, Recommendation } from "../services/api";
 import {
   AlertTriangle,
   ArrowDownUp,
@@ -209,10 +209,78 @@ type RecCategory = "environmental" | "social" | "governance";
 type RecPriority = "high" | "medium" | "low";
 type RecStatus = "pending" | "in_progress" | "completed";
 
+/** Normalize Capitalized API values ("Environmental", ENVIRONMENTAL) to RecCategory */
+const normalizeRecCategory = (raw: unknown): RecCategory | undefined => {
+  if (typeof raw !== "string") return undefined;
+  const s = raw.trim().toLowerCase().replace(/\s+/g, " ");
+  if (s.includes("social")) return "social";
+  if (s.includes("govern")) return "governance";
+  if (s.includes("environment")) return "environmental";
+  if (s.includes("supply chain") || (s.includes("supply") && s.includes("chain")))
+    return "environmental";
+  return undefined;
+};
+
+const normalizeRecPriority = (raw: unknown): RecPriority | undefined => {
+  if (typeof raw !== "string") return undefined;
+  const s = raw.trim().toLowerCase();
+  if (s === "high" || s === "critical" || s === "urgent") return "high";
+  if (s === "medium" || s === "moderate") return "medium";
+  if (s === "low") return "low";
+  return undefined;
+};
+
+const normalizeRecStatus = (raw: unknown): RecStatus | undefined => {
+  if (typeof raw !== "string") return undefined;
+  const s = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  if (s === "pending" || s === "open" || s === "new") return "pending";
+  if (
+    s === "in_progress" ||
+    s === "inprogress" ||
+    s === "active" ||
+    s === "started"
+  )
+    return "in_progress";
+  if (
+    s === "completed" ||
+    s === "done" ||
+    s === "closed" ||
+    s === "resolved"
+  )
+    return "completed";
+  return undefined;
+};
+
+const parseSupplierNameFromTitle = (title: string): string | null => {
+  if (!title.trim()) return null;
+  const t = title.trim();
+  const withParens = /\bfor\s+(.+?)\s*\([^)]+\)\s*$/i.exec(t);
+  if (withParens?.[1]) {
+    const n = withParens[1].trim();
+    if (n.length >= 2) return n.replace(/^["']+|["']+$/g, "");
+  }
+  const plain = /\bfor\s+(.+)$/i.exec(t);
+  if (plain?.[1]) {
+    const n = plain[1].trim();
+    if (n.length >= 2) return n.replace(/^["']+|["']+$/g, "");
+  }
+  return null;
+};
+
+type EnrichContext = { supplierById?: Map<string, string> };
+
 const inferCategory = (r: Recommendation): RecCategory => {
+  const hinted = normalizeRecCategory(r.category);
+  if (hinted) return hinted;
   const hay = `${r.title || ""} ${r.description || ""} ${r.action || ""}`.toLowerCase();
-  if (/(co2|carbon|emission|water|waste|energy|renewable|pollution|climate)/.test(hay)) return "environmental";
-  if (/(worker|labor|safety|wage|human rights|diversity|dei|community)/.test(hay)) return "social";
+  if (
+    /(co2|carbon|emission|water|waste|energy|renewable|pollution|climate)/.test(
+      hay
+    )
+  )
+    return "environmental";
+  if (/(worker|labor|safety|wage|human rights|diversity|dei|community)/.test(hay))
+    return "social";
   return "governance";
 };
 
@@ -228,17 +296,56 @@ const inferDifficulty = (c: RecCategory, p: RecPriority) =>
   p === "high" ? "Medium" : c === "governance" ? "Low" : "Medium";
 const inferTimeframe = (p: RecPriority) => (p === "high" ? "3 months" : p === "medium" ? "6 months" : "12 months");
 
-const enrichRecommendation = (r: EnhancedRecommendation): EnhancedRecommendation => {
-  const category = (r.category as RecCategory) || inferCategory(r);
-  const priority = (r.priority as RecPriority) || inferPriority(r);
-  const status = (r.status as RecStatus) || "pending";
+const resolveSupplierName = (
+  r: EnhancedRecommendation,
+  ctx?: EnrichContext
+): string => {
+  const flat = r.supplier_name?.trim();
+  if (flat) return flat;
 
-  const supplierName =
-    typeof r.supplier === "object" && r.supplier?.name
-      ? r.supplier.name
-      : typeof r.supplier === "string"
-      ? r.supplier
-      : "Unknown Supplier";
+  if (typeof r.supplier === "string" && r.supplier.trim()) {
+    return r.supplier.trim();
+  }
+
+  if (typeof r.supplier === "object" && r.supplier && "name" in r.supplier) {
+    const n = (r.supplier as { name?: string }).name?.trim();
+    if (n) return n;
+  }
+
+  if (
+    r.supplier_id !== undefined &&
+    r.supplier_id !== null &&
+    ctx?.supplierById?.size
+  ) {
+    const fromMap = ctx.supplierById.get(String(r.supplier_id));
+    if (fromMap?.trim()) return fromMap.trim();
+  }
+
+  const fromTitle = parseSupplierNameFromTitle(r.title || "");
+  if (fromTitle) return fromTitle;
+
+  return "Unknown Supplier";
+};
+
+const enrichRecommendation = (
+  r: EnhancedRecommendation,
+  ctx?: EnrichContext
+): EnhancedRecommendation => {
+  const category = normalizeRecCategory(r.category) ?? inferCategory(r);
+  const priority = normalizeRecPriority(r.priority) ?? inferPriority(r);
+  const status = normalizeRecStatus(r.status) ?? "pending";
+
+  const supplierName = resolveSupplierName(r, ctx);
+
+  const supplierBase =
+    typeof r.supplier === "object" && r.supplier !== null
+      ? { ...(r.supplier as Record<string, unknown>) }
+      : {};
+
+  const supplier =
+    Object.keys(supplierBase).length > 0
+      ? { ...supplierBase, name: supplierName }
+      : { name: supplierName };
 
   const title =
     r.title ||
@@ -282,6 +389,7 @@ const enrichRecommendation = (r: EnhancedRecommendation): EnhancedRecommendation
     category,
     priority,
     status,
+    supplier: supplier as Recommendation["supplier"],
     ai_explanation,
     impact,
     difficulty,
@@ -893,8 +1001,14 @@ const RecommendationCard = ({
             <span className="inline-flex items-center gap-1.5">
               <Building2 className="h-4 w-4" style={{ color: colors.primary }} />
               <span style={{ color: colors.primary }} className="font-medium">
-                {typeof recommendation.supplier === "object"
-                  ? recommendation.supplier.name
+                {typeof recommendation.supplier === "object" &&
+                recommendation.supplier &&
+                "name" in recommendation.supplier
+                  ? String(
+                      (recommendation.supplier as { name?: string }).name || ""
+                    ) || "Unknown Supplier"
+                  : typeof recommendation.supplier === "string"
+                  ? recommendation.supplier
                   : "Unknown Supplier"}
               </span>
             </span>
@@ -1350,6 +1464,17 @@ const RecommendationsPage = () => {
     setError(null);
     setUsingMockData(false);
 
+    const supplierById = new Map<string, string>();
+    try {
+      const suppliers = await getSuppliers();
+      suppliers.forEach((s) => {
+        supplierById.set(String(s.id), s.name);
+      });
+    } catch {
+      /* optional; recommendations still work with title-based supplier parse */
+    }
+    const enrichCtx: EnrichContext = { supplierById };
+
     try {
       const response = await getRecommendations();
 
@@ -1383,16 +1508,21 @@ const RecommendationsPage = () => {
         const id = String(
           r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
         );
-        return enrichRecommendation({
-          ...r,
-          _id: id,
-          id: id, // Also set id field for consistency
-        } as EnhancedRecommendation);
+        return enrichRecommendation(
+          {
+            ...r,
+            _id: id,
+            id: id, // Also set id field for consistency
+          } as EnhancedRecommendation,
+          enrichCtx
+        );
       });
 
       // Apply stored action state BEFORE setting recommendations
       const merged = applyStoredActionState(normalized);
-      const enrichedMerged = merged.map(enrichRecommendation);
+      const enrichedMerged = merged.map((rec) =>
+        enrichRecommendation(rec, enrichCtx)
+      );
 
       setRecommendations(enrichedMerged);
       // Persist AFTER setting to ensure state is saved
@@ -1412,7 +1542,9 @@ const RecommendationsPage = () => {
         };
       });
       const mergedFallback = applyStoredActionState(fallback);
-      const enrichedFallback = mergedFallback.map(enrichRecommendation);
+      const enrichedFallback = mergedFallback.map((rec) =>
+        enrichRecommendation(rec, enrichCtx)
+      );
       setRecommendations(enrichedFallback);
       persistActionStateFromArray(enrichedFallback);
       setUsingMockData(true);
@@ -1618,9 +1750,17 @@ const RecommendationsPage = () => {
           break;
         case "supplier":
           const nameA =
-            typeof a.supplier === "object" ? a.supplier.name || "" : "";
+            typeof a.supplier === "object" && a.supplier && "name" in a.supplier
+              ? String((a.supplier as { name?: string }).name || "")
+              : typeof a.supplier === "string"
+              ? a.supplier
+              : "";
           const nameB =
-            typeof b.supplier === "object" ? b.supplier.name || "" : "";
+            typeof b.supplier === "object" && b.supplier && "name" in b.supplier
+              ? String((b.supplier as { name?: string }).name || "")
+              : typeof b.supplier === "string"
+              ? b.supplier
+              : "";
           comparison = nameA.localeCompare(nameB);
           break;
         case "createdAt":
@@ -1646,8 +1786,13 @@ const RecommendationsPage = () => {
   // Component Renderer
   return (
     <div
-      className="min-h-screen p-4 md:p-8"
-      style={{ backgroundColor: colors.background, color: colors.text }}
+      className="min-h-screen p-4 md:p-8 font-sans"
+      style={{
+        backgroundColor: colors.background,
+        color: colors.text,
+        fontFamily: '"Geist", Inter, system-ui, sans-serif',
+        WebkitFontSmoothing: "antialiased",
+      }}
     >
       {/* Subtle texture */}
       <div
@@ -1764,7 +1909,11 @@ const RecommendationsPage = () => {
                       r.category || "",
                       r.priority || "",
                       r.status || "",
-                      typeof r.supplier === "object" ? r.supplier.name : "",
+                      typeof r.supplier === "object" && r.supplier && "name" in r.supplier
+                        ? String((r.supplier as { name?: string }).name || "")
+                        : typeof r.supplier === "string"
+                        ? r.supplier
+                        : "",
                       r.impact || "",
                       r.timeframe || "",
                     ]),

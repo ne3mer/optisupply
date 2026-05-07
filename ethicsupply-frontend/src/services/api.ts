@@ -224,6 +224,8 @@ export interface Recommendation {
   priority?: "high" | "medium" | "low"; // From mock data
   status?: "pending" | "in_progress" | "completed"; // From mock data
   supplier?: { name: string } | string; // Can be object or string ID
+  supplier_id?: string | number;
+  supplier_name?: string;
   ai_explanation?: string | { reasoning?: string }; // From mock data
   estimated_impact?:
     | string
@@ -1108,6 +1110,28 @@ function generateComplianceGaps(data: SupplierEvaluation): string[] {
   return gaps.slice(0, 3);
 }
 
+/** Maps scorer labels ("Environmental", "Supply Chain") to API recommendation.category */
+function normalizeMockRecommendationCategory(
+  label: string
+): "environmental" | "social" | "governance" {
+  const k = label.toLowerCase();
+  if (k.includes("social")) return "social";
+  if (k.includes("govern")) return "governance";
+  if (k.includes("environment")) return "environmental";
+  if (k.includes("supply")) return "environmental";
+  return "environmental";
+}
+
+/** Maps urgency labels ("High") to Recommendation.priority enum */
+function normalizeMockPriorityLabel(
+  label: string
+): "high" | "medium" | "low" {
+  const u = label.trim().toLowerCase();
+  if (u === "high" || u === "critical") return "high";
+  if (u === "medium" || u === "moderate") return "medium";
+  return "low";
+}
+
 export const getRecommendations = async () => {
   try {
     console.log("Fetching AI-powered recommendations from API...");
@@ -1198,8 +1222,8 @@ export const getRecommendations = async () => {
             _id: `mock-${supplier.id}`,
             title: `Improve ${primaryCategory} for ${supplier.name}`,
             description: generatedAiExplanation.reasoning,
-            category: primaryCategory,
-            priority: urgency,
+            category: normalizeMockRecommendationCategory(primaryCategory),
+            priority: normalizeMockPriorityLabel(urgency),
             status: "pending", // <-- Added missing status field
             created_at: supplier.created_at,
             updated_at: supplier.updated_at,
@@ -1329,8 +1353,8 @@ export const getRecommendations = async () => {
           _id: `mock-${supplier.id}`,
           title: `Improve ${primaryCategory} for ${supplier.name}`,
           description: generatedAiExplanation.reasoning,
-          category: primaryCategory,
-          priority: urgency,
+          category: normalizeMockRecommendationCategory(primaryCategory),
+          priority: normalizeMockPriorityLabel(urgency),
           status: "pending", // <-- Added missing status field
           created_at: supplier.created_at,
           updated_at: supplier.updated_at,
@@ -1434,8 +1458,8 @@ export const getRecommendations = async () => {
           _id: `mock-${supplier.id}`,
           title: `Improve ${primaryCategory} for ${supplier.name}`,
           description: generatedAiExplanation.reasoning,
-          category: primaryCategory,
-          priority: urgency,
+          category: normalizeMockRecommendationCategory(primaryCategory),
+          priority: normalizeMockPriorityLabel(urgency),
           status: "pending", // <-- Added missing status field
           created_at: supplier.created_at,
           updated_at: supplier.updated_at,
