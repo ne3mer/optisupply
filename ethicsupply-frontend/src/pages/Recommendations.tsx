@@ -125,57 +125,51 @@ const generateMockRecommendationsFallback = (): Recommendation[] => [
 
 // Colors come from theme
 
-// --- Adjusted Configs for Dark Theme ---
+// --- Theme-first configs (no Tailwind color classes) ---
 const buildCategoryConfig = (colors: any) => ({
   environmental: {
     icon: <Zap className="h-5 w-5" />,
-    color: colors.primary, // Teal
-    bgLight: "bg-cyan-900/20", // Adjusted for dark theme
-    bgDark: "dark:bg-cyan-950/30",
-    border: "border-cyan-700",
-    gradient: `from-[${colors.primary}]/20 to-[${colors.accent}]/20`, // Teal to Blue
+    color: colors.primary,
+    bg: colors.primary + "10",
+    borderColor: colors.primary + "35",
+    rail: colors.primary,
   },
   social: {
     icon: <Users className="h-5 w-5" />,
-    color: colors.accent, // Blue
-    bgLight: "bg-blue-900/20",
-    bgDark: "dark:bg-blue-950/30",
-    border: "border-blue-700",
-    gradient: `from-[${colors.accent}]/20 to-[${colors.secondary}]/20`, // Blue to Magenta
+    color: colors.success,
+    bg: colors.success + "10",
+    borderColor: colors.success + "35",
+    rail: colors.success,
   },
   governance: {
     icon: <Target className="h-5 w-5" />,
-    color: colors.secondary, // Magenta
-    bgLight: "bg-purple-900/20",
-    bgDark: "dark:bg-purple-950/30",
-    border: "border-purple-700",
-    gradient: `from-[${colors.secondary}]/20 to-[${colors.primary}]/20`, // Magenta to Teal
+    color: colors.secondary,
+    bg: colors.secondary + "10",
+    borderColor: colors.secondary + "35",
+    rail: colors.secondary,
   },
 });
 
 const buildPriorityConfig = (colors: any) => ({
   high: {
     icon: <AlertCircle className="h-4 w-4" />,
-    color: colors.error, // Red
-    bgLight: "bg-red-900/20",
-    bgDark: "dark:bg-red-950/30",
-    border: "border-red-700",
+    color: colors.error,
+    bg: colors.error + "10",
+    borderColor: colors.error + "40",
     label: "High Priority",
   },
   medium: {
     icon: <AlertTriangle className="h-4 w-4" />,
-    color: colors.warning, // Yellow
-    bgLight: "bg-yellow-900/20",
-    bgDark: "dark:bg-yellow-950/30",
-    border: "border-yellow-700",
+    color: colors.warning,
+    bg: colors.warning + "10",
+    borderColor: colors.warning + "40",
     label: "Medium Priority",
   },
   low: {
     icon: <Info className="h-4 w-4" />,
-    color: colors.success, // Green
-    bgLight: "bg-green-900/20",
-    bgDark: "dark:bg-green-950/30",
-    border: "border-green-700",
+    color: colors.textMuted,
+    bg: colors.panel,
+    borderColor: colors.textMuted + "35",
     label: "Low Priority",
   },
 });
@@ -183,26 +177,23 @@ const buildPriorityConfig = (colors: any) => ({
 const buildStatusConfig = (colors: any) => ({
   pending: {
     icon: <Clock className="h-4 w-4" />,
-    color: colors.textMuted, // Grayish-blue
-    bgLight: "bg-gray-700/20",
-    bgDark: "dark:bg-gray-800/50",
-    border: "border-gray-600",
+    color: colors.textMuted,
+    bg: "transparent",
+    borderColor: colors.textMuted + "35",
     label: "Pending",
   },
   in_progress: {
     icon: <Loader2 className="h-4 w-4 animate-spin" />,
-    color: colors.accent, // Blue
-    bgLight: "bg-blue-900/20",
-    bgDark: "dark:bg-blue-950/30",
-    border: "border-blue-700",
+    color: colors.primary,
+    bg: colors.primary + "10",
+    borderColor: colors.primary + "35",
     label: "In Progress",
   },
   completed: {
     icon: <CheckCircle className="h-4 w-4" />,
-    color: colors.success, // Green
-    bgLight: "bg-green-900/20",
-    bgDark: "dark:bg-green-950/30",
-    border: "border-green-700",
+    color: colors.success,
+    bg: colors.success + "10",
+    borderColor: colors.success + "35",
     label: "Completed",
   },
 });
@@ -671,31 +662,29 @@ const RecommendationCard = ({
         stiffness: 100,
         damping: 15,
       }}
-      className={`border ${categoryInfo.border} rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 mb-6 group`}
+      className="rounded-md overflow-hidden transition-all duration-300 mb-4"
       style={{
         backgroundColor: colors.panel,
-        borderColor: categoryInfo.border,
+        border: `1px solid ${colors.accent}18`,
+        boxShadow: "none",
       }}
     >
-      <div
-        className={`h-1.5 w-full bg-gradient-to-r ${categoryInfo.gradient}`}
-        style={{
-          background: `linear-gradient(to right, ${categoryInfo.color}40, ${categoryInfo.color}80)`,
-        }}
-      />
+      {/* Accent rail */}
+      <div className="h-[3px] w-full" style={{ backgroundColor: categoryInfo.rail }} />
 
       <button
         onClick={onToggleExpand}
-        className="flex items-start justify-between w-full p-6 text-left hover:bg-gray-700/10 transition-colors focus:outline-none"
+        className="flex items-start justify-between w-full p-5 text-left transition-colors focus:outline-none"
+        style={{ backgroundColor: "transparent" }}
       >
         <div className="flex-1 pr-4">
           <div className="flex flex-wrap gap-2 mb-3">
             <AnimatedBadge
-              className={`${categoryInfo.bgLight} ${categoryInfo.bgDark} ${categoryInfo.border} px-3 py-1`}
+              className="px-3 py-1 border"
               style={{
                 color: categoryInfo.color,
-                backgroundColor: categoryInfo.bgLight,
-                borderColor: categoryInfo.border,
+                backgroundColor: categoryInfo.bg,
+                borderColor: categoryInfo.borderColor,
               }}
             >
               {categoryInfo.icon}
@@ -703,11 +692,11 @@ const RecommendationCard = ({
             </AnimatedBadge>
 
             <AnimatedBadge
-              className={`${priorityInfo.bgLight} ${priorityInfo.bgDark} ${priorityInfo.border} px-3 py-1`}
+              className="px-3 py-1 border"
               style={{
                 color: priorityInfo.color,
-                backgroundColor: priorityInfo.bgLight,
-                borderColor: priorityInfo.border,
+                backgroundColor: priorityInfo.bg,
+                borderColor: priorityInfo.borderColor,
               }}
             >
               {priorityInfo.icon}
@@ -715,11 +704,11 @@ const RecommendationCard = ({
             </AnimatedBadge>
 
             <AnimatedBadge
-              className={`${statusInfo.bgLight} ${statusInfo.bgDark} ${statusInfo.border} px-3 py-1`}
+              className="px-3 py-1 border"
               style={{
                 color: statusInfo.color,
-                backgroundColor: statusInfo.bgLight,
-                borderColor: statusInfo.border,
+                backgroundColor: statusInfo.bg,
+                borderColor: statusInfo.borderColor,
               }}
             >
               {statusInfo.icon}
@@ -809,20 +798,14 @@ const RecommendationCard = ({
             </div>
           )}
 
-          <h3
-            className="text-xl font-bold group-hover:text-blue-400 transition-colors mb-2"
-            style={{ color: colors.text }}
-          >
+          <h3 className="text-xl font-bold mb-2" style={{ color: colors.text, letterSpacing: "-0.02em" }}>
             {recommendation.title || "Untitled Recommendation"}
           </h3>
 
-          <p
-            className="text-sm mb-3 flex items-center gap-4"
-            style={{ color: colors.textMuted }}
-          >
+          <p className="text-sm mb-3 flex items-center gap-4" style={{ color: colors.textMuted }}>
             <span className="inline-flex items-center gap-1.5">
-              <Building2 className="h-4 w-4" style={{ color: colors.accent }} />
-              <span style={{ color: colors.accent }} className="font-medium">
+              <Building2 className="h-4 w-4" style={{ color: colors.primary }} />
+              <span style={{ color: colors.primary }} className="font-medium">
                 {typeof recommendation.supplier === "object"
                   ? recommendation.supplier.name
                   : "Unknown Supplier"}
@@ -852,10 +835,11 @@ const RecommendationCard = ({
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.3, type: "spring" }}
-            className={`p-2 rounded-full ${categoryInfo.bgLight} hover:scale-110 transition-transform`}
+            className="p-2 rounded-full transition-transform"
             style={{
               color: categoryInfo.color,
-              backgroundColor: categoryInfo.bgLight,
+              backgroundColor: categoryInfo.bg,
+              border: `1px solid ${categoryInfo.borderColor}`,
             }}
           >
             <ChevronDown className="h-5 w-5" />
@@ -905,10 +889,10 @@ const RecommendationCard = ({
                       AI Insights
                     </div>
                     <div
-                      className={`pl-6 p-4 rounded-lg border ${categoryInfo.border} backdrop-blur-sm`}
+                      className="pl-6 p-4 rounded-md border backdrop-blur-sm"
                       style={{
-                        backgroundColor: categoryInfo.bgLight,
-                        borderColor: categoryInfo.border,
+                        backgroundColor: categoryInfo.bg,
+                        borderColor: categoryInfo.borderColor,
                         color: colors.text,
                       }}
                     >
@@ -1941,11 +1925,9 @@ const RecommendationsPage = () => {
                                   color: isActive
                                     ? config.color
                                     : colors.textMuted,
-                                  backgroundColor: isActive
-                                    ? config.bgLight
-                                    : colors.inputBg,
+                                  backgroundColor: isActive ? config.bg : colors.inputBg,
                                   borderColor: isActive
-                                    ? config.border
+                                    ? config.borderColor
                                     : colors.accent + "50",
                                 }}
                               >
@@ -1994,11 +1976,9 @@ const RecommendationsPage = () => {
                                 color: isActive
                                   ? config.color
                                   : colors.textMuted,
-                                backgroundColor: isActive
-                                  ? config.bgLight
-                                  : colors.inputBg,
+                                backgroundColor: isActive ? config.bg : colors.inputBg,
                                 borderColor: isActive
-                                  ? config.border
+                                  ? config.borderColor
                                   : colors.accent + "50",
                               }}
                             >
@@ -2045,11 +2025,9 @@ const RecommendationsPage = () => {
                                   color: isActive
                                     ? config.color
                                     : colors.textMuted,
-                                  backgroundColor: isActive
-                                    ? config.bgLight
-                                    : colors.inputBg,
+                                  backgroundColor: isActive ? config.bg : colors.inputBg,
                                   borderColor: isActive
-                                    ? config.border
+                                    ? config.borderColor
                                     : colors.accent + "50",
                                 }}
                               >
