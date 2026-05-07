@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart3,
   Globe,
-  Users,
   Menu,
   X,
   Search,
@@ -15,109 +14,68 @@ import {
   List,
   Map,
   TrendingUp,
-  LogOut,
   Activity,
   Info,
-  Beaker as BeakerIcon,
+  FlaskConical,
   TestTube,
-  Command,
+  ChevronDown,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
-// Interface for Nav Item
 interface NavItem {
   name: string;
   path: string;
   icon: React.ReactNode;
 }
 
-const ORB_SIZE = 56; // Size of the central orb button
-const MENU_RADIUS = 120; // Radius of the expanded menu items
-const ITEM_SIZE = 48; // Size of individual menu item buttons
-
 const Navbar = () => {
   const { darkMode, toggleDarkMode } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 8);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSearch = () => {
-    console.log("Open Search"); // Placeholder
-    setIsMobileMenuOpen(false);
-  };
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setIsMoreOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const handleSettings = () => {
-    console.log("Open Settings"); // Placeholder
+  // Close more menu on route change
+  useEffect(() => {
+    setIsMoreOpen(false);
     setIsMobileMenuOpen(false);
-  };
+  }, [location.pathname]);
 
-  const handleLogout = () => {
-    console.log("Logout"); // Placeholder
-    setIsMobileMenuOpen(false);
-  };
-
-  const navItems: NavItem[] = [
-    { name: "Dashboard", path: "/dashboard", icon: <BarChart3 size={20} /> },
-    { name: "Suppliers", path: "/suppliers", icon: <List size={20} /> },
-    {
-      name: "Recommendations",
-      path: "/recommendations",
-      icon: <TrendingUp size={20} />,
-    },
-    { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={20} /> },
-    { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={20} /> },
-    { name: "Scenarios", path: "/scenarios", icon: <TestTube size={20} /> },
-    { name: "Methodology", path: "/methodology", icon: <BeakerIcon size={20} /> },
-    { name: "About", path: "/about", icon: <Info size={20} /> },
+  // Primary nav — always visible on desktop
+  const primaryNav: NavItem[] = [
+    { name: "Dashboard", path: "/dashboard", icon: <BarChart3 size={16} /> },
+    { name: "Suppliers", path: "/suppliers", icon: <List size={16} /> },
+    { name: "Recomend", path: "/recommendations", icon: <TrendingUp size={16} /> },
+    { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={16} /> },
+    { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={16} /> },
   ];
 
-  const itemVariants = {
-    closed: {
-      x: 0,
-      y: 0,
-      scale: 0,
-      opacity: 0,
-      transition: { duration: 0.2, ease: "easeIn" },
-    },
-    open: (i: number) => {
-      const angle = (i * (360 / navItems.length) - 90) * (Math.PI / 180); // Adjust starting angle if needed
-      return {
-        x: Math.cos(angle) * MENU_RADIUS,
-        y: Math.sin(angle) * MENU_RADIUS,
-        scale: 1,
-        opacity: 1,
-        transition: {
-          type: "spring",
-          stiffness: 100,
-          damping: 15,
-          delay: i * 0.03,
-        },
-      };
-    },
-  };
+  // Secondary nav — hidden behind "More" dropdown on desktop
+  const secondaryNav: NavItem[] = [
+    { name: "Scenarios", path: "/scenarios", icon: <TestTube size={16} /> },
+    { name: "Methodology", path: "/methodology", icon: <FlaskConical size={16} /> },
+    { name: "About", path: "/about", icon: <Info size={16} /> },
+  ];
 
-  const orbVariants = {
-    closed: { scale: 1, rotate: 0 },
-    open: { scale: 0.9, rotate: 45 },
-  };
-
-  const menuBackgroundVariants = {
-    closed: { scale: 0, opacity: 0 },
-    open: {
-      scale: 1,
-      opacity: 1,
-      transition: { duration: 0.3, ease: "circOut" },
-    },
-  };
+  const allNav = [...primaryNav, ...secondaryNav];
 
   const isActivePath = (path: string) =>
     location.pathname === path ||
@@ -126,224 +84,317 @@ const Navbar = () => {
         location.pathname.startsWith("/supplier-details/") ||
         location.pathname.startsWith("/supplier-scorecard/")));
 
+  const anySecondaryActive = secondaryNav.some((item) => isActivePath(item.path));
+
+  const NavLink = ({ item, compact = false }: { item: NavItem; compact?: boolean }) => {
+    const active = isActivePath(item.path);
+    return (
+      <Link
+        to={item.path}
+        className="relative flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium transition-colors rounded-md"
+        style={
+          active
+            ? { color: "#0A0A0A" }
+            : { color: darkMode ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)" }
+        }
+      >
+        {active && (
+          <motion.span
+            layoutId="nav-active-pill"
+            className="absolute inset-0 rounded-md"
+            style={{
+              background: "#C8F05A",
+              boxShadow: "0 2px 8px -2px rgba(200,240,90,0.45)",
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 32 }}
+          />
+        )}
+        <span className="relative z-10 flex items-center gap-1.5">
+          <span className="shrink-0">{item.icon}</span>
+          {!compact && <span className="hidden lg:inline whitespace-nowrap">{item.name}</span>}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled || isMobileMenuOpen
-          ? "bg-[#F5F5F0]/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl"
-          : "bg-[#F5F5F0]/60 dark:bg-[#0A0A0A]/60 backdrop-blur-md"
-      }`}
-      style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: isScrolled || isMobileMenuOpen
+          ? darkMode ? "rgba(10,10,10,0.88)" : "rgba(245,245,240,0.88)"
+          : darkMode ? "rgba(10,10,10,0.70)" : "rgba(245,245,240,0.70)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderBottom: darkMode
+          ? "1px solid rgba(255,255,255,0.06)"
+          : "1px solid rgba(0,0,0,0.06)",
+      }}
     >
-      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo and Brand */}
-          <div className="flex items-center gap-3 lg:gap-6">
-            <Link
-              to="/dashboard"
-              className="flex-shrink-0 flex items-center gap-2.5 group"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <div
-                className="relative h-9 w-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105"
-                style={{ background: "#C8F05A", boxShadow: "0 4px 14px -4px rgba(200,240,90,0.5)" }}
-              >
-                <Activity className="h-5 w-5" style={{ color: "#0A0A0A" }} strokeWidth={2.5} />
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="font-semibold text-[16px] tracking-tight" style={{ color: "inherit", letterSpacing: "-0.02em" }}>
-                  Opti<span style={{ color: "#C8F05A" }}>Supply</span>
-                </span>
-                <span className="hidden lg:block text-[10px] font-medium uppercase mt-0.5" style={{ letterSpacing: "0.12em", color: "#808080" }}>
-                  ESG Intelligence
-                </span>
-              </div>
-            </Link>
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-5 lg:px-8">
+        <div className="flex items-center h-14 gap-2 sm:gap-3">
 
-            {/* Desktop Navigation Links - sliding active indicator */}
-            <div className="hidden md:flex items-center gap-0.5 p-1 rounded-lg" style={{ border: "1px solid rgba(128,128,128,0.10)", background: "rgba(128,128,128,0.04)" }}>
-              {navItems.map((item) => {
-                const active = isActivePath(item.path);
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={`relative flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-md text-xs lg:text-sm font-medium transition-colors ${
-                      active
-                        ? ""
-                        : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
-                    }`}
-                    style={active ? { color: "#0A0A0A" } : {}}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="nav-active-pill"
-                        className="absolute inset-0 rounded-md"
-                        style={{ background: "#C8F05A", boxShadow: "0 2px 8px -2px rgba(200,240,90,0.4)" }}
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                    <span className="relative z-10 flex items-center gap-1.5">
-                      <span className={active ? "opacity-100" : "opacity-70"}>
-                        {item.icon}
-                      </span>
-                      <span className="hidden lg:inline">{item.name}</span>
-                    </span>
-                  </Link>
-                );
-              })}
+          {/* ── Logo ──────────────────────────────────────────── */}
+          <Link
+            to="/dashboard"
+            className="flex-shrink-0 flex items-center gap-2 group mr-1"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <div
+              className="h-8 w-8 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
+              style={{ background: "#C8F05A", boxShadow: "0 3px 12px -3px rgba(200,240,90,0.5)" }}
+            >
+              <Activity className="h-4 w-4" style={{ color: "#0A0A0A" }} strokeWidth={2.5} />
             </div>
-          </div>
-
-          {/* Right Side Actions (Desktop) */}
-          <div className="hidden md:flex items-center gap-2">
-            {/* Search Button/Input */}
-            <motion.div
-              className={`relative flex items-center transition-all duration-300 ease-out ${
-                isSearchOpen ? "w-56 lg:w-72" : "w-44 lg:w-52"
-              }`}
-              layout
-            >
-              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500 z-10" />
-              <input
-                type="search"
-                placeholder="Search suppliers, scores…"
-                onFocus={() => setIsSearchOpen(true)}
-                onBlur={() => setIsSearchOpen(false)}
-                className="h-9 w-full pl-9 pr-14 text-sm transition-all focus:outline-none"
+            <div className="hidden sm:flex flex-col leading-none">
+              <span
+                className="text-[15px] font-semibold"
                 style={{
-                  borderRadius: "6px",
-                  background: "rgba(128,128,128,0.06)",
-                  border: "1px solid rgba(128,128,128,0.12)",
-                  color: "inherit",
+                  letterSpacing: "-0.02em",
+                  color: darkMode ? "#F5F5F0" : "#0A0A0A",
                 }}
-              />
-              <kbd className="absolute right-2 hidden lg:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium font-mono text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 shadow-sm">
-                <Command className="h-2.5 w-2.5" />K
-              </kbd>
-            </motion.div>
-
-            {/* Divider */}
-            <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
-
-            {/* Action cluster */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={toggleDarkMode}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
-                aria-label="Toggle dark mode"
-                title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {darkMode ? (
-                  <Sun size={18} className="text-amber-400" />
-                ) : (
-                  <Moon size={18} />
-                )}
+                Opti<span style={{ color: "#C8F05A" }}>Supply</span>
+              </span>
+              <span
+                className="hidden xl:block text-[9px] font-medium uppercase mt-0.5"
+                style={{ letterSpacing: "0.12em", color: "#808080" }}
+              >
+                ESG Intelligence
+              </span>
+            </div>
+          </Link>
+
+          {/* ── Primary Nav ──────────────────────────────────── */}
+          <div
+            className="hidden md:flex items-center gap-0.5 p-0.5 rounded-md flex-shrink-0"
+            style={{
+              border: "1px solid rgba(128,128,128,0.10)",
+              background: "rgba(128,128,128,0.04)",
+            }}
+          >
+            {primaryNav.map((item) => (
+              <NavLink key={item.path} item={item} />
+            ))}
+
+            {/* More dropdown */}
+            <div className="relative" ref={moreRef}>
+              <button
+                onClick={() => setIsMoreOpen((v) => !v)}
+                className="flex items-center gap-0.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors"
+                style={{
+                  color: anySecondaryActive
+                    ? "#0A0A0A"
+                    : darkMode
+                    ? "rgba(255,255,255,0.55)"
+                    : "rgba(0,0,0,0.55)",
+                  background: anySecondaryActive ? "#C8F05A" : undefined,
+                }}
+              >
+                <ChevronDown size={13} className={`transition-transform ${isMoreOpen ? "rotate-180" : ""}`} />
+                <span className="hidden lg:inline">More</span>
               </button>
 
-              <Link
-                to="/settings"
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
-                title="Settings"
-                aria-label="Open settings"
-              >
-                <Settings size={18} />
-              </Link>
-
-              <Link
-                to="/suppliers/add"
-                className="ml-1 inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold transition-all hover:opacity-90"
-                style={{
-                  borderRadius: "6px",
-                  background: "#C8F05A",
-                  color: "#0A0A0A",
-                  boxShadow: "0 2px 10px -2px rgba(200,240,90,0.4)",
-                  fontWeight: 600,
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-                New Supplier
-              </Link>
+              <AnimatePresence>
+                {isMoreOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 top-[calc(100%+6px)] min-w-[140px] py-1 rounded-lg shadow-xl z-50"
+                    style={{
+                      background: darkMode ? "#111111" : "#FFFFFF",
+                      border: "1px solid rgba(128,128,128,0.12)",
+                    }}
+                  >
+                    {secondaryNav.map((item) => {
+                      const active = isActivePath(item.path);
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          className="flex items-center gap-2 px-3 py-2 text-sm transition-colors"
+                          style={{
+                            color: active
+                              ? "#C8F05A"
+                              : darkMode
+                              ? "rgba(255,255,255,0.7)"
+                              : "rgba(0,0,0,0.7)",
+                            background: active ? "rgba(200,240,90,0.08)" : undefined,
+                          }}
+                        >
+                          <span style={{ color: active ? "#C8F05A" : "#808080" }}>{item.icon}</span>
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
+          {/* ── Spacer ───────────────────────────────────────── */}
+          <div className="flex-1" />
+
+          {/* ── Search ───────────────────────────────────────── */}
+          <div className="hidden md:flex items-center relative">
+            <Search
+              className="absolute left-2.5 h-3.5 w-3.5 pointer-events-none z-10"
+              style={{ color: "#808080" }}
+            />
+            <input
+              type="search"
+              placeholder="Search…"
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              className="h-8 pl-8 pr-3 text-xs transition-all focus:outline-none"
+              style={{
+                borderRadius: "6px",
+                width: isSearchFocused ? "200px" : "130px",
+                background: "rgba(128,128,128,0.07)",
+                border: isSearchFocused
+                  ? "1px solid rgba(200,240,90,0.4)"
+                  : "1px solid rgba(128,128,128,0.12)",
+                color: "inherit",
+                transition: "width 200ms ease, border-color 150ms ease",
+              }}
+            />
+          </div>
+
+          {/* ── Actions ──────────────────────────────────────── */}
+          <div className="hidden md:flex items-center gap-1">
+            <div
+              className="h-5 w-px mx-0.5"
+              style={{ background: "rgba(128,128,128,0.15)" }}
+            />
+            <button
+              onClick={toggleDarkMode}
+              className="h-8 w-8 flex items-center justify-center rounded-md transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? (
+                <Sun size={15} style={{ color: "#FBBF24" }} />
+              ) : (
+                <Moon size={15} style={{ color: "#555" }} />
+              )}
+            </button>
+
+            <Link
+              to="/settings"
+              className="h-8 w-8 flex items-center justify-center rounded-md transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              title="Settings"
+            >
+              <Settings size={15} style={{ color: "#808080" }} />
+            </Link>
+
+            <Link
+              to="/suppliers/add"
+              className="flex items-center gap-1.5 px-3 h-8 text-[12px] font-semibold ml-1 transition-opacity hover:opacity-88"
+              style={{
+                borderRadius: "6px",
+                background: "#C8F05A",
+                color: "#0A0A0A",
+                boxShadow: "0 2px 8px -2px rgba(200,240,90,0.4)",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+              <span className="hidden lg:inline">New Supplier</span>
+              <span className="lg:hidden">New</span>
+            </Link>
+          </div>
+
+          {/* ── Mobile hamburger ─────────────────────────────── */}
+          <div className="md:hidden flex items-center gap-1">
+            <button
+              onClick={toggleDarkMode}
+              className="h-8 w-8 flex items-center justify-center rounded-md"
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? (
+                <Sun size={15} style={{ color: "#FBBF24" }} />
+              ) : (
+                <Moon size={15} style={{ color: "#555" }} />
+              )}
+            </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-lime-400"
+              className="h-8 w-8 flex items-center justify-center rounded-md"
               aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
+                <X size={18} style={{ color: darkMode ? "#F5F5F0" : "#0A0A0A" }} />
               ) : (
-                <Menu className="h-6 w-6" />
+                <Menu size={18} style={{ color: darkMode ? "#F5F5F0" : "#0A0A0A" }} />
               )}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu Panel */}
+      {/* ── Mobile Menu ────────────────────────────────────────── */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-lg overflow-hidden"
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            className="md:hidden overflow-hidden"
+            style={{
+              background: darkMode ? "rgba(10,10,10,0.97)" : "rgba(245,245,240,0.97)",
+              borderTop: "1px solid rgba(128,128,128,0.10)",
+            }}
           >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navItems.map((item) => (
+            <div className="px-4 py-3 space-y-0.5">
+              {allNav.map((item) => {
+                const active = isActivePath(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-colors"
+                    style={{
+                      background: active ? "rgba(200,240,90,0.10)" : "transparent",
+                      color: active
+                        ? "#C8F05A"
+                        : darkMode
+                        ? "rgba(255,255,255,0.65)"
+                        : "rgba(0,0,0,0.65)",
+                    }}
+                  >
+                    <span style={{ color: active ? "#C8F05A" : "#808080" }}>{item.icon}</span>
+                    {item.name}
+                  </Link>
+                );
+              })}
+
+              <div
+                className="pt-3 mt-2 flex flex-col gap-0.5"
+                style={{ borderTop: "1px solid rgba(128,128,128,0.10)" }}
+              >
                 <Link
-                  key={item.path}
-                  to={item.path}
+                  to="/suppliers/add"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center px-3 py-2 text-base font-medium transition-colors duration-200 ${
-                    isActivePath(item.path)
-                      ? ""
-                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5"
-                  }`}
-                  style={isActivePath(item.path) ? {
-                    background: "rgba(200,240,90,0.12)",
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-semibold"
+                  style={{
+                    background: "rgba(200,240,90,0.10)",
                     color: "#C8F05A",
-                    borderRadius: "6px",
-                  } : { borderRadius: "6px" }}
-                >
-                  <span className="mr-3">{item.icon}</span>
-                  {item.name}
-                </Link>
-              ))}
-              <div className="pt-4 pb-2 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={handleSearch}
-                  className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
-                >
-                  <Search className="mr-3 h-5 w-5" /> Search
-                </button>
-                <button
-                  onClick={() => {
-                    toggleDarkMode();
-                    setIsMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
-                  aria-label="Toggle dark mode"
                 >
-                  {darkMode ? (
-                    <Sun className="mr-3 h-5 w-5 text-yellow-500" />
-                  ) : (
-                    <Moon className="mr-3 h-5 w-5 text-gray-600" />
-                  )}
-                  {darkMode ? "Light Mode" : "Dark Mode"}
-                </button>
+                  <Plus size={16} /> New Supplier
+                </Link>
                 <Link
                   to="/settings"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium"
+                  style={{ color: darkMode ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)" }}
                 >
-                  <Settings className="mr-3 h-5 w-5" /> Settings
+                  <Settings size={16} /> Settings
                 </Link>
               </div>
             </div>
