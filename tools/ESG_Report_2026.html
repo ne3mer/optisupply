@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OptiSupply ESG Report 2026</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   FONTS
+═══════════════════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap');
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE SETUP
+═══════════════════════════════════════════════════════════════════════════ */
+@page {
+  size: A4;
+  margin: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #FAFAF7;
+}
+
+.page {
+  width: 210mm;
+  height: 297mm;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TYPOGRAPHIC UTILITIES
+═══════════════════════════════════════════════════════════════════════════ */
+.f-display   { font-family: 'Playfair Display', Georgia, serif; }
+.f-body      { font-family: 'DM Sans', system-ui, sans-serif; }
+.f-mono      { font-family: 'DM Mono', 'Courier New', monospace; }
+
+.label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #999;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE 1 — COVER  (#0F0F0F dark)
+═══════════════════════════════════════════════════════════════════════════ */
+.page-cover {
+  background: #0F0F0F;
+}
+
+.cover-topbar {
+  position: absolute;
+  top: 28pt;
+  left: 36pt;
+  right: 36pt;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cover-topbar-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5pt;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.cover-headline-wrap {
+  position: absolute;
+  top: 50%;
+  left: 36pt;
+  right: 36pt;
+  transform: translateY(-54%);
+}
+
+.cover-headline {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 88pt;
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  color: #FAFAF7;
+}
+
+.cover-rule {
+  width: 100%;
+  height: 1pt;
+  background: #2A2A2A;
+  margin: 22pt 0 14pt;
+}
+
+.cover-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 9pt;
+  letter-spacing: 0.14em;
+  color: #444;
+}
+
+.cover-bottom-left {
+  position: absolute;
+  bottom: 32pt;
+  left: 36pt;
+  display: flex;
+  gap: 20pt;
+  align-items: center;
+}
+
+.pillar-chip {
+  display: flex;
+  align-items: center;
+  gap: 6pt;
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5pt;
+  letter-spacing: 0.12em;
+  color: #555;
+}
+
+.pillar-dot {
+  width: 8pt;
+  height: 8pt;
+  flex-shrink: 0;
+}
+
+.cover-bottom-right {
+  position: absolute;
+  bottom: 32pt;
+  right: 36pt;
+  font-family: 'DM Mono', monospace;
+  font-size: 9pt;
+  letter-spacing: 0.12em;
+  color: #444;
+  text-align: right;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE 2 — EXECUTIVE SUMMARY  (#FAFAF7 light)
+═══════════════════════════════════════════════════════════════════════════ */
+.page-summary {
+  background: #FAFAF7;
+  padding: 0;
+}
+
+.summary-inner {
+  padding: 36pt 36pt 28pt;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-columns {
+  display: flex;
+  gap: 28pt;
+  flex: 1;
+  margin-bottom: 28pt;
+}
+
+.summary-col-left {
+  width: 38%;
+  flex-shrink: 0;
+}
+
+.summary-col-right {
+  flex: 1;
+}
+
+.chapter-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5pt;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 20pt;
+}
+
+.pull-quote-wrap {
+  border-left: 4pt solid #C8F05A;
+  padding-left: 14pt;
+  margin-bottom: 18pt;
+}
+
+.pull-quote {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 15pt;
+  line-height: 1.45;
+  color: #111;
+}
+
+.intro-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.85;
+  color: #666;
+}
+
+/* Metric tiles — right column */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 10pt;
+  height: 100%;
+}
+
+.metric-tile {
+  border: 1pt solid #E0DED8;
+  background: #FFFFFF;
+  padding: 12pt 14pt 10pt;
+  position: relative;
+}
+
+.metric-tile-hero {
+  grid-column: 1 / 3;
+}
+
+.metric-label-top {
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 4pt;
+}
+
+.metric-number {
+  font-family: 'Playfair Display', serif;
+  color: #111;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.metric-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 8pt;
+  color: #999;
+  margin-top: 4pt;
+}
+
+/* Risk distribution bar */
+.risk-section-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 8pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 8pt;
+}
+
+.risk-bar {
+  display: flex;
+  height: 28pt;
+  width: 100%;
+  overflow: hidden;
+}
+
+.risk-segment {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5pt;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.risk-segment-label { font-weight: 500; }
+.risk-segment-count { opacity: 0.75; font-size: 6.5pt; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE 3 — PILLARS & GEOGRAPHY  (#0F0F0F dark)
+═══════════════════════════════════════════════════════════════════════════ */
+.page-pillars {
+  background: #0F0F0F;
+}
+
+.pillars-inner {
+  padding: 36pt 36pt 28pt;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 52pt;
+  font-weight: 400;
+  color: #FAFAF7;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  margin-bottom: 24pt;
+}
+
+.page-headline em {
+  font-style: italic;
+}
+
+/* Pillar cards */
+.pillar-cards {
+  display: flex;
+  gap: 10pt;
+  margin-bottom: 32pt;
+  flex: 0 0 auto;
+}
+
+.pillar-card {
+  flex: 1;
+  padding: 18pt 16pt 14pt;
+  position: relative;
+}
+
+.pillar-top-border {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5pt;
+}
+
+.pillar-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 8pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 10pt;
+}
+
+.pillar-score {
+  font-family: 'Playfair Display', serif;
+  font-size: 64pt;
+  font-weight: 400;
+  color: #FAFAF7;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.pillar-denom {
+  font-family: 'DM Mono', monospace;
+  font-size: 16pt;
+  color: #444;
+  font-weight: 300;
+}
+
+.pillar-bar-wrap {
+  margin-top: 14pt;
+  height: 2pt;
+  background: #333;
+  position: relative;
+}
+
+.pillar-bar-fill {
+  position: absolute;
+  top: 0; left: 0; height: 100%;
+}
+
+/* Geographic bars */
+.geo-section {
+  flex: 1;
+}
+
+.geo-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 8pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #555;
+  margin-bottom: 14pt;
+  padding-top: 18pt;
+  border-top: 1pt solid #1E1E1E;
+}
+
+.geo-row {
+  display: flex;
+  align-items: center;
+  gap: 10pt;
+  margin-bottom: 7pt;
+}
+
+.geo-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 9pt;
+  color: #FAFAF7;
+  width: 100pt;
+  flex-shrink: 0;
+}
+
+.geo-bar-track {
+  flex: 1;
+  height: 8pt;
+  background: #1E1E1E;
+  position: relative;
+}
+
+.geo-bar-fill {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #C8F05A;
+}
+
+.geo-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 9pt;
+  color: #555;
+  width: 24pt;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE 4 — AI INSIGHTS  (#FAFAF7 light)
+═══════════════════════════════════════════════════════════════════════════ */
+.page-insights {
+  background: #FAFAF7;
+}
+
+.insights-inner {
+  padding: 36pt 36pt 28pt;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10pt;
+  flex: 1;
+}
+
+.insight-card {
+  background: #111111;
+  position: relative;
+  padding: 16pt 16pt 14pt 22pt;
+  display: flex;
+  flex-direction: column;
+}
+
+.insight-accent {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 5pt;
+}
+
+.insight-type {
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #666;
+  margin-bottom: 6pt;
+}
+
+.insight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10pt;
+}
+
+.insight-conf {
+  font-family: 'DM Mono', monospace;
+  font-size: 8.5pt;
+  font-weight: 500;
+  padding: 2pt 6pt;
+  border-radius: 2pt;
+  flex-shrink: 0;
+  margin-left: 8pt;
+  margin-top: -2pt;
+}
+
+.insight-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10pt;
+  line-height: 1.7;
+  color: #FAFAF7;
+  flex: 1;
+}
+
+.insight-rule {
+  margin-top: 12pt;
+  height: 1pt;
+  background: #222;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE 5 — RECOMMENDATIONS & SUPPLIERS (split)
+═══════════════════════════════════════════════════════════════════════════ */
+.page-actions {
+  display: flex;
+  flex-direction: column;
+}
+
+.actions-top {
+  background: #0F0F0F;
+  padding: 36pt 36pt 28pt;
+  flex: 1;
+}
+
+.actions-bottom {
+  background: #FAFAF7;
+  padding: 22pt 36pt 28pt;
+  flex: 0 0 auto;
+}
+
+.actions-headline {
+  font-family: 'Playfair Display', serif;
+  font-size: 46pt;
+  font-weight: 400;
+  color: #FAFAF7;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  margin-bottom: 22pt;
+}
+
+.actions-headline em { font-style: italic; }
+
+.reco-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.reco-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 18pt;
+  padding: 14pt 0;
+  border-bottom: 1pt solid #1E1E1E;
+}
+
+.reco-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 36pt;
+  font-weight: 400;
+  color: #C8F05A;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 36pt;
+  letter-spacing: -0.03em;
+}
+
+.reco-text {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.65;
+  color: #FAFAF7;
+  padding-top: 6pt;
+  max-width: 400pt;
+}
+
+/* Supplier table */
+.table-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 8pt;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 10pt;
+}
+
+.supplier-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.supplier-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #999;
+  text-align: left;
+  padding: 5pt 8pt 5pt 0;
+  border-bottom: 1.5pt solid #111;
+  font-weight: 400;
+}
+
+.supplier-table td {
+  font-family: 'DM Mono', monospace;
+  font-size: 9pt;
+  color: #111;
+  padding: 6pt 8pt 6pt 0;
+  border-bottom: 1pt solid #E0DED8;
+  vertical-align: middle;
+}
+
+.supplier-table tr:nth-child(even) td {
+  background: #F3F2EE;
+}
+
+.risk-badge {
+  display: inline-block;
+  padding: 1.5pt 5pt;
+  font-family: 'DM Mono', monospace;
+  font-size: 7pt;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.esg-red { color: #C0392B; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAGE FOOTER (used on light pages)
+═══════════════════════════════════════════════════════════════════════════ */
+.page-footer {
+  position: absolute;
+  bottom: 18pt;
+  left: 36pt;
+  right: 36pt;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 0.5pt solid #E0DED8;
+  padding-top: 8pt;
+}
+
+.page-footer-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5pt;
+  color: #CCC;
+  letter-spacing: 0.10em;
+}
+
+/* Dark page footer */
+.page-footer-dark {
+  border-top-color: #1E1E1E;
+}
+
+.page-footer-dark .page-footer-text { color: #333; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PAGE 1 — COVER
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="page page-cover">
+
+  <!-- Top bar -->
+  <div class="cover-topbar">
+    <span class="cover-topbar-text">OPTISUPPLY</span>
+    <span class="cover-topbar-text">ESG REPORT / 2026</span>
+  </div>
+
+  <!-- Main headline -->
+  <div class="cover-headline-wrap">
+    <div class="cover-headline">Annual<br>ESG Performance<br>Report</div>
+    <div class="cover-rule"></div>
+    <div class="cover-sub">Generated with OptiSupply AI &nbsp;·&nbsp; May 7, 2026</div>
+  </div>
+
+  <!-- Bottom-left pillar chips -->
+  <div class="cover-bottom-left">
+    <div class="pillar-chip">
+      <svg class="pillar-dot" viewBox="0 0 8 8"><rect width="8" height="8" fill="#2D6A4F"/></svg>
+      Environmental
+    </div>
+    <div class="pillar-chip">
+      <svg class="pillar-dot" viewBox="0 0 8 8"><rect width="8" height="8" fill="#1A4E8A"/></svg>
+      Social
+    </div>
+    <div class="pillar-chip">
+      <svg class="pillar-dot" viewBox="0 0 8 8"><rect width="8" height="8" fill="#7B2D8B"/></svg>
+      Governance
+    </div>
+  </div>
+
+  <!-- Bottom-right summary -->
+  <div class="cover-bottom-right">
+    <div class="cover-topbar-text">160 Suppliers &nbsp;·&nbsp; 47 Countries</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PAGE 2 — EXECUTIVE SUMMARY
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="page page-summary">
+  <div class="summary-inner">
+
+    <!-- Chapter label -->
+    <div class="chapter-label">01 / Executive Summary</div>
+
+    <!-- Two-column layout -->
+    <div class="summary-columns">
+
+      <!-- Left: pull-quote + intro -->
+      <div class="summary-col-left">
+        <div class="pull-quote-wrap">
+          <div class="pull-quote">"Your supply chain shows strong governance fundamentals with clear opportunities in environmental performance."</div>
+        </div>
+        <div class="intro-text">This report synthesises performance data across 160 suppliers spanning 47 countries. Our AI scoring engine evaluates Environmental, Social and Governance indicators in real time, applying geo-risk overlays and peer benchmarking to produce a single risk-adjusted ESG score per supplier. The findings below represent the state of your supply chain as of the report generation date.</div>
+      </div>
+
+      <!-- Right: metric tiles -->
+      <div class="summary-col-right">
+        <div class="metrics-grid">
+
+          <!-- Hero tile — Total Suppliers -->
+          <div class="metric-tile metric-tile-hero">
+            <div class="metric-label-top">Total Suppliers</div>
+            <div class="metric-number f-display" style="font-size: 60pt;">160</div>
+            <div class="metric-desc">Active suppliers in ESG programme across 47 countries</div>
+          </div>
+
+          <!-- Avg ESG Score -->
+          <div class="metric-tile">
+            <div class="metric-label-top">Avg ESG Score</div>
+            <div class="metric-number f-display" style="font-size: 44pt;">40%</div>
+            <div class="metric-desc">Risk-adjusted composite</div>
+          </div>
+
+          <!-- CO2 -->
+          <div class="metric-tile">
+            <div class="metric-label-top">Avg CO₂ Emissions</div>
+            <div class="metric-number f-display" style="font-size: 30pt;">149,644.8t</div>
+            <div class="metric-desc">Across reporting suppliers</div>
+          </div>
+
+          <!-- Risk penalty -->
+          <div class="metric-tile">
+            <div class="metric-label-top">Avg Risk Penalty</div>
+            <div class="metric-number f-display" style="font-size: 36pt;">109%</div>
+            <div class="metric-desc">Applied to final ESG score</div>
+          </div>
+
+          <!-- Data completeness -->
+          <div class="metric-tile">
+            <div class="metric-label-top">Data Completeness</div>
+            <div class="metric-number f-display" style="font-size: 36pt;">98%</div>
+            <div class="metric-desc">Of required metrics disclosed</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk distribution bar — full width -->
+    <div>
+      <div class="risk-section-title">Risk Distribution</div>
+      <div class="risk-bar">
+        
+        <div class="risk-segment"
+             style="width: 63.7%; background: #2D6A4F; color: #AAFFCC; ">
+          <span class="risk-segment-label">LOW</span>
+          <span class="risk-segment-count">102</span>
+        </div>
+        
+        <div class="risk-segment"
+             style="width: 1.9%; background: #C9A227; color: #FFF3CC; display: none;">
+          <span class="risk-segment-label">MED</span>
+          <span class="risk-segment-count">3</span>
+        </div>
+        
+        <div class="risk-segment"
+             style="width: 0.6%; background: #C0392B; color: #FFCCCC; display: none;">
+          <span class="risk-segment-label">HIGH</span>
+          <span class="risk-segment-count">1</span>
+        </div>
+        
+        <div class="risk-segment"
+             style="width: 33.8%; background: #7B0000; color: #FFAAAA; ">
+          <span class="risk-segment-label">CRIT</span>
+          <span class="risk-segment-count">54</span>
+        </div>
+        
+      </div>
+      <!-- Legend -->
+      <div style="display: flex; gap: 18pt; margin-top: 8pt;">
+        
+        <div style="display: flex; align-items: center; gap: 5pt;">
+          <div style="width: 8pt; height: 8pt; background: #2D6A4F;"></div>
+          <span style="font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #666; letter-spacing: 0.10em;">
+            LOW · 63.7% (102)
+          </span>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 5pt;">
+          <div style="width: 8pt; height: 8pt; background: #C9A227;"></div>
+          <span style="font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #666; letter-spacing: 0.10em;">
+            MED · 1.9% (3)
+          </span>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 5pt;">
+          <div style="width: 8pt; height: 8pt; background: #C0392B;"></div>
+          <span style="font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #666; letter-spacing: 0.10em;">
+            HIGH · 0.6% (1)
+          </span>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 5pt;">
+          <div style="width: 8pt; height: 8pt; background: #7B0000;"></div>
+          <span style="font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #666; letter-spacing: 0.10em;">
+            CRIT · 33.8% (54)
+          </span>
+        </div>
+        
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="page-footer">
+    <span class="page-footer-text">OptiSupply ESG Report 2026</span>
+    <span class="page-footer-text">Page 2</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PAGE 3 — PILLARS & GEOGRAPHY
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="page page-pillars">
+  <div class="pillars-inner">
+
+    <!-- Chapter label -->
+    <div class="chapter-label" style="color: #555;">02 / ESG Pillars &amp; Geography</div>
+
+    <!-- Page headline -->
+    <div class="page-headline">Performance<br><em>by Pillar</em></div>
+
+    <!-- Pillar cards -->
+    <div class="pillar-cards">
+      
+      <div class="pillar-card" style="background: #1A3A2A;">
+        <div class="pillar-top-border" style="background: #2D6A4F;"></div>
+        <div class="pillar-name" style="color: #2D6A4F;">Environmental</div>
+        <div>
+          <span class="pillar-score">56</span>
+          <span class="pillar-denom">/100</span>
+        </div>
+        <div class="pillar-bar-wrap">
+          <div class="pillar-bar-fill" style="width: 55.6%; background: #2D6A4F; opacity: 0.6;"></div>
+        </div>
+      </div>
+      
+      <div class="pillar-card" style="background: #0F2040;">
+        <div class="pillar-top-border" style="background: #1A4E8A;"></div>
+        <div class="pillar-name" style="color: #1A4E8A;">Social</div>
+        <div>
+          <span class="pillar-score">65</span>
+          <span class="pillar-denom">/100</span>
+        </div>
+        <div class="pillar-bar-wrap">
+          <div class="pillar-bar-fill" style="width: 65.3%; background: #1A4E8A; opacity: 0.6;"></div>
+        </div>
+      </div>
+      
+      <div class="pillar-card" style="background: #2A1040;">
+        <div class="pillar-top-border" style="background: #7B2D8B;"></div>
+        <div class="pillar-name" style="color: #7B2D8B;">Governance</div>
+        <div>
+          <span class="pillar-score">67</span>
+          <span class="pillar-denom">/100</span>
+        </div>
+        <div class="pillar-bar-wrap">
+          <div class="pillar-bar-fill" style="width: 67.3%; background: #7B2D8B; opacity: 0.6;"></div>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Geographic distribution -->
+    <div class="geo-section">
+      <div class="geo-title">Geographic Distribution — Top 10 Countries</div>
+      
+      <div class="geo-row">
+        <div class="geo-name">France</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 100.0%;"></div>
+        </div>
+        <div class="geo-count">25</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">Germany</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 80.0%;"></div>
+        </div>
+        <div class="geo-count">20</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">South Korea</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 76.0%;"></div>
+        </div>
+        <div class="geo-count">19</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">United States</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 68.0%;"></div>
+        </div>
+        <div class="geo-count">17</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">Singapore</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 68.0%;"></div>
+        </div>
+        <div class="geo-count">17</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">China</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 68.0%;"></div>
+        </div>
+        <div class="geo-count">17</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">Japan</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 64.0%;"></div>
+        </div>
+        <div class="geo-count">16</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">India</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 40.0%;"></div>
+        </div>
+        <div class="geo-count">10</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">Canada</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 40.0%;"></div>
+        </div>
+        <div class="geo-count">10</div>
+      </div>
+      
+      <div class="geo-row">
+        <div class="geo-name">United Kingdom</div>
+        <div class="geo-bar-track">
+          <div class="geo-bar-fill" style="width: 36.0%;"></div>
+        </div>
+        <div class="geo-count">9</div>
+      </div>
+      
+    </div>
+
+  </div>
+
+  <!-- Dark footer -->
+  <div class="page-footer page-footer-dark">
+    <span class="page-footer-text">OptiSupply ESG Report 2026</span>
+    <span class="page-footer-text">Page 3</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PAGE 4 — AI INSIGHTS
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="page page-insights">
+  <div class="insights-inner">
+
+    <!-- Chapter label -->
+    <div class="chapter-label">03 / AI-Powered Insights</div>
+
+    <!-- Page headline -->
+    <div style="font-family: 'Playfair Display', serif; font-size: 48pt; font-weight: 400; color: #111; line-height: 1; letter-spacing: -0.025em; margin-bottom: 20pt;">
+      <em>Intelligence</em><br>at Work
+    </div>
+
+    <!-- 2×2 insight cards -->
+    <div class="insights-grid">
+      
+      <div class="insight-card">
+        <div class="insight-accent" style="background: #2D6A4F;"></div>
+
+        <div class="insight-header">
+          <div class="insight-type">Predicted Trend</div>
+          <div class="insight-conf"
+               style="background: rgba(201,162,39,0.18); color: #C9A227;">
+            87%
+          </div>
+        </div>
+
+        <div class="insight-text">Overall ESG score predicted to improve by 12% next quarter, driven by social responsibility gains across European suppliers.</div>
+        <div class="insight-rule"></div>
+
+        <div style="margin-top: 8pt; font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #444; letter-spacing: 0.12em;">
+          CONFIDENCE SCORE · 87%
+        </div>
+      </div>
+      
+      <div class="insight-card">
+        <div class="insight-accent" style="background: #C0392B;"></div>
+
+        <div class="insight-header">
+          <div class="insight-type">Risk Factor</div>
+          <div class="insight-conf"
+               style="background: rgba(201,162,39,0.18); color: #C9A227;">
+            82%
+          </div>
+        </div>
+
+        <div class="insight-text">3 suppliers identified with high potential for labor disputes in the next 6 months. Proactive engagement recommended.</div>
+        <div class="insight-rule"></div>
+
+        <div style="margin-top: 8pt; font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #444; letter-spacing: 0.12em;">
+          CONFIDENCE SCORE · 82%
+        </div>
+      </div>
+      
+      <div class="insight-card">
+        <div class="insight-accent" style="background: #C8F05A;"></div>
+
+        <div class="insight-header">
+          <div class="insight-type">Opportunity</div>
+          <div class="insight-conf"
+               style="background: rgba(200,240,90,0.15); color: #C8F05A;">
+            91%
+          </div>
+        </div>
+
+        <div class="insight-text">Switching 15% of energy suppliers to renewables improves environmental score by 22% with minimal cost impact.</div>
+        <div class="insight-rule"></div>
+
+        <div style="margin-top: 8pt; font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #444; letter-spacing: 0.12em;">
+          CONFIDENCE SCORE · 91%
+        </div>
+      </div>
+      
+      <div class="insight-card">
+        <div class="insight-accent" style="background: #C9A227;"></div>
+
+        <div class="insight-header">
+          <div class="insight-type">Anomaly Detected</div>
+          <div class="insight-conf"
+               style="background: rgba(192,57,43,0.18); color: #C0392B;">
+            78%
+          </div>
+        </div>
+
+        <div class="insight-text">Unusual water usage patterns from 2 suppliers in Southeast Asia. Data verification and on-site audit recommended within 60 days.</div>
+        <div class="insight-rule"></div>
+
+        <div style="margin-top: 8pt; font-family: 'DM Mono', monospace; font-size: 7.5pt; color: #444; letter-spacing: 0.12em;">
+          CONFIDENCE SCORE · 78%
+        </div>
+      </div>
+      
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="page-footer">
+    <span class="page-footer-text">OptiSupply ESG Report 2026</span>
+    <span class="page-footer-text">Page 4</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PAGE 5 — RECOMMENDATIONS & SUPPLIERS
+═══════════════════════════════════════════════════════════════════════ -->
+<div class="page page-actions">
+
+  <!-- Top half: dark — recommendations -->
+  <div class="actions-top">
+    <div class="chapter-label" style="color: #555;">04 / Action Items</div>
+    <div class="actions-headline"><em>What to</em><br>Do Next</div>
+
+    <div class="reco-list">
+      
+      <div class="reco-item">
+        <div class="reco-num">1</div>
+        <div class="reco-text">Implement a supplier diversity program targeting under-represented geographies to improve social score by an estimated 8 points.</div>
+      </div>
+      
+      <div class="reco-item">
+        <div class="reco-num">2</div>
+        <div class="reco-text">Engage the top 10 carbon-emitting suppliers to set and commit to science-based emissions reduction targets by Q3.</div>
+      </div>
+      
+      <div class="reco-item">
+        <div class="reco-num">3</div>
+        <div class="reco-text">Develop water conservation incentives for water-intensive industries — textiles, food &amp; beverage, chemicals.</div>
+      </div>
+      
+      <div class="reco-item">
+        <div class="reco-num">4</div>
+        <div class="reco-text">Enhance supply chain transparency through blockchain-based provenance tracking, starting with tier-1 suppliers.</div>
+      </div>
+      
+    </div>
+  </div>
+
+  <!-- Bottom half: light — recent suppliers -->
+  <div class="actions-bottom">
+    <div class="table-title">Recent Supplier Additions</div>
+
+    <table class="supplier-table">
+      <thead>
+        <tr>
+          <th>Supplier</th>
+          <th>Country</th>
+          <th>ESG</th>
+          <th>Composite</th>
+          <th>Risk</th>
+          <th>Disclosure</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>Vertex Manufacturing Alliance</td>
+          <td>Germany</td>
+          <td class="esg-red">0%</td>
+          <td>72%</td>
+          <td>
+            <span class="risk-badge"
+                  style="background: #7B0000; color: #FFAAAA;">
+              critical
+            </span>
+          </td>
+          <td>100%</td>
+        </tr>
+        
+        <tr>
+          <td>Ultra Construction Enterprises</td>
+          <td>France</td>
+          <td class="esg-red">0%</td>
+          <td>59%</td>
+          <td>
+            <span class="risk-badge"
+                  style="background: #7B0000; color: #FFAAAA;">
+              critical
+            </span>
+          </td>
+          <td>100%</td>
+        </tr>
+        
+        <tr>
+          <td>Vertex Automotive Ventures</td>
+          <td>United Kingdom</td>
+          <td class="esg-red">0%</td>
+          <td>76%</td>
+          <td>
+            <span class="risk-badge"
+                  style="background: #7B0000; color: #FFAAAA;">
+              critical
+            </span>
+          </td>
+          <td>100%</td>
+        </tr>
+        
+        <tr>
+          <td>Green Technology International</td>
+          <td>United States</td>
+          <td >79%</td>
+          <td>79%</td>
+          <td>
+            <span class="risk-badge"
+                  style="background: #2D6A4F; color: #AAFFCC;">
+              low
+            </span>
+          </td>
+          <td>100%</td>
+        </tr>
+        
+        <tr>
+          <td>Next Electronics Solutions</td>
+          <td>South Korea</td>
+          <td >55%</td>
+          <td>55%</td>
+          <td>
+            <span class="risk-badge"
+                  style="background: #2D6A4F; color: #AAFFCC;">
+              low
+            </span>
+          </td>
+          <td>100%</td>
+        </tr>
+        
+        <tr>
+          <td>Summit Chemicals Industries</td>
+          <td>France</td>
+          <td >65%</td>
+          <td>65%</td>
+          <td>
+            <span class="risk-badge"
+                  style="background: #2D6A4F; color: #AAFFCC;">
+              low
+            </span>
+          </td>
+          <td>92%</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer for the last page -->
+  <div class="page-footer" style="position: absolute; bottom: 14pt; left: 36pt; right: 36pt;">
+    <span class="page-footer-text">OptiSupply ESG Report 2026 &nbsp;·&nbsp; Confidential</span>
+    <span class="page-footer-text">Page 5 / 5</span>
+  </div>
+</div>
+
+
+</body>
+</html>
