@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import { getSuppliers, Supplier, exportRankings, exportIndustryMap } from "../services/api"; // Corrected path
 import { motion, AnimatePresence } from "framer-motion";
@@ -354,175 +355,76 @@ const getLastUpdatedBadge = (colors: any, dateString: string | undefined) => {
 };
 
 // Enhanced Tooltip component with robust positioning and overflow prevention
-const Tooltip = ({ children, content, position = "top" }: { children: React.ReactNode; content: string; position?: "top" | "bottom" | "left" | "right" }) => {
+const Tooltip = ({ children, content }: { children: React.ReactNode; content: string }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties>({});
-  const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
-  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; above: boolean }>({ top: 0, left: 0, width: 260, above: true });
   const triggerRef = useRef<HTMLDivElement>(null);
   const colors = useThemeColors() as any;
 
-  // Robust positioning that ensures tooltip stays within viewport
+  const recalc = () => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    const pad = 12;
+    const w = Math.min(280, window.innerWidth - pad * 2);
+    const tipH = 90; // estimated
+    const above = r.top > tipH + pad + 20;
+    let left = r.left + r.width / 2 - w / 2;
+    left = Math.max(pad, Math.min(left, window.innerWidth - w - pad));
+    const top = above ? r.top - tipH - 8 : r.bottom + 8;
+    setPos({ top, left, width: w, above });
+  };
+
   useEffect(() => {
-    if (isVisible && tooltipRef.current && triggerRef.current) {
-      const updatePosition = () => {
-        const tooltip = tooltipRef.current;
-        const trigger = triggerRef.current;
-        if (!tooltip || !trigger) return;
-        
-        // Force a layout recalculation to get accurate dimensions
-        tooltip.style.visibility = "hidden";
-        tooltip.style.display = "block";
-        tooltip.style.position = "fixed";
-        tooltip.style.top = "0";
-        tooltip.style.left = "0";
-        tooltip.style.maxWidth = "280px";
-        tooltip.style.width = "auto";
-        
-      // Wait for next frame to ensure dimensions are calculated
-      requestAnimationFrame(() => {
-        const tooltipRect = tooltip.getBoundingClientRect();
-        const triggerRect = trigger.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const padding = 16; // Increased padding for better spacing
-        const tooltipWidth = Math.min(tooltipRect.width || 240, viewportWidth - padding * 2);
-        const tooltipHeight = Math.min(tooltipRect.height || 100, viewportHeight - padding * 2);
+    if (!isVisible) return;
+    recalc();
+    window.addEventListener("scroll", recalc, true);
+    window.addEventListener("resize", recalc);
+    return () => {
+      window.removeEventListener("scroll", recalc, true);
+      window.removeEventListener("resize", recalc);
+    };
+  }, [isVisible, content]);
 
-        // Calculate available space
-        const spaceAbove = triggerRect.top;
-        const spaceBelow = viewportHeight - triggerRect.bottom;
-        
-        // Determine best vertical position
-        let topPos: number;
-        let arrowBottom = false;
-        
-        if (position === "top" || (spaceAbove > spaceBelow && spaceAbove > tooltipHeight + padding)) {
-          // Position above
-          topPos = triggerRect.top - tooltipHeight - padding;
-          arrowBottom = true;
-          // Ensure it doesn't go above viewport
-          if (topPos < padding) {
-            topPos = padding;
-            arrowBottom = false; // Arrow on top if tooltip is at top of screen
-          }
-        } else {
-          // Position below
-          topPos = triggerRect.bottom + padding;
-          arrowBottom = false;
-          // Ensure it doesn't go below viewport
-          if (topPos + tooltipHeight > viewportHeight - padding) {
-            topPos = Math.max(padding, viewportHeight - tooltipHeight - padding);
-            arrowBottom = true; // Arrow on bottom if tooltip is at bottom of screen
-          }
-        }
-
-        // Calculate horizontal position - center on trigger, but keep within viewport
-        const triggerCenterX = triggerRect.left + triggerRect.width / 2;
-        let leftPos = triggerCenterX - tooltipWidth / 2;
-        
-        // Adjust if going off-screen horizontally
-        if (leftPos + tooltipWidth > viewportWidth - padding) {
-          leftPos = viewportWidth - tooltipWidth - padding;
-        }
-        if (leftPos < padding) {
-          leftPos = padding;
-        }
-
-        // Calculate arrow position relative to trigger center
-        const arrowOffset = triggerCenterX - leftPos;
-        const arrowLeft = Math.max(16, Math.min(tooltipWidth - 16, arrowOffset)); // Keep arrow within bounds with more margin
-
-        // Apply positioning
-        const newTooltipStyle: React.CSSProperties = {
-          position: "fixed",
-          top: `${topPos}px`,
-          left: `${leftPos}px`,
-          width: `${tooltipWidth}px`,
-          maxWidth: `${Math.min(280, viewportWidth - padding * 2)}px`,
-          minWidth: "200px",
-          maxHeight: `${Math.min(viewportHeight - padding * 2, 300)}px`,
-          zIndex: 9999,
-        };
-
-        const newArrowStyle: React.CSSProperties = {
-          [arrowBottom ? "bottom" : "top"]: arrowBottom ? "-4px" : "-4px",
-          left: `${arrowLeft}px`,
-          transform: "translateX(-50%) rotate(45deg)",
-        };
-
-        setTooltipStyle(newTooltipStyle);
-        setArrowStyle(newArrowStyle);
-        
-        // Make visible after positioning
-        tooltip.style.visibility = "visible";
-      });
-      };
-      
-      updatePosition();
-      
-      // Update on scroll/resize
-      window.addEventListener("scroll", updatePosition, true);
-      window.addEventListener("resize", updatePosition);
-      
-      return () => {
-        window.removeEventListener("scroll", updatePosition, true);
-        window.removeEventListener("resize", updatePosition);
-      };
-    }
-  }, [isVisible, position, content]);
+  const tooltipEl = isVisible ? (
+    <div
+      style={{
+        position: "fixed",
+        top: pos.top,
+        left: pos.left,
+        width: pos.width,
+        zIndex: 99999,
+        pointerEvents: "none",
+      }}
+    >
+      <div
+        className="rounded-md border p-3 text-xs leading-relaxed shadow-2xl"
+        style={{
+          backgroundColor: colors.tooltipBg || colors.panel,
+          borderColor: colors.accent + "55",
+          color: colors.text,
+          boxShadow: "0 16px 32px rgba(0,0,0,0.6)",
+          wordBreak: "break-word",
+        }}
+      >
+        {content}
+      </div>
+    </div>
+  ) : null;
 
   return (
     <>
-      <div className="relative inline-flex">
-        <div
-          ref={triggerRef}
-          className="cursor-help inline-flex items-center"
-          onMouseEnter={() => setIsVisible(true)}
-          onMouseLeave={() => setIsVisible(false)}
-          onFocus={() => setIsVisible(true)}
-          onBlur={() => setIsVisible(false)}
-        >
-          {children}
-        </div>
+      <div
+        ref={triggerRef}
+        className="inline-flex items-center"
+        onMouseEnter={() => { setIsVisible(true); }}
+        onMouseLeave={() => setIsVisible(false)}
+        onFocus={() => setIsVisible(true)}
+        onBlur={() => setIsVisible(false)}
+      >
+        {children}
       </div>
-      <AnimatePresence>
-        {isVisible && (
-          <motion.div
-            ref={tooltipRef}
-            initial={{ opacity: 0, scale: 0.95, y: -5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -5 }}
-            transition={{ duration: 0.15 }}
-            className="fixed z-[9999] p-3 rounded-lg shadow-xl pointer-events-none border"
-            style={{
-              ...tooltipStyle,
-              backgroundColor: colors.panel,
-              borderColor: colors.accent + "60",
-              color: colors.text,
-              boxShadow: `0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px ${colors.accent}20`,
-              wordWrap: "break-word",
-              overflowWrap: "break-word",
-              overflowY: "auto",
-              overflowX: "hidden",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            <div className="text-xs leading-relaxed" style={{ color: colors.text }}>
-              {content}
-            </div>
-            {/* Arrow pointer */}
-            <div
-              className="absolute w-2 h-2 border-r border-b"
-              style={{
-                ...arrowStyle,
-                backgroundColor: colors.panel,
-                borderColor: colors.accent + "60",
-              }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Render tooltip through a portal directly on body — escapes all stacking contexts and transforms */}
+      {tooltipEl && createPortal(tooltipEl, document.body)}
     </>
   );
 };
@@ -2037,123 +1939,43 @@ const SuppliersList = () => {
 
       {/* Sorting Controls */}
       <div
-        className="mb-5 md:mb-6 p-3 sm:p-4 rounded-2xl border"
+        className="mb-5 md:mb-6 px-3 sm:px-4 py-2.5 rounded-xl border flex items-center gap-2"
         style={{
           backgroundColor: colors.panel + "cc",
           borderColor: colors.accent + "25",
         }}
       >
-        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
-          <span className="text-xs sm:text-sm sm:mr-2" style={{ color: colors.textMuted }}>
-            Sort by:
-          </span>
-        <div className="flex flex-nowrap sm:flex-wrap gap-2 overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 pb-1 sm:pb-0">
+        <span className="text-[11px] font-mono uppercase tracking-widest shrink-0 mr-1" style={{ color: colors.textMuted }}>
+          Sort
+        </span>
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-nowrap"
+             style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}>
 
-          <button
-            onClick={() => handleSort("name")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
-              sortField === "name" ? "font-medium" : ""
-            }`}
-            style={{
-              backgroundColor:
-                sortField === "name"
-                  ? colors.accent + "30"
-                  : colors.background + "50",
-              color: sortField === "name" ? colors.text : colors.textMuted,
-            }}
-          >
-            Name <SortIcon field="name" />
-          </button>
-
-          <button
-            onClick={() => handleSort("ethical_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
-              sortField === "ethical_score" ? "font-medium" : ""
-            }`}
-            style={{
-              backgroundColor:
-                sortField === "ethical_score"
-                  ? colors.accent + "30"
-                  : colors.background + "50",
-              color:
-                sortField === "ethical_score" ? colors.text : colors.textMuted,
-            }}
-          >
-            Ethical Score <SortIcon field="ethical_score" />
-          </button>
-
-          <button
-            onClick={() => handleSort("environmental_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
-              sortField === "environmental_score" ? "font-medium" : ""
-            }`}
-            style={{
-              backgroundColor:
-                sortField === "environmental_score"
-                  ? colors.accent + "30"
-                  : colors.background + "50",
-              color:
-                sortField === "environmental_score"
-                  ? colors.text
-                  : colors.textMuted,
-            }}
-          >
-            Environmental <SortIcon field="environmental_score" />
-          </button>
-
-          <button
-            onClick={() => handleSort("social_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
-              sortField === "social_score" ? "font-medium" : ""
-            }`}
-            style={{
-              backgroundColor:
-                sortField === "social_score"
-                  ? colors.accent + "30"
-                  : colors.background + "50",
-              color:
-                sortField === "social_score" ? colors.text : colors.textMuted,
-            }}
-          >
-            Social <SortIcon field="social_score" />
-          </button>
-
-          <button
-            onClick={() => handleSort("governance_score")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
-              sortField === "governance_score" ? "font-medium" : ""
-            }`}
-            style={{
-              backgroundColor:
-                sortField === "governance_score"
-                  ? colors.accent + "30"
-                  : colors.background + "50",
-              color:
-                sortField === "governance_score"
-                  ? colors.text
-                  : colors.textMuted,
-            }}
-          >
-            Governance <SortIcon field="governance_score" />
-          </button>
-
-          <button
-            onClick={() => handleSort("risk_level")}
-            className={`flex items-center px-3 py-1.5 text-xs rounded-md whitespace-nowrap ${
-              sortField === "risk_level" ? "font-medium" : ""
-            }`}
-            style={{
-              backgroundColor:
-                sortField === "risk_level"
-                  ? colors.accent + "30"
-                  : colors.background + "50",
-              color:
-                sortField === "risk_level" ? colors.text : colors.textMuted,
-            }}
-          >
-            Risk Level <SortIcon field="risk_level" />
-          </button>
-        </div>
+          {([
+            { key: "name",                 label: "Name" },
+            { key: "ethical_score",        label: "ESG Score" },
+            { key: "environmental_score",  label: "Env" },
+            { key: "social_score",         label: "Social" },
+            { key: "governance_score",     label: "Gov" },
+            { key: "risk_level",           label: "Risk" },
+          ] as { key: string; label: string }[]).map(({ key, label }) => {
+            const active = sortField === key;
+            return (
+              <button
+                key={key}
+                onClick={() => handleSort(key)}
+                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono rounded whitespace-nowrap transition-all"
+                style={{
+                  backgroundColor: active ? colors.primary : "transparent",
+                  color: active ? "#0A0A0A" : colors.textMuted,
+                  border: `1px solid ${active ? colors.primary : colors.accent + "25"}`,
+                  fontWeight: active ? 600 : 400,
+                }}
+              >
+                {label} <SortIcon field={key} />
+              </button>
+            );
+          })}
         </div>
       </div>
 

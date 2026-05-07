@@ -213,9 +213,18 @@ const SupplierAssessment = () => {
   const navigate = useNavigate();
 
   const countries = [
-    "United States",
-    "China",
-    /* ... other countries ... */ "Other",
+    "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria",
+    "Bangladesh", "Belgium", "Bolivia", "Brazil", "Cambodia", "Canada", "Chile",
+    "China", "Colombia", "Croatia", "Czech Republic", "Denmark", "Ecuador", "Egypt",
+    "Ethiopia", "Finland", "France", "Germany", "Ghana", "Greece", "Guatemala",
+    "Honduras", "Hungary", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+    "Italy", "Japan", "Jordan", "Kazakhstan", "Kenya", "Malaysia", "Mexico",
+    "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan",
+    "Panama", "Peru", "Philippines", "Poland", "Portugal", "Romania", "Russia",
+    "Saudi Arabia", "Singapore", "South Africa", "South Korea", "Spain", "Sri Lanka",
+    "Sweden", "Switzerland", "Taiwan", "Thailand", "Turkey", "Uganda", "Ukraine",
+    "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Venezuela",
+    "Vietnam", "Other",
   ];
   // Build a comprehensive, user-friendly industries list
   const defaultIndustries = [
@@ -876,30 +885,37 @@ const SupplierAssessment = () => {
     >
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-6"
+        style={{ borderBottom: `1px solid ${colors.accent}15`, paddingBottom: "20px" }}
       >
-        <h1 className="text-3xl font-bold tracking-tight">
-          Supplier{" "}
-          <span style={{ color: colors.primary }}>Assessment Protocol</span>
+        {supplierId && (
+          <button
+            type="button"
+            onClick={() => navigate(`/suppliers/${supplierId}`)}
+            className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest mb-4 hover:opacity-70 transition-opacity"
+            style={{ color: colors.textMuted }}
+          >
+            <ArrowLeftIcon className="h-3.5 w-3.5" /> Back to Supplier Profile
+          </button>
+        )}
+        <span className="text-[10px] font-mono uppercase tracking-widest block mb-1" style={{ color: colors.textMuted }}>
+          Assessment Protocol
+        </span>
+        <h1 className="text-2xl md:text-3xl font-display font-bold" style={{ color: colors.text, letterSpacing: "-0.025em" }}>
+          Supplier <span style={{ color: colors.primary }}>Evaluation</span>
         </h1>
-        <p style={{ color: colors.textMuted }}>
-          {supplierId
-            ? `Evaluating Supplier ID: ${supplierId}`
-            : "Conducting New Supplier Assessment"}
+        <p className="mt-1 text-sm" style={{ color: colors.textMuted }}>
+          {supplierId ? `Evaluating supplier · ID ${supplierId}` : "New supplier assessment"}
         </p>
         {usingMockData && (
           <div
-            className="mt-2 flex items-center p-2 rounded border text-xs"
-            style={{
-              borderColor: colors.warning + "50",
-              backgroundColor: colors.warning + "10",
-              color: colors.warning,
-            }}
+            className="mt-3 flex items-center gap-2 p-2.5 rounded-md text-xs"
+            style={{ border: `1px solid ${colors.warning}40`, backgroundColor: colors.warning + "10", color: colors.warning }}
           >
-            <InformationCircleIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-            Demo Mode: Using sample data. Submission will use mock results.
+            <InformationCircleIcon className="h-4 w-4 shrink-0" />
+            Demo mode — submission will use mock results.
           </div>
         )}
       </motion.div>
@@ -926,36 +942,27 @@ const SupplierAssessment = () => {
           </span>
         </div>
         {/* Tabs/Progress Indicator */}
-        <div className="mb-6 border-b border-gray-700">
-          <nav
-            className="-mb-px flex space-x-6 overflow-x-auto"
-            aria-label="Tabs"
-          >
-            {Object.entries(sections).map(([key, { name, icon: Icon }]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveTab(key)}
-                className={`whitespace-nowrap py-3 px-1 border-b-2 text-sm font-medium flex items-center transition-colors duration-200
-                                ${
-                                  activeTab === key
-                                    ? "border-primary text-primary"
-                                    : "border-transparent text-textMuted hover:text-text hover:border-gray-500"
-                                }`}
-                style={{
-                  color: activeTab === key ? colors.primary : colors.textMuted,
-                  borderColor:
-                    activeTab === key ? colors.primary : "transparent",
-                }}
-              >
-                <Icon
-                  className={`mr-2 h-5 w-5 ${
-                    activeTab === key ? "text-primary" : "text-textMuted"
-                  }`}
-                />
-                {name}
-              </button>
-            ))}
+        <div className="mb-6" style={{ borderBottom: `1px solid ${colors.accent}20` }}>
+          <nav className="-mb-px flex space-x-1 overflow-x-auto" aria-label="Tabs">
+            {Object.entries(sections).map(([key, { name, icon: Icon }]) => {
+              const isActive = activeTab === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveTab(key)}
+                  className="whitespace-nowrap py-3 px-3 border-b-2 text-xs font-medium flex items-center gap-1.5 transition-colors duration-200 font-mono uppercase tracking-wide"
+                  style={{
+                    color: isActive ? colors.primary : colors.textMuted,
+                    borderColor: isActive ? colors.primary : "transparent",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="hidden sm:inline">{name}</span>
+                </button>
+              );
+            })}
           </nav>
         </div>
 
@@ -1360,12 +1367,6 @@ const SupplierAssessment = () => {
             {/* Results Display */}
             {activeTab === "results" && (
               <div>
-                {console.log(
-                  "Rendering results tab, isSubmitting:",
-                  isSubmitting,
-                  "result:",
-                  result
-                )}
                 {isSubmitting && (
                   <LoadingIndicator message="Evaluating Supplier..." />
                 )}
@@ -1393,176 +1394,56 @@ const SupplierAssessment = () => {
                       </p>
                     )}
                     {/* Display Key Scores */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      <div
-                        className="p-3 rounded border text-center"
-                        style={{
-                          borderColor: colors.accent + "30",
-                          backgroundColor: colors.background,
-                        }}
-                      >
-                        <p
-                          className="text-xs uppercase"
-                          style={{ color: colors.textMuted }}
-                        >
-                          Ethical
-                        </p>
-                        <p
-                          className="text-2xl font-bold font-mono"
-                          style={{
-                            color: getScoreColor(
-                              colors,
-                              result.ethical_score !== undefined
-                                ? result.ethical_score
-                                : result.scores?.overall
-                            ),
-                          }}
-                        >
-                          {safeFormat(
-                            result.ethical_score !== undefined
-                              ? result.ethical_score
-                              : result.scores?.overall
-                          )}
-                        </p>
-                      </div>
-                      <div
-                        className="p-3 rounded border text-center"
-                        style={{
-                          borderColor: colors.accent + "30",
-                          backgroundColor: colors.background,
-                        }}
-                      >
-                        <p
-                          className="text-xs uppercase"
-                          style={{ color: colors.textMuted }}
-                        >
-                          Environmental
-                        </p>
-                        <p
-                          className="text-2xl font-bold font-mono"
-                          style={{
-                            color: getScoreColor(
-                              colors,
-                              result.environmental_score !== undefined
-                                ? result.environmental_score
-                                : result.scores?.environmental
-                            ),
-                          }}
-                        >
-                          {safeFormat(
-                            result.environmental_score !== undefined
-                              ? result.environmental_score
-                              : result.scores?.environmental
-                          )}
-                        </p>
-                      </div>
-                      <div
-                        className="p-3 rounded border text-center"
-                        style={{
-                          borderColor: colors.accent + "30",
-                          backgroundColor: colors.background,
-                        }}
-                      >
-                        <p
-                          className="text-xs uppercase"
-                          style={{ color: colors.textMuted }}
-                        >
-                          Social
-                        </p>
-                        <p
-                          className="text-2xl font-bold font-mono"
-                          style={{
-                            color: getScoreColor(
-                              colors,
-                              result.social_score !== undefined
-                                ? result.social_score
-                                : result.scores?.social
-                            ),
-                          }}
-                        >
-                          {safeFormat(
-                            result.social_score !== undefined
-                              ? result.social_score
-                              : result.scores?.social
-                          )}
-                        </p>
-                      </div>
-                      <div
-                        className="p-3 rounded border text-center"
-                        style={{
-                          borderColor: colors.accent + "30",
-                          backgroundColor: colors.background,
-                        }}
-                      >
-                        <p
-                          className="text-xs uppercase"
-                          style={{ color: colors.textMuted }}
-                        >
-                          Governance
-                        </p>
-                        <p
-                          className="text-2xl font-bold font-mono"
-                          style={{
-                            color: getScoreColor(
-                              colors,
-                              result.governance_score !== undefined
-                                ? result.governance_score
-                                : result.scores?.governance
-                            ),
-                          }}
-                        >
-                          {safeFormat(
-                            result.governance_score !== undefined
-                              ? result.governance_score
-                              : result.scores?.governance
-                          )}
-                        </p>
-                      </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                      {[
+                        { label: "Ethical / Overall", val: result.ethical_score !== undefined ? result.ethical_score : result.scores?.overall },
+                        { label: "Environmental",      val: result.environmental_score !== undefined ? result.environmental_score : result.scores?.environmental },
+                        { label: "Social",             val: result.social_score !== undefined ? result.social_score : result.scores?.social },
+                        { label: "Governance",         val: result.governance_score !== undefined ? result.governance_score : result.scores?.governance },
+                      ].map(({ label, val }) => {
+                        const c = getScoreColor(colors, val);
+                        return (
+                          <div
+                            key={label}
+                            className="p-3 rounded-md text-center"
+                            style={{ backgroundColor: c + "10", border: `1px solid ${c}25` }}
+                          >
+                            <p className="text-[10px] font-mono uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>{label}</p>
+                            <p className="text-2xl font-bold font-mono" style={{ color: c }}>{safeFormat(val)}</p>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {/* Display SWOT/Recommendations */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {result.assessment && (
                         <div className="space-y-3">
-                          <h4
-                            className="font-semibold"
-                            style={{ color: colors.secondary }}
-                          >
+                          <h4 className="text-sm font-semibold font-mono uppercase tracking-wider" style={{ color: colors.text }}>
                             SWOT Analysis
                           </h4>
-                          <ul
-                            className="list-disc list-inside text-sm space-y-1 pl-2"
-                            style={{ color: colors.textMuted }}
-                          >
+                          <ul className="space-y-1.5 text-sm" style={{ color: colors.textMuted }}>
                             {result.assessment.strengths?.map((s, i) => (
-                              <li key={i}>
-                                <span className="font-medium text-green-400">
-                                  Strength:
-                                </span>{" "}
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="font-semibold shrink-0" style={{ color: colors.success }}>S:</span>
                                 {s}
                               </li>
                             ))}
                             {result.assessment.weaknesses?.map((w, i) => (
-                              <li key={i}>
-                                <span className="font-medium text-red-400">
-                                  Weakness:
-                                </span>{" "}
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="font-semibold shrink-0" style={{ color: colors.error }}>W:</span>
                                 {w}
                               </li>
                             ))}
                             {result.assessment.opportunities?.map((o, i) => (
-                              <li key={i}>
-                                <span className="font-medium text-blue-400">
-                                  Opportunity:
-                                </span>{" "}
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="font-semibold shrink-0" style={{ color: colors.primary }}>O:</span>
                                 {o}
                               </li>
                             ))}
                             {result.assessment.threats?.map((t, i) => (
-                              <li key={i}>
-                                <span className="font-medium text-yellow-400">
-                                  Threat:
-                                </span>{" "}
+                              <li key={i} className="flex items-start gap-2">
+                                <span className="font-semibold shrink-0" style={{ color: colors.warning }}>T:</span>
                                 {t}
                               </li>
                             ))}
@@ -1570,11 +1451,8 @@ const SupplierAssessment = () => {
                         </div>
                       )}
                       <div className="space-y-3">
-                        <h4
-                          className="font-semibold"
-                          style={{ color: colors.secondary }}
-                        >
-                          Recommendation & Suggestions
+                        <h4 className="text-sm font-semibold font-mono uppercase tracking-wider" style={{ color: colors.text }}>
+                          Recommendations
                         </h4>
                         <p
                           className="text-sm italic p-3 rounded border"
@@ -1648,38 +1526,27 @@ const SupplierAssessment = () => {
         {activeTab !== "results" && (
           <div
             className="flex justify-between items-center pt-6 border-t"
-            style={{ borderColor: colors.accent + "30" }}
+            style={{ borderColor: colors.accent + "20" }}
           >
             <button
               type="button"
               onClick={prevSection}
               disabled={currentSectionIndex === 0}
-              className="px-4 py-2 rounded border text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors"
-              style={{
-                borderColor: colors.accent,
-                color: colors.accent,
-              }}
-              hover={{ backgroundColor: colors.accent + "10" }}
+              className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-opacity hover:opacity-75 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ border: `1px solid ${colors.accent}40`, color: colors.accent }}
             >
-              <ArrowLeftIcon className="h-4 w-4 mr-2" /> Previous
+              <ArrowLeftIcon className="h-4 w-4" /> Previous
             </button>
 
             {currentSectionIndex === sectionKeys.length - 1 ? (
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-2 rounded border text-sm font-semibold flex items-center justify-center transition-opacity disabled:opacity-60"
-                style={{
-                  backgroundColor: colors.success,
-                  color: colors.background,
-                  borderColor: colors.success,
-                }}
+                className="px-6 py-2 rounded-md text-sm font-semibold flex items-center gap-2 transition-opacity hover:opacity-85 disabled:opacity-60"
+                style={{ backgroundColor: colors.success, color: "#0A0A0A" }}
               >
                 {isSubmitting ? (
-                  <>
-                    <ArrowPathIcon className="animate-spin h-4 w-4 mr-2" />{" "}
-                    Submitting...
-                  </>
+                  <><ArrowPathIcon className="animate-spin h-4 w-4" /> Submitting...</>
                 ) : (
                   "Submit Assessment"
                 )}
@@ -1688,14 +1555,10 @@ const SupplierAssessment = () => {
               <button
                 type="button"
                 onClick={nextSection}
-                className="px-4 py-2 rounded border text-sm flex items-center transition-colors"
-                style={{
-                  borderColor: colors.accent,
-                  color: colors.accent,
-                }}
-                hover={{ backgroundColor: colors.accent + "10" }}
+                className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-opacity hover:opacity-75"
+                style={{ background: colors.primary, color: "#0A0A0A" }}
               >
-                Next <ArrowRightIcon className="h-4 w-4 ml-2" />
+                Next <ArrowRightIcon className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -1703,19 +1566,15 @@ const SupplierAssessment = () => {
         {activeTab === "results" && (
           <div
             className="flex justify-end pt-6 border-t"
-            style={{ borderColor: colors.accent + "30" }}
+            style={{ borderColor: colors.accent + "20" }}
           >
             <button
               type="button"
-              onClick={() => setActiveTab("basic")} // Go back to start
-              className="px-4 py-2 rounded border text-sm flex items-center transition-colors"
-              style={{
-                borderColor: colors.accent,
-                color: colors.accent,
-              }}
-              hover={{ backgroundColor: colors.accent + "10" }}
+              onClick={() => setActiveTab("basic")}
+              className="px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-opacity hover:opacity-75"
+              style={{ border: `1px solid ${colors.accent}40`, color: colors.accent }}
             >
-              <ArrowLeftIcon className="h-4 w-4 mr-2" /> Start New Assessment
+              <ArrowLeftIcon className="h-4 w-4" /> Start New Assessment
             </button>
           </div>
         )}
