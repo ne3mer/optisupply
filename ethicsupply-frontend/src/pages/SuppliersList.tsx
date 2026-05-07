@@ -171,21 +171,35 @@ const sectionHelp = {
   header:
     "Supplier identity and profile basics: name, country, and industry.",
   statusBar:
-    "Operational status, risk penalty from risk factor, and data completeness. High risk penalty lowers final score.",
+    "Operational status set during onboarding. 'Active' = verified and in use. 'Under Review' = pending assessment. 'Blacklisted' = disqualified. 'Unverified' = not yet confirmed.",
+  riskBadge:
+    "Risk tier derived from the composite ESG score, country risk index, and disclosure completeness. Low < Medium < High < Critical.",
   esgRiskAdjusted:
-    "Final ESG score after risk adjustment and completeness cap. Range 0–100 (higher is better).",
+    "Final ESG score after applying risk penalty and data-completeness cap. Ranges 0–100 — higher is better. This is the headline number used for ranking and reporting.",
   esgComposite:
-    "Composite ESG score before risk penalties. Weighted by E(40%), S(30%), G(30%).",
+    "Pre-penalty ESG composite. Weighted average of Environmental (40%), Social (30%), Governance (30%). Subtract risk penalty to get the final score.",
+  coverage:
+    "Data completeness ratio — the share of required ESG fields that have been filled in. Below 50% triggers an automatic risk-penalty on the final score.",
   riskExposure:
-    "Overall risk level estimated from controversies, region, compliance, and sector profile.",
+    "Risk penalty factor applied to the raw ESG score. Derived from controversies, geopolitical risk index, sector profile, and audit history. Higher % = heavier penalty.",
   pillarEnv:
-    "Environmental performance including emissions intensity, waste, water, and energy efficiency.",
+    "Environmental score (E): CO₂ / emissions intensity, water usage, waste management, energy efficiency, and environmental-compliance history.",
   pillarSoc:
-    "Social performance including safety, wages, human rights, and DEI.",
+    "Social score (S): worker safety rates, wage fairness, human-rights audits, community engagement, and DEI metrics.",
   pillarGov:
-    "Governance performance including anti-corruption, transparency, and board practices.",
+    "Governance score (G): anti-corruption measures, board independence, executive-pay transparency, regulatory compliance, and whistleblower policies.",
+  rating:
+    "Performance tier based on the risk-adjusted ESG score. Excellent ≥ 80 · Strong ≥ 60 · Average ≥ 40 · At Risk < 40.",
   lastUpdated:
-    "Timestamp of the latest data sync or assessment captured for this supplier.",
+    "When this supplier's data was last synced or reassessed. Stale data (> 90 days) may affect score reliability.",
+  quickView:
+    "Open a side-panel summary of this supplier's scores, risk flags, and key metrics without leaving the list.",
+  openProfile:
+    "Navigate to the full supplier profile page for deep-dive analytics, audit trail, and ESG breakdown.",
+  select:
+    "Select this supplier to compare side-by-side with others. Select 2 or more to unlock the Compare panel.",
+  riskAccent:
+    "The colour strip indicates risk tier at a glance: green = Low, amber = Medium, orange = High, red = Critical.",
 };
 
 // Helper to get supplier status style
@@ -2204,7 +2218,9 @@ const SuppliersList = () => {
                     whileHover={{ y: -2, transition: { duration: 0.15 } }}
                   >
                     {/* Risk-coded accent line */}
-                    <div className="h-[3px] shrink-0" style={{ background: riskColor }} />
+                    <Tooltip content={sectionHelp.riskAccent}>
+                      <div className="h-[3px] shrink-0 cursor-help" style={{ background: riskColor }} />
+                    </Tooltip>
 
                     {/* ── HEADER ─────────────────────────────────────── */}
                     <div
@@ -2248,20 +2264,22 @@ const SuppliersList = () => {
                         </div>
 
                         {/* Select toggle */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleSupplierSelection(supplier);
-                          }}
-                          className="shrink-0 p-0.5 rounded transition-colors"
-                          aria-label={isSelected ? "Deselect" : "Select"}
-                        >
-                          {isSelected ? (
-                            <CheckCircleIcon className="h-4 w-4" style={{ color: colors.primary }} />
-                          ) : (
-                            <Square2StackIcon className="h-4 w-4" style={{ color: colors.textMuted, opacity: 0.5 }} />
-                          )}
-                        </button>
+                        <Tooltip content={sectionHelp.select}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSupplierSelection(supplier);
+                            }}
+                            className="shrink-0 p-0.5 rounded transition-colors"
+                            aria-label={isSelected ? "Deselect" : "Select"}
+                          >
+                            {isSelected ? (
+                              <CheckCircleIcon className="h-4 w-4" style={{ color: colors.primary }} />
+                            ) : (
+                              <Square2StackIcon className="h-4 w-4" style={{ color: colors.textMuted, opacity: 0.5 }} />
+                            )}
+                          </button>
+                        </Tooltip>
                       </div>
 
                       {/* 2 badges max: status + risk */}
@@ -2281,22 +2299,26 @@ const SuppliersList = () => {
                             {supplier.status || "Unverified"}
                           </span>
                         </Tooltip>
-                        <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase"
-                          style={{
-                            borderRadius: "4px",
-                            color: supplier.risk_level ? riskColor : colors.textMuted,
-                            backgroundColor: supplier.risk_level ? riskColor + "15" : "transparent",
-                            border: supplier.risk_level ? `1px solid ${riskColor}30` : `1px dashed ${colors.textMuted}40`,
-                            letterSpacing: "0.05em",
-                          }}
-                        >
-                          {supplier.risk_level ? (
-                            <>{getRiskIcon(supplier.risk_level)} {supplier.risk_level} risk</>
-                          ) : (
-                            "No Risk Data"
-                          )}
-                        </span>
+                        <Tooltip content={supplier.risk_level
+                          ? (scoreExplanations.risk_levels as Record<string, string>)[supplier.risk_level.toLowerCase()] || sectionHelp.riskBadge
+                          : sectionHelp.riskBadge}>
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase cursor-help"
+                            style={{
+                              borderRadius: "4px",
+                              color: supplier.risk_level ? riskColor : colors.textMuted,
+                              backgroundColor: supplier.risk_level ? riskColor + "15" : "transparent",
+                              border: supplier.risk_level ? `1px solid ${riskColor}30` : `1px dashed ${colors.textMuted}40`,
+                              letterSpacing: "0.05em",
+                            }}
+                          >
+                            {supplier.risk_level ? (
+                              <>{getRiskIcon(supplier.risk_level)} {supplier.risk_level} risk</>
+                            ) : (
+                              "No Risk Data"
+                            )}
+                          </span>
+                        </Tooltip>
                         {recommendation && (
                           <Tooltip content={recommendation.description}>
                             <span
@@ -2368,24 +2390,26 @@ const SuppliersList = () => {
                         {/* E · S · G mini */}
                         <div className="flex items-center gap-3">
                           {[
-                            { key: "E", val: supplier.environmental_score, color: colors.primary },
-                            { key: "S", val: supplier.social_score, color: colors.accent },
-                            { key: "G", val: supplier.governance_score, color: colors.secondary },
+                            { key: "E", val: supplier.environmental_score, color: colors.primary, tip: sectionHelp.pillarEnv },
+                            { key: "S", val: supplier.social_score, color: colors.accent, tip: sectionHelp.pillarSoc },
+                            { key: "G", val: supplier.governance_score, color: colors.secondary, tip: sectionHelp.pillarGov },
                           ].map((p) => (
-                            <div key={p.key} className="flex flex-col items-center">
-                              <span
-                                className="text-[9px] font-bold uppercase leading-none"
-                                style={{ color: colors.textMuted, letterSpacing: "0.07em" }}
-                              >
-                                {p.key}
-                              </span>
-                              <span
-                                className="text-[13px] font-bold font-mono leading-tight"
-                                style={{ color: p.color }}
-                              >
-                                {formatPillar(p.val)}
-                              </span>
-                            </div>
+                            <Tooltip key={p.key} content={p.tip}>
+                              <div className="flex flex-col items-center cursor-help">
+                                <span
+                                  className="text-[9px] font-bold uppercase leading-none"
+                                  style={{ color: colors.textMuted, letterSpacing: "0.07em" }}
+                                >
+                                  {p.key}
+                                </span>
+                                <span
+                                  className="text-[13px] font-bold font-mono leading-tight"
+                                  style={{ color: p.color }}
+                                >
+                                  {formatPillar(p.val)}
+                                </span>
+                              </div>
+                            </Tooltip>
                           ))}
                         </div>
                       </div>
@@ -2394,24 +2418,26 @@ const SuppliersList = () => {
                       <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
                         {/* Rating chip */}
                         <div className="flex items-center gap-2">
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase"
-                            style={{
-                              borderRadius: "4px",
-                              backgroundColor: scoreColor + "18",
-                              color: scoreColor,
-                              letterSpacing: "0.06em",
-                            }}
-                          >
-                            <ScaleIcon className="h-3 w-3" />
-                            {scorePercent >= 80
-                              ? "Excellent"
-                              : scorePercent >= 60
-                              ? "Strong"
-                              : scorePercent >= 40
-                              ? "Average"
-                              : "At Risk"}
-                          </span>
+                          <Tooltip content={sectionHelp.rating}>
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase cursor-help"
+                              style={{
+                                borderRadius: "4px",
+                                backgroundColor: scoreColor + "18",
+                                color: scoreColor,
+                                letterSpacing: "0.06em",
+                              }}
+                            >
+                              <ScaleIcon className="h-3 w-3" />
+                              {scorePercent >= 80
+                                ? "Excellent"
+                                : scorePercent >= 60
+                                ? "Strong"
+                                : scorePercent >= 40
+                                ? "Average"
+                                : "At Risk"}
+                            </span>
+                          </Tooltip>
                         </div>
 
                         {/* Stat rows */}
@@ -2432,7 +2458,7 @@ const SuppliersList = () => {
                                 completenessRatio !== null
                                   ? formatPercent(completenessRatio, 0)
                                   : "N/A",
-                              tooltip: "",
+                              tooltip: sectionHelp.coverage,
                               color: colors.text,
                             },
                             {
@@ -2445,34 +2471,35 @@ const SuppliersList = () => {
                               color: riskColor,
                             },
                           ].map((stat) => (
-                            <div
-                              key={stat.label}
-                              className="flex items-center justify-between gap-1"
-                            >
-                              <span
-                                className="text-[10px] font-medium uppercase shrink-0"
-                                style={{
-                                  color: colors.textMuted,
-                                  letterSpacing: "0.07em",
-                                }}
-                              >
-                                {stat.label}
-                              </span>
-                              <span
-                                className="text-[13px] font-bold font-mono"
-                                style={{ color: stat.color }}
-                              >
-                                {stat.value}
-                              </span>
-                            </div>
+                            <Tooltip key={stat.label} content={stat.tooltip}>
+                              <div className="flex items-center justify-between gap-1 cursor-help">
+                                <span
+                                  className="text-[10px] font-medium uppercase shrink-0"
+                                  style={{
+                                    color: colors.textMuted,
+                                    letterSpacing: "0.07em",
+                                  }}
+                                >
+                                  {stat.label}
+                                </span>
+                                <span
+                                  className="text-[13px] font-bold font-mono"
+                                  style={{ color: stat.color }}
+                                >
+                                  {stat.value}
+                                </span>
+                              </div>
+                            </Tooltip>
                           ))}
                         </div>
 
                         {/* Last updated — small, at bottom */}
-                        <div className="flex items-center gap-1" style={{ color: colors.textMuted }}>
-                          <ClockIcon className="h-3 w-3" />
-                          <span className="text-[10px]">{lastUpdatedBadge.label}</span>
-                        </div>
+                        <Tooltip content={sectionHelp.lastUpdated}>
+                          <div className="flex items-center gap-1 cursor-help" style={{ color: colors.textMuted }}>
+                            <ClockIcon className="h-3 w-3" />
+                            <span className="text-[10px]">{lastUpdatedBadge.label}</span>
+                          </div>
+                        </Tooltip>
                       </div>
                     </div>
 
@@ -2481,29 +2508,33 @@ const SuppliersList = () => {
                       className="px-4 py-3 flex gap-2"
                       style={{ borderTop: "1px solid rgba(128,128,128,0.08)" }}
                     >
-                      <button
-                        onClick={() => handleQuickView(supplier)}
-                        className="flex-1 flex items-center justify-center gap-1.5 text-[12px] py-2 font-medium transition-opacity hover:opacity-75"
-                        style={{
-                          borderRadius: "6px",
-                          color: colors.primary,
-                          border: `1px solid ${colors.primary}30`,
-                          backgroundColor: colors.primary + "08",
-                        }}
-                      >
-                        <EyeIcon className="h-3.5 w-3.5" /> Quick View
-                      </button>
-                      <button
-                        onClick={() => handleViewDetails(supplierId)}
-                        className="flex-[1.4] flex items-center justify-center gap-1.5 text-[12px] py-2 font-semibold transition-opacity hover:opacity-88"
-                        style={{
-                          borderRadius: "6px",
-                          background: "#C8F05A",
-                          color: "#0A0A0A",
-                        }}
-                      >
-                        Open Profile <ArrowRightIcon className="h-3.5 w-3.5" />
-                      </button>
+                      <Tooltip content={sectionHelp.quickView}>
+                        <button
+                          onClick={() => handleQuickView(supplier)}
+                          className="flex-1 flex items-center justify-center gap-1.5 text-[12px] py-2 font-medium transition-opacity hover:opacity-75"
+                          style={{
+                            borderRadius: "6px",
+                            color: colors.primary,
+                            border: `1px solid ${colors.primary}30`,
+                            backgroundColor: colors.primary + "08",
+                          }}
+                        >
+                          <EyeIcon className="h-3.5 w-3.5" /> Quick View
+                        </button>
+                      </Tooltip>
+                      <Tooltip content={sectionHelp.openProfile}>
+                        <button
+                          onClick={() => handleViewDetails(supplierId)}
+                          className="flex-[1.4] flex items-center justify-center gap-1.5 text-[12px] py-2 font-semibold transition-opacity hover:opacity-88"
+                          style={{
+                            borderRadius: "6px",
+                            background: "#C8F05A",
+                            color: "#0A0A0A",
+                          }}
+                        >
+                          Open Profile <ArrowRightIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </motion.div>
                 );
