@@ -271,65 +271,53 @@ const KpiIndicator = ({
   const colors = useColors();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      whileHover={{ y: -3 }}
-      className="relative rounded-2xl border overflow-hidden flex flex-col p-4 sm:p-5"
+      transition={{ duration: 0.35 }}
+      className="relative flex flex-col overflow-hidden"
       style={{
-        borderColor: color + "30",
-        background: `linear-gradient(135deg, ${color}10 0%, ${colors.panel}cc 60%, ${colors.panel}cc 100%)`,
-        boxShadow: `0 6px 24px ${color}10`,
+        backgroundColor: colors.card,
+        border: `1px solid rgba(128,128,128,0.10)`,
+        borderLeft: `3px solid ${color}`,
+        borderRadius: "6px",
+        padding: "1.25rem 1.25rem 1.1rem",
       }}
     >
-      {/* accent bar */}
-      <div
-        className="absolute inset-x-0 top-0 h-[3px]"
-        style={{
-          background: `linear-gradient(90deg, ${color} 0%, ${color}66 100%)`,
-        }}
-      />
-
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <span
-            className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider truncate block"
-            style={{ color: colors.textMuted }}
-          >
-            {label}
-          </span>
-          {value !== undefined && value !== null && (
-            <div className="mt-1.5 flex items-baseline gap-1">
-              <span
-                className="text-2xl sm:text-3xl font-bold font-mono leading-none tracking-tight"
-                style={{ color: colors.text }}
-              >
-                {value}
-              </span>
-              {unit && (
-                <span
-                  className="text-xs font-semibold"
-                  style={{ color: colors.textMuted }}
-                >
-                  {unit}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <div
-          className="shrink-0 h-9 w-9 rounded-xl flex items-center justify-center"
-          style={{
-            color,
-            backgroundColor: color + "20",
-            border: `1px solid ${color}35`,
-          }}
+      {/* Label row — uppercase, widely tracked, tiny */}
+      <div className="flex items-center justify-between mb-3">
+        <span
+          className="metric-label"
+          style={{ color: colors.textMuted }}
         >
-          <Icon className="h-5 w-5" />
-        </div>
+          {label}
+        </span>
+        <Icon
+          className="h-3.5 w-3.5 opacity-35"
+          style={{ color }}
+        />
       </div>
 
-      {children && <div className="mt-2">{children}</div>}
+      {/* Bloomberg-style number */}
+      {value !== undefined && value !== null && (
+        <div className="flex items-end gap-1.5">
+          <span
+            className="metric-value"
+            style={{ color: colors.text }}
+          >
+            {value}
+          </span>
+          {unit && (
+            <span
+              className="text-sm font-medium mb-1 opacity-60"
+              style={{ color: colors.textMuted, fontFamily: '"Geist Mono", monospace' }}
+            >
+              {unit}
+            </span>
+          )}
+        </div>
+      )}
+
+      {children && <div className="mt-3">{children}</div>}
     </motion.div>
   );
 };
@@ -1709,7 +1697,7 @@ const Dashboard = () => {
         backgroundColor: colors.background,
         color: colors.text,
         backgroundImage:
-          "radial-gradient(circle at 10% 20%, rgba(0, 240, 255, 0.03) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(77, 91, 255, 0.04) 0%, transparent 40%)",
+          "radial-gradient(circle at 10% 20%, rgba(200, 240, 90, 0.03) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(200, 240, 90, 0.02) 0%, transparent 40%)",
       }}
     >
       {/* Hero Command Center Header */}
@@ -1762,14 +1750,16 @@ const Dashboard = () => {
                 )}
               </div>
               <h1
-                className={`mt-3 ${
+                className={`heading-display mt-3 ${
                   isMobile ? "text-3xl" : "text-4xl lg:text-5xl"
-                } font-bold tracking-tight leading-tight`}
+                } leading-tight`}
                 style={{
-                  background: `linear-gradient(120deg, ${colors.text} 0%, ${colors.primary} 60%, ${colors.accent} 100%)`,
+                  background: `linear-gradient(120deg, ${colors.text} 0%, ${colors.primary} 80%)`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
+                  letterSpacing: "-0.025em",
+                  fontWeight: 400,
                 }}
               >
                 Supplier ESG Dashboard

@@ -9,8 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  Legend,
 } from "recharts";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface CO2Emission {
   name: string;
@@ -21,36 +21,37 @@ interface CO2EmissionsChartProps {
   data: CO2Emission[];
 }
 
-// Use dashboard colors
+// Lime-to-danger gradient scale for emission magnitude
 const chartColors = [
-  "#00F0FF", // Teal
-  "#FF00FF", // Magenta
-  "#00FF8F", // Green
-  "#FFD700", // Yellow
-  "#8B5CF6", // Purple
-  "#38BDF8", // Sky Blue
-  "#EC4899", // Pink
-  "#10B981", // Emerald
+  "#E84545", // highest emitter — danger
+  "#FB923C",
+  "#FBBF24",
+  "#86EFAC",
+  "#C8F05A", // lowest — lime
+  "#C8F05A",
+  "#86EFAC",
+  "#FBBF24",
 ];
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, dark }: any) => {
   if (active && payload && payload.length) {
     return (
       <div
-        className="rounded-md border backdrop-blur-sm p-2 text-sm shadow-lg"
         style={{
-          backgroundColor: "rgba(13, 15, 26, 0.9)", // colors.tooltipBg
-          borderColor: "rgba(77, 91, 255, 0.4)", // colors.accent + "40"
-          color: "#E0E0FF", // colors.text
+          background: dark ? "rgba(10,10,10,0.97)" : "rgba(245,245,240,0.97)",
+          border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
+          borderRadius: "6px",
+          padding: "8px 12px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
         }}
       >
-        <p
-          className="mb-1 font-semibold"
-          style={{ color: "#E0E0FF" }} // colors.text
-        >{`${label}`}</p>
-        <p style={{ color: "#8A94C8" }}>{`CO₂: ${payload[0].value.toFixed(
-          1
-        )} t`}</p>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: dark ? "#808080" : "#555555", marginBottom: 4 }}>
+          {label}
+        </p>
+        <p style={{ fontSize: 22, fontFamily: '"Geist Mono", monospace', fontWeight: 300, letterSpacing: "-0.03em", color: dark ? "#F5F5F0" : "#0A0A0A", lineHeight: 1 }}>
+          {payload[0].value.toFixed(1)}
+          <span style={{ fontSize: 11, color: dark ? "#808080" : "#555555", marginLeft: 4, fontWeight: 400 }}>t CO₂</span>
+        </p>
       </div>
     );
   }
@@ -58,52 +59,73 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
+  const { darkMode } = useTheme();
   const isMobile = useIsMobile();
 
-  // Sort data descending by value and prepare for chart
   const sortedData = useMemo(() => {
     if (!data || data.length === 0) return [];
     return [...data]
-      .filter((d) => d.value > 0) // Filter out zero values if needed
+      .filter((d) => d.value > 0)
       .sort((a, b) => b.value - a.value);
   }, [data]);
 
   if (sortedData.length === 0) {
-    return <p className="text-center">No CO₂ emission data available.</p>;
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-3 opacity-50">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <rect x="4" y="20" width="8" height="16" rx="2" fill="currentColor" opacity="0.4" />
+          <rect x="16" y="10" width="8" height="26" rx="2" fill="currentColor" opacity="0.6" />
+          <rect x="28" y="14" width="8" height="22" rx="2" fill="currentColor" opacity="0.5" />
+        </svg>
+        <p style={{ fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>
+          No emission data
+        </p>
+      </div>
+    );
   }
+
+  const tickColor = darkMode ? "#808080" : "#555555";
+  const gridColor = darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={sortedData}
         layout="vertical"
-        margin={{ top: isMobile ? 4 : 5, right: isMobile ? 10 : 30, left: isMobile ? 32 : 50, bottom: isMobile ? 0 : 5 }}
+        margin={{ top: 4, right: isMobile ? 8 : 20, left: isMobile ? 36 : 56, bottom: 4 }}
+        barCategoryGap="30%"
       >
         <CartesianGrid
-          strokeDasharray="3 3"
-          stroke="rgba(77, 91, 255, 0.1)"
+          strokeDasharray="0"
+          stroke={gridColor}
           horizontal={false}
+          strokeOpacity={1}
         />
-        <XAxis type="number" stroke="#8A94C8" fontSize={isMobile ? 10 : 12} />
+        <XAxis
+          type="number"
+          tick={{ fontSize: isMobile ? 10 : 11, fill: tickColor, fontFamily: '"Geist Mono", monospace' }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis
           dataKey="name"
           type="category"
-          stroke="#8A94C8"
-          fontSize={isMobile ? 10 : 12}
+          tick={{ fontSize: isMobile ? 10 : 11, fill: tickColor, fontFamily: '"Geist", sans-serif' }}
+          axisLine={false}
+          tickLine={false}
           width={isMobile ? 90 : 120}
-          tick={{ fill: "#E0E0FF" }}
-          interval={0} // Ensure all labels are shown
+          interval={0}
         />
         <Tooltip
-          content={<CustomTooltip />}
-          cursor={{ fill: "rgba(77, 91, 255, 0.1)" }}
+          content={<CustomTooltip dark={darkMode} />}
+          cursor={{ fill: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}
         />
-        {!isMobile && <Legend />}
-        <Bar dataKey="value" name="CO₂ Emissions (tons)" radius={[0, 4, 4, 0]} barSize={isMobile ? 12 : undefined}>
-          {sortedData.map((entry, index) => (
+        <Bar dataKey="value" name="CO₂ Emissions (tons)" radius={[0, 3, 3, 0]} maxBarSize={isMobile ? 14 : 22}>
+          {sortedData.map((_, index) => (
             <Cell
               key={`cell-${index}`}
               fill={chartColors[index % chartColors.length]}
+              fillOpacity={0.85}
             />
           ))}
         </Bar>

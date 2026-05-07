@@ -66,8 +66,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("theme", "light");
       try {
         const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', '#FAFAF8');
-        document.body.style.backgroundColor = '#FAFAF8';
+        if (meta) meta.setAttribute('content', '#F5F5F0');
+        document.body.style.backgroundColor = '#F5F5F0';
       } catch {}
     }
   }, [darkMode]);

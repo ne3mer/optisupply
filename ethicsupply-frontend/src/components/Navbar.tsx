@@ -128,11 +128,12 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled || isMobileMenuOpen
-          ? "bg-white/75 dark:bg-slate-950/70 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(15,23,42,0.25)] border-slate-200/70 dark:border-white/10"
-          : "bg-white/40 dark:bg-slate-950/40 backdrop-blur-md border-transparent"
+          ? "bg-[#F5F5F0]/80 dark:bg-[#0A0A0A]/80 backdrop-blur-xl"
+          : "bg-[#F5F5F0]/60 dark:bg-[#0A0A0A]/60 backdrop-blur-md"
       }`}
+      style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
     >
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -143,38 +144,42 @@ const Navbar = () => {
               className="flex-shrink-0 flex items-center gap-2.5 group"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <div className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-[0_4px_16px_-4px_rgba(16,185,129,0.5)] group-hover:shadow-[0_6px_20px_-4px_rgba(16,185,129,0.6)] transition-all duration-200 group-hover:scale-105">
-                <Activity className="h-5 w-5 text-white" strokeWidth={2.5} />
-                <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div
+                className="relative h-9 w-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105"
+                style={{ background: "#C8F05A", boxShadow: "0 4px 14px -4px rgba(200,240,90,0.5)" }}
+              >
+                <Activity className="h-5 w-5" style={{ color: "#0A0A0A" }} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col leading-none">
-                <span className="font-bold text-[17px] tracking-tight text-slate-900 dark:text-white">
-                  Opti<span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">Supply</span>
+                <span className="font-semibold text-[16px] tracking-tight" style={{ color: "inherit", letterSpacing: "-0.02em" }}>
+                  Opti<span style={{ color: "#C8F05A" }}>Supply</span>
                 </span>
-                <span className="hidden lg:block text-[10px] font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mt-0.5">
+                <span className="hidden lg:block text-[10px] font-medium uppercase mt-0.5" style={{ letterSpacing: "0.12em", color: "#808080" }}>
                   ESG Intelligence
                 </span>
               </div>
             </Link>
 
             {/* Desktop Navigation Links - sliding active indicator */}
-            <div className="hidden md:flex items-center gap-0.5 p-1 rounded-xl border border-slate-200/60 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.03]">
+            <div className="hidden md:flex items-center gap-0.5 p-1 rounded-lg" style={{ border: "1px solid rgba(128,128,128,0.10)", background: "rgba(128,128,128,0.04)" }}>
               {navItems.map((item) => {
                 const active = isActivePath(item.path);
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`relative flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
+                    className={`relative flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-md text-xs lg:text-sm font-medium transition-colors ${
                       active
-                        ? "text-white"
+                        ? ""
                         : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                     }`}
+                    style={active ? { color: "#0A0A0A" } : {}}
                   >
                     {active && (
                       <motion.span
                         layoutId="nav-active-pill"
-                        className="absolute inset-0 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.6)]"
+                        className="absolute inset-0 rounded-md"
+                        style={{ background: "#C8F05A", boxShadow: "0 2px 8px -2px rgba(200,240,90,0.4)" }}
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       />
                     )}
@@ -205,7 +210,13 @@ const Navbar = () => {
                 placeholder="Search suppliers, scores…"
                 onFocus={() => setIsSearchOpen(true)}
                 onBlur={() => setIsSearchOpen(false)}
-                className="h-9 w-full pl-9 pr-14 rounded-lg text-sm bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                className="h-9 w-full pl-9 pr-14 text-sm transition-all focus:outline-none"
+                style={{
+                  borderRadius: "6px",
+                  background: "rgba(128,128,128,0.06)",
+                  border: "1px solid rgba(128,128,128,0.12)",
+                  color: "inherit",
+                }}
               />
               <kbd className="absolute right-2 hidden lg:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium font-mono text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 shadow-sm">
                 <Command className="h-2.5 w-2.5" />K
@@ -241,7 +252,15 @@ const Navbar = () => {
 
               <Link
                 to="/suppliers/add"
-                className="ml-1 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold text-white bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.5)] transition-all"
+                className="ml-1 inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold transition-all hover:opacity-90"
+                style={{
+                  borderRadius: "6px",
+                  background: "#C8F05A",
+                  color: "#0A0A0A",
+                  boxShadow: "0 2px 10px -2px rgba(200,240,90,0.4)",
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                }}
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 New Supplier
@@ -253,7 +272,7 @@ const Navbar = () => {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-lime-400"
               aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? (
@@ -282,11 +301,16 @@ const Navbar = () => {
                   key={item.path}
                   to={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                  className={`flex items-center px-3 py-2 text-base font-medium transition-colors duration-200 ${
                     isActivePath(item.path)
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
-                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800"
+                      ? ""
+                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/5"
                   }`}
+                  style={isActivePath(item.path) ? {
+                    background: "rgba(200,240,90,0.12)",
+                    color: "#C8F05A",
+                    borderRadius: "6px",
+                  } : { borderRadius: "6px" }}
                 >
                   <span className="mr-3">{item.icon}</span>
                   {item.name}

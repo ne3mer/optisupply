@@ -15,6 +15,7 @@ import {
   NameType,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface SupplierCountData {
   name: string;
@@ -25,124 +26,116 @@ interface SuppliersByCountryChartProps {
   suppliersByCountry: Record<string, number>;
 }
 
-// Custom tooltip component
 const CustomTooltip = ({
   active,
   payload,
-}: TooltipProps<ValueType, NameType>) => {
+  dark,
+}: TooltipProps<ValueType, NameType> & { dark: boolean }) => {
   if (active && payload && payload.length) {
     return (
       <div
         style={{
-          backgroundColor: "rgba(20,20,30,0.95)",
-          color: "#E0E0FF",
-          padding: "10px",
-          border: "1px solid rgba(120,120,200,0.5)",
-          borderRadius: "4px",
-          }}
+          background: dark ? "rgba(10,10,10,0.97)" : "rgba(245,245,240,0.97)",
+          border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
+          borderRadius: "6px",
+          padding: "8px 12px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+        }}
       >
-        <p style={{ margin: 0 }}>
-          <strong>{payload[0].payload.name}</strong>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: dark ? "#808080" : "#555555", marginBottom: 4 }}>
+          {payload[0].payload.name}
         </p>
-        <p style={{ margin: 0 }}>{payload[0].value} suppliers</p>
+        <p style={{ fontSize: 22, fontFamily: '"Geist Mono", monospace', fontWeight: 300, letterSpacing: "-0.03em", color: dark ? "#F5F5F0" : "#0A0A0A", lineHeight: 1 }}>
+          {payload[0].value}
+          <span style={{ fontSize: 11, color: dark ? "#808080" : "#555555", marginLeft: 4, fontWeight: 400 }}>suppliers</span>
+        </p>
       </div>
     );
   }
-
   return null;
 };
 
 const SuppliersByCountryChart: React.FC<SuppliersByCountryChartProps> = ({
   suppliersByCountry,
 }) => {
+  const { darkMode } = useTheme();
   const isMobile = useIsMobile();
 
-  // Transform data and sort by count in descending order
   const data = useMemo(() => {
-    // Convert the object to an array of { name, value } objects
     const dataArray = Object.entries(suppliersByCountry || {}).map(
-      ([name, value]) => ({
-        name,
-        value,
-      })
+      ([name, value]) => ({ name, value })
     );
-
-    // Sort by value in descending order and filter out zero values
     return dataArray
       .filter((item) => item.value > 0)
       .sort((a, b) => b.value - a.value)
-      .slice(0, 15); // Limit to top 15 countries
+      .slice(0, 15);
   }, [suppliersByCountry]);
 
-  // Dynamic color scale from red -> yellow -> green based on relative value
-  const maxVal = useMemo(() => (data.length ? Math.max(...data.map((d) => d.value)) : 0), [data]);
-  const getColor = (value: number, index: number) => {
-    if (!maxVal) {
-      // fallback multi-color palette
-      const palette = [
-        "#4D5BFF",
-        "#00F0FF",
-        "#10b981",
-        "#f59e0b",
-        "#ef4444",
-        "#a78bfa",
-        "#38bdf8",
-        "#f472b6",
-        "#22c55e",
-        "#f97316",
-      ];
-      return palette[index % palette.length];
-    }
+  const maxVal = useMemo(
+    () => (data.length ? Math.max(...data.map((d) => d.value)) : 0),
+    [data]
+  );
+
+  // Lime-to-muted scale based on relative rank — not the generic rainbow
+  const getColor = (value: number) => {
+    if (!maxVal) return "#C8F05A";
     const t = Math.max(0, Math.min(1, value / maxVal));
-    // 0 -> red(0deg), 0.5 -> yellow(60deg), 1 -> green(120deg)
-    const hue = 120 * t; // 0..120
-    return `hsl(${hue.toFixed(0)}, 70%, 50%)`;
+    if (t > 0.75) return "#C8F05A";     // lime — top tier
+    if (t > 0.5)  return "#86EFAC";     // green
+    if (t > 0.25) return "#FBBF24";     // amber
+    return "#808080";                   // muted — tail
   };
 
-  // Compute Y axis width based on longest label (approx 7px per char)
   const yAxisWidth = useMemo(() => {
     const longest = data.reduce((m, d) => Math.max(m, (d.name || "").length), 0);
-    const base = Math.max(70, Math.min(180, longest * 7));
-    return isMobile ? Math.min(base, 110) : base;
+    const base = Math.max(60, Math.min(160, longest * 7));
+    return isMobile ? Math.min(base, 100) : base;
   }, [data, isMobile]);
+
+  const tickColor = darkMode ? "#808080" : "#555555";
+  const gridColor = darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={data}
-        margin={{
-          top: 16,
-          right: 20,
-          left: 10,
-          bottom: 8,
-        }}
         layout="vertical"
+        margin={{ top: 8, right: isMobile ? 8 : 20, left: 8, bottom: 4 }}
+        barCategoryGap="32%"
       >
         <CartesianGrid
-          strokeDasharray="3 3"
-          horizontal={true}
-          vertical={false}
+          strokeDasharray="0"
+          stroke={gridColor}
+          horizontal={false}
+          strokeOpacity={1}
         />
-        <XAxis type="number" tick={{ fill: "#8A94C8", fontSize: isMobile ? 10 : 12 }} />
+        <XAxis
+          type="number"
+          tick={{ fill: tickColor, fontSize: isMobile ? 10 : 11, fontFamily: '"Geist Mono", monospace' }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis
           dataKey="name"
           type="category"
           width={yAxisWidth}
-          tick={{ fill: "#8A94C8", fontSize: isMobile ? 10 : 12 }}
+          tick={{ fill: tickColor, fontSize: isMobile ? 10 : 11, fontFamily: '"Geist", sans-serif' }}
           tickLine={false}
           axisLine={false}
-          interval={0} // Show all labels
+          interval={0}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip
+          content={<CustomTooltip dark={darkMode} />}
+          cursor={{ fill: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}
+        />
         <Bar
           dataKey="value"
           name="Suppliers"
-          barSize={isMobile ? 12 : 18}
-          radius={[4, 4, 4, 4]}
-          background={{ fill: "rgba(100, 100, 150, 0.15)" }}
+          maxBarSize={isMobile ? 14 : 20}
+          radius={[0, 3, 3, 0]}
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={getColor(entry.value, index)} />
+            <Cell key={`cell-${index}`} fill={getColor(entry.value)} fillOpacity={0.85} />
           ))}
         </Bar>
       </BarChart>

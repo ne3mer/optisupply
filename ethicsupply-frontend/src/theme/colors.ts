@@ -15,43 +15,42 @@ export type ThemeColors = {
   inputBg?: string;
 };
 
+// Dark: deep true-black with a single lime accent — no blue, no purple
 const darkColors: ThemeColors = {
-  // Editorial dark theme: neutral base + bold lime/amber accents
   background: "#0A0A0A",
-  panel: "rgba(22, 22, 24, 0.86)",
-  card: "rgba(30, 30, 33, 0.74)",
-  primary: "#A3E635",
-  secondary: "#F59E0B",
-  accent: "#84CC16",
-  text: "#F4F4F5",
-  textMuted: "#A1A1AA",
-  success: "#22C55E",
-  warning: "#F59E0B",
-  error: "#F87171",
-  grid: "rgba(132, 204, 22, 0.12)",
-  tooltipBg: "rgba(10, 10, 10, 0.96)",
-  inputBg: "rgba(39, 39, 42, 0.9)",
+  panel: "rgba(17, 17, 17, 0.90)",
+  card: "#111111",
+  primary: "#C8F05A",
+  secondary: "#E84545",
+  accent: "#C8F05A",
+  text: "#F5F5F0",
+  textMuted: "#808080",
+  success: "#4ADE80",
+  warning: "#FBBF24",
+  error: "#E84545",
+  grid: "rgba(200, 240, 90, 0.08)",
+  tooltipBg: "rgba(10, 10, 10, 0.97)",
+  inputBg: "#1A1A1A",
 };
 
+// Light: warm paper tone, single lime accent — no generic slate-blue
 const lightColors: ThemeColors = {
-  // Warm-neutral paper tone for less templated look
-  background: "#FAFAF8",
-  panel: "rgba(255, 255, 255, 0.92)",
-  card: "#FFFFFF",
-  primary: "#4D7C0F",
-  secondary: "#B45309",
-  accent: "#3F6212",
-  text: "#0F172A",
-  textMuted: "#52525B",
+  background: "#F5F5F0",
+  panel: "rgba(255, 255, 255, 0.94)",
+  card: "#EBEBEB",
+  primary: "#3D6B05",
+  secondary: "#E84545",
+  accent: "#3D6B05",
+  text: "#0A0A0A",
+  textMuted: "#555555",
   success: "#15803D",
   warning: "#B45309",
-  error: "#B91C1C",
-  grid: "rgba(77, 124, 15, 0.10)",
-  tooltipBg: "rgba(255, 255, 255, 0.98)",
-  inputBg: "#F4F4F5",
+  error: "#E84545",
+  grid: "rgba(61, 107, 5, 0.10)",
+  tooltipBg: "rgba(245, 245, 240, 0.98)",
+  inputBg: "#E5E5E0",
 };
 
 export function getThemeColors(darkMode: boolean): ThemeColors {
   return darkMode ? darkColors : lightColors;
 }
-

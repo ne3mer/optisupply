@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { useTheme } from "../contexts/ThemeContext";
 
 interface EthicalScoreRange {
   range: string;
@@ -20,22 +21,47 @@ interface EthicalScoreDistributionChartProps {
   data: EthicalScoreRange[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, dark }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border border-gray-200 shadow-md rounded-md">
-        <p className="text-sm font-medium">{`Range: ${label}`}</p>
-        <p className="text-sm text-gray-700">{`Suppliers: ${payload[0].value}`}</p>
+      <div
+        style={{
+          background: dark ? "rgba(10,10,10,0.97)" : "rgba(245,245,240,0.97)",
+          border: `1px solid ${dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"}`,
+          borderRadius: "6px",
+          padding: "8px 12px",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+        }}
+      >
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: dark ? "#808080" : "#555555", marginBottom: 4 }}>
+          Score Range {label}
+        </p>
+        <p style={{ fontSize: 22, fontFamily: '"Geist Mono", monospace', fontWeight: 300, letterSpacing: "-0.03em", color: dark ? "#F5F5F0" : "#0A0A0A", lineHeight: 1 }}>
+          {payload[0].value}
+          <span style={{ fontSize: 12, color: dark ? "#808080" : "#555555", marginLeft: 4, fontWeight: 400 }}>suppliers</span>
+        </p>
       </div>
     );
   }
   return null;
 };
 
-const EthicalScoreDistributionChart: React.FC<
-  EthicalScoreDistributionChartProps
-> = ({ data }) => {
-  // Ensure we have data to display
+// Score-range to lime/amber/red spectrum — communicates quality
+const getBarColor = (range: string) => {
+  switch (range) {
+    case "81-100": return "#C8F05A";   // lime — excellent
+    case "61-80":  return "#86EFAC";   // green — good
+    case "41-60":  return "#FBBF24";   // amber — average
+    case "21-40":  return "#FB923C";   // orange — below average
+    case "0-20":   return "#E84545";   // red — at risk
+    default:       return "#C8F05A";
+  }
+};
+
+const EthicalScoreDistributionChart: React.FC<EthicalScoreDistributionChartProps> = ({ data }) => {
+  const { darkMode } = useTheme();
+  const isMobile = useIsMobile();
+
   const chartData =
     data && data.length > 0
       ? data
@@ -47,38 +73,42 @@ const EthicalScoreDistributionChart: React.FC<
           { range: "81-100", count: 0 },
         ];
 
-  const getBarColor = (range: string) => {
-    switch (range) {
-      case "81-100":
-        return "#059669"; // dark green
-      case "61-80":
-        return "#10b981"; // medium green
-      case "41-60":
-        return "#14b8a6"; // teal
-      case "21-40":
-        return "#f59e0b"; // amber
-      case "0-20":
-        return "#ef4444"; // red
-      default:
-        return "#10b981"; // default emerald
-    }
-  };
-
-  const isMobile = useIsMobile();
+  const axisColor = darkMode ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.25)";
+  const gridColor = darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
+  const tickColor = darkMode ? "#808080" : "#555555";
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
         data={chartData}
-        margin={{ top: isMobile ? 8 : 20, right: isMobile ? 10 : 30, left: 10, bottom: isMobile ? 0 : 5 }}
+        margin={{ top: 12, right: isMobile ? 8 : 16, left: isMobile ? -8 : 0, bottom: isMobile ? 0 : 4 }}
+        barCategoryGap="28%"
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-        <XAxis dataKey="range" tick={{ fontSize: isMobile ? 10 : 12 }} interval={0} />
-        <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} allowDecimals={false} />
-        <Tooltip content={<CustomTooltip />} />
-        <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={isMobile ? 20 : undefined}>
+        {/* Faint horizontal gridlines only — no borders */}
+        <CartesianGrid
+          strokeDasharray="0"
+          stroke={gridColor}
+          vertical={false}
+          strokeOpacity={1}
+        />
+        <XAxis
+          dataKey="range"
+          tick={{ fontSize: isMobile ? 10 : 11, fill: tickColor, fontFamily: '"Geist Mono", monospace', letterSpacing: "-0.01em" }}
+          axisLine={false}
+          tickLine={false}
+          interval={0}
+        />
+        <YAxis
+          tick={{ fontSize: isMobile ? 10 : 11, fill: tickColor, fontFamily: '"Geist Mono", monospace' }}
+          axisLine={false}
+          tickLine={false}
+          allowDecimals={false}
+          width={28}
+        />
+        <Tooltip content={<CustomTooltip dark={darkMode} />} cursor={{ fill: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }} />
+        <Bar dataKey="count" radius={[3, 3, 0, 0]} maxBarSize={isMobile ? 28 : 44}>
           {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={getBarColor(entry.range)} />
+            <Cell key={`cell-${index}`} fill={getBarColor(entry.range)} fillOpacity={0.85} />
           ))}
         </Bar>
       </BarChart>
