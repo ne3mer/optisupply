@@ -39,6 +39,7 @@ import {
   ExclamationCircleIcon,
   NoSymbolIcon,
   SparklesIcon,
+  ArrowPathIcon,
   ClockIcon as ClockIconSolid,
 } from "@heroicons/react/24/outline";
 import { CheckBadgeIcon as CheckBadgeSolid } from "@heroicons/react/24/solid";
@@ -239,39 +240,106 @@ const getStatusStyles = (colors: any, status: string | undefined) => {
 
 // Helper to determine AI recommendation
 const getRecommendation = (colors: any, supplier: Supplier) => {
-  const ethicalScore = supplier.ethical_score || 0;
-  const riskLevel = supplier.risk_level?.toLowerCase() || "";
+  const rawScore = supplier.ethical_score;
+  const score =
+    typeof rawScore === "number"
+      ? rawScore > 0 && rawScore <= 1
+        ? rawScore * 100
+        : rawScore
+      : null;
 
-  if (
-    ethicalScore > 75 ||
-    (ethicalScore > 0 && ethicalScore <= 1 && ethicalScore > 0.75)
-  ) {
+  const riskLevel = supplier.risk_level?.toLowerCase() || "";
+  const completeness =
+    typeof supplier.completeness_ratio === "number"
+      ? Math.round(supplier.completeness_ratio * 100)
+      : null;
+
+  const lastUpdatedMs = supplier.last_updated
+    ? new Date(supplier.last_updated).getTime()
+    : null;
+  const ageDays =
+    lastUpdatedMs !== null
+      ? Math.floor((Date.now() - lastUpdatedMs) / (1000 * 60 * 60 * 24))
+      : null;
+
+  // 1) Missing/low disclosure is the highest-priority fix (you can't trust scores)
+  if (completeness !== null && completeness < 60) {
+    return {
+      type: "data",
+      icon: <DocumentIcon className="h-4 w-4 mr-1" />,
+      label: "Request ESG Data",
+      color: colors.warning,
+      bgColor: colors.warning + "15",
+      description:
+        `Disclosure is ${completeness}%. Scores are less reliable until core ESG fields are submitted and verified.`,
+    };
+  }
+
+  // 2) Critical/high risk should be surfaced even if score looks ok
+  if (riskLevel === "critical" || riskLevel === "high") {
+    return {
+      type: "risk",
+      icon: <ShieldExclamationIcon className="h-4 w-4 mr-1" />,
+      label: riskLevel === "critical" ? "Immediate Review" : "Risk Watch",
+      color: riskLevel === "critical" ? colors.secondary : colors.error,
+      bgColor:
+        (riskLevel === "critical" ? colors.secondary : colors.error) + "15",
+      description:
+        riskLevel === "critical"
+          ? "This supplier is flagged Critical risk. Prioritize reassessment and mitigation actions."
+          : "This supplier is flagged High risk. Monitor closely and schedule a reassessment.",
+    };
+  }
+
+  // 3) Stale data
+  if (ageDays !== null && ageDays > 120) {
+    return {
+      type: "stale",
+      icon: <ArrowPathIcon className="h-4 w-4 mr-1" />,
+      label: "Refresh Assessment",
+      color: colors.textMuted,
+      bgColor: colors.panel,
+      description:
+        `Last update was ${ageDays} days ago. Refresh the assessment before using this supplier in reporting decisions.`,
+    };
+  }
+
+  // 4) Strong / recommended
+  if (score !== null && score >= 80) {
     return {
       type: "recommended",
       icon: <CheckBadgeSolid className="h-4 w-4 mr-1" />,
       label: "Recommended",
       color: colors.success,
       bgColor: colors.success + "15",
-      description: "This supplier meets OptiSupply's high ethical standards",
-    };
-  } else if (
-    riskLevel === "high" ||
-    riskLevel === "critical" ||
-    ethicalScore < 40 ||
-    (ethicalScore > 0 && ethicalScore <= 1 && ethicalScore < 0.4)
-  ) {
-    return {
-      type: "warning",
-      icon: <ExclamationCircleIcon className="h-4 w-4 mr-1" />,
-      label: "High ESG Risk",
-      color: colors.error,
-      bgColor: colors.error + "15",
       description:
-        "This supplier has significant ESG concerns that require attention",
+        "Strong risk-adjusted ESG performance. Suitable for preferred supplier lists and long-term contracts.",
     };
   }
 
-  return null;
+  // 5) At-risk by score even if risk_level isn't set
+  if (score !== null && score < 45) {
+    return {
+      type: "warning",
+      icon: <ExclamationCircleIcon className="h-4 w-4 mr-1" />,
+      label: "Improve Plan",
+      color: colors.error,
+      bgColor: colors.error + "15",
+      description:
+        "Low ESG score. Build an improvement plan and set 30/60/90-day targets before expanding spend.",
+    };
+  }
+
+  // 6) Default: monitor
+  return {
+    type: "monitor",
+    icon: <InformationCircleIcon className="h-4 w-4 mr-1" />,
+    label: "Monitor",
+    color: colors.primary,
+    bgColor: colors.primary + "10",
+    description:
+      "No critical flags detected. Keep monitoring and re-run assessment quarterly or when risk signals change.",
+  };
 };
 
 // Format date for display
@@ -2148,23 +2216,21 @@ const SuppliersList = () => {
                             )}
                           </span>
                         </Tooltip>
-                        {recommendation && (
-                          <Tooltip content={recommendation.description}>
-                            <span
-                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase"
-                              style={{
-                                borderRadius: "4px",
-                                color: recommendation.color,
-                                backgroundColor: recommendation.bgColor,
-                                border: `1px solid ${recommendation.color}25`,
-                                letterSpacing: "0.05em",
-                              }}
-                            >
-                              {recommendation.icon}
-                              {recommendation.label}
-                            </span>
-                          </Tooltip>
-                        )}
+                        <Tooltip content={recommendation.description}>
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase cursor-help"
+                            style={{
+                              borderRadius: "4px",
+                              color: recommendation.color,
+                              backgroundColor: recommendation.bgColor,
+                              border: `1px solid ${recommendation.color}25`,
+                              letterSpacing: "0.05em",
+                            }}
+                          >
+                            {recommendation.icon}
+                            {recommendation.label}
+                          </span>
+                        </Tooltip>
                       </div>
                     </div>
 
@@ -2321,6 +2387,40 @@ const SuppliersList = () => {
                             </Tooltip>
                           ))}
                         </div>
+
+                        {/* Next action — compact recommendation line */}
+                        <Tooltip content={recommendation.description}>
+                          <div
+                            className="mt-2 rounded-md px-2.5 py-2 flex items-start gap-2 cursor-help"
+                            style={{
+                              border: `1px solid ${recommendation.color}25`,
+                              backgroundColor: recommendation.bgColor,
+                              color: colors.text,
+                            }}
+                          >
+                            <div className="mt-0.5" style={{ color: recommendation.color }}>
+                              {recommendation.icon}
+                            </div>
+                            <div className="min-w-0">
+                              <div
+                                className="text-[10px] font-mono uppercase tracking-widest"
+                                style={{ color: colors.textMuted }}
+                              >
+                                Next action
+                              </div>
+                              <div
+                                className="text-[12px] font-semibold leading-snug truncate"
+                                style={{ color: colors.text }}
+                              >
+                                {recommendation.label}
+                                <span className="mx-2 opacity-30">·</span>
+                                <span className="font-normal" style={{ color: colors.textMuted }}>
+                                  {recommendation.description}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Tooltip>
 
                         {/* Last updated — small, at bottom */}
                         <Tooltip content={sectionHelp.lastUpdated}>
@@ -2865,22 +2965,24 @@ const SuppliersList = () => {
                         {selectedSupplier.name}
 
                         {/* AI Recommendation Tag in Modal */}
-                        {getRecommendation(colors, selectedSupplier) && (
-                          <span
-                            className="ml-3 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                            style={{
-                              backgroundColor:
-                                getRecommendation(colors, selectedSupplier)!.bgColor,
-                              color: getRecommendation(colors, selectedSupplier)!.color,
-                              border: `1px solid ${
-                                getRecommendation(colors, selectedSupplier)!.color
-                              }40`,
-                            }}
-                          >
-                            {getRecommendation(colors, selectedSupplier)!.icon}
-                            {getRecommendation(colors, selectedSupplier)!.label}
-                          </span>
-                        )}
+                        {(() => {
+                          const rec = getRecommendation(colors, selectedSupplier);
+                          return (
+                            <Tooltip content={rec.description} wrapperClassName="ml-3 inline-flex">
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-help"
+                                style={{
+                                  backgroundColor: rec.bgColor,
+                                  color: rec.color,
+                                  border: `1px solid ${rec.color}40`,
+                                }}
+                              >
+                                {rec.icon}
+                                {rec.label}
+                              </span>
+                            </Tooltip>
+                          );
+                        })()}
                       </h2>
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         <span
