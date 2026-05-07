@@ -107,14 +107,17 @@ const InputField = ({
         disabled={disabled}
         min={min}
         max={max}
-        className={`w-full px-3 py-2 rounded-md border focus:outline-none focus:ring-2 ${
+        className={`w-full px-3 py-2 rounded border transition-colors focus:outline-none ${
           disabled ? "opacity-60 cursor-not-allowed" : ""
         }`}
         style={{
           backgroundColor: colors.inputBg,
-          borderColor: colors.accent + "50",
+          borderColor: colors.accent + "40",
           color: colors.text,
+          boxShadow: undefined,
         }}
+        onFocus={(e) => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.accent}20`; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = colors.accent + "40"; e.currentTarget.style.boxShadow = "none"; }}
         data-type={type === "number" ? "number" : undefined}
       />
       {helper && (
@@ -152,20 +155,22 @@ const SelectField = ({
         onChange={onChange}
         required={required}
         disabled={disabled}
-        className={`w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2 ${
+        className={`w-full appearance-none pl-3 pr-10 py-2 rounded border transition-colors focus:outline-none ${
           disabled ? "opacity-60 cursor-not-allowed" : ""
         }`}
         style={{
           backgroundColor: colors.inputBg,
-          borderColor: colors.accent + "50",
+          borderColor: colors.accent + "40",
           color: colors.text,
         }}
+        onFocus={(e) => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.boxShadow = `0 0 0 2px ${colors.accent}20`; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = colors.accent + "40"; e.currentTarget.style.boxShadow = "none"; }}
       >
-        <option value="" style={{ color: colors.textMuted }}>
+        <option value="" style={{ color: colors.textMuted, backgroundColor: colors.inputBg }}>
           Select...
         </option>
         {options.map((opt) => (
-          <option key={opt} value={opt}>
+          <option key={opt} value={opt} style={{ color: colors.text, backgroundColor: colors.inputBg }}>
             {opt}
           </option>
         ))}
@@ -435,7 +440,7 @@ const MetricImpactRow = ({
         </span>
         <div className="flex flex-col items-end">
           <div className="flex items-center gap-1">
-            <div className="h-1 w-12 rounded-full bg-gray-700">
+            <div className="h-1 w-12 rounded-full" style={{ backgroundColor: colors.accent + "20" }}>
               <div
                 className="h-1 rounded-full"
                 style={{
@@ -795,8 +800,8 @@ const ESGScorePreview = ({ formData }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white bg-opacity-10 backdrop-blur-md p-5 rounded-xl border shadow-lg"
-      style={{ borderColor: colors.accent + "40" }}
+      className="backdrop-blur-md p-5 rounded-md border"
+      style={{ backgroundColor: colors.panel, borderColor: colors.accent + "30" }}
     >
       <h3
         className="text-lg font-semibold mb-4 text-center"
@@ -884,7 +889,7 @@ const ESGScorePreview = ({ formData }) => {
             >
               Top Positive Contributors
             </h5>
-            <div className="bg-black bg-opacity-20 rounded p-2">
+            <div className="rounded p-2" style={{ backgroundColor: colors.accent + "08" }}>
               {topContributors.positive.length > 0 ? (
                 topContributors.positive.map((factor, index) => (
                   <MetricImpactRow
@@ -915,7 +920,7 @@ const ESGScorePreview = ({ formData }) => {
             >
               Areas for Improvement
             </h5>
-            <div className="bg-black bg-opacity-20 rounded p-2">
+            <div className="rounded p-2" style={{ backgroundColor: colors.error + "08" }}>
               {topContributors.negative.length > 0 ? (
                 topContributors.negative.map((factor, index) => (
                   <MetricImpactRow
@@ -1379,7 +1384,7 @@ const BatchUpload = () => {
   };
 
   return (
-    <div className="bg-white bg-opacity-10 backdrop-blur-md p-6 rounded-xl border shadow-lg">
+    <div className="backdrop-blur-md p-6 rounded-md border" style={{ backgroundColor: colors.panel, borderColor: colors.accent + "30" }}>
       <h3
         className="text-lg font-semibold mb-4 flex items-center"
         style={{ color: colors.primary }}
@@ -1529,7 +1534,7 @@ const BatchUpload = () => {
               {parseProgress}%
             </span>
           </div>
-          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+          <div className="h-2 w-full rounded-full overflow-hidden" style={{ backgroundColor: colors.accent + "15" }}>
             <motion.div
               className="h-full rounded-full"
               style={{
@@ -1622,9 +1627,9 @@ const BatchUpload = () => {
 
           {/* Results Table */}
           <div className="max-h-60 overflow-y-auto">
-            <table className="min-w-full divide-y divide-gray-700">
-              <thead style={{ backgroundColor: colors.panel + "90" }}>
-                <tr>
+            <table className="min-w-full">
+              <thead style={{ backgroundColor: colors.panel }}>
+                <tr style={{ borderBottom: `1px solid ${colors.accent}20` }}>
                   <th
                     className="px-4 py-3 text-left text-xs font-medium tracking-wider"
                     style={{ color: colors.textMuted }}
@@ -1651,9 +1656,9 @@ const BatchUpload = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody>
                 {uploadResults.records.map((record, index) => (
-                  <tr key={index} className="hover:bg-white/5">
+                  <tr key={index} style={{ borderBottom: `1px solid ${colors.accent}15` }}>
                     <td className="px-4 py-2 whitespace-nowrap">
                       {record.success ? (
                         <CheckIcon
@@ -2041,38 +2046,40 @@ const AddSupplier = () => {
 
         {/* Header Content */}
         <div
-          className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-xl backdrop-blur-sm border"
+          className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded border"
           style={{
-            borderColor: colors.accent + "40",
-            backgroundColor: colors.panel + "80",
+            borderColor: colors.accent + "30",
+            backgroundColor: colors.panel,
           }}
         >
           <div>
-            <div className="flex items-center">
-              <PlusCircleIcon
-                className="w-10 h-10 mr-4"
-                style={{ color: colors.secondary }}
-              />
-              <h1 className="text-4xl font-bold tracking-tight">
-                Add <span style={{ color: colors.primary }}>Supplier</span>
-              </h1>
-            </div>
             <p
-              className="mt-2 ml-14 text-lg"
+              className="text-xs font-mono uppercase tracking-widest mb-2"
+              style={{ color: colors.primary }}
+            >
+              Supplier Onboarding
+            </p>
+            <h1
+              className="text-3xl font-bold tracking-tight font-display"
+              style={{ color: colors.text }}
+            >
+              Add New Supplier
+            </h1>
+            <p
+              className="mt-1 text-sm"
               style={{ color: colors.textMuted }}
             >
-              Register a new supplier with detailed information for
-              comprehensive analysis
+              Register supplier details for ESG assessment and supply chain analysis
             </p>
           </div>
           <div className="flex items-center mt-4 md:mt-0">
             <Link
               to="/suppliers"
-              className="flex items-center px-4 py-2 rounded-lg border transition-all hover:scale-105"
+              className="flex items-center px-4 py-2 rounded border transition-all hover:scale-105"
               style={{
                 color: colors.accent,
                 borderColor: colors.accent + "50",
-                background: "rgba(0,0,0,0.2)",
+                background: colors.panel,
               }}
             >
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
@@ -2087,7 +2094,7 @@ const AddSupplier = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mb-8 p-6 rounded-xl border relative overflow-hidden"
+        className="mb-8 p-6 rounded border relative overflow-hidden"
         style={{
           backgroundColor: colors.panel + "90",
           borderColor: colors.accent + "40",
@@ -2123,10 +2130,10 @@ const AddSupplier = () => {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div
-                className="p-3 rounded-lg border"
+                className="p-3 rounded border"
                 style={{
-                  borderColor: colors.success + "50",
-                  backgroundColor: "rgba(0,255,143,0.05)",
+                  borderColor: colors.success + "40",
+                  backgroundColor: colors.success + "08",
                 }}
               >
                 <h4
@@ -2141,10 +2148,10 @@ const AddSupplier = () => {
                 </p>
               </div>
               <div
-                className="p-3 rounded-lg border"
+                className="p-3 rounded border"
                 style={{
-                  borderColor: colors.primary + "50",
-                  backgroundColor: "rgba(0,240,255,0.05)",
+                  borderColor: colors.primary + "40",
+                  backgroundColor: colors.primary + "08",
                 }}
               >
                 <h4
@@ -2158,10 +2165,10 @@ const AddSupplier = () => {
                 </p>
               </div>
               <div
-                className="p-3 rounded-lg border"
+                className="p-3 rounded border"
                 style={{
-                  borderColor: colors.secondary + "50",
-                  backgroundColor: "rgba(255,0,255,0.05)",
+                  borderColor: colors.secondary + "40",
+                  backgroundColor: colors.secondary + "08",
                 }}
               >
                 <h4
@@ -2246,19 +2253,17 @@ const AddSupplier = () => {
       {/* Upload Mode Toggle */}
       <div className="mb-8">
         <div
-          className="inline-flex rounded-lg p-1"
+          className="inline-flex rounded p-1"
           style={{
             backgroundColor: colors.panel,
             border: `1px solid ${colors.accent}40`,
           }}
         >
           <button
-            className={`px-6 py-2 rounded text-sm font-medium transition-colors ${
-              uploadMode === "single" ? "bg-accent/30" : ""
-            }`}
+            className="px-6 py-2 rounded text-sm font-medium transition-all"
             style={{
-              color:
-                uploadMode === "single" ? colors.primary : colors.textMuted,
+              color: uploadMode === "single" ? colors.background : colors.textMuted,
+              backgroundColor: uploadMode === "single" ? colors.primary : "transparent",
             }}
             onClick={() => setUploadMode("single")}
           >
@@ -2268,11 +2273,10 @@ const AddSupplier = () => {
             </span>
           </button>
           <button
-            className={`px-6 py-2 rounded text-sm font-medium transition-colors ${
-              uploadMode === "batch" ? "bg-accent/30" : ""
-            }`}
+            className="px-6 py-2 rounded text-sm font-medium transition-all"
             style={{
-              color: uploadMode === "batch" ? colors.primary : colors.textMuted,
+              color: uploadMode === "batch" ? colors.background : colors.textMuted,
+              backgroundColor: uploadMode === "batch" ? colors.primary : "transparent",
             }}
             onClick={() => setUploadMode("batch")}
           >
@@ -2287,7 +2291,7 @@ const AddSupplier = () => {
       {/* Data Quality Indicator */}
       {uploadMode === "single" && (
         <div
-          className="mb-6 p-4 rounded-lg border flex items-center justify-between"
+          className="mb-6 p-4 rounded border flex items-center justify-between"
           style={{
             borderColor: colors.accent + "40",
             backgroundColor: colors.panel,
@@ -2351,7 +2355,7 @@ const AddSupplier = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="md:w-64 flex-shrink-0 bg-opacity-80 backdrop-blur-sm p-4 rounded-lg border sticky top-4 self-start"
+              className="md:w-64 flex-shrink-0 bg-opacity-80 backdrop-blur-sm p-4 rounded border sticky top-4 self-start"
               style={{
                 backgroundColor: colors.panel,
                 borderColor: colors.accent + "40",
@@ -2446,7 +2450,7 @@ const AddSupplier = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.1 }}
-                  className="p-6 rounded-lg border backdrop-blur-sm space-y-6"
+                  className="p-6 rounded border backdrop-blur-sm space-y-6"
                   style={{
                     backgroundColor: colors.panel,
                     borderColor: colors.accent + "40",
@@ -2476,7 +2480,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="rounded-md p-6 mb-8" style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}20` }}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                       <InputField
                         name="name"
@@ -2588,7 +2592,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="rounded-md p-6 mb-8" style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}20` }}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                       <InputField
                         name="co2_emissions"
@@ -2677,7 +2681,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="rounded-md p-6 mb-8" style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}20` }}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
                       <SliderField
                         name="wage_fairness"
@@ -2772,7 +2776,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="rounded-md p-6 mb-8" style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}20` }}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6">
                       <SliderField
                         name="transparency_score"
@@ -2861,7 +2865,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="rounded-md p-6 mb-8" style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}20` }}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                       <SliderField
                         name="delivery_efficiency"
@@ -2914,7 +2918,7 @@ const AddSupplier = () => {
                       />
                     </div>
                   </h2>
-                  <div className="bg-white bg-opacity-60 backdrop-blur-sm rounded-lg p-6 shadow-sm border border-gray-100 mb-8">
+                  <div className="rounded-md p-6 mb-8" style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}20` }}>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6">
                       <SliderField
                         name="geopolitical_risk"
@@ -2943,8 +2947,8 @@ const AddSupplier = () => {
                     style={{ borderColor: colors.accent + "40" }}
                   >
                     <div
-                      className="flex items-center bg-black/20 px-4 py-3 rounded-lg border"
-                      style={{ borderColor: colors.warning + "30" }}
+                      className="flex items-center px-4 py-3 rounded border"
+                      style={{ borderColor: colors.warning + "30", backgroundColor: colors.warning + "08" }}
                     >
                       <InformationCircleIcon
                         className="h-6 w-6 mr-3 flex-shrink-0"
@@ -2970,7 +2974,7 @@ const AddSupplier = () => {
                         style={{
                           borderColor: colors.accent + "40",
                           color: colors.accent,
-                          background: "rgba(0,0,0,0.3)",
+                          background: "transparent",
                         }}
                       >
                         <ArrowLeftIcon className="h-4 w-4 mr-2" />
@@ -3039,16 +3043,28 @@ const AddSupplier = () => {
         <BatchUpload />
       )}
 
-      <div className="bg-blue-50 rounded-lg p-4 shadow-sm border border-blue-100">
+      <div
+        className="rounded p-4 border mt-6"
+        style={{
+          backgroundColor: colors.panel,
+          borderColor: colors.accent + "25",
+        }}
+      >
         <div className="flex">
           <div className="flex-shrink-0">
-            <InformationCircleIcon className="h-5 w-5 text-blue-400" />
+            <InformationCircleIcon
+              className="h-5 w-5"
+              style={{ color: colors.primary }}
+            />
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
+            <h3
+              className="text-sm font-medium"
+              style={{ color: colors.text }}
+            >
               About this form
             </h3>
-            <div className="mt-2 text-sm text-blue-700">
+            <div className="mt-2 text-sm" style={{ color: colors.textMuted }}>
               <p>
                 This comprehensive form collects detailed supplier information
                 for sustainability and ethical assessment. All fields marked
