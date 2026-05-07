@@ -2388,35 +2388,119 @@ const SuppliersList = () => {
                           ))}
                         </div>
 
-                        {/* Next action — compact recommendation line */}
+                        {/* Action Brief — premium recommendation block */}
                         <Tooltip content={recommendation.description}>
                           <div
-                            className="mt-2 rounded-md px-2.5 py-2 flex items-start gap-2 cursor-help"
+                            className="mt-2 overflow-hidden rounded-md cursor-help"
                             style={{
                               border: `1px solid ${recommendation.color}25`,
-                              backgroundColor: recommendation.bgColor,
-                              color: colors.text,
+                              background:
+                                `linear-gradient(135deg, ${recommendation.bgColor} 0%, rgba(0,0,0,0) 65%)`,
                             }}
                           >
-                            <div className="mt-0.5" style={{ color: recommendation.color }}>
-                              {recommendation.icon}
-                            </div>
-                            <div className="min-w-0">
+                            <div className="flex items-stretch">
+                              {/* Accent rail */}
                               <div
-                                className="text-[10px] font-mono uppercase tracking-widest"
-                                style={{ color: colors.textMuted }}
-                              >
-                                Next action
-                              </div>
-                              <div
-                                className="text-[12px] font-semibold leading-snug truncate"
-                                style={{ color: colors.text }}
-                              >
-                                {recommendation.label}
-                                <span className="mx-2 opacity-30">·</span>
-                                <span className="font-normal" style={{ color: colors.textMuted }}>
-                                  {recommendation.description}
-                                </span>
+                                className="w-[3px] shrink-0"
+                                style={{ backgroundColor: recommendation.color }}
+                              />
+
+                              <div className="px-3 py-2.5 flex-1 min-w-0">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <div
+                                      className="text-[10px] font-mono uppercase tracking-widest"
+                                      style={{ color: colors.textMuted }}
+                                    >
+                                      Action brief
+                                    </div>
+                                    <div className="mt-0.5 flex items-center gap-2">
+                                      <span
+                                        className="inline-flex items-center justify-center h-6 w-6 rounded"
+                                        style={{
+                                          backgroundColor: recommendation.color + "18",
+                                          border: `1px solid ${recommendation.color}30`,
+                                          color: recommendation.color,
+                                        }}
+                                      >
+                                        {recommendation.icon}
+                                      </span>
+                                      <div className="min-w-0">
+                                        <div
+                                          className="text-[12px] font-semibold leading-snug truncate"
+                                          style={{ color: colors.text }}
+                                        >
+                                          {recommendation.label}
+                                        </div>
+                                        <div
+                                          className="text-[11px] leading-snug truncate"
+                                          style={{ color: colors.textMuted }}
+                                        >
+                                          {recommendation.description}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Micro CTA chips */}
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/suppliers/${supplierId}/assessment`);
+                                      }}
+                                      className="px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80"
+                                      style={{
+                                        backgroundColor: colors.primary,
+                                        color: "#0A0A0A",
+                                      }}
+                                    >
+                                      Assess
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleViewDetails(supplierId);
+                                      }}
+                                      className="px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80"
+                                      style={{
+                                        backgroundColor: "transparent",
+                                        border: `1px solid ${colors.accent}30`,
+                                        color: colors.textMuted,
+                                      }}
+                                    >
+                                      Profile
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Context line */}
+                                <div className="mt-2 flex items-center justify-between gap-2">
+                                  <span
+                                    className="text-[10px] font-mono uppercase tracking-widest"
+                                    style={{ color: colors.textMuted }}
+                                  >
+                                    {recommendation.type === "data"
+                                      ? "Priority: unlock reliable scoring"
+                                      : recommendation.type === "risk"
+                                      ? "Priority: reduce disruption exposure"
+                                      : recommendation.type === "stale"
+                                      ? "Priority: refresh signal quality"
+                                      : recommendation.type === "recommended"
+                                      ? "Priority: expand with confidence"
+                                      : recommendation.type === "warning"
+                                      ? "Priority: improvement plan"
+                                      : "Priority: ongoing monitoring"}
+                                  </span>
+                                  <span
+                                    className="text-[10px] font-mono"
+                                    style={{ color: recommendation.color }}
+                                  >
+                                    {supplier.risk_level ? `${supplier.risk_level.toUpperCase()} RISK` : "RISK N/A"}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
