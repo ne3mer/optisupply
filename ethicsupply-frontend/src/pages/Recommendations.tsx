@@ -269,6 +269,104 @@ const parseSupplierNameFromTitle = (title: string): string | null => {
 
 type EnrichContext = { supplierById?: Map<string, string> };
 
+/** Supplier string is usually an Mongo/UUID/database id — do not render as human name until resolved. */
+const looksLikeTechnicalId = (raw: string): boolean => {
+  const s = raw.trim();
+  if (!s || s.length < 8) return false;
+  if (/^[0-9a-f]{24}$/i.test(s)) return true;
+  if (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      s
+    )
+  )
+    return true;
+  if (/^[0-9]{6,}$/.test(s)) return true;
+  if (/^[0-9a-f-]{20,}$/i.test(s) && !/[a-z\s]{5,}/i.test(s)) return true;
+  return false;
+};
+
+const priorityRank = (p: RecPriority) => (p === "high" ? 3 : p === "medium" ? 2 : 1);
+
+/** Prefer the strongest signal when API defaults everything to "low". */
+const mergePriorities = (
+  candidates: Array<RecPriority | undefined | null>
+): RecPriority => {
+  const defined = candidates.filter((x): x is RecPriority => Boolean(x));
+  if (defined.length === 0) return "medium";
+  return defined.reduce((best, cur) =>
+    priorityRank(cur) > priorityRank(best) ? cur : best
+  );
+};
+
+const normalizeRecPriorityFlexible = (raw: unknown): RecPriority | undefined => {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    const n = raw;
+    if (n <= 0) return undefined;
+    if (n <= 33) return "high";
+    if (n <= 66) return "medium";
+    return "low";
+  }
+  const s = String(raw).trim();
+  const sl = s.toLowerCase().replace(/\s+/g, "_").replace(/-+/g, "_");
+  const direct = normalizeRecPriority(s);
+  if (direct) return direct;
+
+  const criticalish =
+    /\b(critical|p0|p1\b|severe|immediate|violat|breach|catastrophic)\b/;
+  if (criticalish.test(sl) || /\b(high|elevated|severe)\s*(risk|impact)?\b/.test(sl))
+    return "high";
+  if (
+    /\b(medium|moderate|moderately|somewhat\s+elevated|watchlist|attention)\b/.test(
+      sl
+    )
+  )
+    return "medium";
+  if (/\b(low|minimal|routine|deferr)\b/.test(sl)) return "low";
+  return undefined;
+};
+
+/** Map legacy impact label to priority when priority field is unreliable. */
+const priorityHintFromImpact = (impact: unknown): RecPriority | undefined => {
+  if (typeof impact !== "string") return undefined;
+  const l = impact.toLowerCase().trim();
+  if (/\b(high|severe|critical|major|material)\b/.test(l)) return "high";
+  if (/\b(medium|moderate)\b/.test(l)) return "medium";
+  if (/\b(low|minimal|minor)\b/.test(l)) return "low";
+  return undefined;
+};
+
+const priorityHintFromSupplierScore = (r: Recommendation): RecPriority | undefined => {
+  if (typeof r.supplier !== "object" || !r.supplier) return undefined;
+  const raw = (r.supplier as { ethical_score?: number | null }).ethical_score;
+  if (typeof raw !== "number" || Number.isNaN(raw)) return undefined;
+  if (raw < 38) return "high";
+  if (raw < 58) return "medium";
+  if (raw < 75) return "low";
+  return undefined;
+};
+
+const recommendationTextHaystack = (r: Recommendation): string => {
+  const bits: unknown[] = [
+    r.priority,
+    r.title,
+    r.description,
+    r.action,
+    r.details,
+    r.impact,
+    r.difficulty,
+    r.timeframe,
+    r.urgency,
+    r.estimated_impact,
+  ];
+  const ai = r.ai_explanation;
+  if (typeof ai === "string") bits.push(ai);
+  else if (ai && typeof ai === "object") {
+    bits.push(JSON.stringify(ai));
+  }
+  return bits.filter((x) => x !== undefined && x !== null).join(" ").toLowerCase();
+};
+
 const inferCategory = (r: Recommendation): RecCategory => {
   const hinted = normalizeRecCategory(r.category);
   if (hinted) return hinted;
@@ -284,33 +382,53 @@ const inferCategory = (r: Recommendation): RecCategory => {
   return "governance";
 };
 
+/** Text-based priority when enums are blank or unreliable (avoid counting generic "Improve"). */
 const inferPriority = (r: Recommendation): RecPriority => {
-  const hay = `${r.priority || ""} ${r.title || ""} ${r.description || ""} ${r.ai_explanation || ""}`.toLowerCase();
-  if (/(critical|immediate|severe|high risk|violation|urgent)/.test(hay)) return "high";
-  if (/(medium|moderate|gap|improve|reduce|mitigate)/.test(hay)) return "medium";
-  return "low";
+  const hay = recommendationTextHaystack(r);
+  if (
+    /\b(critical|immediate\b|severe|high\s*risk|\bviolat|breach|urgent|catastrophic|non-?compliance\s+finding|acute)\b/i.test(
+      hay
+    )
+  )
+    return "high";
+  if (
+    /\b(medium|moderate|gap(s)?(\s|$)|elevated\b|benchmark\s*gap|\bbelow\s*basic|attention\s+required|remediation|corrective)\b/i.test(
+      hay
+    )
+  )
+    return "medium";
+  if (
+    /\b(low\s*risk|opportunit|stretch\s*goal|\bminimal\b|deferr|routine\b|maintain\s+steady)\b/i.test(
+      hay
+    )
+  )
+    return "low";
+  return "medium";
 };
 
-const inferImpact = (p: RecPriority) => (p === "high" ? "High" : p === "medium" ? "Medium" : "Low");
+const inferImpact = (p: RecPriority) =>
+  p === "high" ? "High" : p === "medium" ? "Medium" : "Low";
 const inferDifficulty = (c: RecCategory, p: RecPriority) =>
   p === "high" ? "Medium" : c === "governance" ? "Low" : "Medium";
-const inferTimeframe = (p: RecPriority) => (p === "high" ? "3 months" : p === "medium" ? "6 months" : "12 months");
+const inferTimeframe = (p: RecPriority) =>
+  p === "high" ? "3 months" : p === "medium" ? "6 months" : "12 months";
+
+const timeframeFromImplementationDays = (days?: number): string | undefined => {
+  if (typeof days !== "number" || Number.isNaN(days) || days <= 0) return undefined;
+  if (days <= 35) return "1 month";
+  if (days <= 100) return "3 months";
+  if (days <= 183) return "6 months";
+  if (days <= 400) return "12 months";
+  const mo = Math.max(1, Math.round(days / 30));
+  return `${mo} months`;
+};
 
 const resolveSupplierName = (
   r: EnhancedRecommendation,
   ctx?: EnrichContext
 ): string => {
   const flat = r.supplier_name?.trim();
-  if (flat) return flat;
-
-  if (typeof r.supplier === "string" && r.supplier.trim()) {
-    return r.supplier.trim();
-  }
-
-  if (typeof r.supplier === "object" && r.supplier && "name" in r.supplier) {
-    const n = (r.supplier as { name?: string }).name?.trim();
-    if (n) return n;
-  }
+  if (flat && !looksLikeTechnicalId(flat)) return flat;
 
   if (
     r.supplier_id !== undefined &&
@@ -321,10 +439,43 @@ const resolveSupplierName = (
     if (fromMap?.trim()) return fromMap.trim();
   }
 
-  const fromTitle = parseSupplierNameFromTitle(r.title || "");
-  if (fromTitle) return fromTitle;
+  if (typeof r.supplier === "object" && r.supplier !== null) {
+    const o = r.supplier as Record<string, unknown>;
+    const nRaw = typeof o.name === "string" ? o.name.trim() : "";
+    if (nRaw && !looksLikeTechnicalId(nRaw)) return nRaw;
+    const sid = o.id ?? o._id ?? o.supplier_id;
+    if (sid !== undefined && sid !== null && ctx?.supplierById?.size) {
+      const fromObj = ctx.supplierById.get(String(sid));
+      if (fromObj?.trim()) return fromObj.trim();
+    }
+  }
 
-  return "Unknown Supplier";
+  if (typeof r.supplier === "string" && r.supplier.trim()) {
+    const cand = r.supplier.trim();
+    if (!looksLikeTechnicalId(cand)) return cand;
+    if (ctx?.supplierById?.size) {
+      const fromStr = ctx.supplierById.get(cand);
+      if (fromStr?.trim()) return fromStr.trim();
+    }
+    // Do not surface raw opaque ids — fall through to title
+  }
+
+  const fromTitle = parseSupplierNameFromTitle(r.title || "");
+  if (fromTitle && !looksLikeTechnicalId(fromTitle)) return fromTitle;
+
+  return flat && looksLikeTechnicalId(flat)
+    ? "Unknown Supplier"
+    : flat || "Unknown Supplier";
+};
+
+/** Keep Impact label aligned with merged priority when the API echoes a mismatched canned value. */
+const normalizeImpactAgainstPriority = (
+  impact: string,
+  priority: RecPriority
+): string => {
+  const hint = priorityHintFromImpact(impact);
+  if (!hint) return impact;
+  return priorityRank(priority) !== priorityRank(hint) ? inferImpact(priority) : impact;
 };
 
 const enrichRecommendation = (
@@ -332,7 +483,22 @@ const enrichRecommendation = (
   ctx?: EnrichContext
 ): EnhancedRecommendation => {
   const category = normalizeRecCategory(r.category) ?? inferCategory(r);
-  const priority = normalizeRecPriority(r.priority) ?? inferPriority(r);
+
+  const aiObj =
+    typeof r.ai_explanation === "object" && r.ai_explanation
+      ? (r.ai_explanation as Record<string, unknown>)
+      : null;
+
+  const priority = mergePriorities([
+    normalizeRecPriority(r.priority),
+    normalizeRecPriorityFlexible(r.urgency ?? r.priority_level),
+    normalizeRecPriorityFlexible(aiObj?.urgency),
+    normalizeRecPriorityFlexible(aiObj?.priority),
+    priorityHintFromImpact(r.impact),
+    priorityHintFromSupplierScore(r),
+    inferPriority(r),
+  ]);
+
   const status = normalizeRecStatus(r.status) ?? "pending";
 
   const supplierName = resolveSupplierName(r, ctx);
@@ -361,9 +527,31 @@ const enrichRecommendation = (
     r.ai_explanation ||
     `Derived from the supplier’s recent disclosures, risk indicators, and category benchmarks. This action is prioritized as ${priority.toUpperCase()} due to expected impact and feasibility.`;
 
-  const impact = r.impact || inferImpact(priority);
-  const difficulty = r.difficulty || inferDifficulty(category, priority);
-  const timeframe = r.timeframe || inferTimeframe(priority);
+  const eiObj =
+    r.estimated_impact && typeof r.estimated_impact === "object"
+      ? (r.estimated_impact as { implementation_time?: number })
+      : null;
+
+  let impact =
+    r.impact && String(r.impact).trim().length > 0
+      ? r.impact
+      : inferImpact(priority);
+  impact = normalizeImpactAgainstPriority(impact, priority);
+
+  const difficulty =
+    r.difficulty && String(r.difficulty).trim().length > 0
+      ? r.difficulty
+      : inferDifficulty(category, priority);
+
+  const timeframe =
+    (r.timeframe && String(r.timeframe).trim().length > 0
+      ? r.timeframe.trim()
+      : undefined) ??
+    timeframeFromImplementationDays(eiObj?.implementation_time) ??
+    (typeof aiObj?.timeframe === "string" && aiObj.timeframe.trim().length > 0
+      ? aiObj.timeframe.trim()
+      : inferTimeframe(priority));
+
   const created_at = r.created_at || new Date().toISOString();
 
   const estimated_impact =
@@ -1469,6 +1657,9 @@ const RecommendationsPage = () => {
       const suppliers = await getSuppliers();
       suppliers.forEach((s) => {
         supplierById.set(String(s.id), s.name);
+        const sid = (s as { _id?: string | number })._id;
+        if (sid !== undefined && sid !== null)
+          supplierById.set(String(sid), s.name);
       });
     } catch {
       /* optional; recommendations still work with title-based supplier parse */

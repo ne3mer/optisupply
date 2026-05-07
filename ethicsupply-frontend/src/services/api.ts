@@ -222,11 +222,20 @@ export interface Recommendation {
   description?: string; // From mock data
   category?: "environmental" | "social" | "governance"; // From mock data
   priority?: "high" | "medium" | "low"; // From mock data
+  /** Separate from explicit priority — some APIs only send urgency. */
+  urgency?: string | number;
+  priority_level?: number | string;
   status?: "pending" | "in_progress" | "completed"; // From mock data
   supplier?: { name: string } | string; // Can be object or string ID
   supplier_id?: string | number;
   supplier_name?: string;
-  ai_explanation?: string | { reasoning?: string }; // From mock data
+  ai_explanation?: string | {
+    reasoning?: string;
+    urgency?: string;
+    timeframe?: string;
+    impact_assessment?: string;
+    [key: string]: unknown;
+  };
   estimated_impact?:
     | string
     | {
