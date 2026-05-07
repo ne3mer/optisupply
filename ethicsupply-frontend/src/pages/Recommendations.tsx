@@ -840,10 +840,11 @@ const ImpactScoreCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
-      className="p-4 rounded-xl border backdrop-blur-sm"
+      className="p-4 rounded-2xl border backdrop-blur-md"
       style={{
-        backgroundColor: color + "15",
-        borderColor: color + "40",
+        background: `linear-gradient(135deg, ${color}12 0%, ${color}06 100%)`,
+        borderColor: color + "38",
+        boxShadow: `0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 ${color}22`,
       }}
     >
       <div className="flex items-center justify-between mb-2">
@@ -1028,8 +1029,13 @@ const RecommendationCard = ({
       : "Impact assessment available";
 
   const hasCostSavings =
-    impactText.toLowerCase().includes("$") ||
-    impactText.toLowerCase().includes("cost");
+    (typeof recommendation.estimated_impact === "object" &&
+      recommendation.estimated_impact !== null &&
+      typeof (recommendation.estimated_impact as { cost_savings?: number })
+        .cost_savings === "number") ||
+    (typeof recommendation.estimated_impact === "string" &&
+      (recommendation.estimated_impact.toLowerCase().includes("$") ||
+        recommendation.estimated_impact.toLowerCase().includes("cost")));
   const hasTimeframe = recommendation.timeframe;
 
   return (
@@ -1045,15 +1051,19 @@ const RecommendationCard = ({
         stiffness: 100,
         damping: 15,
       }}
-      className="rounded-md overflow-hidden transition-all duration-300 mb-4"
+      whileHover={{
+        boxShadow: `0 18px 48px rgba(0,0,0,0.14), 0 0 0 1px ${categoryInfo.rail}55`,
+        y: -2,
+      }}
+      className="rounded-2xl overflow-hidden transition-all duration-300 mb-5 group/card"
       style={{
         backgroundColor: colors.panel,
-        border: `1px solid ${colors.accent}18`,
-        boxShadow: "none",
+        border: `1px solid ${colors.primary}14`,
+        boxShadow: `0 6px 32px rgba(0,0,0,0.08), 0 0 0 1px ${colors.accent}0c`,
       }}
     >
       {/* Accent rail */}
-      <div className="h-[3px] w-full" style={{ backgroundColor: categoryInfo.rail }} />
+      <div className="h-[4px] w-full" style={{ backgroundColor: categoryInfo.rail }} />
 
       <button
         onClick={onToggleExpand}
@@ -1985,17 +1995,28 @@ const RecommendationsPage = () => {
         WebkitFontSmoothing: "antialiased",
       }}
     >
+      {/* Ambient orbs — editorial command-center depth */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed -top-48 -right-32 h-[min(70vw,520px)] w-[min(70vw,520px)] rounded-full blur-[100px] opacity-[0.28] dark:opacity-[0.22]"
+        style={{ backgroundColor: colors.primary }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed top-1/3 -left-48 h-[420px] w-[420px] rounded-full blur-[110px] opacity-[0.14] dark:opacity-[0.12]"
+        style={{ backgroundColor: colors.secondary }}
+      />
       {/* Subtle texture */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 opacity-[0.12]"
+        className="pointer-events-none fixed inset-0 opacity-[0.18] dark:opacity-[0.14]"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 20% 10%, rgba(200,240,90,0.12), transparent 35%), radial-gradient(circle at 85% 25%, rgba(232,69,69,0.10), transparent 40%), linear-gradient(to bottom, rgba(255,255,255,0.02), transparent 30%)",
+            "radial-gradient(circle at 15% 20%, rgba(200,240,90,0.18), transparent 42%), radial-gradient(circle at 88% 18%, rgba(232,69,69,0.12), transparent 45%), radial-gradient(circle at 50% 90%, rgba(200,240,90,0.06), transparent 50%)",
           mixBlendMode: "screen",
         }}
       />
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Enhanced Page Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -2004,52 +2025,86 @@ const RecommendationsPage = () => {
           className="mb-8"
         >
           <div
-            className="rounded-xl border p-5 md:p-6 mb-6"
+            className="rounded-2xl border p-5 md:p-8 mb-6 backdrop-blur-xl relative overflow-hidden"
             style={{
-              backgroundColor: colors.panel,
-              borderColor: colors.accent + "25",
+              background: `linear-gradient(145deg, ${colors.panel} 0%, ${colors.background}ee 100%)`,
+              borderColor: colors.primary + "33",
+              boxShadow: `0 4px 40px rgba(0,0,0,0.12), 0 0 0 1px ${colors.primary}14, inset 0 1px 0 ${colors.primary}18`,
             }}
           >
-            <div>
-              <div className="flex items-center gap-3 mb-2">
+            <div
+              aria-hidden
+              className="absolute inset-y-0 right-0 w-1/2 opacity-[0.07] pointer-events-none"
+              style={{
+                background: `radial-gradient(ellipse at 100% 40%, ${colors.primary}, transparent 70%)`,
+              }}
+            />
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4 mb-2">
                 <div
-                  className="p-3 rounded-lg"
+                  className="p-3.5 rounded-2xl shrink-0"
                   style={{
-                    backgroundColor: colors.primary + "20",
-                    border: `1px solid ${colors.primary}25`,
+                    background: `linear-gradient(135deg, ${colors.primary}35, ${colors.primary}12)`,
+                    border: `1px solid ${colors.primary}40`,
+                    boxShadow: `0 8px 32px ${colors.primary}22`,
                   }}
                 >
                   <Sparkles
-                    className="h-6 w-6"
+                    className="h-7 w-7"
                     style={{ color: colors.primary }}
                   />
                 </div>
                 <div>
-                  <h1
-                    className="text-3xl md:text-4xl font-display font-bold tracking-tight"
-                    style={{ color: colors.text, letterSpacing: "-0.03em" }}
-                  >
-                    Recommendations{" "}
-                    <span style={{ color: colors.primary }}>Command</span>
-                  </h1>
                   <p
-                    className="mt-1 text-sm"
+                    className="text-[11px] uppercase tracking-[0.22em] mb-1 font-semibold"
                     style={{ color: colors.textMuted }}
                   >
-                    Editorial-grade action briefs generated from your supplier signals.
+                    Supplier intelligence
+                  </p>
+                  <h1
+                    className="text-3xl md:text-5xl font-display font-bold tracking-tight leading-tight"
+                    style={{
+                      color: colors.text,
+                      letterSpacing: "-0.03em",
+                      textShadow:
+                        colors.background === "#0A0A0A"
+                          ? `0 0 80px ${colors.primary}22`
+                          : "none",
+                    }}
+                  >
+                    Recommendations{" "}
+                    <span
+                      style={{
+                        color: colors.primary,
+                        background: `linear-gradient(90deg, ${colors.primary}, ${colors.primary}99)`,
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text",
+                      }}
+                    >
+                      Command
+                    </span>
+                  </h1>
+                  <p
+                    className="mt-2 text-sm md:text-base max-w-2xl leading-relaxed"
+                    style={{ color: colors.textMuted }}
+                  >
+                    Live action briefs from your catalogue — priorities, horizons,
+                    and supplier context regenerated from fresh API data whenever
+                    you refresh.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 mt-4 flex-wrap">
+            <div className="flex items-center gap-2 mt-5 flex-wrap relative z-10">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() =>
                   setViewMode(viewMode === "list" ? "grid" : "list")
                 }
-                className="flex items-center gap-2 px-3.5 py-2 rounded-md font-medium transition-colors border"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-colors border backdrop-blur-sm"
                 style={{
                   backgroundColor: colors.panel,
                   borderColor: colors.accent + "40",
@@ -2070,10 +2125,11 @@ const RecommendationsPage = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={fetchRecommendations}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-md font-semibold transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all shadow-lg"
                 style={{
                   backgroundColor: colors.primary,
                   color: "#0A0A0A",
+                  boxShadow: `0 8px 28px ${colors.primary}44`,
                 }}
               >
                 <RefreshCcw className="h-4 w-4" />
@@ -2122,7 +2178,7 @@ const RecommendationsPage = () => {
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-md font-semibold transition-colors border shadow-sm"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-colors border backdrop-blur-sm"
                 style={{
                   backgroundColor: colors.panel,
                   borderColor: colors.accent + "40",
@@ -2188,10 +2244,11 @@ const RecommendationsPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="mb-6 p-5 rounded-xl border"
+            className="mb-6 p-6 rounded-2xl border backdrop-blur-md"
             style={{
-              backgroundColor: colors.panel,
-              borderColor: colors.accent + "30",
+              background: `linear-gradient(160deg, ${colors.panel} 0%, ${colors.background}99 100%)`,
+              borderColor: colors.primary + "28",
+              boxShadow: `0 12px 40px rgba(0,0,0,0.08), inset 0 1px 0 ${colors.primary}14`,
             }}
           >
             <div className="flex items-center justify-between mb-4">
@@ -2613,7 +2670,21 @@ const RecommendationsPage = () => {
                 </motion.div>
               )}
 
-              <div className="space-y-2 mb-6">
+              <div className="space-y-3 mb-6">
+                <div className="flex flex-col gap-1">
+                  <p
+                    className="text-[11px] uppercase tracking-[0.2em] font-semibold"
+                    style={{ color: colors.primary }}
+                  >
+                    Briefing queue
+                  </p>
+                  <p
+                    className="text-sm max-w-xl"
+                    style={{ color: colors.textMuted }}
+                  >
+                    Hover a card for depth; expand for AI rationale, horizon, and programme steps.
+                  </p>
+                </div>
                 <div className="flex justify-between items-center">
                   <p
                     className="text-sm font-medium"
@@ -2634,7 +2705,7 @@ const RecommendationsPage = () => {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="rounded-lg border text-sm p-2 focus:ring-2 focus:outline-none font-medium"
+                      className="rounded-xl border text-sm py-2.5 px-3 focus:ring-2 focus:outline-none font-medium shadow-sm"
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.accent + "50",

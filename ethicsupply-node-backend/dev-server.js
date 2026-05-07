@@ -6,6 +6,10 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const config = require("./src/config/app");
+const MOCK_SUPPLIER_LIST_FOR_DEV = require("./src/utils/mockSuppliersRecommendationSource");
+const {
+  flattenRecommendationPayloads,
+} = require("./src/utils/recommendationApiPayload");
 
 // Port to listen on - use a different port to avoid conflicts
 const PORT = process.env.PORT || 8080;
@@ -64,47 +68,7 @@ function createDevelopmentServer() {
 
   // Mock API endpoints
   app.get("/api/suppliers", (req, res) => {
-    res.json([
-      {
-        _id: "67f7fc9e5eed05575d0586c4",
-        id: 1,
-        name: "Mock Supplier 1",
-        country: "USA",
-        industry: "Electronics",
-        ethical_score: 0.85,
-        co2_emissions: 12.5,
-        delivery_efficiency: 0.92,
-        wage_fairness: 0.88,
-        human_rights_index: 0.9,
-        waste_management_score: 0.78,
-      },
-      {
-        _id: "67f7fddb5eed05575d0586df",
-        id: 2,
-        name: "Mock Supplier 2",
-        country: "Canada",
-        industry: "Consumer Goods",
-        ethical_score: 0.72,
-        co2_emissions: 8.3,
-        delivery_efficiency: 0.89,
-        wage_fairness: 0.95,
-        human_rights_index: 0.93,
-        waste_management_score: 0.91,
-      },
-      {
-        _id: "67f7fddb5eed05575d0586e0",
-        id: 3,
-        name: "Mock Supplier 3",
-        country: "Germany",
-        industry: "Automotive",
-        ethical_score: 0.93,
-        co2_emissions: 17.2,
-        delivery_efficiency: 0.94,
-        wage_fairness: 0.94,
-        human_rights_index: 0.91,
-        waste_management_score: 0.89,
-      },
-    ]);
+    res.json(MOCK_SUPPLIER_LIST_FOR_DEV);
   });
 
   // Get individual supplier
@@ -149,32 +113,7 @@ function createDevelopmentServer() {
 
   // Mock suppliers endpoint
   app.get("/api/suppliers/recommendations", (req, res) => {
-    res.json([
-      {
-        _id: "rec1",
-        id: 1,
-        name: "Recommended Supplier 1",
-        country: "USA",
-        industry: "Technology",
-        ethical_score: 0.92,
-      },
-      {
-        _id: "rec2",
-        id: 2,
-        name: "Recommended Supplier 2",
-        country: "Sweden",
-        industry: "Sustainable Materials",
-        ethical_score: 0.89,
-      },
-      {
-        _id: "rec3",
-        id: 3,
-        name: "Recommended Supplier 3",
-        country: "Denmark",
-        industry: "Furniture",
-        ethical_score: 0.87,
-      },
-    ]);
+    res.json(flattenRecommendationPayloads(MOCK_SUPPLIER_LIST_FOR_DEV));
   });
 
   // Supplier evaluation endpoint - detailed mock with all required fields

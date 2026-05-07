@@ -129,117 +129,19 @@ app.get("/api/dataset/meta", datasetController.getDatasetMeta);
 function setupMockRoutes(app) {
   console.log("Setting up mock routes for Render deployment");
 
+  const MOCK_SUPPLIER_FALLBACK = require("./src/utils/mockSuppliersRecommendationSource");
+  const {
+    flattenRecommendationPayloads,
+  } = require("./src/utils/recommendationApiPayload");
+
   // Mock API endpoints
   app.get("/api/suppliers", (req, res) => {
-    res.json([
-      {
-        _id: "67f7fc9e5eed05575d0586c4",
-        id: 1,
-        name: "Mock Supplier 1",
-        country: "USA",
-        industry: "Electronics",
-        ethical_score: 85,
-        co2_emissions: 12.5,
-        delivery_efficiency: 0.92,
-        wage_fairness: 0.88,
-        human_rights_index: 0.9,
-        waste_management_score: 0.78,
-        environmental_score: 82,
-        social_score: 78,
-        governance_score: 81,
-      },
-      {
-        _id: "67f7fddb5eed05575d0586df",
-        id: 2,
-        name: "Mock Supplier 2",
-        country: "Canada",
-        industry: "Consumer Goods",
-        ethical_score: 72,
-        co2_emissions: 8.3,
-        delivery_efficiency: 0.89,
-        wage_fairness: 0.95,
-        human_rights_index: 0.93,
-        waste_management_score: 0.91,
-        environmental_score: 75,
-        social_score: 92,
-        governance_score: 79,
-      },
-      {
-        _id: "67f7fddb5eed05575d0586e0",
-        id: 3,
-        name: "Mock Supplier 3",
-        country: "Germany",
-        industry: "Automotive",
-        ethical_score: 93,
-        co2_emissions: 17.2,
-        delivery_efficiency: 0.94,
-        wage_fairness: 0.94,
-        human_rights_index: 0.91,
-        waste_management_score: 0.89,
-        environmental_score: 87,
-        social_score: 91,
-        governance_score: 88,
-      },
-    ]);
+    res.json(MOCK_SUPPLIER_FALLBACK);
   });
 
   // IMPORTANT: define specific suppliers routes before /api/suppliers/:id
-  // to avoid "recommendations" being treated as :id
   app.get("/api/suppliers/recommendations", (req, res) => {
-    const now = new Date().toISOString();
-    res.json([
-      {
-        _id: "rec1",
-        title: "Improve renewable sourcing for GreenTech Components",
-        description:
-          "Increase renewable electricity contracts to reduce emissions exposure and improve environmental scoring.",
-        category: "Environmental",
-        priority: "High",
-        status: "pending",
-        created_at: now,
-        updated_at: now,
-        supplier: {
-          name: "GreenTech Components",
-          country: "USA",
-          industry: "Technology",
-          ethical_score: 92,
-        },
-      },
-      {
-        _id: "rec2",
-        title: "Strengthen labor safeguards for Nordic Textiles",
-        description:
-          "Add quarterly worker safety audits and corrective-action closure tracking across tier-2 facilities.",
-        category: "Social",
-        priority: "Medium",
-        status: "in_progress",
-        created_at: now,
-        updated_at: now,
-        supplier: {
-          name: "Nordic Textiles",
-          country: "Sweden",
-          industry: "Sustainable Materials",
-          ethical_score: 89,
-        },
-      },
-      {
-        _id: "rec3",
-        title: "Boost traceability controls for EcoWood Partners",
-        description:
-          "Require monthly chain-of-custody evidence to improve governance reliability and disclosure quality.",
-        category: "Governance",
-        priority: "Medium",
-        status: "pending",
-        created_at: now,
-        updated_at: now,
-        supplier: {
-          name: "EcoWood Partners",
-          country: "Denmark",
-          industry: "Furniture",
-          ethical_score: 87,
-        },
-      },
-    ]);
+    res.json(flattenRecommendationPayloads(MOCK_SUPPLIER_FALLBACK));
   });
 
   // Get individual supplier
