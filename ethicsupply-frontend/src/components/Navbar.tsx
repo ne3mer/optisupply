@@ -15,11 +15,12 @@ import {
   List,
   Map,
   TrendingUp,
-  LogOut, // Assuming a logout function exists
-  Activity, // Logo icon
-  Info, // <-- Import the Info icon
+  LogOut,
+  Activity,
+  Info,
   Beaker as BeakerIcon,
-  TestTube, // Scenarios icon
+  TestTube,
+  Command,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -127,110 +128,125 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
         isScrolled || isMobileMenuOpen
-          ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg"
-          : "bg-transparent"
+          ? "bg-white/75 dark:bg-slate-950/70 backdrop-blur-xl shadow-[0_8px_32px_-8px_rgba(15,23,42,0.25)] border-slate-200/70 dark:border-white/10"
+          : "bg-white/40 dark:bg-slate-950/40 backdrop-blur-md border-transparent"
       }`}
     >
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-3 lg:gap-6">
             <Link
               to="/dashboard"
-              className="flex-shrink-0 flex items-center space-x-2 group"
+              className="flex-shrink-0 flex items-center gap-2.5 group"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <div className="h-8 w-8 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
-                <Activity className="h-5 w-5 text-white" />
+              <div className="relative h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-[0_4px_16px_-4px_rgba(16,185,129,0.5)] group-hover:shadow-[0_6px_20px_-4px_rgba(16,185,129,0.6)] transition-all duration-200 group-hover:scale-105">
+                <Activity className="h-5 w-5 text-white" strokeWidth={2.5} />
+                <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <span className="font-bold text-gray-900 dark:text-white text-xl tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200">
-                OptiSupply
-              </span>
+              <div className="flex flex-col leading-none">
+                <span className="font-bold text-[17px] tracking-tight text-slate-900 dark:text-white">
+                  Opti<span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">Supply</span>
+                </span>
+                <span className="hidden lg:block text-[10px] font-medium uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400 mt-0.5">
+                  ESG Intelligence
+                </span>
+              </div>
             </Link>
-          </div>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
-            {navItems.map((item) => (
-              <motion.div key={item.path} whileHover={{ y: -2 }}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ease-in-out group ${
-                    isActivePath(item.path)
-                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-800/60 dark:text-emerald-300"
-                      : "text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  <span
-                    className={`mr-1.5 opacity-80 group-hover:opacity-100 transition-opacity ${
-                      isActivePath(item.path)
-                        ? "text-emerald-600 dark:text-emerald-400 opacity-100"
-                        : ""
+            {/* Desktop Navigation Links - sliding active indicator */}
+            <div className="hidden md:flex items-center gap-0.5 p-1 rounded-xl border border-slate-200/60 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.03]">
+              {navItems.map((item) => {
+                const active = isActivePath(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`relative flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-colors ${
+                      active
+                        ? "text-white"
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
                     }`}
                   >
-                    {item.icon}
-                  </span>
-                  {item.name}
-                </Link>
-              </motion.div>
-            ))}
+                    {active && (
+                      <motion.span
+                        layoutId="nav-active-pill"
+                        className="absolute inset-0 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.6)]"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <span className={active ? "opacity-100" : "opacity-70"}>
+                        {item.icon}
+                      </span>
+                      <span className="hidden lg:inline">{item.name}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
 
           {/* Right Side Actions (Desktop) */}
-          <div className="hidden md:flex items-center space-x-1 md:space-x-2">
-            {/* Search Button/Input Area */}
+          <div className="hidden md:flex items-center gap-2">
+            {/* Search Button/Input */}
             <motion.div
-              className={`relative flex items-center transition-all duration-300 ease-in-out ${
-                isSearchOpen ? "w-48 md:w-64" : "w-10"
+              className={`relative flex items-center transition-all duration-300 ease-out ${
+                isSearchOpen ? "w-56 lg:w-72" : "w-44 lg:w-52"
               }`}
               layout
             >
-              <motion.button
-                onClick={() => setIsSearchOpen(true)}
-                className="h-10 w-10 flex items-center justify-center rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none z-10"
-                whileTap={{ scale: 0.9 }}
-              >
-                <Search className="h-5 w-5" />
-              </motion.button>
+              <Search className="pointer-events-none absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500 z-10" />
               <input
                 type="search"
-                placeholder="Search..."
-                className={`absolute inset-y-0 left-0 h-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-full leading-5 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 ease-in-out ${
-                  isSearchOpen
-                    ? "w-full opacity-100 pointer-events-auto"
-                    : "w-0 opacity-0 pointer-events-none"
-                }`}
+                placeholder="Search suppliers, scores…"
+                onFocus={() => setIsSearchOpen(true)}
                 onBlur={() => setIsSearchOpen(false)}
+                className="h-9 w-full pl-9 pr-14 rounded-lg text-sm bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-900 focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 transition-all"
               />
+              <kbd className="absolute right-2 hidden lg:flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium font-mono text-slate-500 dark:text-slate-400 bg-white/80 dark:bg-white/[0.06] border border-slate-200/80 dark:border-white/10 shadow-sm">
+                <Command className="h-2.5 w-2.5" />K
+              </kbd>
             </motion.div>
 
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle dark mode"
-            >
-              {darkMode ? (
-                <Sun size={20} className="text-yellow-500" />
-              ) : (
-                <Moon size={20} className="text-gray-600" />
-              )}
-            </button>
+            {/* Divider */}
+            <div className="h-6 w-px bg-slate-200 dark:bg-white/10" />
 
-            {/* Settings Button - Changed to Link */}
-            <Link
-              to="/settings" // Navigate to settings page
-              className="p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 focus:outline-none"
-              title="Settings"
-            >
-              <motion.div whileTap={{ scale: 0.9 }}>
-                {" "}
-                {/* Keep tap animation */}
-                <Settings size={20} />
-              </motion.div>
-            </Link>
+            {/* Action cluster */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleDarkMode}
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
+                aria-label="Toggle dark mode"
+                title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {darkMode ? (
+                  <Sun size={18} className="text-amber-400" />
+                ) : (
+                  <Moon size={18} />
+                )}
+              </button>
+
+              <Link
+                to="/settings"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
+                title="Settings"
+                aria-label="Open settings"
+              >
+                <Settings size={18} />
+              </Link>
+
+              <Link
+                to="/suppliers/add"
+                className="ml-1 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold text-white bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-[0_4px_12px_-4px_rgba(16,185,129,0.5)] transition-all"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+                New Supplier
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}

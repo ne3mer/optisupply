@@ -16,38 +16,39 @@ export type ThemeColors = {
 };
 
 const darkColors: ThemeColors = {
-  background: "#0D0F1A",
-  panel: "rgba(25, 28, 43, 0.8)",
-  card: "rgba(22, 28, 45, 0.6)",
-  primary: "#00F0FF",
-  secondary: "#FF00FF",
-  accent: "#4D5BFF",
-  text: "#E0E0FF",
-  textMuted: "#8A94C8",
-  success: "#00FF8F",
-  warning: "#FFD700",
-  error: "#FF4D4D",
-  grid: "rgba(77, 91, 255, 0.1)",
-  tooltipBg: "rgba(13, 15, 26, 0.95)",
-  inputBg: "rgba(40, 44, 66, 0.9)",
+  // Deep slate dark theme with restrained saturation
+  background: "#0B1020",
+  panel: "rgba(17, 24, 39, 0.86)",
+  card: "rgba(20, 29, 48, 0.72)",
+  primary: "#38BDF8",
+  secondary: "#A78BFA",
+  accent: "#3B82F6",
+  text: "#E6ECFF",
+  textMuted: "#93A4C4",
+  success: "#22C55E",
+  warning: "#F59E0B",
+  error: "#F87171",
+  grid: "rgba(59, 130, 246, 0.12)",
+  tooltipBg: "rgba(11, 16, 32, 0.96)",
+  inputBg: "rgba(30, 41, 59, 0.85)",
 };
 
 const lightColors: ThemeColors = {
-  // Soft, airy light theme tuned for readability
-  background: "#F7FAFC", // slate-50-ish
-  panel: "rgba(255,255,255,0.8)",
+  // Neutral professional light theme with cool accents
+  background: "#F5F7FB",
+  panel: "rgba(255, 255, 255, 0.88)",
   card: "#FFFFFF",
-  primary: "#0EA5E9", // sky-500
-  secondary: "#8B5CF6", // violet-500
-  accent: "#2563EB", // blue-600
-  text: "#111827", // gray-900
-  textMuted: "#4B5563", // gray-600
-  success: "#16A34A", // green-600
-  warning: "#D97706", // amber-600
-  error: "#DC2626", // red-600
-  grid: "rgba(37, 99, 235, 0.12)",
-  tooltipBg: "rgba(255,255,255,0.95)",
-  inputBg: "#F3F4F6",
+  primary: "#0284C7",
+  secondary: "#7C3AED",
+  accent: "#1D4ED8",
+  text: "#0F172A",
+  textMuted: "#475569",
+  success: "#15803D",
+  warning: "#B45309",
+  error: "#B91C1C",
+  grid: "rgba(29, 78, 216, 0.10)",
+  tooltipBg: "rgba(255, 255, 255, 0.98)",
+  inputBg: "#EEF2F7",
 };
 
 export function getThemeColors(darkMode: boolean): ThemeColors {

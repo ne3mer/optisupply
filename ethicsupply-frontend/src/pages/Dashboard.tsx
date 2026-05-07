@@ -1866,7 +1866,62 @@ const Dashboard = () => {
         colors={{ panel: colors.panel, accent: colors.accent, text: colors.text, textMuted: colors.textMuted, primary: colors.primary }}
       />
 
+      {/* Executive signal banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.45 }}
+        className="mb-6 md:mb-8 rounded-2xl border p-4 sm:p-5"
+        style={{
+          borderColor: colors.accent + "25",
+          background: `linear-gradient(120deg, ${colors.card} 0%, ${colors.background} 100%)`,
+        }}
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="min-w-0">
+            <div
+              className="text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: colors.textMuted }}
+            >
+              Executive Signal
+            </div>
+            <h2 className="mt-1 text-lg sm:text-xl font-semibold" style={{ color: colors.text }}>
+              {avgEthicalScore >= 70
+                ? "Portfolio is trending strong on ESG quality."
+                : avgEthicalScore >= 50
+                ? "Portfolio performance is mixed across ESG dimensions."
+                : "Portfolio needs urgent ESG uplift actions."}
+            </h2>
+            <p className="mt-1 text-sm" style={{ color: colors.textMuted }}>
+              Focus on high-risk suppliers and disclosure completeness to improve weighted score momentum.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 shrink-0">
+            <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: colors.accent + "25", backgroundColor: colors.panel + "aa" }}>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.textMuted }}>ESG</div>
+              <div className="mt-1 font-mono text-lg font-bold" style={{ color: scoreColor }}>{avgEthicalScore ? avgEthicalScore.toFixed(1) : "N/A"}</div>
+            </div>
+            <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: colors.accent + "25", backgroundColor: colors.panel + "aa" }}>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.textMuted }}>Risk</div>
+              <div className="mt-1 font-mono text-lg font-bold" style={{ color: colors.warning }}>{highRiskCount ?? 0}</div>
+            </div>
+            <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: colors.accent + "25", backgroundColor: colors.panel + "aa" }}>
+              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.textMuted }}>Coverage</div>
+              <div className="mt-1 font-mono text-lg font-bold" style={{ color: colors.primary }}>{formatPercent(avgCompletenessRatio ?? 1, 0)}</div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* KPI Section */}
+      <div className="mb-3 sm:mb-4">
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.primary }} />
+          <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: colors.textMuted }}>
+            Portfolio KPIs
+          </p>
+        </div>
+      </div>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -2010,7 +2065,15 @@ const Dashboard = () => {
       )}
 
       {/* Main Grid: Charts & Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="mb-3 sm:mb-4">
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.accent }} />
+          <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: colors.textMuted }}>
+            Analytics Workspace
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
         {/* Ethical Score Distribution */}
         <MetricCard
           title="Ethical Score Distribution"
