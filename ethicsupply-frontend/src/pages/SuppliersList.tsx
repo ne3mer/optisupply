@@ -355,9 +355,17 @@ const getLastUpdatedBadge = (colors: any, dateString: string | undefined) => {
 };
 
 // Enhanced Tooltip component with robust positioning and overflow prevention
-const Tooltip = ({ children, content }: { children: React.ReactNode; content: string }) => {
+const Tooltip = ({
+  children,
+  content,
+  wrapperClassName = "inline-flex items-center",
+}: {
+  children: React.ReactNode;
+  content: string;
+  wrapperClassName?: string;
+}) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; above: boolean }>({ top: 0, left: 0, width: 260, above: true });
+  const [pos, setPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 260 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const colors = useThemeColors() as any;
 
@@ -366,12 +374,12 @@ const Tooltip = ({ children, content }: { children: React.ReactNode; content: st
     const r = triggerRef.current.getBoundingClientRect();
     const pad = 12;
     const w = Math.min(280, window.innerWidth - pad * 2);
-    const tipH = 90; // estimated
+    const tipH = 90;
     const above = r.top > tipH + pad + 20;
     let left = r.left + r.width / 2 - w / 2;
     left = Math.max(pad, Math.min(left, window.innerWidth - w - pad));
     const top = above ? r.top - tipH - 8 : r.bottom + 8;
-    setPos({ top, left, width: w, above });
+    setPos({ top, left, width: w });
   };
 
   useEffect(() => {
@@ -415,15 +423,14 @@ const Tooltip = ({ children, content }: { children: React.ReactNode; content: st
     <>
       <div
         ref={triggerRef}
-        className="inline-flex items-center"
-        onMouseEnter={() => { setIsVisible(true); }}
+        className={wrapperClassName}
+        onMouseEnter={() => setIsVisible(true)}
         onMouseLeave={() => setIsVisible(false)}
         onFocus={() => setIsVisible(true)}
         onBlur={() => setIsVisible(false)}
       >
         {children}
       </div>
-      {/* Render tooltip through a portal directly on body — escapes all stacking contexts and transforms */}
       {tooltipEl && createPortal(tooltipEl, document.body)}
     </>
   );
@@ -2330,10 +2337,10 @@ const SuppliersList = () => {
                       className="px-4 py-3 flex gap-2"
                       style={{ borderTop: "1px solid rgba(128,128,128,0.08)" }}
                     >
-                      <Tooltip content={sectionHelp.quickView}>
+                      <Tooltip content={sectionHelp.quickView} wrapperClassName="flex flex-1">
                         <button
                           onClick={() => handleQuickView(supplier)}
-                          className="flex-1 flex items-center justify-center gap-1.5 text-[12px] py-2 font-medium transition-opacity hover:opacity-75"
+                          className="w-full flex items-center justify-center gap-1.5 text-[12px] py-2 font-medium transition-opacity hover:opacity-75"
                           style={{
                             borderRadius: "6px",
                             color: colors.primary,
@@ -2344,10 +2351,10 @@ const SuppliersList = () => {
                           <EyeIcon className="h-3.5 w-3.5" /> Quick View
                         </button>
                       </Tooltip>
-                      <Tooltip content={sectionHelp.openProfile}>
+                      <Tooltip content={sectionHelp.openProfile} wrapperClassName="flex flex-[1.4]">
                         <button
                           onClick={() => handleViewDetails(supplierId)}
-                          className="flex-[1.4] flex items-center justify-center gap-1.5 text-[12px] py-2 font-semibold transition-opacity hover:opacity-88"
+                          className="w-full flex items-center justify-center gap-1.5 text-[12px] py-2 font-semibold transition-opacity hover:opacity-88"
                           style={{
                             borderRadius: "6px",
                             background: "#C8F05A",
