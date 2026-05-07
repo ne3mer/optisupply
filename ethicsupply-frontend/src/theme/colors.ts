@@ -16,39 +16,39 @@ export type ThemeColors = {
 };
 
 const darkColors: ThemeColors = {
-  // Deep slate dark theme with restrained saturation
-  background: "#0B1020",
-  panel: "rgba(17, 24, 39, 0.86)",
-  card: "rgba(20, 29, 48, 0.72)",
-  primary: "#38BDF8",
-  secondary: "#A78BFA",
-  accent: "#3B82F6",
-  text: "#E6ECFF",
-  textMuted: "#93A4C4",
+  // Editorial dark theme: neutral base + bold lime/amber accents
+  background: "#0A0A0A",
+  panel: "rgba(22, 22, 24, 0.86)",
+  card: "rgba(30, 30, 33, 0.74)",
+  primary: "#A3E635",
+  secondary: "#F59E0B",
+  accent: "#84CC16",
+  text: "#F4F4F5",
+  textMuted: "#A1A1AA",
   success: "#22C55E",
   warning: "#F59E0B",
   error: "#F87171",
-  grid: "rgba(59, 130, 246, 0.12)",
-  tooltipBg: "rgba(11, 16, 32, 0.96)",
-  inputBg: "rgba(30, 41, 59, 0.85)",
+  grid: "rgba(132, 204, 22, 0.12)",
+  tooltipBg: "rgba(10, 10, 10, 0.96)",
+  inputBg: "rgba(39, 39, 42, 0.9)",
 };
 
 const lightColors: ThemeColors = {
-  // Neutral professional light theme with cool accents
-  background: "#F5F7FB",
-  panel: "rgba(255, 255, 255, 0.88)",
+  // Warm-neutral paper tone for less templated look
+  background: "#FAFAF8",
+  panel: "rgba(255, 255, 255, 0.92)",
   card: "#FFFFFF",
-  primary: "#0284C7",
-  secondary: "#7C3AED",
-  accent: "#1D4ED8",
+  primary: "#4D7C0F",
+  secondary: "#B45309",
+  accent: "#3F6212",
   text: "#0F172A",
-  textMuted: "#475569",
+  textMuted: "#52525B",
   success: "#15803D",
   warning: "#B45309",
   error: "#B91C1C",
-  grid: "rgba(29, 78, 216, 0.10)",
+  grid: "rgba(77, 124, 15, 0.10)",
   tooltipBg: "rgba(255, 255, 255, 0.98)",
-  inputBg: "#EEF2F7",
+  inputBg: "#F4F4F5",
 };
 
 export function getThemeColors(darkMode: boolean): ThemeColors {

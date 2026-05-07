@@ -4,6 +4,10 @@ module.exports = {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Geist", "Inter", "system-ui", "sans-serif"],
+        display: ["DM Serif Display", "Georgia", "serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -142,8 +146,8 @@ module.exports = {
         sm: "0.25rem",
         md: "0.375rem",
         lg: "0.5rem",
-        xl: "0.75rem",
-        "2xl": "1rem",
+        xl: "0.625rem",
+        "2xl": "0.875rem",
       },
       fontSize: {
         xs: ["0.75rem", { lineHeight: "1rem" }],

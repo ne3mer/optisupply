@@ -57,8 +57,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       // Update theme-color and background for better UX on mobile/desktop
       try {
         const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', '#0B1020');
-        document.body.style.backgroundColor = '#0B1020';
+        if (meta) meta.setAttribute('content', '#0A0A0A');
+        document.body.style.backgroundColor = '#0A0A0A';
       } catch {}
     } else {
       document.documentElement.classList.remove("dark");
@@ -66,8 +66,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("theme", "light");
       try {
         const meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', '#F5F7FB');
-        document.body.style.backgroundColor = '#F5F7FB';
+        if (meta) meta.setAttribute('content', '#FAFAF8');
+        document.body.style.backgroundColor = '#FAFAF8';
       } catch {}
     }
   }, [darkMode]);
