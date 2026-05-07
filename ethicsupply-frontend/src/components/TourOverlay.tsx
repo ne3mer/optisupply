@@ -13,48 +13,38 @@ type Props = {
   onFinish: () => void;
 };
 
-const PAD = 12;
+const PAD = 16;
+const CARD_W = 390;
+const TOUR_BTN_H = 60; // height of TourButton + gap
 
-function getCardMetrics() {
-  const vw = window.innerWidth;
-  const isMobile = vw < 640;
-  const cardW = isMobile ? Math.min(vw - PAD * 2, 340) : 390;
-  const cardHApprox = isMobile ? 380 : 460;
-  return { cardW, cardHApprox, isMobile };
-}
-
-function getCardPosition(rect: Rect): { top: number; left: number; width: number } {
-  const { cardW, cardHApprox, isMobile } = getCardMetrics();
+/**
+ * Position the story card so it NEVER overlaps the highlighted element.
+ * Desktop strategy: pin to bottom-right corner of viewport (same area as
+ * TourButton but above it), offset so both are visible.
+ * Mobile strategy: full-width panel pinned to bottom of viewport.
+ */
+function getCardPosition(_rect: Rect): { top: number; left: number; width: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const isMobile = vw < 640;
 
-  // On mobile: always pin to bottom of viewport, full width minus padding
   if (isMobile) {
+    const w = vw - PAD * 2;
+    const h = 340; // approximate card height on mobile
     return {
-      top: Math.max(PAD, vh - cardHApprox - 72), // leave room for tour button
+      top: Math.max(PAD, vh - h - TOUR_BTN_H - PAD),
       left: PAD,
-      width: vw - PAD * 2,
+      width: w,
     };
   }
 
-  // Vertical: prefer below, fallback above
-  let top: number;
-  const spaceBelow = vh - rect.bottom - PAD;
-  const spaceAbove = rect.top - PAD;
-  if (spaceBelow >= cardHApprox || spaceBelow >= spaceAbove) {
-    top = rect.bottom + PAD;
-  } else {
-    top = Math.max(PAD, rect.top - cardHApprox - PAD);
-  }
-  top = Math.min(top, vh - cardHApprox - PAD);
-  top = Math.max(top, PAD);
-
-  // Horizontal: align with element, keep in viewport
-  let left = rect.left;
-  if (left + cardW > vw - PAD) left = vw - cardW - PAD;
-  if (left < PAD) left = PAD;
-
-  return { top, left, width: cardW };
+  // Desktop: pin to bottom-right, above the TourButton
+  const cardH = 460;
+  return {
+    top: Math.max(PAD, vh - cardH - TOUR_BTN_H - PAD),
+    left: vw - CARD_W - PAD,
+    width: CARD_W,
+  };
 }
 
 export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onExit, onFinish }: Props) {
@@ -119,7 +109,7 @@ export function TourOverlay({ isActive, currentStep, steps, onNext, onPrev, onEx
   const step = steps[currentStep];
   const progress = ((currentStep + 1) / steps.length) * 100;
   const isLast = currentStep === steps.length - 1;
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const isMobile = window.innerWidth < 640;
 
   const gx = highlight.left - 8;
   const gy = highlight.top - 8;

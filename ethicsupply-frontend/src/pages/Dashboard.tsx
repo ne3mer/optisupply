@@ -2016,7 +2016,7 @@ const Dashboard = () => {
           icon={UsersIcon}
           color={colors.accent}
         />
-        <div data-tour="esg-score">
+        <div data-tour="esg-score" className="h-full">
         <KpiIndicator
           label="Avg. ESG Score (Risk Adjusted)"
           value={avgEthicalScore ? avgEthicalScore.toFixed(1) : "N/A"}
@@ -2175,7 +2175,7 @@ const Dashboard = () => {
         </MetricCard>
 
         {/* Risk Breakdown */}
-        <div data-tour="risk-distribution">
+        <div data-tour="risk-distribution" className="h-full">
         <MetricCard
           title="Risk Breakdown"
           icon={ShieldExclamationIcon}
@@ -2218,7 +2218,7 @@ const Dashboard = () => {
       {/* Suppliers by Country (Example of another chart) */}
         {suppliersByCountry &&
           Object.keys(suppliersByCountry).length > 0 && (
-            <div data-tour="top-countries" className="lg:col-span-3">
+            <div data-tour="top-countries" className="lg:col-span-3 h-full">
             <MetricCard
               title="Suppliers by Country"
               icon={MapIcon}
@@ -2255,7 +2255,7 @@ const Dashboard = () => {
       {/* Watchlist & Alerts */}
       <div className="lg:col-span-3">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-        <div data-tour="supplier-table">
+        <div data-tour="supplier-table" className="h-full">
         <DashboardCard title="Watchlist: High Risk" icon={ShieldExclamationIcon} gridSpan="col-span-1">
           {extraAnalytics.watchHighRisk.length ? (
             <div className="space-y-2">
@@ -2457,7 +2457,7 @@ const Dashboard = () => {
         className="lg:col-span-3 mt-6"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <div data-tour="water-usage">
+          <div data-tour="water-usage" className="h-full">
           <DashboardCard title={isMobile ? "Environmental Summary" : "Environmental Impact Summary"} icon={FireIcon} gridSpan="col-span-1">
             <div className={`space-y-2 sm:space-y-3 ${isMobile ? 'text-xs' : 'text-sm'}`}>
               <div className="flex justify-between items-center">

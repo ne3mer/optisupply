@@ -27,7 +27,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
 }) => {
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border backdrop-blur-md p-5 ${className}`}
+      className={`relative overflow-hidden rounded-xl border backdrop-blur-md p-5 h-full ${className}`}
       style={style}
     >
       <div className="relative z-10 h-full flex flex-col" style={{ minHeight }}>
