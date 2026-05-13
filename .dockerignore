@@ -1,0 +1,9 @@
+# Ignore everything by default to keep build context small
+*
+
+# Allow the root Dockerfile
+!Dockerfile
+
+# Allow the backend folder and its contents
+!ethicsupply-node-backend/
+!ethicsupply-node-backend/**

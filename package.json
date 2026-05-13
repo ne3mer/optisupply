@@ -1,0 +1,7 @@
+{
+  "name": "optisupply",
+  "private": true,
+  "workspaces": [
+    "ethicsupply-node-backend"
+  ]
+}
