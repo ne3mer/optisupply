@@ -300,13 +300,32 @@ const SupplierDetails = () => {
     return typeof r === "number" ? Math.round(r * 100) : null;
   }, [supplier?.completeness_ratio]);
 
-  const riskPenaltyPct = useMemo(() => {
-    if ((supplier as any)?.risk_penalty !== undefined) {
-      const rp = (supplier as any).risk_penalty;
-      return rp === null ? null : Number(rp);
+  const riskFactor = useMemo(() => {
+    // Prefer explicit 0-1 risk_factor
+    if (typeof supplier?.risk_factor === "number" && Number.isFinite(supplier.risk_factor)) {
+      return Math.max(0, Math.min(1, supplier.risk_factor));
     }
-    const rf = supplier?.risk_factor;
-    return typeof rf === "number" ? Math.round(rf * 100) : null;
+    // If we only have a risk_penalty (pts), invert the thesis formula:
+    // penalty = 15 * max(0, r - 0.3) * 100  => r = penalty/1500 + 0.3
+    const rpRaw = (supplier as any)?.risk_penalty;
+    if (typeof rpRaw === "number" && Number.isFinite(rpRaw)) {
+      const r = rpRaw / 1500 + 0.3;
+      return Math.max(0, Math.min(1, r));
+    }
+    return null;
+  }, [supplier]);
+
+  const riskPenaltyPts = useMemo(() => {
+    // If API provides explicit penalty points, use them
+    const rpRaw = (supplier as any)?.risk_penalty;
+    if (rpRaw !== undefined) {
+      return rpRaw === null ? null : Number(rpRaw);
+    }
+    // Otherwise compute from risk_factor if available
+    if (typeof supplier?.risk_factor === "number" && Number.isFinite(supplier.risk_factor)) {
+      return 15 * Math.max(0, supplier.risk_factor - 0.3) * 100;
+    }
+    return null;
   }, [supplier]);
 
   const supplierId = (supplier as any)?._id || supplier?.id;
@@ -432,7 +451,8 @@ const SupplierDetails = () => {
                 {supplier.risk_level || "No Data"}
               </Pill>
             } />
-            <StatRow label="Risk Penalty" icon={ExclamationTriangleIcon} value={riskPenaltyPct !== null ? `${riskPenaltyPct.toFixed(1)}` : "N/A"} color={riskColor} />
+            <StatRow label="Risk Factor" icon={ExclamationTriangleIcon} value={riskFactor !== null ? `${(riskFactor * 100).toFixed(1)}%` : "N/A"} color={riskColor} />
+            <StatRow label="Risk Penalty" icon={ExclamationTriangleIcon} value={riskPenaltyPts !== null ? `${riskPenaltyPts.toFixed(1)} pts` : "N/A"} color={riskColor} />
             <StatRow label="Disclosure" icon={DocumentTextIcon} value={completenessPct !== null ? `${completenessPct}%` : "N/A"} color={completenessPct !== null ? (completenessPct >= 85 ? colors.success : completenessPct >= 70 ? colors.warning : colors.error) : undefined} />
           </SectionCard>
 
