@@ -63,7 +63,6 @@ import {
   Building2,
   MapPin,
 } from "lucide-react";
-import { useInView } from "react-intersection-observer";
 import { useThemeColors } from "../theme/useThemeColors";
 import { Link } from "react-router-dom";
 
@@ -1030,10 +1029,6 @@ const RecommendationCard = ({
   onActionClick: () => void;
   index: number;
 }) => {
-  const { ref, inView } = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
-  });
   const colors = useThemeColors() as any;
   const categoryConfig = buildCategoryConfig(colors);
   const priorityConfig = buildPriorityConfig(colors);
@@ -1107,18 +1102,22 @@ const RecommendationCard = ({
       ? focusRoundBadgeLabel(focusN)
       : null;
 
+  // Do not tie card visibility to IntersectionObserver: fast scroll can skip
+  // intersection callbacks, leaving many cards at opacity 0 (blank page).
+  // Keep opacity at 1 always; only ease y slightly so the list never disappears.
+  const enterDelay = Math.min(index * 0.015, 0.18);
+
   return (
     <motion.div
-      ref={ref}
       layout
-      initial={{ opacity: 0, y: 50 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+      initial={{ opacity: 1, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{
-        duration: 0.5,
-        delay: index * 0.1,
+        duration: 0.28,
+        delay: enterDelay,
         type: "spring",
-        stiffness: 100,
-        damping: 15,
+        stiffness: 120,
+        damping: 20,
       }}
       whileHover={{
         boxShadow: `0 18px 48px rgba(0,0,0,0.14), 0 0 0 1px ${categoryInfo.rail}55`,
