@@ -26,6 +26,7 @@ import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import * as XLSX from "xlsx";
 import { useThemeColors } from "../theme/useThemeColors";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 // Colors are provided by theme hook
 
@@ -1730,6 +1731,7 @@ const BatchUpload = () => {
 };
 
 const AddSupplier = () => {
+  usePageTitle("Add supplier");
   const colors = useThemeColors() as any;
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);

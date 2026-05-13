@@ -29,6 +29,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
 import { useThemeColors } from "../../theme/useThemeColors";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 // colors come from theme hook
 
@@ -208,6 +209,7 @@ const generateMLRecommendations = (data) => {
 
 // --- Main Component ---
 const SupplierAssessment = () => {
+  usePageTitle("Assessment");
   const colors = useThemeColors() as any;
   const { id: supplierId } = useParams();
   const navigate = useNavigate();

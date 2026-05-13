@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { apiEndpoint } from "../config";
 import { runScenario, fetchBaseline, downloadBaselineCsv } from "../services/api";
 import { useThemeColors } from "../theme/useThemeColors";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const getApiEndpoint = apiEndpoint;
 
 export default function Scenarios() {
+  usePageTitle("Scenarios");
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [s1Info, setS1Info] = useState<{ base?: number; s1?: number; delta?: number; used?: number } | null>(null);

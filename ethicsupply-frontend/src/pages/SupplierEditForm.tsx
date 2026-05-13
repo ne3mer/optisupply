@@ -28,6 +28,7 @@ import {
   DocumentChartBarIcon,
 } from "@heroicons/react/24/outline";
 import { useThemeColors } from "../theme/useThemeColors";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 // Theme-aware color helper is provided by useThemeColors
 
@@ -357,6 +358,7 @@ const SliderField = ({
 
 // --- Main Edit Form Component ---
 const SupplierEditForm = () => {
+  usePageTitle("Edit supplier");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const colors = useThemeColors();

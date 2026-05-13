@@ -39,6 +39,7 @@ import {
 } from "recharts";
 import { useTheme } from "../contexts/ThemeContext";
 import { fmtRiskFactor } from "../lib/formatters";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { getThemeColors } from "../theme/colors";
 
 // Theme-aware colors helper
@@ -236,6 +237,7 @@ const formatSentimentValue = (value: string | number) => {
 
 // Main component
 const SupplierAnalytics = () => {
+  usePageTitle("Supplier analytics");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState(null);

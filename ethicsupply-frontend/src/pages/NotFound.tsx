@@ -2,8 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useThemeColors } from "../theme/useThemeColors";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const NotFound: React.FC = () => {
+  usePageTitle("Page not found");
   const colors = useThemeColors();
 
   return (

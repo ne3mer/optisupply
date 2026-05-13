@@ -12,8 +12,10 @@ import {
   recomputeAllSuppliers,
   type ScoringSettings,
 } from "../services/api";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const Settings: React.FC = () => {
+  usePageTitle("Settings");
   const { darkMode, toggleDarkMode } = useTheme();
   const colors = useThemeColors();
   const [apiEndpoint, setApiEndpoint] = useState<string>(

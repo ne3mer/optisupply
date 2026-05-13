@@ -33,6 +33,7 @@ import {
   fmtRawMetric,
 } from "../lib/formatters";
 import { scoreBandColor, riskMetricColor } from "../lib/scoreThresholds";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const LoadingIndicator = () => {
   const colors = useThemeColors();
@@ -279,6 +280,8 @@ const SupplierDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [showTraceDrawer, setShowTraceDrawer] = useState(false);
+
+  usePageTitle(supplier?.name || (id ? "Supplier profile" : "Supplier"));
 
   const fetchSupplier = async () => {
     if (!id) {
@@ -927,12 +930,6 @@ const SupplierDetails = () => {
             accent={colors.secondary}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-              <StatRow
-                label="Human Rights Index"
-                icon={ShieldCheckIcon}
-                value={fmt(supplier.human_rights_index)}
-                color={scoreBandColor(colors, supplier.human_rights_index)}
-              />
               <StatRow
                 label="Overall Risk Level"
                 icon={ShieldExclamationIcon}

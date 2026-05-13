@@ -19,6 +19,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { getBands, getDatasetMeta, BandsMap, DatasetMeta } from "../services/api";
 import { useThemeColors } from "../theme/useThemeColors";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -75,6 +76,7 @@ const FormulaBox = ({ formula, description }: { formula: string; description?: s
 };
 
 const Methodology: React.FC = () => {
+  usePageTitle("Methodology");
   const [bands, setBands] = useState<BandsMap | null>(null);
   const [datasetMeta, setDatasetMeta] = useState<DatasetMeta | null>(null);
   const industries = useMemo(() => (bands ? Object.keys(bands) : []), [bands]);

@@ -57,6 +57,7 @@ import {
   fmtDate,
 } from "../lib/formatters";
 import { scoreBandColor, scorePerformanceLabel } from "../lib/scoreThresholds";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const LoadingIndicator = () => {
   const colors = useThemeColors();
@@ -554,9 +555,7 @@ const Tooltip = ({
 // --- SuppliersList Component ---
 
 const SuppliersList = () => {
-  useEffect(() => {
-    document.title = "OptiSupply — Suppliers";
-  }, []);
+  usePageTitle("Suppliers");
   const themeColors = useThemeColors() as any;
   const colors = themeColors || {
     background: "#ffffff",
@@ -2327,6 +2326,7 @@ const SuppliersList = () => {
                                 color: colors.text,
                                 letterSpacing: "-0.01em",
                               }}
+                              title={supplier.name || undefined}
                             >
                               {supplier.name}
                             </h2>

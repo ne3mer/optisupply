@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 // ─── Font aliases — match the rest of the app ─────────────────────────────────
 const F = {
@@ -412,6 +413,7 @@ const StatNum = ({
 
 // ─── HOME PAGE ────────────────────────────────────────────────────────────────
 const HomePage = () => {
+  usePageTitle("Home");
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cursor, setCursor] = useState({ x: -100, y: -100 });

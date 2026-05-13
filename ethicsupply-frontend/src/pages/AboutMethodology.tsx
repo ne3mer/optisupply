@@ -12,6 +12,7 @@ import {
   BeakerIcon,
 } from "@heroicons/react/24/outline";
 import { useThemeColors } from "../theme/useThemeColors";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const useColors = () => useThemeColors() as any;
 
@@ -21,6 +22,7 @@ const fadeUp = {
 };
 
 const AboutMethodology: React.FC = () => {
+  usePageTitle("About");
   const colors = useColors();
   return (
     <div

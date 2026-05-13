@@ -8,6 +8,11 @@
  */
 
 import { Supplier } from "../services/api";
+import {
+  fmtScore,
+  fmtRiskFactor,
+  fmtRawMetric,
+} from "../lib/formatters";
 
 export interface ReportData {
   summary: {
@@ -30,11 +35,7 @@ export interface ReportData {
   [key: string]: unknown;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-const pct = (v: number, decimals = 1) => `${(v * 100).toFixed(decimals)}%`;
-const num = (v: number, decimals = 1) => v.toFixed(decimals);
-const commas = (v: number) => v.toLocaleString("en-US");
+// ── Helpers (report-specific; numeric display uses ../lib/formatters) ───────
 
 function riskColor(level: string): { bg: string; text: string } {
   switch (level.toLowerCase()) {
@@ -98,18 +99,26 @@ function buildReportHTML(reportData: ReportData, allSuppliers: Supplier[], year:
   const supplierRows = recentSuppliers.map((sup) => {
     const name = (sup.name ?? "—").replace(/\(Batch \d+\)/gi, "").trim();
     const country = sup.country ?? "—";
-    const esg = typeof sup.ethical_score === "number"
-      ? (sup.ethical_score <= 1 ? pct(sup.ethical_score) : `${Math.round(sup.ethical_score)}%`)
-      : "—";
-    const composite = typeof sup.composite_score === "number"
-      ? (sup.composite_score <= 1 ? pct(sup.composite_score) : `${Math.round(sup.composite_score)}%`)
-      : "—";
+    const esg =
+      typeof sup.ethical_score === "number"
+        ? sup.ethical_score <= 1
+          ? fmtRiskFactor(sup.ethical_score)
+          : fmtScore(sup.ethical_score)
+        : "—";
+    const composite =
+      typeof sup.composite_score === "number"
+        ? sup.composite_score <= 1
+          ? fmtRiskFactor(sup.composite_score)
+          : fmtScore(sup.composite_score)
+        : "—";
     const riskLevel = (sup as any).risk_level ?? (sup as any).riskLevel ?? "—";
-    const disclosure = typeof sup.completeness_ratio === "number"
-      ? pct(sup.completeness_ratio)
-      : "—";
+    const disclosure =
+      typeof sup.completeness_ratio === "number"
+        ? fmtRiskFactor(sup.completeness_ratio)
+        : "—";
     const rc = riskColor(riskLevel);
-    const isZeroEsg = esg === "0%" || esg === "0.0%";
+    const isZeroEsg =
+      esg === "0.0%" || esg === "0%" || esg === "0.0";
     return `
       <tr>
         <td>${name}</td>
@@ -337,22 +346,35 @@ body{font-family:'DM Sans',sans-serif;background:#FAFAF7;}
           </div>
           <div class="metric-tile">
             <div class="metric-lbl">Avg ESG Score</div>
-            <div class="metric-num f-serif" style="font-size:42pt;">${pct(s.avgEthicalScore, 0)}</div>
+            <div class="metric-num f-serif" style="font-size:42pt;">${
+              typeof s.avgEthicalScore === "number"
+                ? s.avgEthicalScore <= 1
+                  ? fmtRiskFactor(s.avgEthicalScore)
+                  : fmtScore(s.avgEthicalScore)
+                : "—"
+            }</div>
             <div class="metric-desc">Risk-adjusted composite</div>
           </div>
           <div class="metric-tile">
             <div class="metric-lbl">Avg CO₂ Emissions</div>
-            <div class="metric-num f-serif" style="font-size:26pt;">${commas(Math.round(s.avgCO2Emissions))}t</div>
+            <div class="metric-num f-serif" style="font-size:26pt;">${fmtRawMetric(
+              Math.round(s.avgCO2Emissions),
+              "t",
+            )}</div>
             <div class="metric-desc">Per reporting supplier</div>
           </div>
           <div class="metric-tile">
             <div class="metric-lbl">Avg Risk Penalty</div>
-            <div class="metric-num f-serif" style="font-size:32pt;">${pct(s.avgRiskFactor, 0)}</div>
+            <div class="metric-num f-serif" style="font-size:32pt;">${fmtRiskFactor(
+              s.avgRiskFactor,
+            )}</div>
             <div class="metric-desc">Applied to final ESG score</div>
           </div>
           <div class="metric-tile">
             <div class="metric-lbl">Data Completeness</div>
-            <div class="metric-num f-serif" style="font-size:32pt;">${pct(s.avgCompletenessRatio, 0)}</div>
+            <div class="metric-num f-serif" style="font-size:32pt;">${fmtRiskFactor(
+              s.avgCompletenessRatio,
+            )}</div>
             <div class="metric-desc">Required metrics disclosed</div>
           </div>
         </div>
@@ -399,7 +421,7 @@ body{font-family:'DM Sans',sans-serif;background:#FAFAF7;}
           <div class="pillar-top" style="background:${p.color};"></div>
           <div class="pillar-name" style="color:${p.color};">${p.name}</div>
           <div>
-            <span class="pillar-score">${num(p.score, 0)}</span>
+            <span class="pillar-score">${fmtScore(p.score)}</span>
             <span class="pillar-denom">/100</span>
           </div>
           <div class="pillar-bar-wrap">

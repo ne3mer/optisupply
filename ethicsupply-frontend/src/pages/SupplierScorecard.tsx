@@ -11,8 +11,10 @@ import {
   SparklesIcon,
   ChartPieIcon,
 } from "@heroicons/react/24/outline";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 const SupplierScorecard = () => {
+  usePageTitle("Scorecard");
   const { id } = useParams();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);

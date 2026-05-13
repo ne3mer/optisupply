@@ -3,6 +3,7 @@ import { evaluateSupplier, getSupplier } from "../services/api";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useThemeColors } from "../theme/useThemeColors";
+import { usePageTitle } from "../hooks/usePageTitle";
 import {
   BuildingOfficeIcon,
   GlobeAltIcon,
@@ -105,6 +106,7 @@ interface EvaluationResult {
 }
 
 const EvaluateSupplier = () => {
+  usePageTitle("Evaluate supplier");
   const [searchParams] = useSearchParams();
   const colors = useThemeColors() as any;
   const supplierId = searchParams.get("id");
