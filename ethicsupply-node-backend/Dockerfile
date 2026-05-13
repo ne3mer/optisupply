@@ -1,15 +1,15 @@
 FROM node:20-bookworm-slim
 
-WORKDIR /app
+WORKDIR /app/ethicsupply-node-backend
 
 # Copy package.json and package-lock.json
-COPY package*.json ./
+COPY ethicsupply-node-backend/package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
 # Copy application code
-COPY . .
+COPY ethicsupply-node-backend . .
 
 # Create public directory
 RUN mkdir -p public
