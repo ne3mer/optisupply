@@ -32,6 +32,7 @@ import {
   fmtScore,
   fmtRawMetric,
 } from "../lib/formatters";
+import { scoreBandColor, riskMetricColor } from "../lib/scoreThresholds";
 
 const LoadingIndicator = () => {
   const colors = useThemeColors();
@@ -108,15 +109,6 @@ const getRiskColor = (colors: any, level: string | undefined) => {
     default:
       return colors.textMuted;
   }
-};
-
-const getScoreColor = (colors: any, score: number | null | undefined) => {
-  if (score === null || score === undefined) return colors.textMuted;
-  const n = score > 0 && score <= 1 ? score * 100 : score;
-  if (n >= 80) return colors.success;
-  if (n >= 60) return colors.primary;
-  if (n >= 40) return colors.warning;
-  return colors.error;
 };
 
 const normalizeScore = (v: number | null | undefined) => {
@@ -377,7 +369,7 @@ const SupplierDetails = () => {
   }, [supplier]);
 
   const scoreColor = useMemo(
-    () => getScoreColor(colors, overallScore),
+    () => scoreBandColor(colors, overallScore),
     [colors, overallScore],
   );
   const riskColor = useMemo(
@@ -712,7 +704,7 @@ const SupplierDetails = () => {
                 {similarSuppliers.map((s) => {
                   const sid = (s as any)._id || s.id;
                   const sc = normalizeScore(s.ethical_score);
-                  const scColor = getScoreColor(colors, s.ethical_score);
+                  const scColor = scoreBandColor(colors, s.ethical_score);
                   return (
                     <div
                       key={sid}
@@ -877,32 +869,32 @@ const SupplierDetails = () => {
                 label="Waste Management"
                 icon={BeakerIcon}
                 value={fmt(supplier.waste_management_score)}
-                color={getScoreColor(colors, supplier.waste_management_score)}
+                color={scoreBandColor(colors, supplier.waste_management_score)}
               />
               <StatRow
                 label="Wage Fairness"
                 icon={UserGroupIcon}
                 value={fmt(supplier.wage_fairness)}
-                color={getScoreColor(colors, supplier.wage_fairness)}
+                color={scoreBandColor(colors, supplier.wage_fairness)}
               />
               <StatRow
                 label="Human Rights Index"
                 icon={UserGroupIcon}
                 value={fmt(supplier.human_rights_index)}
-                color={getScoreColor(colors, supplier.human_rights_index)}
+                color={scoreBandColor(colors, supplier.human_rights_index)}
               />
               <StatRow
                 label="Delivery Efficiency"
                 icon={TruckIcon}
                 value={fmt(supplier.delivery_efficiency)}
-                color={getScoreColor(colors, supplier.delivery_efficiency)}
+                color={scoreBandColor(colors, supplier.delivery_efficiency)}
               />
               {(supplier as any).worker_safety !== undefined && (
                 <StatRow
                   label="Worker Safety"
                   icon={ShieldCheckIcon}
                   value={fmt((supplier as any).worker_safety)}
-                  color={getScoreColor(colors, (supplier as any).worker_safety)}
+                  color={scoreBandColor(colors, (supplier as any).worker_safety)}
                 />
               )}
               {(supplier as any).transparency_score !== undefined && (
@@ -910,7 +902,7 @@ const SupplierDetails = () => {
                   label="Transparency"
                   icon={InformationCircleIcon}
                   value={fmt((supplier as any).transparency_score)}
-                  color={getScoreColor(
+                  color={scoreBandColor(
                     colors,
                     (supplier as any).transparency_score,
                   )}
@@ -921,7 +913,7 @@ const SupplierDetails = () => {
                   label="Energy Efficiency"
                   icon={SparklesIcon}
                   value={fmt((supplier as any).energy_efficiency)}
-                  color={getScoreColor(
+                  color={scoreBandColor(
                     colors,
                     (supplier as any).energy_efficiency,
                   )}
@@ -941,7 +933,7 @@ const SupplierDetails = () => {
                 label="Human Rights Index"
                 icon={ShieldCheckIcon}
                 value={fmt(supplier.human_rights_index)}
-                color={getScoreColor(colors, supplier.human_rights_index)}
+                color={scoreBandColor(colors, supplier.human_rights_index)}
               />
               <StatRow
                 label="Overall Risk Level"
@@ -961,7 +953,7 @@ const SupplierDetails = () => {
                   label="Corruption Risk"
                   icon={ExclamationTriangleIcon}
                   value={fmt((supplier as any).corruption_risk)}
-                  color={getScoreColor(
+                  color={riskMetricColor(
                     colors,
                     (supplier as any).corruption_risk,
                   )}
@@ -972,7 +964,7 @@ const SupplierDetails = () => {
                   label="Geopolitical Risk"
                   icon={ExclamationTriangleIcon}
                   value={fmt((supplier as any).geopolitical_risk)}
-                  color={getScoreColor(
+                  color={riskMetricColor(
                     colors,
                     (supplier as any).geopolitical_risk,
                   )}
@@ -983,7 +975,7 @@ const SupplierDetails = () => {
                   label="Climate Risk"
                   icon={ExclamationTriangleIcon}
                   value={fmt((supplier as any).climate_risk)}
-                  color={getScoreColor(colors, (supplier as any).climate_risk)}
+                  color={riskMetricColor(colors, (supplier as any).climate_risk)}
                 />
               )}
             </div>

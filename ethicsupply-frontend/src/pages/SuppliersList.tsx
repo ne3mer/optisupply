@@ -56,6 +56,7 @@ import {
   fmtRawMetric,
   fmtDate,
 } from "../lib/formatters";
+import { scoreBandColor } from "../lib/scoreThresholds";
 
 const LoadingIndicator = () => {
   const colors = useThemeColors();
@@ -131,20 +132,24 @@ const getRiskIcon = (riskLevel: string | undefined) => {
   }
 };
 
-const getScoreColor = (colors: any, score: number | null | undefined) => {
-  if (score === null || score === undefined) return colors.textMuted;
-  const normalizedScore = score > 0 && score <= 1 ? score * 100 : score;
-  if (normalizedScore >= 80) return colors.success;
-  if (normalizedScore >= 60) return colors.primary;
-  if (normalizedScore >= 40) return colors.warning;
-  return colors.error;
-};
-
 const normalizeScoreTo100 = (score: number | null | undefined) => {
   if (score === null || score === undefined || Number.isNaN(score)) {
     return null;
   }
   return score > 0 && score <= 1 ? score * 100 : score;
+};
+
+/** Final / risk-adjusted headline score for the donut (matches tooltip copy). */
+const pickPostPenaltyDisplayScore = (supplier: Supplier): number | null => {
+  const fs = (supplier as any).finalScore;
+  if (typeof fs === "number" && Number.isFinite(fs)) {
+    return fs;
+  }
+  const es = supplier.ethical_score;
+  if (es !== null && es !== undefined && Number.isFinite(es)) {
+    return es;
+  }
+  return null;
 };
 
 const formatScoreValue = (score: number | null | undefined, digits = 1) => {
@@ -223,7 +228,7 @@ const sectionHelp = {
   coverage:
     "Data completeness ratio — the share of required ESG fields that have been filled in. Below 50% triggers an automatic risk-penalty on the final score.",
   riskExposure:
-    "Risk penalty factor applied to the raw ESG score. Derived from controversies, geopolitical risk index, sector profile, and audit history. Higher % = heavier penalty.",
+    "Implied external risk factor r (0–1), shown as 0–100%. Higher means heavier exposure in the thesis penalty model (not the same as penalty points).",
   pillarEnv:
     "Environmental score (E): CO₂ / emissions intensity, water usage, waste management, energy efficiency, and environmental-compliance history.",
   pillarSoc:
@@ -2230,15 +2235,7 @@ const SuppliersList = () => {
                     (currentPage - 1) * itemsPerPage + idx + 1;
                   const riskColor = getRiskColor(colors, supplier.risk_level);
                   const riskIcon = getRiskIcon(supplier.risk_level);
-                  const scoreColor = getScoreColor(
-                    colors,
-                    supplier.ethical_score,
-                  );
-                  const riskAdjustedScore =
-                    supplier.ethical_score !== null &&
-                    supplier.ethical_score !== undefined
-                      ? supplier.ethical_score
-                      : null;
+                  const riskAdjustedScore = pickPostPenaltyDisplayScore(supplier);
                   const scorePercent = Math.max(
                     0,
                     Math.min(100, normalizeScoreTo100(riskAdjustedScore) ?? 0),
@@ -2265,6 +2262,8 @@ const SuppliersList = () => {
                       return "N/A";
                     return (val > 0 && val <= 1 ? val * 100 : val).toFixed(0);
                   };
+
+                  const scoreColor = scoreBandColor(colors, riskAdjustedScore);
 
                   return (
                     <motion.div
@@ -2601,7 +2600,7 @@ const SuppliersList = () => {
                           <div className="flex flex-col gap-1.5">
                             {[
                               {
-                                label: "Composite",
+                                label: "Composite (pre-risk)",
                                 value:
                                   compositeScore !== null
                                     ? compositeScore.toFixed(1)
@@ -3598,7 +3597,7 @@ const SuppliersList = () => {
                                 <span
                                   className="font-bold"
                                   style={{
-                                    color: getScoreColor(
+                                    color: scoreBandColor(
                                       colors,
                                       selectedSupplier.ethical_score,
                                     ),
@@ -3627,7 +3626,7 @@ const SuppliersList = () => {
                                         ? selectedSupplier.ethical_score * 100
                                         : selectedSupplier.ethical_score || 0
                                     }%`,
-                                    backgroundColor: getScoreColor(
+                                    backgroundColor: scoreBandColor(
                                       colors,
                                       selectedSupplier.ethical_score,
                                     ),

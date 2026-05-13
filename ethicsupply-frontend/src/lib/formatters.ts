@@ -15,11 +15,12 @@ export function fmtScore(score: number | null | undefined): string {
   return normalizeScoreTo100(v).toFixed(1);
 }
 
+/** External risk factor `r` on 0–1 scale → percent for display (thesis Appendix B). */
 export function fmtRiskFactor(factor: number | null | undefined): string {
   const v = toFiniteNumber(factor);
   if (v === null) return "N/A";
   const clamped = Math.min(1, Math.max(0, v));
-  return clamped.toFixed(3);
+  return `${(clamped * 100).toFixed(1)}%`;
 }
 
 export function fmtPenalty(penalty: number | null | undefined): string {
