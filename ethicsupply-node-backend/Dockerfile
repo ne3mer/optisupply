@@ -9,7 +9,7 @@ COPY ethicsupply-node-backend/package*.json ./
 RUN npm ci --only=production
 
 # Copy application code
-COPY ethicsupply-node-backend . .
+COPY ethicsupply-node-backend/ .
 
 # Create public directory
 RUN mkdir -p public
