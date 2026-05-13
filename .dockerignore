@@ -3,6 +3,8 @@
 
 # Allow the root Dockerfile
 !Dockerfile
+!package.json
+!package-lock.json
 
 # Allow Leapcell-generated command scripts
 !build_cmd_*.sh
