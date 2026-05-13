@@ -207,6 +207,17 @@ const formatPercent = (value: number | null | undefined, digits = 0) => {
   return `${(value * 100).toFixed(digits)}%`;
 };
 
+/** 0–1 pillar-style scores → %; values already on 0–100 stay as-is (jsPDF tables). */
+const formatScoreAsPercentRounded = (
+  value: number | null | undefined,
+): string => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "N/A";
+  }
+  const normalized = value > 0 && value <= 1 ? value * 100 : value;
+  return `${Math.round(normalized)}%`;
+};
+
 // --- Reusable Styled Components ---
 
 const LoadingIndicator = () => {
@@ -842,11 +853,11 @@ const ReportGenerator = ({
             supplier.country || "N/A",
             supplier.ethical_score !== undefined &&
             supplier.ethical_score !== null
-              ? `${Math.round(supplier.ethical_score)}%`
+              ? formatScoreAsPercentRounded(supplier.ethical_score)
               : "N/A",
             supplier.composite_score !== undefined &&
             supplier.composite_score !== null
-              ? `${Math.round(supplier.composite_score)}%`
+              ? formatScoreAsPercentRounded(supplier.composite_score)
               : "N/A",
             (supplier.risk_level || "N/A").toString(),
             supplier.completeness_ratio !== undefined &&
@@ -2762,7 +2773,7 @@ const Dashboard = () => {
                         className="font-mono"
                         style={{ color: colors.textMuted }}
                       >
-                        {Math.round((s.risk_factor || 0) * 100)}%
+                        {fmtRiskFactor(s.risk_factor as number)}
                       </span>
                     </div>
                   ))}
