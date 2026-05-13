@@ -38,7 +38,7 @@ export const CO2EmissionsTooltip = ({ active, payload }: any) => {
         <p className="text-sm font-medium">{`${payload[0].name}`}</p>
         <p className="text-sm text-gray-700">{`CO₂ Emissions: ${fmtRawMetric(
           Number(payload[0].value),
-          "t"
+          "t",
         )}`}</p>
         <p className="text-xs text-gray-500 mt-1">
           {getIndustryEmissionsContext(payload[0].name, payload[0].value)}
@@ -70,7 +70,7 @@ export const WaterUsageTooltip = ({ active, payload, label }: any) => {
         <p className="text-sm font-medium">{`${label}`}</p>
         <p className="text-sm text-gray-700">{`Water Usage: ${fmtRawMetric(
           Number(payload[0].value),
-          "gallons/unit"
+          "gallons/unit",
         )}`}</p>
         <p className="text-xs text-gray-500 mt-1">
           {payload[0].value > 100
@@ -146,8 +146,8 @@ export const SustainabilityMetricsTooltip = ({ active, payload }: any) => {
             {difference > 0
               ? `${difference} points above average`
               : difference === 0
-              ? "At industry average"
-              : `${Math.abs(difference)} points below average`}
+                ? "At industry average"
+                : `${Math.abs(difference)} points below average`}
           </p>
         </div>
       );

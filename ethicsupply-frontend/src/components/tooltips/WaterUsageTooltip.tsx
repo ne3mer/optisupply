@@ -18,7 +18,7 @@ const WaterUsageTooltip: React.FC<WaterUsageTooltipProps> = ({
         <p className="text-sm font-medium">{`${label}`}</p>
         <p className="text-sm text-gray-700">{`Water Usage: ${fmtRawMetric(
           Number(payload[0].value),
-          "gallons/unit"
+          "gallons/unit",
         )}`}</p>
         <p className="text-xs text-gray-500 mt-1">
           {payload[0].value > 100

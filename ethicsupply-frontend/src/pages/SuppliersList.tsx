@@ -1162,9 +1162,10 @@ const SuppliersList = () => {
       formatted["Risk Factor"] =
         supplier.risk_factor !== undefined && supplier.risk_factor !== null
           ? fmtRiskFactor(supplier.risk_factor)
-          : supplier.risk_penalty !== undefined && supplier.risk_penalty !== null
-          ? fmtPenalty(supplier.risk_penalty)
-          : "N/A";
+          : supplier.risk_penalty !== undefined &&
+              supplier.risk_penalty !== null
+            ? fmtPenalty(supplier.risk_penalty)
+            : "N/A";
       formatted["Risk Penalty"] =
         supplier.risk_penalty !== undefined && supplier.risk_penalty !== null
           ? fmtPenalty(supplier.risk_penalty)

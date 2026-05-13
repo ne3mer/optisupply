@@ -30,7 +30,7 @@ const CO2EmissionsTooltip: React.FC<CO2EmissionsTooltipProps> = ({
         <p className="text-sm font-medium">{`${payload[0].name}`}</p>
         <p className="text-sm text-gray-700">{`CO₂ Emissions: ${fmtRawMetric(
           Number(payload[0].value),
-          "t"
+          "t",
         )}`}</p>
         <p className="text-xs text-gray-500 mt-1">
           {getIndustryEmissionsContext(payload[0].name, payload[0].value)}

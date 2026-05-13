@@ -46,12 +46,39 @@ const CustomTooltip = ({ active, payload, label, dark }: any) => {
           boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
         }}
       >
-        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: dark ? "#808080" : "#555555", marginBottom: 4 }}>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: dark ? "#808080" : "#555555",
+            marginBottom: 4,
+          }}
+        >
           {label}
         </p>
-        <p style={{ fontSize: 22, fontFamily: '"Geist Mono", monospace', fontWeight: 300, letterSpacing: "-0.03em", color: dark ? "#F5F5F0" : "#0A0A0A", lineHeight: 1 }}>
+        <p
+          style={{
+            fontSize: 22,
+            fontFamily: '"Geist Mono", monospace',
+            fontWeight: 300,
+            letterSpacing: "-0.03em",
+            color: dark ? "#F5F5F0" : "#0A0A0A",
+            lineHeight: 1,
+          }}
+        >
           {fmtRawMetric(Number(payload[0].value), "t")}
-          <span style={{ fontSize: 11, color: dark ? "#808080" : "#555555", marginLeft: 4, fontWeight: 400 }}>CO₂</span>
+          <span
+            style={{
+              fontSize: 11,
+              color: dark ? "#808080" : "#555555",
+              marginLeft: 4,
+              fontWeight: 400,
+            }}
+          >
+            CO₂
+          </span>
         </p>
       </div>
     );
@@ -74,11 +101,42 @@ const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3 opacity-50">
         <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-          <rect x="4" y="20" width="8" height="16" rx="2" fill="currentColor" opacity="0.4" />
-          <rect x="16" y="10" width="8" height="26" rx="2" fill="currentColor" opacity="0.6" />
-          <rect x="28" y="14" width="8" height="22" rx="2" fill="currentColor" opacity="0.5" />
+          <rect
+            x="4"
+            y="20"
+            width="8"
+            height="16"
+            rx="2"
+            fill="currentColor"
+            opacity="0.4"
+          />
+          <rect
+            x="16"
+            y="10"
+            width="8"
+            height="26"
+            rx="2"
+            fill="currentColor"
+            opacity="0.6"
+          />
+          <rect
+            x="28"
+            y="14"
+            width="8"
+            height="22"
+            rx="2"
+            fill="currentColor"
+            opacity="0.5"
+          />
         </svg>
-        <p style={{ fontSize: 12, letterSpacing: "0.06em", textTransform: "uppercase", fontWeight: 600 }}>
+        <p
+          style={{
+            fontSize: 12,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            fontWeight: 600,
+          }}
+        >
           No emission data
         </p>
       </div>
@@ -93,7 +151,12 @@ const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
       <BarChart
         data={sortedData}
         layout="vertical"
-        margin={{ top: 4, right: isMobile ? 8 : 20, left: isMobile ? 36 : 56, bottom: 4 }}
+        margin={{
+          top: 4,
+          right: isMobile ? 8 : 20,
+          left: isMobile ? 36 : 56,
+          bottom: 4,
+        }}
         barCategoryGap="30%"
       >
         <CartesianGrid
@@ -104,14 +167,22 @@ const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
         />
         <XAxis
           type="number"
-          tick={{ fontSize: isMobile ? 10 : 11, fill: tickColor, fontFamily: '"Geist Mono", monospace' }}
+          tick={{
+            fontSize: isMobile ? 10 : 11,
+            fill: tickColor,
+            fontFamily: '"Geist Mono", monospace',
+          }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           dataKey="name"
           type="category"
-          tick={{ fontSize: isMobile ? 10 : 11, fill: tickColor, fontFamily: '"Geist", sans-serif' }}
+          tick={{
+            fontSize: isMobile ? 10 : 11,
+            fill: tickColor,
+            fontFamily: '"Geist", sans-serif',
+          }}
           axisLine={false}
           tickLine={false}
           width={isMobile ? 90 : 120}
@@ -119,9 +190,16 @@ const CO2EmissionsChart: React.FC<CO2EmissionsChartProps> = ({ data }) => {
         />
         <Tooltip
           content={<CustomTooltip dark={darkMode} />}
-          cursor={{ fill: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}
+          cursor={{
+            fill: darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
+          }}
         />
-        <Bar dataKey="value" name="CO₂ Emissions (tons)" radius={[0, 3, 3, 0]} maxBarSize={isMobile ? 14 : 22}>
+        <Bar
+          dataKey="value"
+          name="CO₂ Emissions (tons)"
+          radius={[0, 3, 3, 0]}
+          maxBarSize={isMobile ? 14 : 22}
+        >
           {sortedData.map((_, index) => (
             <Cell
               key={`cell-${index}`}
