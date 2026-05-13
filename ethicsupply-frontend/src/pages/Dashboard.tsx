@@ -1538,49 +1538,52 @@ const Dashboard = () => {
   }, [allSuppliers]);
 
   // --- Derived Data for KPIs and Charts ---
-    const kpiData = useMemo(() => {
-      if (!data) return null;
-      const totalSuppliers = Number(
-        data.totalSuppliers ?? data.total_suppliers ?? 0,
-      );
-      const avgEthicalScore = Number(
-        data.avgEthicalScore ?? data.avg_ethical_score ?? 0,
-      );
-      const avgCompositeScore = Number(
-        data.avgCompositeScore ?? data.avg_composite_score ?? avgEthicalScore,
-      );
-      const avgRiskFactor = Number(
-        data.avgRiskFactor ?? data.avg_risk_factor ?? 0,
-      );
-      const avgCompletenessRatio = Number(
-        data.avgCompletenessRatio ?? data.avg_completeness_ratio ?? 1,
-      );
-      const riskBreakdown = (data.riskBreakdown ?? data.risk_breakdown) || {};
-      const highRiskCount =
-        (riskBreakdown.high ?? 0) + (riskBreakdown.critical ?? 0);
+  const kpiData = useMemo(() => {
+    if (!data) return null;
+    const totalSuppliers = Number(
+      data.totalSuppliers ?? data.total_suppliers ?? 0,
+    );
+    const avgEthicalScore = Number(
+      data.avgEthicalScore ?? data.avg_ethical_score ?? 0,
+    );
+    const avgCompositeScore = Number(
+      data.avgCompositeScore ?? data.avg_composite_score ?? avgEthicalScore,
+    );
+    const avgRiskFactor = Number(
+      data.avgRiskFactor ?? data.avg_risk_factor ?? 0,
+    );
+    const avgCompletenessRatio = Number(
+      data.avgCompletenessRatio ?? data.avg_completeness_ratio ?? 1,
+    );
+    const riskBreakdown = (data.riskBreakdown ?? data.risk_breakdown) || {};
+    const highRiskCount =
+      (riskBreakdown.high ?? 0) + (riskBreakdown.critical ?? 0);
 
-      // Compute average risk penalty in points (per thesis: Penalty = 15 * max(0, r - 0.3) * 100)
-      let avgRiskPenaltyPts: number | null = null;
-      // Prefer an explicit avg_risk_penalty if the API provides it
-      if (data.avgRiskPenalty !== undefined || data.avg_risk_penalty !== undefined) {
-        const raw = Number(data.avgRiskPenalty ?? data.avg_risk_penalty);
-        avgRiskPenaltyPts = Number.isFinite(raw) ? raw : null;
-      } else {
-        const r = Number(data.avgRiskFactor ?? data.avg_risk_factor ?? 0);
-        // calculate penalty points according to thesis formula
-        avgRiskPenaltyPts = 15 * Math.max(0, r - 0.3) * 100;
-      }
+    // Compute average risk penalty in points (per thesis: Penalty = 15 * max(0, r - 0.3) * 100)
+    let avgRiskPenaltyPts: number | null = null;
+    // Prefer an explicit avg_risk_penalty if the API provides it
+    if (
+      data.avgRiskPenalty !== undefined ||
+      data.avg_risk_penalty !== undefined
+    ) {
+      const raw = Number(data.avgRiskPenalty ?? data.avg_risk_penalty);
+      avgRiskPenaltyPts = Number.isFinite(raw) ? raw : null;
+    } else {
+      const r = Number(data.avgRiskFactor ?? data.avg_risk_factor ?? 0);
+      // calculate penalty points according to thesis formula
+      avgRiskPenaltyPts = 15 * Math.max(0, r - 0.3) * 100;
+    }
 
-      return {
-        totalSuppliers,
-        avgEthicalScore,
-        avgCompositeScore,
-        avgRiskFactor,
-        avgRiskPenaltyPts,
-        avgCompletenessRatio,
-        highRiskCount,
-      };
-    }, [data]);
+    return {
+      totalSuppliers,
+      avgEthicalScore,
+      avgCompositeScore,
+      avgRiskFactor,
+      avgRiskPenaltyPts,
+      avgCompletenessRatio,
+      highRiskCount,
+    };
+  }, [data]);
 
   const suppliersByCountry = useMemo(
     () =>
@@ -2278,7 +2281,13 @@ const Dashboard = () => {
         />
         <KpiIndicator
           label="Avg. Risk Penalty"
-          value={avgRiskPenaltyPts !== null && avgRiskPenaltyPts !== undefined ? (Number.isFinite(avgRiskPenaltyPts) ? avgRiskPenaltyPts.toFixed(0) : "N/A") : "N/A"}
+          value={
+            avgRiskPenaltyPts !== null && avgRiskPenaltyPts !== undefined
+              ? Number.isFinite(avgRiskPenaltyPts)
+                ? avgRiskPenaltyPts.toFixed(0)
+                : "N/A"
+              : "N/A"
+          }
           icon={ShieldExclamationIcon}
           color={colors.warning}
           unit="pts"
