@@ -4,6 +4,10 @@
 # Allow the root Dockerfile
 !Dockerfile
 
+# Allow Leapcell-generated command scripts
+!build_cmd_*.sh
+!start_cmd_*.sh
+
 # Allow the backend folder and its contents
 !ethicsupply-node-backend/
 !ethicsupply-node-backend/**
