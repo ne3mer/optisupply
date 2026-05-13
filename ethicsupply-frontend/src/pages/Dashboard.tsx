@@ -63,7 +63,13 @@ import {
   Supplier,
   BandsMap,
 } from "../services/api";
-import { fmtRiskFactor, fmtPenalty, fmtScore, fmtRawMetric, fmtDate } from "../lib/formatters";
+import {
+  fmtRiskFactor,
+  fmtPenalty,
+  fmtScore,
+  fmtRawMetric,
+  fmtDate,
+} from "../lib/formatters";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import MachineLearningStatus from "../components/MachineLearningStatus";
@@ -545,7 +551,11 @@ const ReportGenerator = ({
       doc.setFontSize(18);
       doc.text(reportData.summary.totalSuppliers.toString(), 40, 70);
       doc.text(`${Math.round(reportData.summary.avgEthicalScore)}%`, 95, 70);
-      doc.text(`${fmtRawMetric(reportData.summary.avgCO2Emissions, "t")}`, 150, 70);
+      doc.text(
+        `${fmtRawMetric(reportData.summary.avgCO2Emissions, "t")}`,
+        150,
+        70,
+      );
 
       // Additional KPIs
       doc.setTextColor(138, 148, 200);
@@ -1026,9 +1036,7 @@ const ReportGenerator = ({
             supplier.completeness_ratio !== null
               ? formatPercent(supplier.completeness_ratio, 0)
               : "N/A",
-            supplier.updated_at
-              ? fmtDate(supplier.updated_at)
-              : "N/A",
+            supplier.updated_at ? fmtDate(supplier.updated_at) : "N/A",
           ]);
         });
 
@@ -2283,7 +2291,11 @@ const Dashboard = () => {
         />
         <KpiIndicator
           label="Avg. Risk Penalty"
-          value={avgRiskPenaltyPts !== null && avgRiskPenaltyPts !== undefined ? fmtPenalty(Number(avgRiskPenaltyPts)) : "N/A"}
+          value={
+            avgRiskPenaltyPts !== null && avgRiskPenaltyPts !== undefined
+              ? fmtPenalty(Number(avgRiskPenaltyPts))
+              : "N/A"
+          }
           icon={ShieldExclamationIcon}
           color={colors.warning}
         >
