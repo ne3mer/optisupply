@@ -3,6 +3,7 @@
 
 # Allow the root Dockerfile
 !Dockerfile
+!start.js
 !package.json
 !package-lock.json
 
