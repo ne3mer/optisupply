@@ -1,5 +1,9 @@
 // API URL and service functions for the application
 import { apiEndpoint } from "../config";
+import {
+  buildVariedListTitle,
+  shortSupplierDisplayName,
+} from "../lib/recommendationTitles";
 import logger from "../utils/log";
 
 const getEndpoint = apiEndpoint;
@@ -246,6 +250,9 @@ export interface Recommendation {
   created_at?: string; // From mock data
   updated_at?: string; // Optional updated timestamp
   isMockData?: boolean; // Flag if it's mock data
+  /** Follow-up / audit cycle when > 1 (from API or legacy title suffix). */
+  focus_round?: number;
+  focusRound?: number;
 }
 
 export interface ImprovementScenario {
@@ -1141,6 +1148,14 @@ function normalizeMockPriorityLabel(
   return "low";
 }
 
+function seedMockRecommendationStatus(
+  listIndex: number
+): "pending" | "in_progress" | "completed" {
+  if (listIndex % 37 === 0) return "completed";
+  if (listIndex % 23 === 7) return "in_progress";
+  return "pending";
+}
+
 export const getRecommendations = async () => {
   try {
     console.log("Fetching AI-powered recommendations from API...");
@@ -1153,7 +1168,7 @@ export const getRecommendations = async () => {
       // Return enhanced mock suppliers with AI recommendations if the endpoint is not available
       return mockSuppliers
         .sort((a, b) => (b.ethical_score || 0) - (a.ethical_score || 0))
-        .map((supplier) => {
+        .map((supplier, listIndex) => {
           // Create a partial SupplierEvaluation from Supplier data
           const supplierEval: SupplierEvaluation = {
             name: supplier.name,
@@ -1229,11 +1244,15 @@ export const getRecommendations = async () => {
           // Construct the mock Recommendation object matching the frontend interface
           return {
             _id: `mock-${supplier.id}`,
-            title: `Improve ${primaryCategory} for ${supplier.name}`,
+            title: buildVariedListTitle(
+              normalizeMockRecommendationCategory(primaryCategory),
+              `mock-${supplier.id}`,
+              shortSupplierDisplayName(supplier.name)
+            ),
             description: generatedAiExplanation.reasoning,
             category: normalizeMockRecommendationCategory(primaryCategory),
             priority: normalizeMockPriorityLabel(urgency),
-            status: "pending", // <-- Added missing status field
+            status: seedMockRecommendationStatus(listIndex),
             created_at: supplier.created_at,
             updated_at: supplier.updated_at,
             supplier: {
@@ -1284,7 +1303,7 @@ export const getRecommendations = async () => {
     );
     return mockSuppliers
       .sort((a, b) => (b.ethical_score || 0) - (a.ethical_score || 0))
-      .map((supplier) => {
+      .map((supplier, listIndex) => {
         // Create a partial SupplierEvaluation from Supplier data
         const supplierEval: SupplierEvaluation = {
           name: supplier.name,
@@ -1360,11 +1379,15 @@ export const getRecommendations = async () => {
         // Construct the mock Recommendation object matching the frontend interface
         return {
           _id: `mock-${supplier.id}`,
-          title: `Improve ${primaryCategory} for ${supplier.name}`,
+          title: buildVariedListTitle(
+            normalizeMockRecommendationCategory(primaryCategory),
+            `mock-${supplier.id}`,
+            shortSupplierDisplayName(supplier.name)
+          ),
           description: generatedAiExplanation.reasoning,
           category: normalizeMockRecommendationCategory(primaryCategory),
           priority: normalizeMockPriorityLabel(urgency),
-          status: "pending", // <-- Added missing status field
+          status: seedMockRecommendationStatus(listIndex),
           created_at: supplier.created_at,
           updated_at: supplier.updated_at,
           supplier: {
@@ -1389,7 +1412,7 @@ export const getRecommendations = async () => {
     // Return enhanced mock suppliers in case of error
     return mockSuppliers
       .sort((a, b) => (b.ethical_score || 0) - (a.ethical_score || 0))
-      .map((supplier) => {
+      .map((supplier, listIndex) => {
         // Create a partial SupplierEvaluation from Supplier data
         const supplierEval: SupplierEvaluation = {
           name: supplier.name,
@@ -1465,11 +1488,15 @@ export const getRecommendations = async () => {
         // Construct the mock Recommendation object matching the frontend interface
         return {
           _id: `mock-${supplier.id}`,
-          title: `Improve ${primaryCategory} for ${supplier.name}`,
+          title: buildVariedListTitle(
+            normalizeMockRecommendationCategory(primaryCategory),
+            `mock-${supplier.id}`,
+            shortSupplierDisplayName(supplier.name)
+          ),
           description: generatedAiExplanation.reasoning,
           category: normalizeMockRecommendationCategory(primaryCategory),
           priority: normalizeMockPriorityLabel(urgency),
-          status: "pending", // <-- Added missing status field
+          status: seedMockRecommendationStatus(listIndex),
           created_at: supplier.created_at,
           updated_at: supplier.updated_at,
           supplier: {

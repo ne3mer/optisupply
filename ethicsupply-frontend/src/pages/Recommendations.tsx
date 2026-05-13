@@ -6,6 +6,13 @@ import {
   Recommendation,
 } from "../services/api";
 import {
+  buildVariedListTitle,
+  focusRoundBadgeLabel,
+  looksLikeTemplateLoopTitle,
+  shortSupplierDisplayName,
+  stripFocusSuffixFromTitle,
+} from "../lib/recommendationTitles";
+import {
   AlertTriangle,
   ArrowDownUp,
   CheckCircle,
@@ -202,11 +209,23 @@ const buildStatusConfig = (colors: any) => ({
   },
 });
 
+/** Labels for the sort field segment (before _asc / _desc). */
+const SORT_FIELD_LABELS: Record<string, string> = {
+  createdAt: "Date Created",
+  priority: "Priority",
+  title: "Title",
+  supplier: "Supplier Name",
+  category: "Category",
+  status: "Status",
+  impact: "Estimated Impact",
+};
+
 type EnhancedRecommendation = Recommendation & {
   action_started_at?: string;
   action_owner?: string;
   action_notes?: string[];
   action_completed_at?: string;
+  focus_round?: number;
 };
 
 type RecCategory = "environmental" | "social" | "governance";
@@ -535,10 +554,29 @@ const enrichRecommendation = (
       ? { ...supplierBase, name: supplierName }
       : { name: supplierName };
 
-  const title =
-    r.title ||
-    (r.action ? `${r.action}` : null) ||
-    `Action plan for ${supplierName}`;
+  const rawTitle = (r.title || "").trim();
+  const { title: titleSansFocus, focusRound: focusFromTitleSuffix } =
+    stripFocusSuffixFromTitle(rawTitle);
+  const recAny = r as Record<string, unknown>;
+  const apiFocusRaw = recAny.focus_round ?? recAny.focusRound;
+  const focus_round =
+    typeof apiFocusRaw === "number" && !Number.isNaN(apiFocusRaw)
+      ? apiFocusRaw
+      : focusFromTitleSuffix;
+
+  const stableId = String(r._id ?? r.id ?? "");
+  const supplierShort = shortSupplierDisplayName(supplierName);
+
+  let title: string;
+  if (category && looksLikeTemplateLoopTitle(rawTitle)) {
+    title = buildVariedListTitle(category, stableId, supplierShort);
+  } else {
+    title =
+      titleSansFocus ||
+      rawTitle ||
+      (r.action ? `${r.action}` : null) ||
+      `Action plan for ${supplierName}`;
+  }
 
   const description =
     r.description ||
@@ -607,6 +645,9 @@ const enrichRecommendation = (
     created_at,
     estimated_impact,
     details,
+    ...(focus_round !== undefined && focus_round !== null
+      ? { focus_round }
+      : {}),
   };
 };
 
@@ -1060,6 +1101,12 @@ const RecommendationCard = ({
         recommendation.estimated_impact.toLowerCase().includes("cost")));
   const hasTimeframe = recommendation.timeframe;
 
+  const focusN = recommendation.focus_round;
+  const focusBadgeLabel =
+    typeof focusN === "number" && focusN > 1
+      ? focusRoundBadgeLabel(focusN)
+      : null;
+
   return (
     <motion.div
       ref={ref}
@@ -1120,6 +1167,20 @@ const RecommendationCard = ({
               {priorityInfo.icon}
               <span className="font-medium">{priorityInfo.label}</span>
             </AnimatedBadge>
+
+            {focusBadgeLabel && (
+              <AnimatedBadge
+                className="px-3 py-1 border"
+                style={{
+                  color: colors.textMuted,
+                  backgroundColor: colors.panel,
+                  borderColor: colors.textMuted + "40",
+                }}
+              >
+                <Layers className="h-4 w-4" />
+                <span className="font-medium">{focusBadgeLabel}</span>
+              </AnimatedBadge>
+            )}
 
             <AnimatedBadge
               className="px-3 py-1 border"
@@ -2001,6 +2062,19 @@ const RecommendationsPage = () => {
                 : "";
           comparison = nameA.localeCompare(nameB);
           break;
+        case "impact": {
+          const order = { High: 0, Medium: 1, Low: 2 };
+          const ia =
+            order[a.impact as keyof typeof order] ??
+            order[String(a.impact) as keyof typeof order] ??
+            99;
+          const ib =
+            order[b.impact as keyof typeof order] ??
+            order[String(b.impact) as keyof typeof order] ??
+            99;
+          comparison = ia - ib;
+          break;
+        }
         case "createdAt":
         default:
           const dateA = new Date(a.created_at).getTime();
@@ -2247,28 +2321,44 @@ const RecommendationsPage = () => {
               color={colors.error}
               delay={0.1}
             />
-            <ImpactScoreCard
-              label="In Progress"
-              value={stats.inProgress}
-              icon={<Activity className="h-5 w-5" />}
-              color={colors.accent}
-              delay={0.2}
-            />
-            <ImpactScoreCard
-              label="Completed"
-              value={stats.completed}
-              trend="up"
-              icon={<CheckCircle2 className="h-5 w-5" />}
-              color={colors.success}
-              delay={0.3}
-            />
-            <ImpactScoreCard
-              label="Completion"
-              value={`${stats.completionRate}%`}
-              icon={<Percent className="h-5 w-5" />}
-              color={colors.primary}
-              delay={0.4}
-            />
+            {stats.inProgress > 0 || stats.completed > 0 ? (
+              <>
+                <ImpactScoreCard
+                  label="In Progress"
+                  value={stats.inProgress}
+                  icon={<Activity className="h-5 w-5" />}
+                  color={colors.accent}
+                  delay={0.2}
+                />
+                <ImpactScoreCard
+                  label="Completed"
+                  value={stats.completed}
+                  trend="up"
+                  icon={<CheckCircle2 className="h-5 w-5" />}
+                  color={colors.success}
+                  delay={0.3}
+                />
+                <ImpactScoreCard
+                  label="Completion"
+                  value={`${stats.completionRate}%`}
+                  icon={<Percent className="h-5 w-5" />}
+                  color={colors.primary}
+                  delay={0.4}
+                />
+              </>
+            ) : (
+              <div
+                className="col-span-2 md:col-span-4 lg:col-span-3 flex items-center rounded-xl border px-4 py-3"
+                style={{
+                  borderColor: colors.accent + "30",
+                  backgroundColor: colors.background + "80",
+                }}
+              >
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  No actions started yet — click a recommendation to begin.
+                </p>
+              </div>
+            )}
             <ImpactScoreCard
               label="High Impact"
               value={`${stats.avgImpact}%`}
@@ -2378,8 +2468,8 @@ const RecommendationsPage = () => {
                 >
                   <ArrowDownUp className="h-4 w-4" />
                   <span>
-                    {sortBy.split("_")[0].charAt(0).toUpperCase() +
-                      sortBy.split("_")[0].slice(1)}
+                    {SORT_FIELD_LABELS[sortBy.split("_")[0]] ??
+                      sortBy.split("_")[0]}
                   </span>
                   <span className="text-xs">
                     {sortBy.split("_")[1] === "asc" ? "↑" : "↓"}
@@ -2758,13 +2848,15 @@ const RecommendationsPage = () => {
                         color: colors.text,
                       }}
                     >
-                      <option value="createdAt_desc">Newest First</option>
-                      <option value="createdAt_asc">Oldest First</option>
+                      <option value="createdAt_desc">Date Created (Newest)</option>
+                      <option value="createdAt_asc">Date Created (Oldest)</option>
                       <option value="priority_desc">Priority (High-Low)</option>
                       <option value="priority_asc">Priority (Low-High)</option>
                       <option value="title_asc">Title (A-Z)</option>
                       <option value="title_desc">Title (Z-A)</option>
-                      <option value="supplier_asc">Supplier (A-Z)</option>
+                      <option value="supplier_asc">Supplier Name (A-Z)</option>
+                      <option value="impact_desc">Estimated Impact (High first)</option>
+                      <option value="impact_asc">Estimated Impact (Low first)</option>
                     </select>
                   </div>
                 </div>

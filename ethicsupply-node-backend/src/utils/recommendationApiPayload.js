@@ -6,6 +6,49 @@
 
 const PILLARS = ["environmental", "social", "governance"];
 
+const TITLE_TEMPLATES = {
+  environmental: [
+    "Tighten emission controls for {supplier}",
+    "Address pollution compliance gaps at {supplier}",
+    "Strengthen renewable energy targets for {supplier}",
+    "Reduce carbon intensity at {supplier}",
+    "Improve waste management practices at {supplier}",
+  ],
+  social: [
+    "Review labour practices at {supplier}",
+    "Strengthen worker safety protocols for {supplier}",
+    "Close wage fairness gap at {supplier}",
+    "Improve human rights compliance for {supplier}",
+    "Increase gender diversity targets at {supplier}",
+  ],
+  governance: [
+    "Strengthen board oversight at {supplier}",
+    "Address ethics and compliance gaps for {supplier}",
+    "Improve transparency reporting at {supplier}",
+    "Review anti-corruption controls at {supplier}",
+    "Close board independence gap at {supplier}",
+  ],
+};
+
+function shortSupplierTitleName(name) {
+  if (!name || typeof name !== "string") return "Supplier";
+  return name.replace(/\s*\(Batch\s*\d+\)\s*$/i, "").trim() || "Supplier";
+}
+
+function pickListTitle(pillar, supplierIdx, recIdx, fullName) {
+  const short = shortSupplierTitleName(fullName);
+  const list = TITLE_TEMPLATES[pillar] || TITLE_TEMPLATES.environmental;
+  const idx = (supplierIdx + recIdx) % list.length;
+  return list[idx].replace("{supplier}", short);
+}
+
+/** ~8 completed / ~13 in_progress over ~300 rows (deterministic). */
+function seedWorkflowStatus(globalIndex) {
+  if (globalIndex % 37 === 0) return "completed";
+  if (globalIndex % 23 === 7) return "in_progress";
+  return "pending";
+}
+
 /** @returns {number|null} 0..1 */
 function toUnitInterval(v) {
   if (v === undefined || v === null || Number.isNaN(Number(v))) return null;
@@ -172,7 +215,7 @@ function insightForPillar(pillar, supplier, score01) {
 /**
  * Single recommendation payload for one supplier × pillar (snake_case, frontend-aligned).
  */
-function buildPayload(supplier, pillar, score01, batchIndex = 1) {
+function buildPayload(supplier, pillar, score01, batchIndex = 1, supplierIdx = 0, recIdx = 0) {
   const sid = supplier._id != null ? String(supplier._id) : String(supplier.id ?? "unknown");
   const name = supplier.name || "Supplier";
   let ethical;
@@ -190,7 +233,7 @@ function buildPayload(supplier, pillar, score01, batchIndex = 1) {
   const insight = insightForPillar(pillar, supplier, score01);
 
   const scorePct = Math.round(score01 * 1000) / 10;
-  const title = `Improve ${pillarHuman} performance for ${name}${batchIndex > 1 ? ` (Focus ${batchIndex})` : ""}`;
+  const title = pickListTitle(pillar, supplierIdx, recIdx, name);
 
   const description = `${name}'s modeled ${pillar} pillar sits near ${scorePct}% relative strength. ${insight.charAt(0).toUpperCase()}${insight.slice(1)}.`;
 
@@ -204,7 +247,7 @@ function buildPayload(supplier, pillar, score01, batchIndex = 1) {
   const scoreImprovement = Math.min(22, bump + Math.round((1 - score01) * 12));
   const costBand = priority === "high" ? 180000 + Math.round(score01 * 40000) : 75000 + Math.round(score01 * 50000);
 
-  return {
+  const out = {
     _id: recId,
     id: recId,
     action: actionLine(pillar),
@@ -253,13 +296,17 @@ function buildPayload(supplier, pillar, score01, batchIndex = 1) {
     updated_at: supplier.updated_at ? new Date(supplier.updated_at).toISOString() : now,
     isMockData: false,
   };
+  if (batchIndex > 1) {
+    out.focus_round = batchIndex;
+  }
+  return out;
 }
 
 /**
  * @param {object} supplier — plain Mongoose doc or POJO
  * @returns {object[]}
  */
-function buildRecommendationPayloadsForSupplier(supplier) {
+function buildRecommendationPayloadsForSupplier(supplier, supplierIdx = 0) {
   if (!supplier) return [];
   const scores = pillarScores(supplier);
   const ranked = Object.entries(scores).sort((a, b) => a[1] - b[1]);
@@ -287,8 +334,8 @@ function buildRecommendationPayloadsForSupplier(supplier) {
     }
   }
 
-  return picks.map((p) =>
-    buildPayload(supplier, p.pillar, p.score01, p.batchIndex)
+  return picks.map((p, recIdx) =>
+    buildPayload(supplier, p.pillar, p.score01, p.batchIndex, supplierIdx, recIdx)
   );
 }
 
@@ -298,7 +345,14 @@ function buildRecommendationPayloadsForSupplier(supplier) {
  */
 function flattenRecommendationPayloads(suppliers) {
   if (!Array.isArray(suppliers) || suppliers.length === 0) return [];
-  return suppliers.flatMap((s) => buildRecommendationPayloadsForSupplier(s));
+  let globalIdx = 0;
+  return suppliers.flatMap((s, supplierIdx) => {
+    const payloads = buildRecommendationPayloadsForSupplier(s, supplierIdx);
+    return payloads.map((payload) => ({
+      ...payload,
+      status: seedWorkflowStatus(globalIdx++),
+    }));
+  });
 }
 
 module.exports = {
