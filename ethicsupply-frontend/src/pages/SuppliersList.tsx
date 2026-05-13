@@ -507,6 +507,9 @@ const Tooltip = ({
 // --- SuppliersList Component ---
 
 const SuppliersList = () => {
+  useEffect(() => {
+    document.title = "OptiSupply — Suppliers";
+  }, []);
   const themeColors = useThemeColors() as any;
   const colors = themeColors || {
     background: '#ffffff',

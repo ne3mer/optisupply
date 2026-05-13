@@ -1276,6 +1276,9 @@ const TOUR_STEPS: TourStep[] = [
 // --- Dashboard Component ---
 
 const Dashboard = () => {
+  useEffect(() => {
+    document.title = "OptiSupply — Dashboard";
+  }, []);
   const colors = useColors();
   const tour = useTour(TOUR_STEPS);
   const navigate = useNavigate();

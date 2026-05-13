@@ -187,6 +187,9 @@ const createNodeTypes = (colors) => ({
 });
 
 const SupplyChainGraph = () => {
+  useEffect(() => {
+    document.title = "OptiSupply — Supply Chain Graph";
+  }, []);
   const globeEl = useRef<Globe | null>(null);
   const controlsRef = useRef<any>(); // For OrbitControls
   const colors = useThemeColors() as any;
@@ -573,6 +576,27 @@ const SupplyChainGraph = () => {
     alert("Connection created successfully!");
   };
 
+  // Seed sample relationships locally (useful for demos when API returns few links)
+  const seedRelationships = () => {
+    const nodes = graphData.nodes || [];
+    if (nodes.length < 2) return;
+    const newLinks: LinkObject[] = [];
+    const targetCount = Math.max(5, Math.floor(nodes.length / 6));
+    for (let i = 0; i < targetCount; i++) {
+      const s = nodes[Math.floor(Math.random() * nodes.length)].id;
+      let t = nodes[Math.floor(Math.random() * nodes.length)].id;
+      let safety = 0;
+      while (t === s && safety++ < 10) t = nodes[Math.floor(Math.random() * nodes.length)].id;
+      newLinks.push({ id: `seed-${Date.now()}-${i}`, source: s, target: t, relationship: "seed", ethical: Math.random() > 0.6 });
+    }
+    const merged = [...(graphData.links || []), ...newLinks];
+    setGraphData({ ...(graphData || { nodes: [], links: [] }), links: merged, nodes: graphData.nodes });
+    // persist to localStorage for demo consistency
+    const current = loadUserLinks();
+    saveUserLinks([...current, ...newLinks]);
+    setUsingMockData(true);
+  };
+
   // Handle node selection during connection creation
   const handleNodeSelectionForConnection = (nodeId: string) => {
     if (!connectionSource) {
@@ -927,6 +951,27 @@ const SupplyChainGraph = () => {
         )}
         </div>
       </motion.div>
+
+      {/* Quick diagnostic when nodes >> links */}
+      {(() => {
+        const nodeCount = filteredGraphData.nodes.length;
+        const linkCount = filteredGraphData.links.length;
+        const minExpected = Math.max(1, Math.floor(nodeCount / 10));
+        if (nodeCount > 0 && linkCount < minExpected) {
+          return (
+            <div className="mb-4 p-3 rounded border flex items-center justify-between" style={{ backgroundColor: colors.warning + '10', borderColor: colors.warning + '40', color: colors.warning }}>
+              <div>
+                This graph contains <strong>{nodeCount}</strong> suppliers but only <strong>{linkCount}</strong> connections. If you expected relationships, try refreshing or seed sample connections for the demo.
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => window.dispatchEvent(new Event('fetchData'))} className="px-3 py-1 rounded border" style={{ backgroundColor: colors.panel, borderColor: colors.accent + '40' }}>Refresh</button>
+                <button onClick={seedRelationships} className="px-3 py-1 rounded border" style={{ backgroundColor: colors.panel, borderColor: colors.accent + '40' }}>Seed sample relationships</button>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {/* Legend */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

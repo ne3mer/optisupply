@@ -1635,6 +1635,9 @@ const ActionPlanModal = ({
 
 // Main Page Component (Enhanced)
 const RecommendationsPage = () => {
+  useEffect(() => {
+    document.title = "OptiSupply — Recommendations";
+  }, []);
   const colors = useThemeColors() as any;
   const categoryConfig = buildCategoryConfig(colors);
   const priorityConfig = buildPriorityConfig(colors);

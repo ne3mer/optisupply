@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -22,6 +22,10 @@ import { useThemeColors } from "../theme/useThemeColors";
 
 const About: React.FC = () => {
   const colors = useThemeColors() as any;
+
+  useEffect(() => {
+    document.title = "OptiSupply — About";
+  }, []);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },

@@ -63,7 +63,7 @@ const Navbar = () => {
   const primaryNav: NavItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: <BarChart3 size={16} /> },
     { name: "Suppliers", path: "/suppliers", icon: <List size={16} /> },
-    { name: "Recomend", path: "/recommendations", icon: <TrendingUp size={16} /> },
+    { name: "Recommend", path: "/recommendations", icon: <TrendingUp size={16} /> },
     { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={16} /> },
     { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={16} /> },
   ];

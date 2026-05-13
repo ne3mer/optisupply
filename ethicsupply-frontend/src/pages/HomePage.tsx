@@ -242,6 +242,8 @@ const HomePage = () => {
   const numbersRef = useRef<HTMLDivElement>(null!);
   const numbersVisible = useInView(numbersRef);
   const [emailVal, setEmailVal] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -271,7 +273,22 @@ const HomePage = () => {
 
   const handleGetStarted = (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = "/dashboard";
+    setEmailError("");
+    const val = emailVal.trim();
+    if (!val) {
+      setEmailError("Please enter your work email.");
+      return;
+    }
+    // simple email validation
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(val)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+
+    // TODO: hook up to API — for now show an in-place success message
+    setEmailSubmitted(true);
+    setEmailVal("");
   };
 
   return (
@@ -961,12 +978,15 @@ const HomePage = () => {
             <p style={{ fontFamily: F.sans, fontSize: 13, color: "rgba(0,0,0,0.55)", marginBottom: 24 }}>
               No credit card. Setup in under 5 minutes.
             </p>
-            <form onSubmit={handleGetStarted} style={{ display: "flex", gap: 0, flexWrap: "wrap" }}>
+            <form onSubmit={handleGetStarted} style={{ display: "flex", gap: 0, flexWrap: "wrap" }} noValidate>
               <input
                 type="email"
+                required
+                aria-required="true"
+                aria-invalid={!!emailError}
                 placeholder="your@company.com"
                 value={emailVal}
-                onChange={(e) => setEmailVal(e.target.value)}
+                onChange={(e) => { setEmailVal(e.target.value); setEmailError(""); }}
                 style={{
                   flex: 1, minWidth: 180,
                   height: 48, padding: "0 16px",
@@ -993,6 +1013,16 @@ const HomePage = () => {
               >
                 Request Access
               </button>
+              <div style={{ width: "100%", marginTop: 8 }}>
+                {emailError && (
+                  <div role="alert" style={{ color: "#E84545", fontFamily: F.mono, fontSize: 12 }}>{emailError}</div>
+                )}
+                {emailSubmitted && (
+                  <div role="status" style={{ color: "#083808", background: "#C8F05A", padding: "8px 10px", borderRadius: 4, fontFamily: F.sans, fontSize: 13, marginTop: 4 }}>
+                    Thanks — we&apos;ll be in touch soon.
+                  </div>
+                )}
+              </div>
             </form>
           </div>
         </div>
@@ -1006,15 +1036,34 @@ const HomePage = () => {
               OptiSupply
             </span>
             <div className="lp-footer-links">
-              {["Dashboard", "Suppliers", "Recommendations", "About"].map((l) => (
-                <a key={l} href={l === "Dashboard" ? "/dashboard" : `#${l.toLowerCase()}`}
-                  style={{ fontFamily: F.sans, fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em", textDecoration: "none", transition: "color 0.2s" }}
-                  onMouseOver={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-                  onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
-                >
-                  {l}
-                </a>
-              ))}
+              <Link to="/dashboard"
+                style={{ fontFamily: F.sans, fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em", textDecoration: "none", transition: "color 0.2s" }}
+                onMouseOver={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+                onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+              >
+                Dashboard
+              </Link>
+              <Link to="/suppliers"
+                style={{ fontFamily: F.sans, fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em", textDecoration: "none", transition: "color 0.2s" }}
+                onMouseOver={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+                onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+              >
+                Suppliers
+              </Link>
+              <Link to="/recommendations"
+                style={{ fontFamily: F.sans, fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em", textDecoration: "none", transition: "color 0.2s" }}
+                onMouseOver={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+                onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+              >
+                Recommendations
+              </Link>
+              <Link to="/about"
+                style={{ fontFamily: F.sans, fontSize: 12, color: "rgba(255,255,255,0.35)", letterSpacing: "0.04em", textDecoration: "none", transition: "color 0.2s" }}
+                onMouseOver={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+                onMouseOut={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+              >
+                About
+              </Link>
             </div>
             <span style={{ fontFamily: F.mono, fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: "0.06em" }}>
               © 2026 OptiSupply

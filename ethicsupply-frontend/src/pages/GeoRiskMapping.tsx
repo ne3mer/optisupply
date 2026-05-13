@@ -275,6 +275,9 @@ const getRiskBadge = (risks: string[]) => {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 const GeoRiskMapping = () => {
+  useEffect(() => {
+    document.title = "OptiSupply — Geo Risk Mapping";
+  }, []);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
