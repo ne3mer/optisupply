@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { useTheme } from "../contexts/ThemeContext";
+import { fmtRawMetric } from "../lib/formatters";
 
 interface CO2Emission {
   name: string;
@@ -49,8 +50,8 @@ const CustomTooltip = ({ active, payload, label, dark }: any) => {
           {label}
         </p>
         <p style={{ fontSize: 22, fontFamily: '"Geist Mono", monospace', fontWeight: 300, letterSpacing: "-0.03em", color: dark ? "#F5F5F0" : "#0A0A0A", lineHeight: 1 }}>
-          {payload[0].value.toFixed(1)}
-          <span style={{ fontSize: 11, color: dark ? "#808080" : "#555555", marginLeft: 4, fontWeight: 400 }}>t CO₂</span>
+          {fmtRawMetric(Number(payload[0].value), "t")}
+          <span style={{ fontSize: 11, color: dark ? "#808080" : "#555555", marginLeft: 4, fontWeight: 400 }}>CO₂</span>
         </p>
       </div>
     );

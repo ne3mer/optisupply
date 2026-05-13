@@ -26,6 +26,12 @@ import {
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useThemeColors } from "../theme/useThemeColors";
+import {
+  fmtRiskFactor,
+  fmtPenalty,
+  fmtScore,
+  fmtRawMetric,
+} from "../lib/formatters";
 
 const LoadingIndicator = () => {
   const colors = useThemeColors();
@@ -614,20 +620,14 @@ const SupplierDetails = () => {
             <StatRow
               label="Risk Factor"
               icon={ExclamationTriangleIcon}
-              value={
-                riskFactor !== null
-                  ? `${(riskFactor * 100).toFixed(1)}%`
-                  : "N/A"
-              }
+              value={riskFactor !== null ? fmtRiskFactor(riskFactor) : "N/A"}
               color={riskColor}
             />
             <StatRow
               label="Risk Penalty"
               icon={ExclamationTriangleIcon}
               value={
-                riskPenaltyPts !== null
-                  ? `${riskPenaltyPts.toFixed(1)} pts`
-                  : "N/A"
+                riskPenaltyPts !== null ? fmtPenalty(riskPenaltyPts) : "N/A"
               }
               color={riskColor}
             />
@@ -869,7 +869,7 @@ const SupplierDetails = () => {
                 value={
                   supplier.co2_emissions !== undefined &&
                   supplier.co2_emissions !== null
-                    ? `${supplier.co2_emissions} t`
+                    ? fmtRawMetric(Number(supplier.co2_emissions), "t")
                     : "N/A"
                 }
               />

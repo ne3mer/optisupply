@@ -49,6 +49,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { CheckBadgeIcon as CheckBadgeSolid } from "@heroicons/react/24/solid";
 import { useThemeColors } from "../theme/useThemeColors";
+import {
+  fmtRiskFactor,
+  fmtPenalty,
+  fmtScore,
+  fmtRawMetric,
+  fmtDate,
+} from "../lib/formatters";
 
 const LoadingIndicator = () => {
   const colors = useThemeColors();
@@ -1152,32 +1159,48 @@ const SuppliersList = () => {
 
       // Risk Information
       formatted["Risk Level"] = supplier.risk_level || "N/A";
-      formatted["Risk Factor"] = formatValue(supplier.risk_factor);
-      formatted["Risk Penalty"] = formatValue(supplier.risk_penalty);
+      formatted["Risk Factor"] =
+        supplier.risk_factor !== undefined && supplier.risk_factor !== null
+          ? fmtRiskFactor(supplier.risk_factor)
+          : supplier.risk_penalty !== undefined && supplier.risk_penalty !== null
+          ? fmtPenalty(supplier.risk_penalty)
+          : "N/A";
+      formatted["Risk Penalty"] =
+        supplier.risk_penalty !== undefined && supplier.risk_penalty !== null
+          ? fmtPenalty(supplier.risk_penalty)
+          : "N/A";
       formatted["Completeness Ratio"] = formatValue(
         supplier.completeness_ratio,
       );
 
       // Environmental Metrics
-      formatted["CO2 Emissions (tons)"] = formatValue(supplier.co2_emissions);
-      formatted["Total Emissions"] = formatValue(
-        (supplier as any).total_emissions,
-      );
-      formatted["Water Usage (cubic meters)"] = formatValue(
-        supplier.water_usage,
-      );
-      formatted["Waste Generated"] = formatValue(
-        (supplier as any).waste_generated,
-      );
+      formatted["CO2 Emissions (tons)"] =
+        typeof supplier.co2_emissions === "number"
+          ? fmtRawMetric(supplier.co2_emissions, "t")
+          : formatValue(supplier.co2_emissions);
+      formatted["Total Emissions"] =
+        typeof (supplier as any).total_emissions === "number"
+          ? fmtRawMetric((supplier as any).total_emissions, "t")
+          : formatValue((supplier as any).total_emissions);
+      formatted["Water Usage (cubic meters)"] =
+        typeof supplier.water_usage === "number"
+          ? fmtRawMetric(supplier.water_usage, "m³")
+          : formatValue(supplier.water_usage);
+      formatted["Waste Generated"] =
+        typeof (supplier as any).waste_generated === "number"
+          ? fmtRawMetric((supplier as any).waste_generated, "t")
+          : formatValue((supplier as any).waste_generated);
       formatted["Energy Efficiency"] = formatValue(
         (supplier as any).energy_efficiency,
       );
       formatted["Waste Management Score"] = formatValue(
         supplier.waste_management_score,
       );
-      formatted["Renewable Energy Percent"] = formatValue(
-        supplier.renewable_energy_percent,
-      );
+      formatted["Renewable Energy Percent"] =
+        supplier.renewable_energy_percent !== undefined &&
+        supplier.renewable_energy_percent !== null
+          ? `${Number(supplier.renewable_energy_percent).toFixed(1)}%`
+          : formatValue(supplier.renewable_energy_percent);
       formatted["Pollution Control"] = formatValue(
         (supplier as any).pollution_control,
       );
@@ -1249,7 +1272,9 @@ const SuppliersList = () => {
       formatted["Created At"] =
         supplier.created_at || (supplier as any).createdAt || "N/A";
       formatted["Updated At"] =
-        supplier.updated_at || (supplier as any).updatedAt || "N/A";
+        (supplier as any).updated_at || (supplier as any).updatedAt
+          ? fmtDate((supplier as any).updated_at || (supplier as any).updatedAt)
+          : "N/A";
 
       return formatted;
     });
@@ -2596,9 +2621,7 @@ const SuppliersList = () => {
                                 label: "Risk Factor",
                                 value: (() => {
                                   const r = computeRiskFactor(supplier);
-                                  return r !== null
-                                    ? formatPercent(r, 1)
-                                    : "N/A";
+                                  return r !== null ? fmtRiskFactor(r) : "N/A";
                                 })(),
                                 tooltip: sectionHelp.riskExposure,
                                 color: riskColor,

@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { fmtRawMetric } from "../lib/formatters";
 
 // Common tooltip wrapper component with enhanced styling
 const TooltipWrapper = ({ children, title }) => (
@@ -35,9 +36,10 @@ export const CO2EmissionsTooltip = ({ active, payload }: any) => {
     return (
       <div className="bg-white p-3 border border-gray-200 shadow-md rounded-md">
         <p className="text-sm font-medium">{`${payload[0].name}`}</p>
-        <p className="text-sm text-gray-700">{`CO₂ Emissions: ${payload[0].value.toFixed(
-          1
-        )} tons`}</p>
+        <p className="text-sm text-gray-700">{`CO₂ Emissions: ${fmtRawMetric(
+          Number(payload[0].value),
+          "t"
+        )}`}</p>
         <p className="text-xs text-gray-500 mt-1">
           {getIndustryEmissionsContext(payload[0].name, payload[0].value)}
         </p>
@@ -66,7 +68,10 @@ export const WaterUsageTooltip = ({ active, payload, label }: any) => {
     return (
       <div className="bg-white p-3 border border-gray-200 shadow-md rounded-md">
         <p className="text-sm font-medium">{`${label}`}</p>
-        <p className="text-sm text-gray-700">{`Water Usage: ${payload[0].value} gallons/unit`}</p>
+        <p className="text-sm text-gray-700">{`Water Usage: ${fmtRawMetric(
+          Number(payload[0].value),
+          "gallons/unit"
+        )}`}</p>
         <p className="text-xs text-gray-500 mt-1">
           {payload[0].value > 100
             ? "Above target threshold"

@@ -1,4 +1,5 @@
 import React from "react";
+import { fmtRawMetric } from "../../lib/formatters";
 
 interface CO2EmissionsTooltipProps {
   active?: boolean;
@@ -27,9 +28,10 @@ const CO2EmissionsTooltip: React.FC<CO2EmissionsTooltipProps> = ({
     return (
       <div className="bg-white p-3 border border-gray-200 shadow-md rounded-md">
         <p className="text-sm font-medium">{`${payload[0].name}`}</p>
-        <p className="text-sm text-gray-700">{`CO₂ Emissions: ${payload[0].value.toFixed(
-          1
-        )} tons`}</p>
+        <p className="text-sm text-gray-700">{`CO₂ Emissions: ${fmtRawMetric(
+          Number(payload[0].value),
+          "t"
+        )}`}</p>
         <p className="text-xs text-gray-500 mt-1">
           {getIndustryEmissionsContext(payload[0].name, payload[0].value)}
         </p>

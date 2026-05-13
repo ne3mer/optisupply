@@ -58,6 +58,10 @@ import {
   getDatasetMeta,
   getBands,
   getSuppliers,
+} from "../services/api";
+import { fmtRawMetric, fmtDate } from "../lib/formatters";
+} from "../services/api";
+import { fmtRiskFactor, fmtPenalty, fmtScore, fmtRawMetric } from "../lib/formatters";
   Supplier,
   BandsMap,
 } from "../services/api";
@@ -543,7 +547,7 @@ const ReportGenerator = ({
       doc.setFontSize(18);
       doc.text(reportData.summary.totalSuppliers.toString(), 40, 70);
       doc.text(`${Math.round(reportData.summary.avgEthicalScore)}%`, 95, 70);
-      doc.text(`${reportData.summary.avgCO2Emissions.toFixed(1)}t`, 150, 70);
+      doc.text(`${fmtRawMetric(reportData.summary.avgCO2Emissions, "t")}`, 150, 70);
 
       // Additional KPIs
       doc.setTextColor(138, 148, 200);
@@ -927,7 +931,7 @@ const ReportGenerator = ({
         ],
         [
           "Average CO₂ Emissions",
-          `${reportData.summary.avgCO2Emissions.toFixed(1)} tons`,
+          `${fmtRawMetric(reportData.summary.avgCO2Emissions, "t")}`,
         ],
         [""],
         ["Risk Distribution", "Count", "Percentage"],
@@ -980,7 +984,7 @@ const ReportGenerator = ({
         const co2Data = [["Industry", "CO₂ Emissions (tons)"]];
 
         reportData.co2ByIndustry.forEach((item) => {
-          co2Data.push([item.name, item.value]);
+          co2Data.push([item.name, fmtRawMetric(item.value, "t")]);
         });
 
         const co2Sheet = XLSX.utils.aoa_to_sheet(co2Data);
@@ -992,7 +996,7 @@ const ReportGenerator = ({
         const waterData = [["Month", "Water Usage (m³)"]];
 
         reportData.waterUsageTrend.forEach((item) => {
-          waterData.push([item.month, item.usage]);
+          waterData.push([item.month, fmtRawMetric(item.usage, "m³")]);
         });
 
         const waterSheet = XLSX.utils.aoa_to_sheet(waterData);
@@ -1025,7 +1029,7 @@ const ReportGenerator = ({
               ? formatPercent(supplier.completeness_ratio, 0)
               : "N/A",
             supplier.updated_at
-              ? new Date(supplier.updated_at).toLocaleDateString()
+              ? fmtDate(supplier.updated_at)
               : "N/A",
           ]);
         });
@@ -2281,16 +2285,9 @@ const Dashboard = () => {
         />
         <KpiIndicator
           label="Avg. Risk Penalty"
-          value={
-            avgRiskPenaltyPts !== null && avgRiskPenaltyPts !== undefined
-              ? Number.isFinite(avgRiskPenaltyPts)
-                ? avgRiskPenaltyPts.toFixed(0)
-                : "N/A"
-              : "N/A"
-          }
+          value={avgRiskPenaltyPts !== null && avgRiskPenaltyPts !== undefined ? fmtPenalty(Number(avgRiskPenaltyPts)) : "N/A"}
           icon={ShieldExclamationIcon}
           color={colors.warning}
-          unit="pts"
         >
           <div className="mt-2 text-xs" style={{ color: colors.textMuted }}>
             High & Critical suppliers: {highRiskCount ?? 0}

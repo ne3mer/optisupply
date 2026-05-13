@@ -35,6 +35,7 @@ import {
 } from "../services/api";
 import { useThemeColors } from "../theme/useThemeColors";
 import { useTheme } from "../contexts/ThemeContext";
+import { fmtDate } from "../lib/formatters";
 
 // Risk categories — updated palette to match site theme
 const riskTypes: Record<
@@ -1174,7 +1175,7 @@ const GeoRiskMapping = () => {
                               className="text-[10px]"
                               style={{ color: "#808080" }}
                             >
-                              {alert.date}
+                              {fmtDate(alert.date)}
                             </span>
                           </div>
                         </div>
