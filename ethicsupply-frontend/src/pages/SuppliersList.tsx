@@ -159,6 +159,23 @@ const formatPercent = (value: number | null | undefined, digits = 0) => {
   return `${(value * 100).toFixed(digits)}%`;
 };
 
+// Compute canonical risk factor `r` (0-1) for display
+const computeRiskFactor = (supplier: Supplier): number | null => {
+  // If an explicit risk_factor (0-1) is present, use it
+  if (typeof supplier.risk_factor === "number" && Number.isFinite(supplier.risk_factor)) {
+    return Math.max(0, Math.min(1, supplier.risk_factor));
+  }
+
+  // If only a risk_penalty (points) is present, invert the thesis formula:
+  // penalty = 15 * max(0, r - 0.3) * 100  => r = penalty/1500 + 0.3
+  if (typeof supplier.risk_penalty === "number" && Number.isFinite(supplier.risk_penalty)) {
+    const r = supplier.risk_penalty / 1500 + 0.3;
+    return Math.max(0, Math.min(1, r));
+  }
+
+  return null;
+};
+
 // Score explanation descriptions
 const scoreExplanations = {
   ethical_score:
@@ -2571,10 +2588,10 @@ const SuppliersList = () => {
                               },
                               {
                                 label: "Risk Factor",
-                                value:
-                                  typeof supplier.risk_factor === "number"
-                                    ? formatPercent(supplier.risk_factor, 0)
-                                    : "N/A",
+                                value: (() => {
+                                  const r = computeRiskFactor(supplier);
+                                  return r !== null ? formatPercent(r, 1) : "N/A";
+                                })(),
                                 tooltip: sectionHelp.riskExposure,
                                 color: riskColor,
                               },
