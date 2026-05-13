@@ -1,0 +1,14 @@
+service:
+  name: ethicsupply-backend
+  root: ./ethicsupply-node-backend   # Build context for Leapcell
+  dockerfile: Dockerfile            # Path relative to root
+  build:
+    command: npm ci --only=production
+  start:
+    command: npm start            # Uses package.json start script (node start.js)
+  env:
+    NODE_ENV: production
+    PORT: 10000
+    CORS_ALLOWED_ORIGINS: "https://optisupply.vercel.app,https://optisupp.netlify.app,http://localhost:5173"
+    JWT_SECRET: "912A3060859n912A3060859n912A3060859n912A3060859n912A3060859n912A3060859n912A3060859n"
+    MONGODB_URI: "mongodb+srv://ne3mer:912A3060859n@cluster0.pf5lrul.mongodb.net/optisupply?retryWrites=true&w=majority"
