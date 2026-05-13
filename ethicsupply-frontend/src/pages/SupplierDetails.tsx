@@ -40,7 +40,10 @@ const LoadingIndicator = () => {
         className="w-12 h-12 border-t-2 border-b-2 rounded-full mb-4"
         style={{ borderColor: colors.primary }}
       />
-      <p className="text-sm font-mono uppercase tracking-widest" style={{ color: colors.textMuted }}>
+      <p
+        className="text-sm font-mono uppercase tracking-widest"
+        style={{ color: colors.textMuted }}
+      >
         Loading Dossier
       </p>
     </div>
@@ -56,13 +59,24 @@ const ErrorDisplay = ({ message }: { message: string }) => {
     >
       <div
         className="max-w-md w-full rounded-md p-8 text-center"
-        style={{ backgroundColor: colors.panel, border: `1px solid ${colors.error}30` }}
+        style={{
+          backgroundColor: colors.panel,
+          border: `1px solid ${colors.error}30`,
+        }}
       >
-        <ExclamationTriangleIcon className="h-10 w-10 mx-auto mb-4" style={{ color: colors.error }} />
-        <h3 className="text-lg font-semibold mb-2" style={{ color: colors.text }}>
+        <ExclamationTriangleIcon
+          className="h-10 w-10 mx-auto mb-4"
+          style={{ color: colors.error }}
+        />
+        <h3
+          className="text-lg font-semibold mb-2"
+          style={{ color: colors.text }}
+        >
           Supplier Not Found
         </h3>
-        <p className="text-sm mb-6" style={{ color: colors.textMuted }}>{message}</p>
+        <p className="text-sm mb-6" style={{ color: colors.textMuted }}>
+          {message}
+        </p>
         <Link
           to="/suppliers"
           className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-md transition-opacity hover:opacity-80"
@@ -77,11 +91,16 @@ const ErrorDisplay = ({ message }: { message: string }) => {
 
 const getRiskColor = (colors: any, level: string | undefined) => {
   switch (level?.toLowerCase()) {
-    case "low":      return colors.success;
-    case "medium":   return colors.warning;
-    case "high":     return colors.error;
-    case "critical": return colors.secondary;
-    default:         return colors.textMuted;
+    case "low":
+      return colors.success;
+    case "medium":
+      return colors.warning;
+    case "high":
+      return colors.error;
+    case "critical":
+      return colors.secondary;
+    default:
+      return colors.textMuted;
   }
 };
 
@@ -118,7 +137,13 @@ const Pill = ({
 }) => (
   <span
     className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase font-mono"
-    style={{ color, backgroundColor: bg, border, borderRadius: "4px", letterSpacing: "0.06em" }}
+    style={{
+      color,
+      backgroundColor: bg,
+      border,
+      borderRadius: "4px",
+      letterSpacing: "0.06em",
+    }}
   >
     {children}
   </span>
@@ -142,11 +167,17 @@ const StatRow = ({
       className="flex items-center justify-between py-2.5"
       style={{ borderBottom: `1px solid ${colors.accent}12` }}
     >
-      <span className="flex items-center gap-2 text-sm" style={{ color: colors.textMuted }}>
+      <span
+        className="flex items-center gap-2 text-sm"
+        style={{ color: colors.textMuted }}
+      >
         {Icon && <Icon className="h-4 w-4 shrink-0" />}
         {label}
       </span>
-      <span className="text-sm font-mono font-semibold" style={{ color: color || colors.text }}>
+      <span
+        className="text-sm font-mono font-semibold"
+        style={{ color: color || colors.text }}
+      >
         {value}
       </span>
     </div>
@@ -170,11 +201,17 @@ const PillarBar = ({
     <div>
       <div className="flex items-center justify-between text-sm mb-1.5">
         <span style={{ color: colors.textMuted }}>{label}</span>
-        <span className="font-mono font-semibold" style={{ color: shown !== null ? color : colors.textMuted }}>
+        <span
+          className="font-mono font-semibold"
+          style={{ color: shown !== null ? color : colors.textMuted }}
+        >
           {shown !== null ? shown.toFixed(1) : "N/A"}
         </span>
       </div>
-      <div className="h-[3px] rounded-full overflow-hidden" style={{ backgroundColor: color + "22" }}>
+      <div
+        className="h-[3px] rounded-full overflow-hidden"
+        style={{ backgroundColor: color + "22" }}
+      >
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: color }}
@@ -203,14 +240,28 @@ const SectionCard = ({
   return (
     <div
       className="rounded-md overflow-hidden"
-      style={{ backgroundColor: colors.panel, border: `1px solid ${colors.accent}18` }}
+      style={{
+        backgroundColor: colors.panel,
+        border: `1px solid ${colors.accent}18`,
+      }}
     >
       <div
         className="px-5 py-3.5 flex items-center gap-2"
-        style={{ borderBottom: `1px solid ${colors.accent}12`, borderLeft: `3px solid ${accent || colors.primary}` }}
+        style={{
+          borderBottom: `1px solid ${colors.accent}12`,
+          borderLeft: `3px solid ${accent || colors.primary}`,
+        }}
       >
-        {Icon && <Icon className="h-4 w-4 shrink-0" style={{ color: accent || colors.primary }} />}
-        <span className="text-sm font-semibold uppercase tracking-wider font-mono" style={{ color: colors.text, letterSpacing: "0.08em" }}>
+        {Icon && (
+          <Icon
+            className="h-4 w-4 shrink-0"
+            style={{ color: accent || colors.primary }}
+          />
+        )}
+        <span
+          className="text-sm font-semibold uppercase tracking-wider font-mono"
+          style={{ color: colors.text, letterSpacing: "0.08em" }}
+        >
           {title}
         </span>
       </div>
@@ -232,7 +283,11 @@ const SupplierDetails = () => {
   const [showTraceDrawer, setShowTraceDrawer] = useState(false);
 
   const fetchSupplier = async () => {
-    if (!id) { setError("No supplier ID provided."); setLoading(false); return; }
+    if (!id) {
+      setError("No supplier ID provided.");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -241,28 +296,38 @@ const SupplierDetails = () => {
         const s = await getSupplier(id);
         setSupplier(s);
         // Also load list for similar-suppliers sidebar (non-blocking)
-        getSuppliers().then(setAllSuppliers).catch(() => {});
+        getSuppliers()
+          .then(setAllSuppliers)
+          .catch(() => {});
       } catch {
         // Fallback: search full list
         const list = await getSuppliers();
         setAllSuppliers(list);
-        const found = list.find((s) => s.id?.toString() === id || (s as any)._id?.toString() === id);
+        const found = list.find(
+          (s) => s.id?.toString() === id || (s as any)._id?.toString() === id,
+        );
         if (!found) throw new Error(`Supplier ID ${id} not found.`);
         setSupplier(found);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load supplier dossier.");
+      setError(
+        err instanceof Error ? err.message : "Failed to load supplier dossier.",
+      );
       setSupplier(null);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchSupplier(); }, [id]);
+  useEffect(() => {
+    fetchSupplier();
+  }, [id]);
 
   useEffect(() => {
     const onRefresh = () => fetchSupplier();
-    const onVisible = () => { if (document.visibilityState === "visible") fetchSupplier(); };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchSupplier();
+    };
     window.addEventListener("supplier-refresh", onRefresh);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
@@ -275,25 +340,44 @@ const SupplierDetails = () => {
     if (!supplier || allSuppliers.length === 0) return [];
     const suppId = (supplier as any)._id || supplier.id;
     return allSuppliers
-      .filter((s) => s.industry === supplier.industry && ((s as any)._id || s.id)?.toString() !== suppId?.toString())
+      .filter(
+        (s) =>
+          s.industry === supplier.industry &&
+          ((s as any)._id || s.id)?.toString() !== suppId?.toString(),
+      )
       .map((s) => ({
         ...s,
-        _sim: Math.abs((s.ethical_score || 0) - (supplier.ethical_score || 0))
-              + Math.abs((s.environmental_score || 0) - (supplier.environmental_score || 0))
-              + Math.abs((s.social_score || 0) - (supplier.social_score || 0))
-              + Math.abs((s.governance_score || 0) - (supplier.governance_score || 0)),
+        _sim:
+          Math.abs((s.ethical_score || 0) - (supplier.ethical_score || 0)) +
+          Math.abs(
+            (s.environmental_score || 0) - (supplier.environmental_score || 0),
+          ) +
+          Math.abs((s.social_score || 0) - (supplier.social_score || 0)) +
+          Math.abs(
+            (s.governance_score || 0) - (supplier.governance_score || 0),
+          ),
       }))
       .sort((a, b) => a._sim - b._sim)
       .slice(0, 3);
   }, [supplier, allSuppliers]);
 
   const overallScore = useMemo(() => {
-    const s = (supplier as any)?.finalScore ?? supplier?.composite_score ?? supplier?.ethical_score ?? 0;
+    const s =
+      (supplier as any)?.finalScore ??
+      supplier?.composite_score ??
+      supplier?.ethical_score ??
+      0;
     return s > 0 && s <= 1 ? s * 100 : s;
   }, [supplier]);
 
-  const scoreColor = useMemo(() => getScoreColor(colors, overallScore), [colors, overallScore]);
-  const riskColor  = useMemo(() => getRiskColor(colors, supplier?.risk_level), [colors, supplier?.risk_level]);
+  const scoreColor = useMemo(
+    () => getScoreColor(colors, overallScore),
+    [colors, overallScore],
+  );
+  const riskColor = useMemo(
+    () => getRiskColor(colors, supplier?.risk_level),
+    [colors, supplier?.risk_level],
+  );
 
   const completenessPct = useMemo(() => {
     const r = supplier?.completeness_ratio;
@@ -302,7 +386,10 @@ const SupplierDetails = () => {
 
   const riskFactor = useMemo(() => {
     // Prefer explicit 0-1 risk_factor
-    if (typeof supplier?.risk_factor === "number" && Number.isFinite(supplier.risk_factor)) {
+    if (
+      typeof supplier?.risk_factor === "number" &&
+      Number.isFinite(supplier.risk_factor)
+    ) {
       return Math.max(0, Math.min(1, supplier.risk_factor));
     }
     // If we only have a risk_penalty (pts), invert the thesis formula:
@@ -322,7 +409,10 @@ const SupplierDetails = () => {
       return rpRaw === null ? null : Number(rpRaw);
     }
     // Otherwise compute from risk_factor if available
-    if (typeof supplier?.risk_factor === "number" && Number.isFinite(supplier.risk_factor)) {
+    if (
+      typeof supplier?.risk_factor === "number" &&
+      Number.isFinite(supplier.risk_factor)
+    ) {
       return 15 * Math.max(0, supplier.risk_factor - 0.3) * 100;
     }
     return null;
@@ -331,7 +421,8 @@ const SupplierDetails = () => {
   const supplierId = (supplier as any)?._id || supplier?.id;
 
   if (loading) return <LoadingIndicator />;
-  if (error || !supplier) return <ErrorDisplay message={error || "Supplier not found."} />;
+  if (error || !supplier)
+    return <ErrorDisplay message={error || "Supplier not found."} />;
 
   const initials = supplier.name?.slice(0, 2).toUpperCase() || "??";
   const pillarColors = {
@@ -341,8 +432,10 @@ const SupplierDetails = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: colors.background, color: colors.text }}>
-
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: colors.background, color: colors.text }}
+    >
       {/* ── PAGE HEADER ─────────────────────────────────── */}
       <div
         className="px-4 md:px-8 pt-6 pb-5"
@@ -360,14 +453,21 @@ const SupplierDetails = () => {
           {/* Avatar */}
           <div
             className="shrink-0 h-14 w-14 rounded-md flex items-center justify-center text-lg font-bold font-mono"
-            style={{ background: scoreColor + "18", color: scoreColor, border: `1px solid ${scoreColor}30` }}
+            style={{
+              background: scoreColor + "18",
+              color: scoreColor,
+              border: `1px solid ${scoreColor}30`,
+            }}
           >
             {initials}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: colors.textMuted }}>
+              <span
+                className="text-[10px] font-mono uppercase tracking-widest"
+                style={{ color: colors.textMuted }}
+              >
                 Supplier Profile
               </span>
               <Pill
@@ -379,9 +479,21 @@ const SupplierDetails = () => {
               </Pill>
               {completenessPct !== null && (
                 <Pill
-                  color={completenessPct >= 85 ? colors.success : completenessPct >= 70 ? colors.warning : colors.error}
-                  bg={(completenessPct >= 85 ? colors.success : completenessPct >= 70 ? colors.warning : colors.error) + "15"}
-                  border={`1px solid ${(completenessPct >= 85 ? colors.success : completenessPct >= 70 ? colors.warning : colors.error)}30`}
+                  color={
+                    completenessPct >= 85
+                      ? colors.success
+                      : completenessPct >= 70
+                        ? colors.warning
+                        : colors.error
+                  }
+                  bg={
+                    (completenessPct >= 85
+                      ? colors.success
+                      : completenessPct >= 70
+                        ? colors.warning
+                        : colors.error) + "15"
+                  }
+                  border={`1px solid ${completenessPct >= 85 ? colors.success : completenessPct >= 70 ? colors.warning : colors.error}30`}
                 >
                   {completenessPct}% Disclosure
                 </Pill>
@@ -393,33 +505,48 @@ const SupplierDetails = () => {
             >
               {supplier.name}
             </h1>
-            <div className="flex items-center gap-3 mt-1 text-sm flex-wrap" style={{ color: colors.textMuted }}>
+            <div
+              className="flex items-center gap-3 mt-1 text-sm flex-wrap"
+              style={{ color: colors.textMuted }}
+            >
               <span className="flex items-center gap-1">
-                <MapPinIcon className="h-3.5 w-3.5" /> {supplier.country || "N/A"}
+                <MapPinIcon className="h-3.5 w-3.5" />{" "}
+                {supplier.country || "N/A"}
               </span>
               <span className="opacity-30">·</span>
               <span className="flex items-center gap-1">
-                <BuildingOfficeIcon className="h-3.5 w-3.5" /> {supplier.industry || "N/A"}
+                <BuildingOfficeIcon className="h-3.5 w-3.5" />{" "}
+                {supplier.industry || "N/A"}
               </span>
             </div>
           </div>
 
           {/* Overall score chip — desktop only */}
           <div className="hidden md:flex flex-col items-end shrink-0">
-            <span className="text-[10px] font-mono uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>
+            <span
+              className="text-[10px] font-mono uppercase tracking-widest mb-1"
+              style={{ color: colors.textMuted }}
+            >
               ESG Score
             </span>
-            <span className="text-4xl font-bold font-mono leading-none" style={{ color: scoreColor }}>
+            <span
+              className="text-4xl font-bold font-mono leading-none"
+              style={{ color: scoreColor }}
+            >
               {overallScore.toFixed(1)}
             </span>
-            <span className="text-xs font-mono mt-0.5" style={{ color: colors.textMuted }}>/100</span>
+            <span
+              className="text-xs font-mono mt-0.5"
+              style={{ color: colors.textMuted }}
+            >
+              /100
+            </span>
           </div>
         </div>
       </div>
 
       {/* ── BODY ─────────────────────────────────────────── */}
       <div className="px-4 md:px-8 py-6 grid grid-cols-1 lg:grid-cols-3 gap-5">
-
         {/* ── LEFT SIDEBAR ──────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -428,32 +555,96 @@ const SupplierDetails = () => {
           className="space-y-4"
         >
           {/* Score summary */}
-          <SectionCard title="Score Summary" icon={ScaleIcon} accent={scoreColor}>
+          <SectionCard
+            title="Score Summary"
+            icon={ScaleIcon}
+            accent={scoreColor}
+          >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-widest mb-0.5" style={{ color: colors.textMuted }}>
+                <div
+                  className="text-[10px] font-mono uppercase tracking-widest mb-0.5"
+                  style={{ color: colors.textMuted }}
+                >
                   Post-Penalty Score
                 </div>
-                <span className="text-4xl font-bold font-mono leading-none" style={{ color: scoreColor }}>
+                <span
+                  className="text-4xl font-bold font-mono leading-none"
+                  style={{ color: scoreColor }}
+                >
                   {overallScore.toFixed(1)}
                 </span>
-                <span className="text-sm font-mono ml-1" style={{ color: colors.textMuted }}>/100</span>
+                <span
+                  className="text-sm font-mono ml-1"
+                  style={{ color: colors.textMuted }}
+                >
+                  /100
+                </span>
               </div>
               <div
                 className="h-14 w-14 rounded-md flex items-center justify-center text-xs font-bold uppercase"
-                style={{ background: scoreColor + "15", color: scoreColor, border: `1px solid ${scoreColor}25` }}
+                style={{
+                  background: scoreColor + "15",
+                  color: scoreColor,
+                  border: `1px solid ${scoreColor}25`,
+                }}
               >
-                {overallScore >= 80 ? "Excellent" : overallScore >= 60 ? "Strong" : overallScore >= 40 ? "Average" : "At Risk"}
+                {overallScore >= 80
+                  ? "Excellent"
+                  : overallScore >= 60
+                    ? "Strong"
+                    : overallScore >= 40
+                      ? "Average"
+                      : "At Risk"}
               </div>
             </div>
-            <StatRow label="Risk Level" icon={ShieldExclamationIcon} value={
-              <Pill color={riskColor} bg={riskColor + "18"} border={`1px solid ${riskColor}30`}>
-                {supplier.risk_level || "No Data"}
-              </Pill>
-            } />
-            <StatRow label="Risk Factor" icon={ExclamationTriangleIcon} value={riskFactor !== null ? `${(riskFactor * 100).toFixed(1)}%` : "N/A"} color={riskColor} />
-            <StatRow label="Risk Penalty" icon={ExclamationTriangleIcon} value={riskPenaltyPts !== null ? `${riskPenaltyPts.toFixed(1)} pts` : "N/A"} color={riskColor} />
-            <StatRow label="Disclosure" icon={DocumentTextIcon} value={completenessPct !== null ? `${completenessPct}%` : "N/A"} color={completenessPct !== null ? (completenessPct >= 85 ? colors.success : completenessPct >= 70 ? colors.warning : colors.error) : undefined} />
+            <StatRow
+              label="Risk Level"
+              icon={ShieldExclamationIcon}
+              value={
+                <Pill
+                  color={riskColor}
+                  bg={riskColor + "18"}
+                  border={`1px solid ${riskColor}30`}
+                >
+                  {supplier.risk_level || "No Data"}
+                </Pill>
+              }
+            />
+            <StatRow
+              label="Risk Factor"
+              icon={ExclamationTriangleIcon}
+              value={
+                riskFactor !== null
+                  ? `${(riskFactor * 100).toFixed(1)}%`
+                  : "N/A"
+              }
+              color={riskColor}
+            />
+            <StatRow
+              label="Risk Penalty"
+              icon={ExclamationTriangleIcon}
+              value={
+                riskPenaltyPts !== null
+                  ? `${riskPenaltyPts.toFixed(1)} pts`
+                  : "N/A"
+              }
+              color={riskColor}
+            />
+            <StatRow
+              label="Disclosure"
+              icon={DocumentTextIcon}
+              value={completenessPct !== null ? `${completenessPct}%` : "N/A"}
+              color={
+                completenessPct !== null
+                  ? completenessPct >= 85
+                    ? colors.success
+                    : completenessPct >= 70
+                      ? colors.warning
+                      : colors.error
+                  : undefined
+              }
+            />
           </SectionCard>
 
           {/* Actions */}
@@ -462,7 +653,8 @@ const SupplierDetails = () => {
               <button
                 onClick={async () => {
                   try {
-                    const { recomputeSupplierScores } = await import("../services/api");
+                    const { recomputeSupplierScores } =
+                      await import("../services/api");
                     await recomputeSupplierScores(supplierId);
                     await fetchSupplier();
                   } catch {}
@@ -476,21 +668,33 @@ const SupplierDetails = () => {
               <button
                 onClick={() => setShowTraceDrawer(true)}
                 className="w-full flex items-center justify-center gap-2 text-sm py-2.5 rounded-md font-medium transition-opacity hover:opacity-85"
-                style={{ background: colors.secondary + "18", color: colors.secondary, border: `1px solid ${colors.secondary}30` }}
+                style={{
+                  background: colors.secondary + "18",
+                  color: colors.secondary,
+                  border: `1px solid ${colors.secondary}30`,
+                }}
               >
                 <ChartBarIcon className="h-4 w-4" /> Calculation Trace
               </button>
               <button
                 onClick={() => navigate(`/suppliers/${supplierId}/analytics`)}
                 className="w-full flex items-center justify-center gap-2 text-sm py-2.5 rounded-md font-medium transition-opacity hover:opacity-85"
-                style={{ background: colors.primary + "12", color: colors.primary, border: `1px solid ${colors.primary}25` }}
+                style={{
+                  background: colors.primary + "12",
+                  color: colors.primary,
+                  border: `1px solid ${colors.primary}25`,
+                }}
               >
                 <SparklesIcon className="h-4 w-4" /> AI Analytics
               </button>
               <button
                 onClick={() => navigate(`/suppliers/${supplierId}/edit`)}
                 className="w-full flex items-center justify-center gap-2 text-sm py-2.5 rounded-md font-medium transition-opacity hover:opacity-85"
-                style={{ background: "transparent", color: colors.textMuted, border: `1px solid ${colors.accent}25` }}
+                style={{
+                  background: "transparent",
+                  color: colors.textMuted,
+                  border: `1px solid ${colors.accent}25`,
+                }}
               >
                 <PencilIcon className="h-4 w-4" /> Edit Supplier Data
               </button>
@@ -498,7 +702,11 @@ const SupplierDetails = () => {
           </SectionCard>
 
           {/* Similar suppliers */}
-          <SectionCard title="Similar Suppliers" icon={ArrowTrendingUpIcon} accent={colors.warning}>
+          <SectionCard
+            title="Similar Suppliers"
+            icon={ArrowTrendingUpIcon}
+            accent={colors.warning}
+          >
             {similarSuppliers.length > 0 ? (
               <div className="space-y-2">
                 {similarSuppliers.map((s) => {
@@ -509,22 +717,37 @@ const SupplierDetails = () => {
                     <div
                       key={sid}
                       className="flex items-center justify-between p-3 rounded-md cursor-pointer transition-opacity hover:opacity-80"
-                      style={{ backgroundColor: colors.background, border: `1px solid ${colors.accent}15` }}
+                      style={{
+                        backgroundColor: colors.background,
+                        border: `1px solid ${colors.accent}15`,
+                      }}
                       onClick={() => navigate(`/suppliers/${sid}`)}
                     >
                       <div className="min-w-0">
-                        <div className="text-sm font-medium truncate" style={{ color: colors.text }}>
+                        <div
+                          className="text-sm font-medium truncate"
+                          style={{ color: colors.text }}
+                        >
                           {s.name}
                         </div>
-                        <div className="text-[11px] mt-0.5 truncate" style={{ color: colors.textMuted }}>
+                        <div
+                          className="text-[11px] mt-0.5 truncate"
+                          style={{ color: colors.textMuted }}
+                        >
                           {s.country} · {s.industry}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-sm font-mono font-semibold" style={{ color: scColor }}>
+                        <span
+                          className="text-sm font-mono font-semibold"
+                          style={{ color: scColor }}
+                        >
                           {sc !== null ? sc.toFixed(0) : "N/A"}
                         </span>
-                        <ArrowRightIcon className="h-3.5 w-3.5" style={{ color: colors.textMuted }} />
+                        <ArrowRightIcon
+                          className="h-3.5 w-3.5"
+                          style={{ color: colors.textMuted }}
+                        />
                       </div>
                     </div>
                   );
@@ -548,35 +771,85 @@ const SupplierDetails = () => {
           {/* Pillar Breakdown */}
           <SectionCard title="ESG Pillar Breakdown" icon={BeakerIcon}>
             <div className="space-y-4">
-              <PillarBar label="Environmental" value={supplier.environmental_score} color={pillarColors.environmental} />
-              <PillarBar label="Social"       value={supplier.social_score}         color={pillarColors.social} />
-              <PillarBar label="Governance"   value={supplier.governance_score}     color={pillarColors.governance} />
+              <PillarBar
+                label="Environmental"
+                value={supplier.environmental_score}
+                color={pillarColors.environmental}
+              />
+              <PillarBar
+                label="Social"
+                value={supplier.social_score}
+                color={pillarColors.social}
+              />
+              <PillarBar
+                label="Governance"
+                value={supplier.governance_score}
+                color={pillarColors.governance}
+              />
             </div>
           </SectionCard>
 
           {/* Score Breakdown */}
-          <SectionCard title="Score Breakdown" icon={ScaleIcon} accent={colors.primary}>
+          <SectionCard
+            title="Score Breakdown"
+            icon={ScaleIcon}
+            accent={colors.primary}
+          >
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: "Environmental", value: supplier.environmental_score, color: pillarColors.environmental, icon: BeakerIcon },
-                { label: "Social",        value: supplier.social_score,        color: pillarColors.social,       icon: UserGroupIcon },
-                { label: "Governance",    value: supplier.governance_score,    color: pillarColors.governance,   icon: ShieldCheckIcon },
+                {
+                  label: "Environmental",
+                  value: supplier.environmental_score,
+                  color: pillarColors.environmental,
+                  icon: BeakerIcon,
+                },
+                {
+                  label: "Social",
+                  value: supplier.social_score,
+                  color: pillarColors.social,
+                  icon: UserGroupIcon,
+                },
+                {
+                  label: "Governance",
+                  value: supplier.governance_score,
+                  color: pillarColors.governance,
+                  icon: ShieldCheckIcon,
+                },
               ].map((p) => {
                 const shown = normalizeScore(p.value);
                 return (
                   <div
                     key={p.label}
                     className="flex flex-col items-center p-4 rounded-md"
-                    style={{ backgroundColor: p.color + "08", border: `1px solid ${p.color}20` }}
+                    style={{
+                      backgroundColor: p.color + "08",
+                      border: `1px solid ${p.color}20`,
+                    }}
                   >
-                    <p.icon className="h-5 w-5 mb-2" style={{ color: p.color, opacity: 0.8 }} />
-                    <span className="text-[10px] font-mono uppercase tracking-wider mb-1.5" style={{ color: colors.textMuted }}>
+                    <p.icon
+                      className="h-5 w-5 mb-2"
+                      style={{ color: p.color, opacity: 0.8 }}
+                    />
+                    <span
+                      className="text-[10px] font-mono uppercase tracking-wider mb-1.5"
+                      style={{ color: colors.textMuted }}
+                    >
                       {p.label}
                     </span>
-                    <span className="text-2xl font-bold font-mono" style={{ color: shown !== null ? p.color : colors.textMuted }}>
+                    <span
+                      className="text-2xl font-bold font-mono"
+                      style={{
+                        color: shown !== null ? p.color : colors.textMuted,
+                      }}
+                    >
                       {shown !== null ? shown.toFixed(1) : "N/A"}
                     </span>
-                    <span className="text-[10px] font-mono" style={{ color: colors.textMuted }}>/100</span>
+                    <span
+                      className="text-[10px] font-mono"
+                      style={{ color: colors.textMuted }}
+                    >
+                      /100
+                    </span>
                   </div>
                 );
               })}
@@ -584,51 +857,150 @@ const SupplierDetails = () => {
           </SectionCard>
 
           {/* Detailed Metrics */}
-          <SectionCard title="Detailed Metrics" icon={DocumentTextIcon} accent={colors.warning}>
+          <SectionCard
+            title="Detailed Metrics"
+            icon={DocumentTextIcon}
+            accent={colors.warning}
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-              <StatRow label="CO₂ Emissions" icon={BeakerIcon} value={supplier.co2_emissions !== undefined && supplier.co2_emissions !== null ? `${supplier.co2_emissions} t` : "N/A"} />
-              <StatRow label="Waste Management" icon={BeakerIcon} value={fmt(supplier.waste_management_score)} color={getScoreColor(colors, supplier.waste_management_score)} />
-              <StatRow label="Wage Fairness" icon={UserGroupIcon} value={fmt(supplier.wage_fairness)} color={getScoreColor(colors, supplier.wage_fairness)} />
-              <StatRow label="Human Rights Index" icon={UserGroupIcon} value={fmt(supplier.human_rights_index)} color={getScoreColor(colors, supplier.human_rights_index)} />
-              <StatRow label="Delivery Efficiency" icon={TruckIcon} value={fmt(supplier.delivery_efficiency)} color={getScoreColor(colors, supplier.delivery_efficiency)} />
+              <StatRow
+                label="CO₂ Emissions"
+                icon={BeakerIcon}
+                value={
+                  supplier.co2_emissions !== undefined &&
+                  supplier.co2_emissions !== null
+                    ? `${supplier.co2_emissions} t`
+                    : "N/A"
+                }
+              />
+              <StatRow
+                label="Waste Management"
+                icon={BeakerIcon}
+                value={fmt(supplier.waste_management_score)}
+                color={getScoreColor(colors, supplier.waste_management_score)}
+              />
+              <StatRow
+                label="Wage Fairness"
+                icon={UserGroupIcon}
+                value={fmt(supplier.wage_fairness)}
+                color={getScoreColor(colors, supplier.wage_fairness)}
+              />
+              <StatRow
+                label="Human Rights Index"
+                icon={UserGroupIcon}
+                value={fmt(supplier.human_rights_index)}
+                color={getScoreColor(colors, supplier.human_rights_index)}
+              />
+              <StatRow
+                label="Delivery Efficiency"
+                icon={TruckIcon}
+                value={fmt(supplier.delivery_efficiency)}
+                color={getScoreColor(colors, supplier.delivery_efficiency)}
+              />
               {(supplier as any).worker_safety !== undefined && (
-                <StatRow label="Worker Safety" icon={ShieldCheckIcon} value={fmt((supplier as any).worker_safety)} color={getScoreColor(colors, (supplier as any).worker_safety)} />
+                <StatRow
+                  label="Worker Safety"
+                  icon={ShieldCheckIcon}
+                  value={fmt((supplier as any).worker_safety)}
+                  color={getScoreColor(colors, (supplier as any).worker_safety)}
+                />
               )}
               {(supplier as any).transparency_score !== undefined && (
-                <StatRow label="Transparency" icon={InformationCircleIcon} value={fmt((supplier as any).transparency_score)} color={getScoreColor(colors, (supplier as any).transparency_score)} />
+                <StatRow
+                  label="Transparency"
+                  icon={InformationCircleIcon}
+                  value={fmt((supplier as any).transparency_score)}
+                  color={getScoreColor(
+                    colors,
+                    (supplier as any).transparency_score,
+                  )}
+                />
               )}
               {(supplier as any).energy_efficiency !== undefined && (
-                <StatRow label="Energy Efficiency" icon={SparklesIcon} value={fmt((supplier as any).energy_efficiency)} color={getScoreColor(colors, (supplier as any).energy_efficiency)} />
+                <StatRow
+                  label="Energy Efficiency"
+                  icon={SparklesIcon}
+                  value={fmt((supplier as any).energy_efficiency)}
+                  color={getScoreColor(
+                    colors,
+                    (supplier as any).energy_efficiency,
+                  )}
+                />
               )}
             </div>
           </SectionCard>
 
           {/* Compliance & Risk */}
-          <SectionCard title="Compliance & Risk" icon={ShieldExclamationIcon} accent={colors.secondary}>
+          <SectionCard
+            title="Compliance & Risk"
+            icon={ShieldExclamationIcon}
+            accent={colors.secondary}
+          >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-              <StatRow label="Human Rights Index" icon={ShieldCheckIcon} value={fmt(supplier.human_rights_index)} color={getScoreColor(colors, supplier.human_rights_index)} />
-              <StatRow label="Overall Risk Level" icon={ShieldExclamationIcon} value={
-                <Pill color={riskColor} bg={riskColor + "18"} border={`1px solid ${riskColor}30`}>
-                  {supplier.risk_level || "No Data"}
-                </Pill>
-              } />
+              <StatRow
+                label="Human Rights Index"
+                icon={ShieldCheckIcon}
+                value={fmt(supplier.human_rights_index)}
+                color={getScoreColor(colors, supplier.human_rights_index)}
+              />
+              <StatRow
+                label="Overall Risk Level"
+                icon={ShieldExclamationIcon}
+                value={
+                  <Pill
+                    color={riskColor}
+                    bg={riskColor + "18"}
+                    border={`1px solid ${riskColor}30`}
+                  >
+                    {supplier.risk_level || "No Data"}
+                  </Pill>
+                }
+              />
               {(supplier as any).corruption_risk !== undefined && (
-                <StatRow label="Corruption Risk" icon={ExclamationTriangleIcon} value={fmt((supplier as any).corruption_risk)} color={getScoreColor(colors, (supplier as any).corruption_risk)} />
+                <StatRow
+                  label="Corruption Risk"
+                  icon={ExclamationTriangleIcon}
+                  value={fmt((supplier as any).corruption_risk)}
+                  color={getScoreColor(
+                    colors,
+                    (supplier as any).corruption_risk,
+                  )}
+                />
               )}
               {(supplier as any).geopolitical_risk !== undefined && (
-                <StatRow label="Geopolitical Risk" icon={ExclamationTriangleIcon} value={fmt((supplier as any).geopolitical_risk)} color={getScoreColor(colors, (supplier as any).geopolitical_risk)} />
+                <StatRow
+                  label="Geopolitical Risk"
+                  icon={ExclamationTriangleIcon}
+                  value={fmt((supplier as any).geopolitical_risk)}
+                  color={getScoreColor(
+                    colors,
+                    (supplier as any).geopolitical_risk,
+                  )}
+                />
               )}
               {(supplier as any).climate_risk !== undefined && (
-                <StatRow label="Climate Risk" icon={ExclamationTriangleIcon} value={fmt((supplier as any).climate_risk)} color={getScoreColor(colors, (supplier as any).climate_risk)} />
+                <StatRow
+                  label="Climate Risk"
+                  icon={ExclamationTriangleIcon}
+                  value={fmt((supplier as any).climate_risk)}
+                  color={getScoreColor(colors, (supplier as any).climate_risk)}
+                />
               )}
             </div>
           </SectionCard>
 
           {/* Last updated footer */}
           {(supplier as any).last_updated && (
-            <div className="flex items-center gap-2 text-xs" style={{ color: colors.textMuted }}>
+            <div
+              className="flex items-center gap-2 text-xs"
+              style={{ color: colors.textMuted }}
+            >
               <ClockIcon className="h-3.5 w-3.5" />
-              Last updated: {new Date((supplier as any).last_updated).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+              Last updated:{" "}
+              {new Date((supplier as any).last_updated).toLocaleDateString(
+                "en-US",
+                { year: "numeric", month: "short", day: "numeric" },
+              )}
             </div>
           )}
         </motion.div>
