@@ -59,6 +59,7 @@ import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import Globe from "react-globe.gl";
 import { useThemeColors } from "../theme/useThemeColors";
+import { fmtScore } from "../lib/formatters";
 import logger from "../utils/log";
 
 // --- Define default edgeTypes OUTSIDE component ---
@@ -1566,7 +1567,10 @@ const SupplyChainGraph = () => {
                               : colors.error + "50",
                       }}
                     >
-                      {selectedNodeApiData.ethical_score?.toFixed(1) ?? "N/A"}%
+                      {selectedNodeApiData.ethical_score !== undefined &&
+                      selectedNodeApiData.ethical_score !== null
+                        ? fmtScore(selectedNodeApiData.ethical_score)
+                        : "N/A"}
                     </span>
                   </p>
                   <Link

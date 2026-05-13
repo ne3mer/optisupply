@@ -38,6 +38,7 @@ import {
   Legend,
 } from "recharts";
 import { useTheme } from "../contexts/ThemeContext";
+import { fmtRiskFactor } from "../lib/formatters";
 import { getThemeColors } from "../theme/colors";
 
 // Theme-aware colors helper
@@ -55,159 +56,159 @@ const useColors = () => {
 const LoadingIndicator = () => {
   const colors = useColors();
   return (
-  <div className="flex flex-col items-center justify-center min-h-[80vh]">
-    <motion.div
-      className="relative w-24 h-24"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
       <motion.div
-        className="absolute inset-0 rounded-full border-b-4 border-t-4"
-        style={{ borderColor: colors.primary }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div
-        className="absolute inset-2 rounded-full border-r-4 border-l-4"
-        style={{ borderColor: colors.secondary }}
-        animate={{ rotate: -360 }}
-        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-      />
-      <motion.div
-        className="absolute inset-4 rounded-full"
-        style={{
-          background: `radial-gradient(circle, ${colors.primary}30, ${colors.secondary}10)`,
-        }}
-        animate={{ scale: [0.8, 1.2, 0.8] }}
+        className="relative w-24 h-24"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <motion.div
+          className="absolute inset-0 rounded-full border-b-4 border-t-4"
+          style={{ borderColor: colors.primary }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="absolute inset-2 rounded-full border-r-4 border-l-4"
+          style={{ borderColor: colors.secondary }}
+          animate={{ rotate: -360 }}
+          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className="absolute inset-4 rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${colors.primary}30, ${colors.secondary}10)`,
+          }}
+          animate={{ scale: [0.8, 1.2, 0.8] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+      <motion.p
+        className="mt-6 text-xl font-light"
+        style={{ color: colors.textMuted }}
+        animate={{ opacity: [0.5, 1, 0.5] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </motion.div>
-    <motion.p
-      className="mt-6 text-xl font-light"
-      style={{ color: colors.textMuted }}
-      animate={{ opacity: [0.5, 1, 0.5] }}
-      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-    >
-      Analyzing data streams...
-    </motion.p>
-  </div>
+      >
+        Analyzing data streams...
+      </motion.p>
+    </div>
   );
 };
 
 const ErrorDisplay = ({ message }) => {
   const colors = useColors();
   return (
-  <div className="flex flex-col items-center justify-center min-h-[80vh]">
-    <div
-      className="max-w-lg p-8 rounded-xl backdrop-blur-lg border"
-      style={{
-        backgroundColor: (colors.error || "#ef4444") + "15",
-        borderColor: (colors.error || "#ef4444") + "30",
-      }}
-    >
-      <ExclamationTriangleIcon
-        className="h-20 w-20 mx-auto mb-6"
-        style={{ color: colors.error }}
-      />
-      <h2
-        className="text-2xl font-semibold text-center mb-4"
-        style={{ color: colors.error }}
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+      <div
+        className="max-w-lg p-8 rounded-xl backdrop-blur-lg border"
+        style={{
+          backgroundColor: (colors.error || "#ef4444") + "15",
+          borderColor: (colors.error || "#ef4444") + "30",
+        }}
       >
-        Analytics Unavailable
-      </h2>
-      <p className="text-center mb-6" style={{ color: colors.textMuted }}>
-        {message}
-      </p>
-      <div className="flex justify-center">
-        <Link
-          to="/suppliers"
-          className="px-6 py-3 rounded-lg border transition-all hover:scale-105"
-          style={{ borderColor: colors.accent, color: colors.accent }}
+        <ExclamationTriangleIcon
+          className="h-20 w-20 mx-auto mb-6"
+          style={{ color: colors.error }}
+        />
+        <h2
+          className="text-2xl font-semibold text-center mb-4"
+          style={{ color: colors.error }}
         >
-          <ArrowLeftIcon className="h-5 w-5 inline mr-2" />
-          Return to Suppliers
-        </Link>
+          Analytics Unavailable
+        </h2>
+        <p className="text-center mb-6" style={{ color: colors.textMuted }}>
+          {message}
+        </p>
+        <div className="flex justify-center">
+          <Link
+            to="/suppliers"
+            className="px-6 py-3 rounded-lg border transition-all hover:scale-105"
+            style={{ borderColor: colors.accent, color: colors.accent }}
+          >
+            <ArrowLeftIcon className="h-5 w-5 inline mr-2" />
+            Return to Suppliers
+          </Link>
+        </div>
       </div>
     </div>
-  </div>
   );
 };
 
 const Card = ({ title, icon: Icon, children, className = "" }) => {
   const colors = useColors();
   return (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.4 }}
-    className={`relative overflow-hidden rounded-xl border backdrop-blur-md p-5 ${className}`}
-    style={{
-      backgroundColor: colors.card,
-      borderColor: colors.accent + "20",
-    }}
-  >
-    {/* Subtle gradient background */}
-    <div
-      className="absolute inset-0 opacity-10 z-0"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className={`relative overflow-hidden rounded-xl border backdrop-blur-md p-5 ${className}`}
       style={{
-        background: `linear-gradient(135deg, ${colors.gradientStart}10, ${colors.gradientEnd}10)`,
+        backgroundColor: colors.card,
+        borderColor: colors.accent + "20",
       }}
-    />
-    <div className="relative z-10">
-      <div className="flex items-center mb-4">
-        <div
-          className="p-2 rounded-lg mr-3"
-          style={{ backgroundColor: colors.background }}
-        >
-          <Icon className="h-5 w-5" style={{ color: colors.primary }} />
+    >
+      {/* Subtle gradient background */}
+      <div
+        className="absolute inset-0 opacity-10 z-0"
+        style={{
+          background: `linear-gradient(135deg, ${colors.gradientStart}10, ${colors.gradientEnd}10)`,
+        }}
+      />
+      <div className="relative z-10">
+        <div className="flex items-center mb-4">
+          <div
+            className="p-2 rounded-lg mr-3"
+            style={{ backgroundColor: colors.background }}
+          >
+            <Icon className="h-5 w-5" style={{ color: colors.primary }} />
+          </div>
+          <h3 className="text-lg font-semibold" style={{ color: colors.text }}>
+            {title}
+          </h3>
         </div>
-        <h3 className="text-lg font-semibold" style={{ color: colors.text }}>
-          {title}
-        </h3>
+        {children}
       </div>
-      {children}
-    </div>
-  </motion.div>
+    </motion.div>
   );
 };
 
 const ScoreCard = ({ label, value, icon: Icon, color }) => {
   const colors = useColors();
   return (
-  <div
-    className="relative p-4 rounded-lg backdrop-blur-sm border overflow-hidden"
-    style={{
-      backgroundColor: color + "10",
-      borderColor: color + "30",
-    }}
-  >
-    <div className="flex justify-between items-center mb-1">
-      <div className="flex items-center">
-        <Icon className="h-5 w-5 mr-2" style={{ color: color }} />
-        <span
-          className="text-sm font-medium"
-          style={{ color: colors.textMuted }}
+    <div
+      className="relative p-4 rounded-lg backdrop-blur-sm border overflow-hidden"
+      style={{
+        backgroundColor: color + "10",
+        borderColor: color + "30",
+      }}
+    >
+      <div className="flex justify-between items-center mb-1">
+        <div className="flex items-center">
+          <Icon className="h-5 w-5 mr-2" style={{ color: color }} />
+          <span
+            className="text-sm font-medium"
+            style={{ color: colors.textMuted }}
+          >
+            {label}
+          </span>
+        </div>
+        <div
+          className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold"
+          style={{ backgroundColor: color + "20", color }}
         >
-          {label}
-        </span>
+          {Math.round(value) === value ? value : value.toFixed(1)}
+        </div>
       </div>
-      <div
-        className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-semibold"
-        style={{ backgroundColor: color + "20", color }}
-      >
-        {Math.round(value) === value ? value : value.toFixed(1)}
+      <div className="mt-2 bg-black bg-opacity-20 rounded-full h-1.5 overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className="h-full rounded-full"
+          style={{ backgroundColor: color }}
+        />
       </div>
     </div>
-    <div className="mt-2 bg-black bg-opacity-20 rounded-full h-1.5 overflow-hidden">
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${value}%` }}
-        transition={{ duration: 1, delay: 0.2 }}
-        className="h-full rounded-full"
-        style={{ backgroundColor: color }}
-      />
-    </div>
-  </div>
   );
 };
 
@@ -259,7 +260,7 @@ const SupplierAnalytics = () => {
       } catch (err) {
         console.error("Error fetching analytics:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to load analytics data"
+          err instanceof Error ? err.message : "Failed to load analytics data",
         );
         setLoading(false);
       }
@@ -383,7 +384,10 @@ const SupplierAnalytics = () => {
             <Link
               to="/methodology"
               className="flex items-center px-4 py-2 rounded-lg border transition-all hover:scale-105"
-              style={{ borderColor: colors.primary + "40", color: colors.primary }}
+              style={{
+                borderColor: colors.primary + "40",
+                color: colors.primary,
+              }}
             >
               <InformationCircleIcon className="h-4 w-4 mr-2" />
               View Methodology
@@ -394,7 +398,10 @@ const SupplierAnalytics = () => {
               <button
                 onClick={() => setShowBreakdown(true)}
                 className="flex items-center px-4 py-2 rounded-lg border transition-all hover:scale-105"
-                style={{ borderColor: colors.secondary + "40", color: colors.secondary }}
+                style={{
+                  borderColor: colors.secondary + "40",
+                  color: colors.secondary,
+                }}
               >
                 <DocumentTextIcon className="h-4 w-4 mr-2" />
                 Score Breakdown
@@ -535,7 +542,8 @@ const SupplierAnalytics = () => {
                       <span
                         className="px-2 py-0.5 rounded-full text-xs font-medium"
                         style={{
-                          backgroundColor: getRiskColor(risk.severity, colors) + "20",
+                          backgroundColor:
+                            getRiskColor(risk.severity, colors) + "20",
                           color: getRiskColor(risk.severity, colors),
                         }}
                       >
@@ -614,14 +622,14 @@ const SupplierAnalytics = () => {
                                 rec.impact === "High"
                                   ? colors.success + "30"
                                   : rec.impact === "Medium"
-                                  ? colors.warning + "30"
-                                  : colors.error + "30",
+                                    ? colors.warning + "30"
+                                    : colors.error + "30",
                               color:
                                 rec.impact === "High"
                                   ? colors.success
                                   : rec.impact === "Medium"
-                                  ? colors.warning
-                                  : colors.error,
+                                    ? colors.warning
+                                    : colors.error,
                             }}
                           >
                             Impact: {rec.impact}
@@ -633,14 +641,14 @@ const SupplierAnalytics = () => {
                                 rec.difficulty === "Low"
                                   ? colors.success + "30"
                                   : rec.difficulty === "Medium"
-                                  ? colors.warning + "30"
-                                  : colors.error + "30",
+                                    ? colors.warning + "30"
+                                    : colors.error + "30",
                               color:
                                 rec.difficulty === "Low"
                                   ? colors.success
                                   : rec.difficulty === "Medium"
-                                  ? colors.warning
-                                  : colors.error,
+                                    ? colors.warning
+                                    : colors.error,
                             }}
                           >
                             Difficulty: {rec.difficulty}
@@ -847,10 +855,10 @@ const SupplierAnalytics = () => {
                           value >= 90
                             ? colors.success
                             : value >= 80
-                            ? colors.primary
-                            : value >= 70
-                            ? colors.warning
-                            : colors.error,
+                              ? colors.primary
+                              : value >= 70
+                                ? colors.warning
+                                : colors.error,
                       }}
                     >
                       {value}%
@@ -881,58 +889,114 @@ const SupplierAnalytics = () => {
       {/* Breakdown Modal */}
       {showBreakdown && data?.breakdown && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowBreakdown(false)} />
-          <div className="relative max-w-5xl w-[95%] rounded-xl border p-6 overflow-auto max-h-[90vh]"
-               style={{ backgroundColor: colors.panel, borderColor: colors.accent+"40" }}>
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowBreakdown(false)}
+          />
+          <div
+            className="relative max-w-5xl w-[95%] rounded-xl border p-6 overflow-auto max-h-[90vh]"
+            style={{
+              backgroundColor: colors.panel,
+              borderColor: colors.accent + "40",
+            }}
+          >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xl font-semibold">Transparent Score Breakdown</h3>
-              <button onClick={() => setShowBreakdown(false)} className="text-sm" style={{ color: colors.textMuted }}>Close</button>
+              <h3 className="text-xl font-semibold">
+                Transparent Score Breakdown
+              </h3>
+              <button
+                onClick={() => setShowBreakdown(false)}
+                className="text-sm"
+                style={{ color: colors.textMuted }}
+              >
+                Close
+              </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="rounded-lg border p-4" style={{ borderColor: colors.accent+"30" }}>
+              <div
+                className="rounded-lg border p-4"
+                style={{ borderColor: colors.accent + "30" }}
+              >
                 <h4 className="font-semibold mb-2">Pillar Scores</h4>
                 <ul style={{ color: colors.textMuted }}>
-                  <li>Environmental: {Math.round(data.breakdown.pillarScores.environmental)}</li>
-                  <li>Social: {Math.round(data.breakdown.pillarScores.social)}</li>
-                  <li>Governance: {Math.round(data.breakdown.pillarScores.governance)}</li>
+                  <li>
+                    Environmental:{" "}
+                    {Math.round(data.breakdown.pillarScores.environmental)}
+                  </li>
+                  <li>
+                    Social: {Math.round(data.breakdown.pillarScores.social)}
+                  </li>
+                  <li>
+                    Governance:{" "}
+                    {Math.round(data.breakdown.pillarScores.governance)}
+                  </li>
                   <li>Composite: {Math.round(data.breakdown.composite)}</li>
-                  <li>Risk factor: {(data.breakdown.risk?.factor ?? 0).toFixed(2)} ({data.breakdown.risk?.level})</li>
-                  <li>Completeness: {((data.breakdown.completeness_ratio ?? 1)*100).toFixed(0)}%</li>
-                  <li>Ethical score: {Math.round(data.breakdown.ethical_score)}</li>
+                  <li>
+                    Risk factor:{" "}
+                    {fmtRiskFactor(data.breakdown.risk?.factor ?? 0)} (
+                    {data.breakdown.risk?.level})
+                  </li>
+                  <li>
+                    Completeness:{" "}
+                    {((data.breakdown.completeness_ratio ?? 1) * 100).toFixed(
+                      0,
+                    )}
+                    %
+                  </li>
+                  <li>
+                    Ethical score: {Math.round(data.breakdown.ethical_score)}
+                  </li>
                 </ul>
               </div>
-              <div className="rounded-lg border p-4" style={{ borderColor: colors.accent+"30" }}>
+              <div
+                className="rounded-lg border p-4"
+                style={{ borderColor: colors.accent + "30" }}
+              >
                 <h4 className="font-semibold mb-2">Weights</h4>
-                <div className="grid grid-cols-2 gap-3" style={{ color: colors.textMuted }}>
+                <div
+                  className="grid grid-cols-2 gap-3"
+                  style={{ color: colors.textMuted }}
+                >
                   <div>
-                    <div className="font-medium" style={{ color: colors.text }}>Environmental</div>
+                    <div className="font-medium" style={{ color: colors.text }}>
+                      Environmental
+                    </div>
                     <div>emission_intensity 0.4</div>
                     <div>renewable_pct 0.2</div>
                     <div>water_intensity 0.2</div>
                     <div>waste_intensity 0.2</div>
                   </div>
                   <div>
-                    <div className="font-medium" style={{ color: colors.text }}>Social</div>
+                    <div className="font-medium" style={{ color: colors.text }}>
+                      Social
+                    </div>
                     <div>injury_rate 0.3</div>
                     <div>training_hours 0.2</div>
                     <div>wage_ratio 0.2</div>
                     <div>diversity_pct 0.3</div>
                   </div>
                   <div>
-                    <div className="font-medium" style={{ color: colors.text }}>Governance</div>
+                    <div className="font-medium" style={{ color: colors.text }}>
+                      Governance
+                    </div>
                     <div>board_diversity 0.25</div>
                     <div>board_independence 0.25</div>
                     <div>anti_corruption 0.2</div>
                     <div>transparency 0.3</div>
                   </div>
                   <div>
-                    <div className="font-medium" style={{ color: colors.text }}>Composite</div>
+                    <div className="font-medium" style={{ color: colors.text }}>
+                      Composite
+                    </div>
                     <div>E 0.4; S 0.3; G 0.3</div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="mt-4 rounded-lg border p-4" style={{ borderColor: colors.accent+"30" }}>
+            <div
+              className="mt-4 rounded-lg border p-4"
+              style={{ borderColor: colors.accent + "30" }}
+            >
               <h4 className="font-semibold mb-3">Normalized Metrics</h4>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-xs">
@@ -948,15 +1012,58 @@ const SupplierAnalytics = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries<any>(data.breakdown.normalizedMetrics || {}).map(([k, v]: any) => (
-                      <tr key={k} className="border-t" style={{ borderColor: colors.accent+"20" }}>
-                        <td className="px-2 py-1" style={{ color: colors.text }}>{k}</td>
-                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.value ?? "—"}</td>
-                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{typeof v?.normalized === 'number' ? v.normalized.toFixed(2) : "—"}</td>
-                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.imputed ? "yes" : "no"}</td>
-                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.band?.min ?? "—"}</td>
-                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.band?.avg ?? "—"}</td>
-                        <td className="px-2 py-1" style={{ color: colors.textMuted }}>{v?.band?.max ?? "—"}</td>
+                    {Object.entries<any>(
+                      data.breakdown.normalizedMetrics || {},
+                    ).map(([k, v]: any) => (
+                      <tr
+                        key={k}
+                        className="border-t"
+                        style={{ borderColor: colors.accent + "20" }}
+                      >
+                        <td
+                          className="px-2 py-1"
+                          style={{ color: colors.text }}
+                        >
+                          {k}
+                        </td>
+                        <td
+                          className="px-2 py-1"
+                          style={{ color: colors.textMuted }}
+                        >
+                          {v?.value ?? "—"}
+                        </td>
+                        <td
+                          className="px-2 py-1"
+                          style={{ color: colors.textMuted }}
+                        >
+                          {typeof v?.normalized === "number"
+                            ? v.normalized.toFixed(2)
+                            : "—"}
+                        </td>
+                        <td
+                          className="px-2 py-1"
+                          style={{ color: colors.textMuted }}
+                        >
+                          {v?.imputed ? "yes" : "no"}
+                        </td>
+                        <td
+                          className="px-2 py-1"
+                          style={{ color: colors.textMuted }}
+                        >
+                          {v?.band?.min ?? "—"}
+                        </td>
+                        <td
+                          className="px-2 py-1"
+                          style={{ color: colors.textMuted }}
+                        >
+                          {v?.band?.avg ?? "—"}
+                        </td>
+                        <td
+                          className="px-2 py-1"
+                          style={{ color: colors.textMuted }}
+                        >
+                          {v?.band?.max ?? "—"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
