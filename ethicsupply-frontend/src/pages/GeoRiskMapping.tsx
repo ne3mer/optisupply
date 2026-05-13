@@ -27,12 +27,20 @@ import {
   ChartBarIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
-import { getSuppliers, Supplier, getGeoRiskAlerts, GeoRiskAlert } from "../services/api";
+import {
+  getSuppliers,
+  Supplier,
+  getGeoRiskAlerts,
+  GeoRiskAlert,
+} from "../services/api";
 import { useThemeColors } from "../theme/useThemeColors";
 import { useTheme } from "../contexts/ThemeContext";
 
 // Risk categories — updated palette to match site theme
-const riskTypes: Record<string, { color: string; name: string; icon: React.ReactNode; description: string }> = {
+const riskTypes: Record<
+  string,
+  { color: string; name: string; icon: React.ReactNode; description: string }
+> = {
   political: {
     color: "#E84545",
     name: "Political Instability",
@@ -43,13 +51,15 @@ const riskTypes: Record<string, { color: string; name: string; icon: React.React
     color: "#C8F05A",
     name: "Environmental Risk",
     icon: <CloudIcon className="w-4 h-4" />,
-    description: "Areas with water scarcity, natural disasters or extreme climate vulnerability",
+    description:
+      "Areas with water scarcity, natural disasters or extreme climate vulnerability",
   },
   socialEthical: {
     color: "#FBBF24",
     name: "Social / Ethical",
     icon: <UserGroupIcon className="w-4 h-4" />,
-    description: "Regions with human rights issues, child labor or poor working conditions",
+    description:
+      "Regions with human rights issues, child labor or poor working conditions",
   },
   conflict: {
     color: "#FB923C",
@@ -61,7 +71,8 @@ const riskTypes: Record<string, { color: string; name: string; icon: React.React
     color: "#86EFAC",
     name: "Regulatory Changes",
     icon: <ScaleIcon className="w-4 h-4" />,
-    description: "Recent or upcoming regulatory changes affecting business operations",
+    description:
+      "Recent or upcoming regulatory changes affecting business operations",
   },
 };
 
@@ -142,7 +153,7 @@ const latLngToVector3 = (lat: number, lng: number, radius: number) => {
   return new THREE.Vector3(
     radius * Math.sin(phi) * Math.cos(theta),
     radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
+    radius * Math.sin(phi) * Math.sin(theta),
   );
 };
 
@@ -154,7 +165,10 @@ const GlobeLoader = () => (
         className="h-10 w-10 rounded-full border-2 border-t-transparent animate-spin"
         style={{ borderColor: "#C8F05A", borderTopColor: "transparent" }}
       />
-      <p className="text-sm font-medium" style={{ color: "#808080", letterSpacing: "0.05em" }}>
+      <p
+        className="text-sm font-medium"
+        style={{ color: "#808080", letterSpacing: "0.05em" }}
+      >
         Loading globe…
       </p>
     </div>
@@ -164,7 +178,7 @@ const GlobeLoader = () => (
 const Earth = ({ children }: { children?: React.ReactNode }) => {
   const earthRef = useRef<THREE.Group>(null);
   const earthTexture = useTexture(
-    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_atmos_2048.jpg"
+    "https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/planets/earth_atmos_2048.jpg",
   );
   useFrame(() => {
     if (earthRef.current) earthRef.current.rotation.y += 0.0015;
@@ -173,7 +187,11 @@ const Earth = ({ children }: { children?: React.ReactNode }) => {
     <group ref={earthRef}>
       <mesh>
         <sphereGeometry args={[5, 64, 64]} />
-        <meshStandardMaterial map={earthTexture} metalness={0.1} roughness={0.8} />
+        <meshStandardMaterial
+          map={earthTexture}
+          metalness={0.1}
+          roughness={0.8}
+        />
       </mesh>
       {children}
     </group>
@@ -191,26 +209,32 @@ const GlobeScene = ({
 }) => {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
-  const riskMarkers = Object.entries(countryRiskData).flatMap(([country, risks]) => {
-    const coords = countryCoordinates[country];
-    if (!coords) return [];
-    const activeRisks = risks.filter((r) => activeRiskTypes.includes(r));
-    if (!activeRisks.length) return [];
-    const pos = latLngToVector3(coords[0], coords[1], 5.1);
-    return activeRisks.map((risk, i) => (
-      <group key={`${country}-${risk}`} position={pos}>
-        <mesh
-          position={[0, 0, 0.08 * i]}
-          onPointerOver={() => setHoveredCountry(country)}
-          onPointerOut={() => setHoveredCountry(null)}
-          onClick={() => onCountryClick(country)}
-        >
-          <sphereGeometry args={[0.14 + i * 0.04, 16, 16]} />
-          <meshBasicMaterial color={riskTypes[risk]?.color ?? "#888"} transparent opacity={0.85} />
-        </mesh>
-      </group>
-    ));
-  });
+  const riskMarkers = Object.entries(countryRiskData).flatMap(
+    ([country, risks]) => {
+      const coords = countryCoordinates[country];
+      if (!coords) return [];
+      const activeRisks = risks.filter((r) => activeRiskTypes.includes(r));
+      if (!activeRisks.length) return [];
+      const pos = latLngToVector3(coords[0], coords[1], 5.1);
+      return activeRisks.map((risk, i) => (
+        <group key={`${country}-${risk}`} position={pos}>
+          <mesh
+            position={[0, 0, 0.08 * i]}
+            onPointerOver={() => setHoveredCountry(country)}
+            onPointerOut={() => setHoveredCountry(null)}
+            onClick={() => onCountryClick(country)}
+          >
+            <sphereGeometry args={[0.14 + i * 0.04, 16, 16]} />
+            <meshBasicMaterial
+              color={riskTypes[risk]?.color ?? "#888"}
+              transparent
+              opacity={0.85}
+            />
+          </mesh>
+        </group>
+      ));
+    },
+  );
 
   const supplierMarkers = suppliers.map((s) => {
     const coords = countryCoordinates[s.country ?? ""];
@@ -226,7 +250,9 @@ const GlobeScene = ({
         >
           <sphereGeometry args={[0.1, 16, 16]} />
           <meshBasicMaterial
-            color={score > 0.7 ? "#C8F05A" : score > 0.4 ? "#FBBF24" : "#E84545"}
+            color={
+              score > 0.7 ? "#C8F05A" : score > 0.4 ? "#FBBF24" : "#E84545"
+            }
             transparent
             opacity={0.9}
           />
@@ -252,7 +278,9 @@ const GlobeScene = ({
               fontFamily: '"Geist", sans-serif',
             }}
           >
-            <p className="font-semibold" style={{ letterSpacing: "-0.01em" }}>{hoveredCountry}</p>
+            <p className="font-semibold" style={{ letterSpacing: "-0.01em" }}>
+              {hoveredCountry}
+            </p>
             <p className="text-[11px] mt-0.5" style={{ color: "#808080" }}>
               {countryRiskData[hoveredCountry]
                 ?.map((r) => riskTypes[r]?.name)
@@ -267,9 +295,12 @@ const GlobeScene = ({
 
 // ─── Risk score badge ─────────────────────────────────────────────────────────
 const getRiskBadge = (risks: string[]) => {
-  if (!risks || risks.length === 0) return { label: "Clear", color: "#4ADE80", bg: "rgba(74,222,128,0.12)" };
-  if (risks.length >= 3) return { label: "Critical", color: "#E84545", bg: "rgba(232,69,69,0.12)" };
-  if (risks.length === 2) return { label: "High", color: "#FB923C", bg: "rgba(251,146,60,0.12)" };
+  if (!risks || risks.length === 0)
+    return { label: "Clear", color: "#4ADE80", bg: "rgba(74,222,128,0.12)" };
+  if (risks.length >= 3)
+    return { label: "Critical", color: "#E84545", bg: "rgba(232,69,69,0.12)" };
+  if (risks.length === 2)
+    return { label: "High", color: "#FB923C", bg: "rgba(251,146,60,0.12)" };
   return { label: "Medium", color: "#FBBF24", bg: "rgba(251,191,36,0.12)" };
 };
 
@@ -281,7 +312,9 @@ const GeoRiskMapping = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeRiskTypes, setActiveRiskTypes] = useState<string[]>(Object.keys(riskTypes));
+  const [activeRiskTypes, setActiveRiskTypes] = useState<string[]>(
+    Object.keys(riskTypes),
+  );
   const [alerts, setAlerts] = useState<GeoRiskAlert[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"globe" | "map" | "chart">("globe");
@@ -301,7 +334,9 @@ const GeoRiskMapping = () => {
         setAlerts(alertsData);
         setError(null);
       } catch (err) {
-        setError("Failed to load geo-risk data. Check your connection and try again.");
+        setError(
+          "Failed to load geo-risk data. Check your connection and try again.",
+        );
         console.error(err);
       } finally {
         setLoading(false);
@@ -312,7 +347,7 @@ const GeoRiskMapping = () => {
 
   const toggleRiskType = (type: string) =>
     setActiveRiskTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
 
   // ── Loading state ────────────────────────────────────────────────────────
@@ -328,10 +363,16 @@ const GeoRiskMapping = () => {
             style={{ borderColor: "#C8F05A", borderTopColor: "transparent" }}
           />
           <div className="text-center">
-            <p className="text-sm font-semibold" style={{ color: colors.text, letterSpacing: "-0.01em" }}>
+            <p
+              className="text-sm font-semibold"
+              style={{ color: colors.text, letterSpacing: "-0.01em" }}
+            >
               Loading Geo Risk Intelligence
             </p>
-            <p className="text-[11px] mt-1 uppercase" style={{ color: "#808080", letterSpacing: "0.08em" }}>
+            <p
+              className="text-[11px] mt-1 uppercase"
+              style={{ color: "#808080", letterSpacing: "0.08em" }}
+            >
               Fetching global data…
             </p>
           </div>
@@ -356,14 +397,25 @@ const GeoRiskMapping = () => {
         >
           <div
             className="h-14 w-14 rounded-xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: "rgba(232,69,69,0.10)", border: "1px solid rgba(232,69,69,0.20)" }}
+            style={{
+              background: "rgba(232,69,69,0.10)",
+              border: "1px solid rgba(232,69,69,0.20)",
+            }}
           >
-            <ExclamationTriangleIcon className="h-7 w-7" style={{ color: "#E84545" }} />
+            <ExclamationTriangleIcon
+              className="h-7 w-7"
+              style={{ color: "#E84545" }}
+            />
           </div>
-          <h2 className="text-base font-semibold mb-2" style={{ color: colors.text, letterSpacing: "-0.01em" }}>
+          <h2
+            className="text-base font-semibold mb-2"
+            style={{ color: colors.text, letterSpacing: "-0.01em" }}
+          >
             Data Unavailable
           </h2>
-          <p className="text-[13px] mb-5" style={{ color: "#808080" }}>{error}</p>
+          <p className="text-[13px] mb-5" style={{ color: "#808080" }}>
+            {error}
+          </p>
           <button
             onClick={() => window.location.reload()}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-opacity hover:opacity-85"
@@ -400,23 +452,34 @@ const GeoRiskMapping = () => {
   return (
     <div
       className="relative w-full overflow-hidden"
-      style={{ height: "100dvh", backgroundColor: colors.background, color: colors.text }}
+      style={{
+        height: "100dvh",
+        backgroundColor: colors.background,
+        color: colors.text,
+      }}
     >
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div
         className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 h-14 flex items-center justify-between"
         style={{
-          background: darkMode ? "rgba(10,10,10,0.85)" : "rgba(245,245,240,0.85)",
+          background: darkMode
+            ? "rgba(10,10,10,0.85)"
+            : "rgba(245,245,240,0.85)",
           backdropFilter: "blur(16px)",
           WebkitBackdropFilter: "blur(16px)",
-          borderBottom: darkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(0,0,0,0.06)",
+          borderBottom: darkMode
+            ? "1px solid rgba(255,255,255,0.06)"
+            : "1px solid rgba(0,0,0,0.06)",
         }}
       >
         {/* Title */}
         <div className="flex items-center gap-3">
           <div
             className="h-7 w-7 rounded-md flex items-center justify-center shrink-0"
-            style={{ background: "rgba(232,69,69,0.15)", border: "1px solid rgba(232,69,69,0.25)" }}
+            style={{
+              background: "rgba(232,69,69,0.15)",
+              border: "1px solid rgba(232,69,69,0.25)",
+            }}
           >
             <GlobeAltIcon className="h-4 w-4" style={{ color: "#E84545" }} />
           </div>
@@ -427,8 +490,12 @@ const GeoRiskMapping = () => {
             >
               Geo Risk Intelligence
             </h1>
-            <p className="text-[10px] uppercase" style={{ color: "#808080", letterSpacing: "0.08em" }}>
-              {suppliers.length} suppliers · {Object.keys(countryRiskData).length} risk zones
+            <p
+              className="text-[10px] uppercase"
+              style={{ color: "#808080", letterSpacing: "0.08em" }}
+            >
+              {suppliers.length} suppliers ·{" "}
+              {Object.keys(countryRiskData).length} risk zones
             </p>
           </div>
         </div>
@@ -438,7 +505,10 @@ const GeoRiskMapping = () => {
           {/* View mode pill */}
           <div
             className="flex items-center p-0.5 rounded-md gap-0.5"
-            style={{ border: "1px solid rgba(128,128,128,0.12)", background: "rgba(128,128,128,0.04)" }}
+            style={{
+              border: "1px solid rgba(128,128,128,0.12)",
+              background: "rgba(128,128,128,0.04)",
+            }}
           >
             {(["globe", "map", "chart"] as const).map((mode) => {
               const icons = {
@@ -458,14 +528,19 @@ const GeoRiskMapping = () => {
                   }
                 >
                   {icons[mode]}
-                  <span className="hidden sm:inline">{mode.charAt(0).toUpperCase() + mode.slice(1)}</span>
+                  <span className="hidden sm:inline">
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </span>
                 </button>
               );
             })}
           </div>
 
           {/* Divider */}
-          <div className="h-5 w-px mx-0.5" style={{ background: "rgba(128,128,128,0.15)" }} />
+          <div
+            className="h-5 w-px mx-0.5"
+            style={{ background: "rgba(128,128,128,0.15)" }}
+          />
 
           {/* Alerts toggle */}
           <button
@@ -473,7 +548,9 @@ const GeoRiskMapping = () => {
             className="h-8 w-8 flex items-center justify-center rounded-md transition-colors"
             style={{
               background: showAlerts ? "rgba(200,240,90,0.12)" : "transparent",
-              border: showAlerts ? "1px solid rgba(200,240,90,0.25)" : "1px solid transparent",
+              border: showAlerts
+                ? "1px solid rgba(200,240,90,0.25)"
+                : "1px solid transparent",
             }}
             title={showAlerts ? "Hide alerts" : "Show alerts"}
           >
@@ -488,7 +565,6 @@ const GeoRiskMapping = () => {
 
       {/* ── Main content ────────────────────────────────────────────────── */}
       <div className="absolute inset-0 top-14">
-
         {/* Globe view */}
         {viewMode === "globe" && (
           <Canvas
@@ -500,7 +576,14 @@ const GeoRiskMapping = () => {
               <ambientLight intensity={0.55} />
               <pointLight position={[10, 10, 10]} intensity={1.2} />
               <pointLight position={[-10, -10, -10]} intensity={0.6} />
-              <Stars radius={100} depth={50} count={2500} factor={4} saturation={0} fade />
+              <Stars
+                radius={100}
+                depth={50}
+                count={2500}
+                factor={4}
+                saturation={0}
+                fade
+              />
               <GlobeScene
                 suppliers={suppliers}
                 activeRiskTypes={activeRiskTypes}
@@ -526,10 +609,16 @@ const GeoRiskMapping = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {Object.entries(countryCoordinates)
                   .filter(([c]) => c !== "Other")
-                  .sort((a, b) => (countryRiskData[b[0]]?.length || 0) - (countryRiskData[a[0]]?.length || 0))
+                  .sort(
+                    (a, b) =>
+                      (countryRiskData[b[0]]?.length || 0) -
+                      (countryRiskData[a[0]]?.length || 0),
+                  )
                   .map(([country]) => {
                     const risks = countryRiskData[country] || [];
-                    const supplierCount = suppliers.filter((s) => s.country === country).length;
+                    const supplierCount = suppliers.filter(
+                      (s) => s.country === country,
+                    ).length;
                     const badge = getRiskBadge(risks);
                     return (
                       <motion.button
@@ -537,18 +626,23 @@ const GeoRiskMapping = () => {
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="text-left p-4 rounded-lg transition-all hover:ring-1"
-                        style={{
-                          background: colors.card,
-                          border: `1px solid ${risks.length > 0 ? "rgba(128,128,128,0.10)" : "rgba(128,128,128,0.07)"}`,
-                          "--tw-ring-color": colors.primary + "30",
-                        } as any}
+                        style={
+                          {
+                            background: colors.card,
+                            border: `1px solid ${risks.length > 0 ? "rgba(128,128,128,0.10)" : "rgba(128,128,128,0.07)"}`,
+                            "--tw-ring-color": colors.primary + "30",
+                          } as any
+                        }
                         onClick={() => setSelectedCountry(country)}
                       >
                         {/* Country + badge */}
                         <div className="flex items-start justify-between gap-2 mb-2">
                           <h3
                             className="text-[13px] font-semibold leading-tight"
-                            style={{ color: colors.text, letterSpacing: "-0.01em" }}
+                            style={{
+                              color: colors.text,
+                              letterSpacing: "-0.01em",
+                            }}
                           >
                             {country}
                           </h3>
@@ -569,7 +663,10 @@ const GeoRiskMapping = () => {
                           {risks.length === 0 ? (
                             <span
                               className="text-[10px] uppercase font-medium"
-                              style={{ color: "#808080", letterSpacing: "0.06em" }}
+                              style={{
+                                color: "#808080",
+                                letterSpacing: "0.06em",
+                              }}
                             >
                               No active risks
                             </span>
@@ -585,7 +682,9 @@ const GeoRiskMapping = () => {
                                 }}
                               >
                                 {riskTypes[r]?.icon}
-                                <span style={{ letterSpacing: "0.03em" }}>{riskTypes[r]?.name}</span>
+                                <span style={{ letterSpacing: "0.03em" }}>
+                                  {riskTypes[r]?.name}
+                                </span>
                               </span>
                             ))
                           )}
@@ -597,7 +696,8 @@ const GeoRiskMapping = () => {
                             className="text-[11px] font-medium"
                             style={{ color: "#808080" }}
                           >
-                            {supplierCount} supplier{supplierCount > 1 ? "s" : ""}
+                            {supplierCount} supplier
+                            {supplierCount > 1 ? "s" : ""}
                           </div>
                         )}
                       </motion.button>
@@ -621,10 +721,16 @@ const GeoRiskMapping = () => {
                 }}
               >
                 <div className="mb-4">
-                  <p className="text-[10px] uppercase font-semibold" style={{ color: "#808080", letterSpacing: "0.09em" }}>
+                  <p
+                    className="text-[10px] uppercase font-semibold"
+                    style={{ color: "#808080", letterSpacing: "0.09em" }}
+                  >
                     Risk Alerts
                   </p>
-                  <h3 className="text-[15px] font-semibold mt-0.5" style={{ color: colors.text, letterSpacing: "-0.01em" }}>
+                  <h3
+                    className="text-[15px] font-semibold mt-0.5"
+                    style={{ color: colors.text, letterSpacing: "-0.01em" }}
+                  >
                     Alerts by Type
                   </h3>
                 </div>
@@ -635,10 +741,18 @@ const GeoRiskMapping = () => {
                       margin={{ top: 4, right: 8, left: -8, bottom: 4 }}
                       barCategoryGap="30%"
                     >
-                      <CartesianGrid stroke={gridColor} strokeDasharray="0" vertical={false} />
+                      <CartesianGrid
+                        stroke={gridColor}
+                        strokeDasharray="0"
+                        vertical={false}
+                      />
                       <XAxis
                         dataKey="type"
-                        tick={{ fontSize: 10, fill: tickColor, fontFamily: '"Geist", sans-serif' }}
+                        tick={{
+                          fontSize: 10,
+                          fill: tickColor,
+                          fontFamily: '"Geist", sans-serif',
+                        }}
                         axisLine={false}
                         tickLine={false}
                         angle={-20}
@@ -646,7 +760,11 @@ const GeoRiskMapping = () => {
                         textAnchor="end"
                       />
                       <YAxis
-                        tick={{ fontSize: 10, fill: tickColor, fontFamily: '"Geist Mono", monospace' }}
+                        tick={{
+                          fontSize: 10,
+                          fill: tickColor,
+                          fontFamily: '"Geist Mono", monospace',
+                        }}
                         axisLine={false}
                         tickLine={false}
                         allowDecimals={false}
@@ -655,7 +773,9 @@ const GeoRiskMapping = () => {
                       <Tooltip
                         cursor={{ fill: "rgba(200,240,90,0.04)" }}
                         contentStyle={{
-                          background: darkMode ? "rgba(10,10,10,0.97)" : "rgba(245,245,240,0.97)",
+                          background: darkMode
+                            ? "rgba(10,10,10,0.97)"
+                            : "rgba(245,245,240,0.97)",
                           border: "1px solid rgba(128,128,128,0.12)",
                           borderRadius: "6px",
                           fontSize: "12px",
@@ -663,7 +783,14 @@ const GeoRiskMapping = () => {
                           color: colors.text,
                         }}
                       />
-                      <Bar dataKey="count" name="Alerts" radius={[3, 3, 0, 0]} maxBarSize={36} fill="#C8F05A" fillOpacity={0.85} />
+                      <Bar
+                        dataKey="count"
+                        name="Alerts"
+                        radius={[3, 3, 0, 0]}
+                        maxBarSize={36}
+                        fill="#C8F05A"
+                        fillOpacity={0.85}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -678,10 +805,16 @@ const GeoRiskMapping = () => {
                 }}
               >
                 <div className="mb-4">
-                  <p className="text-[10px] uppercase font-semibold" style={{ color: "#808080", letterSpacing: "0.09em" }}>
+                  <p
+                    className="text-[10px] uppercase font-semibold"
+                    style={{ color: "#808080", letterSpacing: "0.09em" }}
+                  >
                     Country Exposure
                   </p>
-                  <h3 className="text-[15px] font-semibold mt-0.5" style={{ color: colors.text, letterSpacing: "-0.01em" }}>
+                  <h3
+                    className="text-[15px] font-semibold mt-0.5"
+                    style={{ color: colors.text, letterSpacing: "-0.01em" }}
+                  >
                     Risk Concentration
                   </h3>
                 </div>
@@ -693,10 +826,18 @@ const GeoRiskMapping = () => {
                       margin={{ top: 4, right: 8, left: 56, bottom: 4 }}
                       barCategoryGap="28%"
                     >
-                      <CartesianGrid stroke={gridColor} strokeDasharray="0" horizontal={false} />
+                      <CartesianGrid
+                        stroke={gridColor}
+                        strokeDasharray="0"
+                        horizontal={false}
+                      />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 10, fill: tickColor, fontFamily: '"Geist Mono", monospace' }}
+                        tick={{
+                          fontSize: 10,
+                          fill: tickColor,
+                          fontFamily: '"Geist Mono", monospace',
+                        }}
                         axisLine={false}
                         tickLine={false}
                         allowDecimals={false}
@@ -704,7 +845,11 @@ const GeoRiskMapping = () => {
                       <YAxis
                         dataKey="country"
                         type="category"
-                        tick={{ fontSize: 10, fill: tickColor, fontFamily: '"Geist", sans-serif' }}
+                        tick={{
+                          fontSize: 10,
+                          fill: tickColor,
+                          fontFamily: '"Geist", sans-serif',
+                        }}
                         axisLine={false}
                         tickLine={false}
                         width={80}
@@ -713,7 +858,9 @@ const GeoRiskMapping = () => {
                       <Tooltip
                         cursor={{ fill: "rgba(200,240,90,0.04)" }}
                         contentStyle={{
-                          background: darkMode ? "rgba(10,10,10,0.97)" : "rgba(245,245,240,0.97)",
+                          background: darkMode
+                            ? "rgba(10,10,10,0.97)"
+                            : "rgba(245,245,240,0.97)",
                           border: "1px solid rgba(128,128,128,0.12)",
                           borderRadius: "6px",
                           fontSize: "12px",
@@ -721,7 +868,14 @@ const GeoRiskMapping = () => {
                           color: colors.text,
                         }}
                       />
-                      <Bar dataKey="risks" name="Risk types" radius={[0, 3, 3, 0]} maxBarSize={18} fill="#E84545" fillOpacity={0.8} />
+                      <Bar
+                        dataKey="risks"
+                        name="Risk types"
+                        radius={[0, 3, 3, 0]}
+                        maxBarSize={18}
+                        fill="#E84545"
+                        fillOpacity={0.8}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -736,13 +890,25 @@ const GeoRiskMapping = () => {
                 }}
               >
                 <div className="mb-4">
-                  <p className="text-[10px] uppercase font-semibold" style={{ color: "#808080", letterSpacing: "0.09em" }}>Overview</p>
-                  <h3 className="text-[15px] font-semibold mt-0.5" style={{ color: colors.text, letterSpacing: "-0.01em" }}>Risk Type Summary</h3>
+                  <p
+                    className="text-[10px] uppercase font-semibold"
+                    style={{ color: "#808080", letterSpacing: "0.09em" }}
+                  >
+                    Overview
+                  </p>
+                  <h3
+                    className="text-[15px] font-semibold mt-0.5"
+                    style={{ color: colors.text, letterSpacing: "-0.01em" }}
+                  >
+                    Risk Type Summary
+                  </h3>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {Object.entries(riskTypes).map(([key, rt]) => {
                     const count = alerts.filter((a) => a.type === key).length;
-                    const countries = Object.entries(countryRiskData).filter(([, r]) => r.includes(key)).length;
+                    const countries = Object.entries(countryRiskData).filter(
+                      ([, r]) => r.includes(key),
+                    ).length;
                     return (
                       <div
                         key={key}
@@ -753,20 +919,46 @@ const GeoRiskMapping = () => {
                           borderLeft: `3px solid ${rt.color}`,
                         }}
                       >
-                        <div className="flex items-center gap-1.5 mb-2" style={{ color: rt.color }}>
+                        <div
+                          className="flex items-center gap-1.5 mb-2"
+                          style={{ color: rt.color }}
+                        >
                           {rt.icon}
-                          <span className="text-[10px] font-bold uppercase" style={{ letterSpacing: "0.06em" }}>
+                          <span
+                            className="text-[10px] font-bold uppercase"
+                            style={{ letterSpacing: "0.06em" }}
+                          >
                             {rt.name}
                           </span>
                         </div>
                         <div className="flex flex-col gap-0.5">
                           <div className="flex justify-between items-center">
-                            <span className="text-[10px]" style={{ color: "#808080" }}>Alerts</span>
-                            <span className="text-[14px] font-bold font-mono" style={{ color: rt.color }}>{count}</span>
+                            <span
+                              className="text-[10px]"
+                              style={{ color: "#808080" }}
+                            >
+                              Alerts
+                            </span>
+                            <span
+                              className="text-[14px] font-bold font-mono"
+                              style={{ color: rt.color }}
+                            >
+                              {count}
+                            </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-[10px]" style={{ color: "#808080" }}>Countries</span>
-                            <span className="text-[14px] font-bold font-mono" style={{ color: rt.color }}>{countries}</span>
+                            <span
+                              className="text-[10px]"
+                              style={{ color: "#808080" }}
+                            >
+                              Countries
+                            </span>
+                            <span
+                              className="text-[14px] font-bold font-mono"
+                              style={{ color: rt.color }}
+                            >
+                              {countries}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -802,15 +994,23 @@ const GeoRiskMapping = () => {
                     onClick={() => toggleRiskType(type)}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-all text-[12px] font-medium"
                     style={{
-                      background: active ? data.color + "18" : "rgba(128,128,128,0.05)",
-                      border: active ? `1px solid ${data.color}30` : "1px solid rgba(128,128,128,0.08)",
+                      background: active
+                        ? data.color + "18"
+                        : "rgba(128,128,128,0.05)",
+                      border: active
+                        ? `1px solid ${data.color}30`
+                        : "1px solid rgba(128,128,128,0.08)",
                       color: active ? data.color : "#808080",
                       opacity: active ? 1 : 0.6,
                     }}
                   >
                     <span
                       className="h-2 w-2 rounded-full shrink-0"
-                      style={{ background: active ? data.color : "rgba(128,128,128,0.4)" }}
+                      style={{
+                        background: active
+                          ? data.color
+                          : "rgba(128,128,128,0.4)",
+                      }}
                     />
                     {data.name}
                   </button>
@@ -825,7 +1025,10 @@ const GeoRiskMapping = () => {
               className="absolute bottom-4 right-4 z-20 p-3 rounded-lg"
               style={panelStyle}
             >
-              <p className="text-[10px] uppercase font-semibold mb-2" style={{ color: "#808080", letterSpacing: "0.09em" }}>
+              <p
+                className="text-[10px] uppercase font-semibold mb-2"
+                style={{ color: "#808080", letterSpacing: "0.09em" }}
+              >
                 Supplier Score
               </p>
               <div className="flex flex-col gap-1.5">
@@ -835,8 +1038,13 @@ const GeoRiskMapping = () => {
                   { label: "At Risk", color: "#E84545" },
                 ].map((l) => (
                   <div key={l.label} className="flex items-center gap-2">
-                    <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: l.color }} />
-                    <span className="text-[11px]" style={{ color: "#808080" }}>{l.label}</span>
+                    <div
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ background: l.color }}
+                    />
+                    <span className="text-[11px]" style={{ color: "#808080" }}>
+                      {l.label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -863,14 +1071,23 @@ const GeoRiskMapping = () => {
               style={{ borderBottom: "1px solid rgba(128,128,128,0.08)" }}
             >
               <div>
-                <p className="text-[10px] uppercase font-semibold" style={{ color: "#808080", letterSpacing: "0.09em" }}>
+                <p
+                  className="text-[10px] uppercase font-semibold"
+                  style={{ color: "#808080", letterSpacing: "0.09em" }}
+                >
                   Live Feed
                 </p>
-                <h2 className="text-[13px] font-semibold" style={{ color: colors.text, letterSpacing: "-0.01em" }}>
+                <h2
+                  className="text-[13px] font-semibold"
+                  style={{ color: colors.text, letterSpacing: "-0.01em" }}
+                >
                   Risk Alerts
                   <span
                     className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded"
-                    style={{ background: "rgba(232,69,69,0.15)", color: "#E84545" }}
+                    style={{
+                      background: "rgba(232,69,69,0.15)",
+                      color: "#E84545",
+                    }}
                   >
                     {alerts.length}
                   </span>
@@ -890,7 +1107,12 @@ const GeoRiskMapping = () => {
               {alerts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 opacity-50">
                   <BellIcon className="h-8 w-8" style={{ color: "#808080" }} />
-                  <p className="text-sm font-medium" style={{ color: "#808080" }}>No active alerts</p>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "#808080" }}
+                  >
+                    No active alerts
+                  </p>
                 </div>
               ) : (
                 alerts.map((alert, idx) => {
@@ -903,7 +1125,9 @@ const GeoRiskMapping = () => {
                       transition={{ delay: idx * 0.04 }}
                       className="p-3 rounded-md"
                       style={{
-                        background: rt ? rt.color + "0C" : "rgba(128,128,128,0.05)",
+                        background: rt
+                          ? rt.color + "0C"
+                          : "rgba(128,128,128,0.05)",
                         border: `1px solid ${rt ? rt.color + "25" : "rgba(128,128,128,0.10)"}`,
                         borderLeft: `3px solid ${rt?.color ?? "#808080"}`,
                       }}
@@ -911,28 +1135,45 @@ const GeoRiskMapping = () => {
                       <div className="flex items-start gap-2">
                         <div
                           className="shrink-0 h-6 w-6 rounded flex items-center justify-center mt-0.5"
-                          style={{ background: rt ? rt.color + "20" : "rgba(128,128,128,0.10)", color: rt?.color ?? "#808080" }}
+                          style={{
+                            background: rt
+                              ? rt.color + "20"
+                              : "rgba(128,128,128,0.10)",
+                            color: rt?.color ?? "#808080",
+                          }}
                         >
                           {rt?.icon ?? <BellIcon className="h-3.5 w-3.5" />}
                         </div>
                         <div className="min-w-0">
                           <p
                             className="text-[12px] font-semibold leading-tight"
-                            style={{ color: colors.text, letterSpacing: "-0.01em" }}
+                            style={{
+                              color: colors.text,
+                              letterSpacing: "-0.01em",
+                            }}
                           >
                             {alert.title}
                           </p>
-                          <p className="text-[11px] mt-0.5 leading-snug" style={{ color: "#808080" }}>
+                          <p
+                            className="text-[11px] mt-0.5 leading-snug"
+                            style={{ color: "#808080" }}
+                          >
                             {alert.description}
                           </p>
                           <div className="flex items-center justify-between mt-1.5">
                             <span
                               className="text-[10px] font-semibold uppercase"
-                              style={{ color: rt?.color ?? "#808080", letterSpacing: "0.05em" }}
+                              style={{
+                                color: rt?.color ?? "#808080",
+                                letterSpacing: "0.05em",
+                              }}
                             >
                               {alert.country}
                             </span>
-                            <span className="text-[10px]" style={{ color: "#808080" }}>
+                            <span
+                              className="text-[10px]"
+                              style={{ color: "#808080" }}
+                            >
                               {alert.date}
                             </span>
                           </div>
@@ -968,7 +1209,10 @@ const GeoRiskMapping = () => {
               style={{ borderBottom: "1px solid rgba(128,128,128,0.08)" }}
             >
               <div>
-                <p className="text-[10px] uppercase font-semibold" style={{ color: "#808080", letterSpacing: "0.09em" }}>
+                <p
+                  className="text-[10px] uppercase font-semibold"
+                  style={{ color: "#808080", letterSpacing: "0.09em" }}
+                >
                   Country Detail
                 </p>
                 <h2
@@ -1000,7 +1244,11 @@ const GeoRiskMapping = () => {
                   {(countryRiskData[selectedCountry] ?? []).length === 0 ? (
                     <span
                       className="text-[11px] px-2 py-1 rounded"
-                      style={{ background: "rgba(74,222,128,0.10)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.20)" }}
+                      style={{
+                        background: "rgba(74,222,128,0.10)",
+                        color: "#4ADE80",
+                        border: "1px solid rgba(74,222,128,0.20)",
+                      }}
                     >
                       No active risks
                     </span>
@@ -1032,15 +1280,25 @@ const GeoRiskMapping = () => {
                   className="text-[10px] uppercase font-semibold mb-2"
                   style={{ color: "#808080", letterSpacing: "0.09em" }}
                 >
-                  Suppliers ({suppliers.filter((s) => s.country === selectedCountry).length})
+                  Suppliers (
+                  {
+                    suppliers.filter((s) => s.country === selectedCountry)
+                      .length
+                  }
+                  )
                 </p>
                 <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto">
                   {suppliers
                     .filter((s) => s.country === selectedCountry)
                     .slice(0, 10)
                     .map((s) => {
-                      const score = (s.ethical_score ?? 0);
-                      const scoreColor = score > 70 ? "#C8F05A" : score > 40 ? "#FBBF24" : "#E84545";
+                      const score = s.ethical_score ?? 0;
+                      const scoreColor =
+                        score > 70
+                          ? "#C8F05A"
+                          : score > 40
+                            ? "#FBBF24"
+                            : "#E84545";
                       return (
                         <div
                           key={(s as any)._id ?? (s as any).id}
@@ -1052,7 +1310,10 @@ const GeoRiskMapping = () => {
                         >
                           <p
                             className="text-[12px] font-medium truncate flex-1"
-                            style={{ color: colors.text, letterSpacing: "-0.01em" }}
+                            style={{
+                              color: colors.text,
+                              letterSpacing: "-0.01em",
+                            }}
                           >
                             {s.name}
                           </p>
@@ -1065,7 +1326,8 @@ const GeoRiskMapping = () => {
                         </div>
                       );
                     })}
-                  {suppliers.filter((s) => s.country === selectedCountry).length === 0 && (
+                  {suppliers.filter((s) => s.country === selectedCountry)
+                    .length === 0 && (
                     <p className="text-[12px]" style={{ color: "#808080" }}>
                       No suppliers in this country
                     </p>

@@ -49,8 +49,18 @@ import {
   ReferenceLine,
   DonutChart,
 } from "recharts";
-import { getDashboardData, checkApiConnection, getMockDashboardData } from "../services/dashboardService";
-import { getDatasetMeta, getBands, getSuppliers, Supplier, BandsMap } from "../services/api";
+import {
+  getDashboardData,
+  checkApiConnection,
+  getMockDashboardData,
+} from "../services/dashboardService";
+import {
+  getDatasetMeta,
+  getBands,
+  getSuppliers,
+  Supplier,
+  BandsMap,
+} from "../services/api";
 import { getSupplyChainGraphData, GraphData } from "../services/api";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
@@ -92,8 +102,12 @@ function loadTargets(): Targets {
     if (!raw) return defaultTargets;
     const parsed = JSON.parse(raw);
     return {
-      renewablePct: Number.isFinite(Number(parsed.renewablePct)) ? Number(parsed.renewablePct) : defaultTargets.renewablePct,
-      injuryRate: Number.isFinite(Number(parsed.injuryRate)) ? Number(parsed.injuryRate) : defaultTargets.injuryRate,
+      renewablePct: Number.isFinite(Number(parsed.renewablePct))
+        ? Number(parsed.renewablePct)
+        : defaultTargets.renewablePct,
+      injuryRate: Number.isFinite(Number(parsed.injuryRate))
+        ? Number(parsed.injuryRate)
+        : defaultTargets.injuryRate,
     };
   } catch {
     return defaultTargets;
@@ -178,10 +192,7 @@ const getRiskColor = (level: string | undefined, themeColors: any) => {
   }
 };
 
-const formatPercent = (
-  value: number | null | undefined,
-  digits = 0
-) => {
+const formatPercent = (value: number | null | undefined, digits = 0) => {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "N/A";
   }
@@ -216,8 +227,14 @@ const ErrorDisplay = ({ message }) => {
         animate={{ opacity: 1, scale: 1 }}
         className="bg-red-900/30 border border-red-500 p-8 rounded-lg text-center max-w-lg shadow-xl"
       >
-        <ExclamationTriangleIcon className="h-16 w-16 mx-auto mb-5" style={{ color: colors.error }} />
-        <h3 className="text-2xl font-semibold mb-3" style={{ color: colors.error }}>
+        <ExclamationTriangleIcon
+          className="h-16 w-16 mx-auto mb-5"
+          style={{ color: colors.error }}
+        />
+        <h3
+          className="text-2xl font-semibold mb-3"
+          style={{ color: colors.error }}
+        >
           Connection Error
         </h3>
         <p className="text-lg" style={{ color: colors.textMuted }}>
@@ -250,7 +267,10 @@ const DashboardCard = ({
     >
       <div className="relative z-10 h-full flex flex-col">
         <div className="flex items-center mb-4">
-          <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: colors.panel }}>
+          <div
+            className="p-2 rounded-lg mr-3"
+            style={{ backgroundColor: colors.panel }}
+          >
             <Icon className="h-5 w-5" style={{ color: colors.primary }} />
           </div>
           <h3 className="text-lg font-semibold" style={{ color: colors.text }}>
@@ -288,31 +308,25 @@ const KpiIndicator = ({
     >
       {/* Label row — uppercase, widely tracked, tiny */}
       <div className="flex items-center justify-between mb-3">
-        <span
-          className="metric-label"
-          style={{ color: colors.textMuted }}
-        >
+        <span className="metric-label" style={{ color: colors.textMuted }}>
           {label}
         </span>
-        <Icon
-          className="h-3.5 w-3.5 opacity-35"
-          style={{ color }}
-        />
+        <Icon className="h-3.5 w-3.5 opacity-35" style={{ color }} />
       </div>
 
       {/* Bloomberg-style number */}
       {value !== undefined && value !== null && (
         <div className="flex items-end gap-1.5">
-          <span
-            className="metric-value"
-            style={{ color: colors.text }}
-          >
+          <span className="metric-value" style={{ color: colors.text }}>
             {value}
           </span>
           {unit && (
             <span
               className="text-sm font-medium mb-1 opacity-60"
-              style={{ color: colors.textMuted, fontFamily: '"Geist Mono", monospace' }}
+              style={{
+                color: colors.textMuted,
+                fontFamily: '"Geist Mono", monospace',
+              }}
             >
               {unit}
             </span>
@@ -362,8 +376,8 @@ const ReportGenerator = ({
           1,
         avgCO2Emissions:
           dashboardData.avgCo2Emissions ?? dashboardData.avg_co2_emissions ?? 0,
-        riskBreakdown:
-          dashboardData.riskBreakdown ?? dashboardData.risk_breakdown ?? {
+        riskBreakdown: dashboardData.riskBreakdown ??
+          dashboardData.risk_breakdown ?? {
             low: 0,
             medium: 0,
             high: 0,
@@ -378,18 +392,19 @@ const ReportGenerator = ({
         dashboardData.co2EmissionsByIndustry ||
         dashboardData.co2_emissions_by_industry ||
         [],
-      pillarAverages:
-        (dashboardData.pillarAverages || dashboardData.pillar_averages || null) as
-          | { environmental: number; social: number; governance: number }
-          | null,
+      pillarAverages: (dashboardData.pillarAverages ||
+        dashboardData.pillar_averages ||
+        null) as {
+        environmental: number;
+        social: number;
+        governance: number;
+      } | null,
       suppliersByCountry:
         dashboardData.suppliersByCountry ||
         dashboardData.suppliers_by_country ||
         {},
       waterUsageTrend:
-        dashboardData.waterUsageTrend ||
-        dashboardData.water_usage_trend ||
-        [],
+        dashboardData.waterUsageTrend || dashboardData.water_usage_trend || [],
       renewableEnergy:
         dashboardData.renewableEnergyMix ||
         dashboardData.renewableEnergyAdoption ||
@@ -400,9 +415,7 @@ const ReportGenerator = ({
         dashboardData.sustainable_practices ||
         [],
       recentSuppliers:
-        dashboardData.recentSuppliers ||
-        dashboardData.recent_suppliers ||
-        [],
+        dashboardData.recentSuppliers || dashboardData.recent_suppliers || [],
       mlInsights: [
         {
           title: "Predicted Trend Analysis",
@@ -449,12 +462,16 @@ const ReportGenerator = ({
 
     try {
       // Import the comprehensive PDF generator
-      const { generateComprehensivePDFReport } = await import("./Dashboard_PDF_Enhanced");
+      const { generateComprehensivePDFReport } =
+        await import("./Dashboard_PDF_Enhanced");
       await generateComprehensivePDFReport(reportData, allSuppliers, year);
       setGenerating(false);
       return;
     } catch (importError) {
-      console.warn("Failed to load enhanced PDF generator, using fallback:", importError);
+      console.warn(
+        "Failed to load enhanced PDF generator, using fallback:",
+        importError,
+      );
       // Fallback to original implementation if import fails
     }
 
@@ -504,13 +521,13 @@ const ReportGenerator = ({
         "This report provides a comprehensive overview of your supply chain's ESG performance",
         105,
         30,
-        { align: "center" }
+        { align: "center" },
       );
       doc.text(
         "for the past year, with detailed analytics and actionable insights.",
         105,
         36,
-        { align: "center" }
+        { align: "center" },
       );
 
       // Key metrics
@@ -534,8 +551,16 @@ const ReportGenerator = ({
       doc.text("Avg. Data Completeness", 120, 88);
       doc.setTextColor(0, 240, 255);
       doc.setFontSize(14);
-      doc.text(`${Math.round((reportData.summary.avgRiskFactor || 0) * 100)}%`, 40, 98);
-      doc.text(`${Math.round((reportData.summary.avgCompletenessRatio || 1) * 100)}%`, 120, 98);
+      doc.text(
+        `${Math.round((reportData.summary.avgRiskFactor || 0) * 100)}%`,
+        40,
+        98,
+      );
+      doc.text(
+        `${Math.round((reportData.summary.avgCompletenessRatio || 1) * 100)}%`,
+        120,
+        98,
+      );
 
       // Risk breakdown table
       doc.setTextColor(0, 240, 255);
@@ -589,7 +614,7 @@ const ReportGenerator = ({
       const critW = (critical / total) * barW;
       // Track
       doc.setFillColor(40, 44, 66);
-      doc.roundedRect(barX, barY, barW, barH, 2, 2, 'F');
+      doc.roundedRect(barX, barY, barW, barH, 2, 2, "F");
       // Segments
       let offsetX = barX;
       const segs: [number, number, number, number][] = [
@@ -601,20 +626,20 @@ const ReportGenerator = ({
       segs.forEach(([r, g, b, w]) => {
         if (w <= 0.1) return;
         doc.setFillColor(r, g, b);
-        doc.roundedRect(offsetX, barY, w, barH, 2, 2, 'F');
+        doc.roundedRect(offsetX, barY, w, barH, 2, 2, "F");
         offsetX += w;
       });
       // Legend
       const legendY = barY + 15;
       const legendItems: [string, [number, number, number], number][] = [
-        [`Low (${low})`, [10,185,129], 35],
-        [`Medium (${med})`, [245,158,11], 85],
-        [`High (${high})`, [239,68,68], 150],
-        [`Critical (${critical})`, [139,92,246], 190],
+        [`Low (${low})`, [10, 185, 129], 35],
+        [`Medium (${med})`, [245, 158, 11], 85],
+        [`High (${high})`, [239, 68, 68], 150],
+        [`Critical (${critical})`, [139, 92, 246], 190],
       ];
       legendItems.forEach(([label, color, x]) => {
         doc.setFillColor(color[0], color[1], color[2]);
-        doc.rect(x, legendY - 4, 6, 6, 'F');
+        doc.rect(x, legendY - 4, 6, 6, "F");
         doc.setTextColor(224, 224, 255);
         doc.setFontSize(10);
         doc.text(label, x + 9, legendY + 1);
@@ -654,7 +679,9 @@ const ReportGenerator = ({
 
       const p = reportData.pillarAverages;
       const pillarLabels = ["Environmental", "Social", "Governance"];
-      const pillarVals: number[] = p ? [p.environmental, p.social, p.governance] : [0, 0, 0];
+      const pillarVals: number[] = p
+        ? [p.environmental, p.social, p.governance]
+        : [0, 0, 0];
       const pillarColors: [number, number, number][] = [
         [16, 185, 129],
         [59, 130, 246],
@@ -665,11 +692,11 @@ const ReportGenerator = ({
         doc.setTextColor(224, 224, 255);
         doc.text(`${pillarLabels[i]}: ${pillarVals[i].toFixed(1)}`, 30, yPos);
         doc.setFillColor(40, 44, 66);
-        doc.roundedRect(30, yPos + 4, 110, 6, 2, 2, 'F');
+        doc.roundedRect(30, yPos + 4, 110, 6, 2, 2, "F");
         const w = Math.max(2, Math.min(110, pillarVals[i] * 1.1));
         const c = pillarColors[i];
         doc.setFillColor(c[0], c[1], c[2]);
-        doc.roundedRect(30, yPos + 4, w, 6, 2, 2, 'F');
+        doc.roundedRect(30, yPos + 4, w, 6, 2, 2, "F");
         yPos += 18;
       }
 
@@ -680,18 +707,22 @@ const ReportGenerator = ({
         .slice(0, 10);
       if (countryEntries.length) {
         doc.setTextColor(138, 148, 200);
-        doc.text("Top Countries", 150, 40, { align: 'center' });
+        doc.text("Top Countries", 150, 40, { align: "center" });
         let cy = 50;
         countryEntries.forEach(([name, val], idx) => {
-          const color: [number, number, number] = idx < 4 ? [77,91,255] : idx < 7 ? [0,240,255] : [16,185,129];
+          const color: [number, number, number] =
+            idx < 4 ? [77, 91, 255] : idx < 7 ? [0, 240, 255] : [16, 185, 129];
           doc.setFillColor(...color);
-          doc.circle(120, cy - 3, 2, 'F');
-          doc.setTextColor(224,224,255);
+          doc.circle(120, cy - 3, 2, "F");
+          doc.setTextColor(224, 224, 255);
           // wrap long names if needed
-          const display = String(name).length > 18 ? String(name).slice(0, 17) + '…' : String(name);
+          const display =
+            String(name).length > 18
+              ? String(name).slice(0, 17) + "…"
+              : String(name);
           doc.text(display, 125, cy);
-          doc.setTextColor(138,148,200);
-          doc.text(String(val), 195, cy, { align: 'right' });
+          doc.setTextColor(138, 148, 200);
+          doc.text(String(val), 195, cy, { align: "right" });
           cy += 10;
         });
       }
@@ -721,7 +752,7 @@ const ReportGenerator = ({
         // Confidence pill
         doc.setFillColor(77, 91, 255, 0.2);
         const confidenceText = `${(insight.confidence * 100).toFixed(
-          0
+          0,
         )}% confidence`;
         const confidenceWidth = doc.getTextWidth(confidenceText) + 10;
         doc.roundedRect(
@@ -731,7 +762,7 @@ const ReportGenerator = ({
           7,
           3,
           3,
-          "F"
+          "F",
         );
 
         doc.setTextColor(138, 148, 200);
@@ -762,7 +793,7 @@ const ReportGenerator = ({
         "Based on data analysis and industry benchmarks, we recommend these actions:",
         105,
         32,
-        { align: "center" }
+        { align: "center" },
       );
 
       doc.setFillColor(25, 28, 43);
@@ -797,7 +828,8 @@ const ReportGenerator = ({
           supplierData.push([
             supplier.name || "N/A",
             supplier.country || "N/A",
-            supplier.ethical_score !== undefined && supplier.ethical_score !== null
+            supplier.ethical_score !== undefined &&
+            supplier.ethical_score !== null
               ? `${Math.round(supplier.ethical_score)}%`
               : "N/A",
             supplier.composite_score !== undefined &&
@@ -853,7 +885,7 @@ const ReportGenerator = ({
           `Annual ESG Performance Report ${year} | Generated with EthicSupply AI | Page ${i} of ${pageCount}`,
           105,
           288,
-          { align: "center" }
+          { align: "center" },
         );
       }
 
@@ -862,7 +894,7 @@ const ReportGenerator = ({
     } catch (error) {
       console.error("Error generating PDF report:", error);
       alert(
-        "An error occurred while generating the PDF report. Please try again."
+        "An error occurred while generating the PDF report. Please try again.",
       );
     } finally {
       setGenerating(false);
@@ -1032,7 +1064,7 @@ const ReportGenerator = ({
     } catch (error) {
       console.error("Error generating Excel report:", error);
       alert(
-        "An error occurred while generating the Excel report. Please try again."
+        "An error occurred while generating the Excel report. Please try again.",
       );
     } finally {
       setGenerating(false);
@@ -1180,7 +1212,6 @@ const ReportGenerator = ({
           </div>
         </div>
       </motion.div>
-
     </>
   );
 };
@@ -1310,7 +1341,11 @@ const Dashboard = () => {
       const saved = localStorage.getItem("dashboardTopMovers:v1");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed.increases) && Array.isArray(parsed.decreases)) {
+        if (
+          parsed &&
+          Array.isArray(parsed.increases) &&
+          Array.isArray(parsed.decreases)
+        ) {
           return { increases: parsed.increases, decreases: parsed.decreases };
         }
       }
@@ -1337,7 +1372,7 @@ const Dashboard = () => {
         const isConnected = await checkConnection();
         if (!isConnected) {
           setError(
-            "Cannot connect to the backend. Displaying mock data. Ensure server is running."
+            "Cannot connect to the backend. Displaying mock data. Ensure server is running.",
           );
           setData(getMockDashboardData());
           setUsingMockData(true);
@@ -1364,7 +1399,7 @@ const Dashboard = () => {
       } catch (error) {
         logger.error("Error fetching dashboard data:", error);
         setError(
-          "Failed to fetch data from API. Displaying mock data. Check backend."
+          "Failed to fetch data from API. Displaying mock data. Check backend.",
         );
         setData(getMockDashboardData());
         setUsingMockData(true);
@@ -1415,29 +1450,39 @@ const Dashboard = () => {
       const prev: Record<string, { rf?: number; esg?: number }> = prevRaw
         ? JSON.parse(prevRaw)
         : {};
-      
+
       // Build current snapshot
-      const curr: Record<string, { rf?: number; esg?: number; name: string }> = {};
-      const diffs: Array<{ id: string | number; name: string; delta: number }> = [];
-      
+      const curr: Record<string, { rf?: number; esg?: number; name: string }> =
+        {};
+      const diffs: Array<{ id: string | number; name: string; delta: number }> =
+        [];
+
       allSuppliers.forEach((s) => {
         const id = String((s as any)._id || s.id);
-        const riskFactor = typeof s.risk_factor === "number" ? s.risk_factor : 
-                          typeof s.risk_penalty === "number" ? s.risk_penalty / 100 : 
-                          undefined;
-        const finalScore = (s as any).finalScore ?? s.composite_score ?? s.ethical_score;
-        
+        const riskFactor =
+          typeof s.risk_factor === "number"
+            ? s.risk_factor
+            : typeof s.risk_penalty === "number"
+              ? s.risk_penalty / 100
+              : undefined;
+        const finalScore =
+          (s as any).finalScore ?? s.composite_score ?? s.ethical_score;
+
         curr[id] = {
           rf: riskFactor,
           esg: typeof finalScore === "number" ? finalScore : undefined,
           name: s.name || String(id),
         };
-        
+
         // Compare with previous snapshot
         const prevRf = prev[id]?.rf;
         const currRf = curr[id].rf;
-        
-        if (typeof prevRf === "number" && typeof currRf === "number" && prevRf !== currRf) {
+
+        if (
+          typeof prevRf === "number" &&
+          typeof currRf === "number" &&
+          prevRf !== currRf
+        ) {
           const delta = currRf - prevRf;
           // Only include significant changes (at least 0.01 or 1%)
           if (Math.abs(delta) >= 0.01) {
@@ -1445,7 +1490,7 @@ const Dashboard = () => {
           }
         }
       });
-      
+
       // Sort by absolute delta and get top movers
       diffs.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
       const increases = diffs
@@ -1456,19 +1501,22 @@ const Dashboard = () => {
         .filter((d) => d.delta < 0)
         .sort((a, b) => a.delta - b.delta)
         .slice(0, 5);
-      
+
       // Update Top Movers if we have new changes, otherwise preserve existing
       if (diffs.length > 0) {
         const newMovers = { increases, decreases };
         setTopMovers(newMovers);
         // Persist Top Movers to localStorage
         try {
-          localStorage.setItem("dashboardTopMovers:v1", JSON.stringify(newMovers));
+          localStorage.setItem(
+            "dashboardTopMovers:v1",
+            JSON.stringify(newMovers),
+          );
         } catch (e) {
           logger.warn("Failed to persist Top Movers:", e);
         }
       }
-      
+
       // Save current snapshot for next comparison
       // Only save if we have valid data AND if there were changes (to avoid overwriting on every load)
       if (Object.keys(prev).length === 0 || diffs.length > 0) {
@@ -1478,7 +1526,7 @@ const Dashboard = () => {
             toSave[id] = { rf: v.rf, esg: v.esg };
           }
         });
-        
+
         // Only update localStorage if we have data to save
         if (Object.keys(toSave).length > 0) {
           localStorage.setItem("dashboardSnapshot:v1", JSON.stringify(toSave));
@@ -1490,43 +1538,57 @@ const Dashboard = () => {
   }, [allSuppliers]);
 
   // --- Derived Data for KPIs and Charts ---
-  const kpiData = useMemo(() => {
-    if (!data) return null;
-    const totalSuppliers = Number(
-      data.totalSuppliers ?? data.total_suppliers ?? 0
-    );
-    const avgEthicalScore = Number(
-      data.avgEthicalScore ?? data.avg_ethical_score ?? 0
-    );
-    const avgCompositeScore = Number(
-      data.avgCompositeScore ?? data.avg_composite_score ?? avgEthicalScore
-    );
-    const avgRiskFactor = Number(
-      data.avgRiskFactor ?? data.avg_risk_factor ?? 0
-    );
-    const avgCompletenessRatio = Number(
-      data.avgCompletenessRatio ?? data.avg_completeness_ratio ?? 1
-    );
-    const riskBreakdown = (data.riskBreakdown ?? data.risk_breakdown) || {};
-    const highRiskCount =
-      (riskBreakdown.high ?? 0) + (riskBreakdown.critical ?? 0);
+    const kpiData = useMemo(() => {
+      if (!data) return null;
+      const totalSuppliers = Number(
+        data.totalSuppliers ?? data.total_suppliers ?? 0,
+      );
+      const avgEthicalScore = Number(
+        data.avgEthicalScore ?? data.avg_ethical_score ?? 0,
+      );
+      const avgCompositeScore = Number(
+        data.avgCompositeScore ?? data.avg_composite_score ?? avgEthicalScore,
+      );
+      const avgRiskFactor = Number(
+        data.avgRiskFactor ?? data.avg_risk_factor ?? 0,
+      );
+      const avgCompletenessRatio = Number(
+        data.avgCompletenessRatio ?? data.avg_completeness_ratio ?? 1,
+      );
+      const riskBreakdown = (data.riskBreakdown ?? data.risk_breakdown) || {};
+      const highRiskCount =
+        (riskBreakdown.high ?? 0) + (riskBreakdown.critical ?? 0);
 
-    return {
-      totalSuppliers,
-      avgEthicalScore,
-      avgCompositeScore,
-      avgRiskFactor,
-      avgCompletenessRatio,
-      highRiskCount,
-    };
-  }, [data]);
+      // Compute average risk penalty in points (per thesis: Penalty = 15 * max(0, r - 0.3) * 100)
+      let avgRiskPenaltyPts: number | null = null;
+      // Prefer an explicit avg_risk_penalty if the API provides it
+      if (data.avgRiskPenalty !== undefined || data.avg_risk_penalty !== undefined) {
+        const raw = Number(data.avgRiskPenalty ?? data.avg_risk_penalty);
+        avgRiskPenaltyPts = Number.isFinite(raw) ? raw : null;
+      } else {
+        const r = Number(data.avgRiskFactor ?? data.avg_risk_factor ?? 0);
+        // calculate penalty points according to thesis formula
+        avgRiskPenaltyPts = 15 * Math.max(0, r - 0.3) * 100;
+      }
+
+      return {
+        totalSuppliers,
+        avgEthicalScore,
+        avgCompositeScore,
+        avgRiskFactor,
+        avgRiskPenaltyPts,
+        avgCompletenessRatio,
+        highRiskCount,
+      };
+    }, [data]);
 
   const suppliersByCountry = useMemo(
     () =>
-      (data?.suppliersByCountry ||
-        data?.suppliers_by_country ||
-        {}) as Record<string, number>,
-    [data?.suppliersByCountry, data?.suppliers_by_country]
+      (data?.suppliersByCountry || data?.suppliers_by_country || {}) as Record<
+        string,
+        number
+      >,
+    [data?.suppliersByCountry, data?.suppliers_by_country],
   );
 
   const pillarAverages = data?.pillarAverages || data?.pillar_averages;
@@ -1579,53 +1641,86 @@ const Dashboard = () => {
   // --- Creative analytics derived from suppliers and graph ---
   const extraAnalytics = useMemo(() => {
     const suppliers = allSuppliers || [];
-    const byNumber = (v: any) => (typeof v === 'number' && !Number.isNaN(v)) ? v : null;
-    const avg = (arr: number[]) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+    const byNumber = (v: any) =>
+      typeof v === "number" && !Number.isNaN(v) ? v : null;
+    const avg = (arr: number[]) =>
+      arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     // Averages
     const avgRenewable = avg(
-      suppliers.map(s => byNumber((s as any).renewable_energy_percent)).filter((v): v is number => v !== null)
+      suppliers
+        .map((s) => byNumber((s as any).renewable_energy_percent))
+        .filter((v): v is number => v !== null),
     );
     const avgInjury = avg(
-      suppliers.map(s => byNumber((s as any).injury_rate)).filter((v): v is number => v !== null)
+      suppliers
+        .map((s) => byNumber((s as any).injury_rate))
+        .filter((v): v is number => v !== null),
     );
     // Targets (configurable)
     const targetsCfg = targets;
     // Watchlist: high risk or low disclosure
     const watchHighRisk = suppliers
-      .filter(s => (s.risk_level || '').toString().toLowerCase() === 'high' || (s.risk_level || '').toString().toLowerCase() === 'critical')
+      .filter(
+        (s) =>
+          (s.risk_level || "").toString().toLowerCase() === "high" ||
+          (s.risk_level || "").toString().toLowerCase() === "critical",
+      )
       .slice(0, 5);
     const watchLowDisclosure = suppliers
-      .filter(s => typeof s.completeness_ratio === 'number' && (s.completeness_ratio as number) < 0.7)
+      .filter(
+        (s) =>
+          typeof s.completeness_ratio === "number" &&
+          (s.completeness_ratio as number) < 0.7,
+      )
       .slice(0, 5);
     // Largest risk penalties
     const riskLeaders = suppliers
-      .filter(s => typeof s.risk_factor === 'number')
-      .sort((a,b) => (b.risk_factor as number) - (a.risk_factor as number))
-      .slice(0,5);
+      .filter((s) => typeof s.risk_factor === "number")
+      .sort((a, b) => (b.risk_factor as number) - (a.risk_factor as number))
+      .slice(0, 5);
     // Data quality: missingness by metric (presence across a small key set)
     const keys: Array<keyof Supplier | string> = [
-      'revenue','total_emissions','co2_emissions','water_usage','waste_generated','renewable_energy_percent',
-      'injury_rate','training_hours','living_wage_ratio','gender_diversity_percent',
-      'board_diversity','board_independence','transparency_score','anti_corruption_policy'
+      "revenue",
+      "total_emissions",
+      "co2_emissions",
+      "water_usage",
+      "waste_generated",
+      "renewable_energy_percent",
+      "injury_rate",
+      "training_hours",
+      "living_wage_ratio",
+      "gender_diversity_percent",
+      "board_diversity",
+      "board_independence",
+      "transparency_score",
+      "anti_corruption_policy",
     ];
     const missingCounts: Record<string, number> = {};
     const totalSup = suppliers.length || 1;
-    keys.forEach(k => { missingCounts[k as string] = 0; });
-    suppliers.forEach(s => {
-      keys.forEach(k => {
+    keys.forEach((k) => {
+      missingCounts[k as string] = 0;
+    });
+    suppliers.forEach((s) => {
+      keys.forEach((k) => {
         const v = (s as any)[k];
-        const present = !(v === undefined || v === null || v === '');
+        const present = !(v === undefined || v === null || v === "");
         if (!present) missingCounts[k as string] += 1;
       });
     });
     const topMissing = Object.entries(missingCounts)
-      .sort((a,b) => b[1]-a[1])
-      .slice(0,6)
-      .map(([k, c]) => ({ metric: k, missing: c, pct: Math.round((c/totalSup)*100) }));
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([k, c]) => ({
+        metric: k,
+        missing: c,
+        pct: Math.round((c / totalSup) * 100),
+      }));
     // Ethical path ratio from graph
     let ethicalRatio = null;
     // Prefer links from API, otherwise fall back to locally saved user links
-    let links: any[] = Array.isArray((graphData as any)?.links) ? (graphData as any).links : [];
+    let links: any[] = Array.isArray((graphData as any)?.links)
+      ? (graphData as any).links
+      : [];
     if (!links.length) {
       try {
         const raw = localStorage.getItem(USER_LINKS_KEY);
@@ -1641,111 +1736,185 @@ const Dashboard = () => {
     // Top performers by pillar
     const topPerformers = {
       environmental: suppliers
-        .filter(s => typeof s.environmental_score === 'number')
-        .sort((a, b) => (b.environmental_score || 0) - (a.environmental_score || 0))
+        .filter((s) => typeof s.environmental_score === "number")
+        .sort(
+          (a, b) => (b.environmental_score || 0) - (a.environmental_score || 0),
+        )
         .slice(0, 5)
-        .map(s => ({ id: (s as any)._id || s.id, name: s.name || 'Unknown', score: s.environmental_score || 0 })),
+        .map((s) => ({
+          id: (s as any)._id || s.id,
+          name: s.name || "Unknown",
+          score: s.environmental_score || 0,
+        })),
       social: suppliers
-        .filter(s => typeof s.social_score === 'number')
+        .filter((s) => typeof s.social_score === "number")
         .sort((a, b) => (b.social_score || 0) - (a.social_score || 0))
         .slice(0, 5)
-        .map(s => ({ id: (s as any)._id || s.id, name: s.name || 'Unknown', score: s.social_score || 0 })),
+        .map((s) => ({
+          id: (s as any)._id || s.id,
+          name: s.name || "Unknown",
+          score: s.social_score || 0,
+        })),
       governance: suppliers
-        .filter(s => typeof s.governance_score === 'number')
+        .filter((s) => typeof s.governance_score === "number")
         .sort((a, b) => (b.governance_score || 0) - (a.governance_score || 0))
         .slice(0, 5)
-        .map(s => ({ id: (s as any)._id || s.id, name: s.name || 'Unknown', score: s.governance_score || 0 })),
+        .map((s) => ({
+          id: (s as any)._id || s.id,
+          name: s.name || "Unknown",
+          score: s.governance_score || 0,
+        })),
       overall: suppliers
-        .filter(s => {
-          const final = (s as any).finalScore ?? s.composite_score ?? s.ethical_score;
-          return typeof final === 'number';
+        .filter((s) => {
+          const final =
+            (s as any).finalScore ?? s.composite_score ?? s.ethical_score;
+          return typeof final === "number";
         })
         .sort((a, b) => {
-          const aScore = (a as any).finalScore ?? a.composite_score ?? a.ethical_score ?? 0;
-          const bScore = (b as any).finalScore ?? b.composite_score ?? b.ethical_score ?? 0;
+          const aScore =
+            (a as any).finalScore ?? a.composite_score ?? a.ethical_score ?? 0;
+          const bScore =
+            (b as any).finalScore ?? b.composite_score ?? b.ethical_score ?? 0;
           return bScore - aScore;
         })
         .slice(0, 5)
-        .map(s => {
-          const final = (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? 0;
-          return { id: (s as any)._id || s.id, name: s.name || 'Unknown', score: final };
+        .map((s) => {
+          const final =
+            (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? 0;
+          return {
+            id: (s as any)._id || s.id,
+            name: s.name || "Unknown",
+            score: final,
+          };
         }),
     };
 
     // Environmental impact summary
     const envSummary = {
-      totalCO2: suppliers.reduce((sum, s) => sum + (byNumber(s.co2_emissions) || 0), 0),
-      totalWater: suppliers.reduce((sum, s) => sum + (byNumber(s.water_usage) || 0), 0),
-      totalWaste: suppliers.reduce((sum, s) => sum + (byNumber((s as any).waste_generated) || 0), 0),
+      totalCO2: suppliers.reduce(
+        (sum, s) => sum + (byNumber(s.co2_emissions) || 0),
+        0,
+      ),
+      totalWater: suppliers.reduce(
+        (sum, s) => sum + (byNumber(s.water_usage) || 0),
+        0,
+      ),
+      totalWaste: suppliers.reduce(
+        (sum, s) => sum + (byNumber((s as any).waste_generated) || 0),
+        0,
+      ),
       avgRenewable: avgRenewable,
-      suppliersWithRenewable: suppliers.filter(s => byNumber((s as any).renewable_energy_percent) !== null).length,
+      suppliersWithRenewable: suppliers.filter(
+        (s) => byNumber((s as any).renewable_energy_percent) !== null,
+      ).length,
     };
 
     // Social metrics summary
     const socialSummary = {
-      avgDiversity: avg(suppliers.map(s => byNumber((s as any).gender_diversity_percent)).filter((v): v is number => v !== null)),
-      avgTraining: avg(suppliers.map(s => byNumber((s as any).training_hours)).filter((v): v is number => v !== null)),
-      avgLivingWage: avg(suppliers.map(s => byNumber((s as any).living_wage_ratio)).filter((v): v is number => v !== null)),
+      avgDiversity: avg(
+        suppliers
+          .map((s) => byNumber((s as any).gender_diversity_percent))
+          .filter((v): v is number => v !== null),
+      ),
+      avgTraining: avg(
+        suppliers
+          .map((s) => byNumber((s as any).training_hours))
+          .filter((v): v is number => v !== null),
+      ),
+      avgLivingWage: avg(
+        suppliers
+          .map((s) => byNumber((s as any).living_wage_ratio))
+          .filter((v): v is number => v !== null),
+      ),
       avgInjury: avgInjury,
-      suppliersWithTraining: suppliers.filter(s => byNumber((s as any).training_hours) !== null).length,
+      suppliersWithTraining: suppliers.filter(
+        (s) => byNumber((s as any).training_hours) !== null,
+      ).length,
     };
 
     // Governance metrics summary
     const govSummary = {
-      avgTransparency: avg(suppliers.map(s => byNumber((s as any).transparency_score)).filter((v): v is number => v !== null)),
-      avgBoardDiversity: avg(suppliers.map(s => byNumber((s as any).board_diversity)).filter((v): v is number => v !== null)),
-      avgBoardIndependence: avg(suppliers.map(s => byNumber((s as any).board_independence)).filter((v): v is number => v !== null)),
-      suppliersWithAntiCorruption: suppliers.filter(s => (s as any).anti_corruption_policy === true).length,
-      antiCorruptionRate: suppliers.length > 0 ? (suppliers.filter(s => (s as any).anti_corruption_policy === true).length / suppliers.length) * 100 : 0,
+      avgTransparency: avg(
+        suppliers
+          .map((s) => byNumber((s as any).transparency_score))
+          .filter((v): v is number => v !== null),
+      ),
+      avgBoardDiversity: avg(
+        suppliers
+          .map((s) => byNumber((s as any).board_diversity))
+          .filter((v): v is number => v !== null),
+      ),
+      avgBoardIndependence: avg(
+        suppliers
+          .map((s) => byNumber((s as any).board_independence))
+          .filter((v): v is number => v !== null),
+      ),
+      suppliersWithAntiCorruption: suppliers.filter(
+        (s) => (s as any).anti_corruption_policy === true,
+      ).length,
+      antiCorruptionRate:
+        suppliers.length > 0
+          ? (suppliers.filter((s) => (s as any).anti_corruption_policy === true)
+              .length /
+              suppliers.length) *
+            100
+          : 0,
     };
 
     // Compliance status
-    const complianceRate = suppliers.length > 0
-      ? (suppliers.filter(s => {
-          const final = (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? 0;
-          return typeof final === 'number' && final >= 60; // 60% threshold
-        }).length / suppliers.length) * 100
-      : 0;
+    const complianceRate =
+      suppliers.length > 0
+        ? (suppliers.filter((s) => {
+            const final =
+              (s as any).finalScore ??
+              s.composite_score ??
+              s.ethical_score ??
+              0;
+            return typeof final === "number" && final >= 60; // 60% threshold
+          }).length /
+            suppliers.length) *
+          100
+        : 0;
 
     // Quick insights (use local variables, not extraAnalytics object)
     const insights = [];
     if (watchHighRisk.length > 0) {
       insights.push({
-        type: 'error',
-        title: `${watchHighRisk.length} High-Risk Supplier${watchHighRisk.length > 1 ? 's' : ''}`,
-        message: 'Immediate attention required',
+        type: "error",
+        title: `${watchHighRisk.length} High-Risk Supplier${watchHighRisk.length > 1 ? "s" : ""}`,
+        message: "Immediate attention required",
       });
     }
     if (watchLowDisclosure.length > 0) {
       insights.push({
-        type: 'warning',
-        title: `${watchLowDisclosure.length} Low Disclosure Supplier${watchLowDisclosure.length > 1 ? 's' : ''}`,
-        message: 'Data completeness below 70%',
+        type: "warning",
+        title: `${watchLowDisclosure.length} Low Disclosure Supplier${watchLowDisclosure.length > 1 ? "s" : ""}`,
+        message: "Data completeness below 70%",
       });
     }
     if (complianceRate < 80) {
       insights.push({
-        type: 'warning',
-        title: 'Compliance Rate Below Target',
+        type: "warning",
+        title: "Compliance Rate Below Target",
         message: `${complianceRate.toFixed(1)}% of suppliers meet 60%+ threshold`,
       });
     }
     if (envSummary.avgRenewable < targetsCfg.renewablePct) {
       insights.push({
-        type: 'info',
-        title: 'Renewable Energy Below Target',
+        type: "info",
+        title: "Renewable Energy Below Target",
         message: `Average ${envSummary.avgRenewable.toFixed(1)}% vs target ${targetsCfg.renewablePct}%`,
       });
     }
 
-    return { 
-      avgRenewable, 
-      avgInjury, 
-      targets: targetsCfg, 
-      watchHighRisk, 
-      watchLowDisclosure, 
-      riskLeaders, 
-      topMissing, 
+    return {
+      avgRenewable,
+      avgInjury,
+      targets: targetsCfg,
+      watchHighRisk,
+      watchLowDisclosure,
+      riskLeaders,
+      topMissing,
       ethicalRatio,
       topPerformers,
       envSummary,
@@ -1770,6 +1939,7 @@ const Dashboard = () => {
     avgEthicalScore,
     avgCompositeScore,
     avgRiskFactor,
+    avgRiskPenaltyPts,
     avgCompletenessRatio,
     highRiskCount,
   } = kpiData || {};
@@ -1891,7 +2061,9 @@ const Dashboard = () => {
                   />
                   {isMobile ? "Data: " : "Data Source: "}
                   {formatVersionLabel(datasetMeta.version)}
-                  {datasetMeta.seed && !isMobile && ` · seed ${datasetMeta.seed}`}
+                  {datasetMeta.seed &&
+                    !isMobile &&
+                    ` · seed ${datasetMeta.seed}`}
                 </span>
               )}
               <button
@@ -1940,15 +2112,26 @@ const Dashboard = () => {
         open={showMethodology}
         onClose={() => setShowMethodology(false)}
         meta={datasetMeta}
-        colors={{ panel: colors.panel, accent: colors.accent, text: colors.text, textMuted: colors.textMuted }}
+        colors={{
+          panel: colors.panel,
+          accent: colors.accent,
+          text: colors.text,
+          textMuted: colors.textMuted,
+        }}
       />
       <EditTargetsModal
         open={showEditTargets}
         onClose={() => setShowEditTargets(false)}
         value={targets}
-        onSave={(t)=> setTargets(t)}
-        onReset={()=> setTargets(defaultTargets)}
-        colors={{ panel: colors.panel, accent: colors.accent, text: colors.text, textMuted: colors.textMuted, primary: colors.primary }}
+        onSave={(t) => setTargets(t)}
+        onReset={() => setTargets(defaultTargets)}
+        colors={{
+          panel: colors.panel,
+          accent: colors.accent,
+          text: colors.text,
+          textMuted: colors.textMuted,
+          primary: colors.primary,
+        }}
       />
 
       {/* Executive signal banner */}
@@ -1970,29 +2153,81 @@ const Dashboard = () => {
             >
               Executive Signal
             </div>
-            <h2 className="mt-1 text-lg sm:text-xl font-semibold" style={{ color: colors.text }}>
+            <h2
+              className="mt-1 text-lg sm:text-xl font-semibold"
+              style={{ color: colors.text }}
+            >
               {avgEthicalScore >= 70
                 ? "Portfolio is trending strong on ESG quality."
                 : avgEthicalScore >= 50
-                ? "Portfolio performance is mixed across ESG dimensions."
-                : "Portfolio needs urgent ESG uplift actions."}
+                  ? "Portfolio performance is mixed across ESG dimensions."
+                  : "Portfolio needs urgent ESG uplift actions."}
             </h2>
             <p className="mt-1 text-sm" style={{ color: colors.textMuted }}>
-              Focus on high-risk suppliers and disclosure completeness to improve weighted score momentum.
+              Focus on high-risk suppliers and disclosure completeness to
+              improve weighted score momentum.
             </p>
           </div>
           <div className="grid grid-cols-3 gap-2.5 sm:gap-3 shrink-0">
-            <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: colors.accent + "25", backgroundColor: colors.panel + "aa" }}>
-              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.textMuted }}>ESG</div>
-              <div className="mt-1 font-mono text-lg font-bold" style={{ color: scoreColor }}>{avgEthicalScore ? avgEthicalScore.toFixed(1) : "N/A"}</div>
+            <div
+              className="rounded-xl border px-3 py-2.5"
+              style={{
+                borderColor: colors.accent + "25",
+                backgroundColor: colors.panel + "aa",
+              }}
+            >
+              <div
+                className="text-[10px] uppercase tracking-wider"
+                style={{ color: colors.textMuted }}
+              >
+                ESG
+              </div>
+              <div
+                className="mt-1 font-mono text-lg font-bold"
+                style={{ color: scoreColor }}
+              >
+                {avgEthicalScore ? avgEthicalScore.toFixed(1) : "N/A"}
+              </div>
             </div>
-            <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: colors.accent + "25", backgroundColor: colors.panel + "aa" }}>
-              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.textMuted }}>Risk</div>
-              <div className="mt-1 font-mono text-lg font-bold" style={{ color: colors.warning }}>{highRiskCount ?? 0}</div>
+            <div
+              className="rounded-xl border px-3 py-2.5"
+              style={{
+                borderColor: colors.accent + "25",
+                backgroundColor: colors.panel + "aa",
+              }}
+            >
+              <div
+                className="text-[10px] uppercase tracking-wider"
+                style={{ color: colors.textMuted }}
+              >
+                Risk
+              </div>
+              <div
+                className="mt-1 font-mono text-lg font-bold"
+                style={{ color: colors.warning }}
+              >
+                {highRiskCount ?? 0}
+              </div>
             </div>
-            <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: colors.accent + "25", backgroundColor: colors.panel + "aa" }}>
-              <div className="text-[10px] uppercase tracking-wider" style={{ color: colors.textMuted }}>Coverage</div>
-              <div className="mt-1 font-mono text-lg font-bold" style={{ color: colors.primary }}>{formatPercent(avgCompletenessRatio ?? 1, 0)}</div>
+            <div
+              className="rounded-xl border px-3 py-2.5"
+              style={{
+                borderColor: colors.accent + "25",
+                backgroundColor: colors.panel + "aa",
+              }}
+            >
+              <div
+                className="text-[10px] uppercase tracking-wider"
+                style={{ color: colors.textMuted }}
+              >
+                Coverage
+              </div>
+              <div
+                className="mt-1 font-mono text-lg font-bold"
+                style={{ color: colors.primary }}
+              >
+                {formatPercent(avgCompletenessRatio ?? 1, 0)}
+              </div>
             </div>
           </div>
         </div>
@@ -2001,8 +2236,14 @@ const Dashboard = () => {
       {/* KPI Section */}
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.primary }} />
-          <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: colors.textMuted }}>
+          <div
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: colors.primary }}
+          />
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.14em]"
+            style={{ color: colors.textMuted }}
+          >
             Portfolio KPIs
           </p>
         </div>
@@ -2020,13 +2261,13 @@ const Dashboard = () => {
           color={colors.accent}
         />
         <div data-tour="esg-score" className="h-full">
-        <KpiIndicator
-          label="Avg. ESG Score (Risk Adjusted)"
-          value={avgEthicalScore ? avgEthicalScore.toFixed(1) : "N/A"}
-          icon={ScaleIcon}
-          color={scoreColor}
-          unit="%"
-        />
+          <KpiIndicator
+            label="Avg. ESG Score (Risk Adjusted)"
+            value={avgEthicalScore ? avgEthicalScore.toFixed(1) : "N/A"}
+            icon={ScaleIcon}
+            color={scoreColor}
+            unit="%"
+          />
         </div>
         <KpiIndicator
           label="Avg. Composite Score"
@@ -2037,9 +2278,10 @@ const Dashboard = () => {
         />
         <KpiIndicator
           label="Avg. Risk Penalty"
-          value={formatPercent(avgRiskFactor ?? 0, 0)}
+          value={avgRiskPenaltyPts !== null && avgRiskPenaltyPts !== undefined ? (Number.isFinite(avgRiskPenaltyPts) ? avgRiskPenaltyPts.toFixed(0) : "N/A") : "N/A"}
           icon={ShieldExclamationIcon}
           color={colors.warning}
+          unit="pts"
         >
           <div className="mt-2 text-xs" style={{ color: colors.textMuted }}>
             High & Critical suppliers: {highRiskCount ?? 0}
@@ -2065,35 +2307,58 @@ const Dashboard = () => {
         className="mb-6 md:mb-8"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-        {(() => {
-          const renewableOk = Math.round(extraAnalytics.avgRenewable) >= targets.renewablePct;
-          const injuryOk = Number.isFinite(extraAnalytics.avgInjury) && extraAnalytics.avgInjury <= targets.injuryRate;
-          const renewableColor = renewableOk ? colors.success : colors.error;
-          const injuryColor = injuryOk ? colors.success : colors.error;
-          return (
-            <>
-        <KpiIndicator
-          label={isMobile ? "Ethical Paths" : "Ethical Paths (Supply Graph)"}
-          value={extraAnalytics.ethicalRatio !== null ? extraAnalytics.ethicalRatio.toString() : 'N/A'}
-          unit="%"
-          icon={GlobeAltIcon}
-          color={colors.accent}
-        />
-        <KpiIndicator
-          label={isMobile ? "Renewable Energy" : "Renewable Energy (Avg vs Target)"}
-          value={isMobile ? `${Math.round(extraAnalytics.avgRenewable)}%` : `${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`}
-          icon={SparklesIcon}
-          color={renewableColor}
-        />
-        <KpiIndicator
-          label={isMobile ? "Injury Rate" : "Injury Rate (Avg vs Target)"}
-          value={isMobile ? extraAnalytics.avgInjury.toFixed(1) : `${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`}
-          icon={ShieldExclamationIcon}
-          color={injuryColor}
-        />
-            </>
-          );
-        })()}
+          {(() => {
+            const renewableOk =
+              Math.round(extraAnalytics.avgRenewable) >= targets.renewablePct;
+            const injuryOk =
+              Number.isFinite(extraAnalytics.avgInjury) &&
+              extraAnalytics.avgInjury <= targets.injuryRate;
+            const renewableColor = renewableOk ? colors.success : colors.error;
+            const injuryColor = injuryOk ? colors.success : colors.error;
+            return (
+              <>
+                <KpiIndicator
+                  label={
+                    isMobile ? "Ethical Paths" : "Ethical Paths (Supply Graph)"
+                  }
+                  value={
+                    extraAnalytics.ethicalRatio !== null
+                      ? extraAnalytics.ethicalRatio.toString()
+                      : "N/A"
+                  }
+                  unit="%"
+                  icon={GlobeAltIcon}
+                  color={colors.accent}
+                />
+                <KpiIndicator
+                  label={
+                    isMobile
+                      ? "Renewable Energy"
+                      : "Renewable Energy (Avg vs Target)"
+                  }
+                  value={
+                    isMobile
+                      ? `${Math.round(extraAnalytics.avgRenewable)}%`
+                      : `${Math.round(extraAnalytics.avgRenewable)}% / ${extraAnalytics.targets.renewablePct}%`
+                  }
+                  icon={SparklesIcon}
+                  color={renewableColor}
+                />
+                <KpiIndicator
+                  label={
+                    isMobile ? "Injury Rate" : "Injury Rate (Avg vs Target)"
+                  }
+                  value={
+                    isMobile
+                      ? extraAnalytics.avgInjury.toFixed(1)
+                      : `${extraAnalytics.avgInjury.toFixed(1)} / ${extraAnalytics.targets.injuryRate}`
+                  }
+                  icon={ShieldExclamationIcon}
+                  color={injuryColor}
+                />
+              </>
+            );
+          })()}
         </div>
       </motion.div>
 
@@ -2126,7 +2391,9 @@ const Dashboard = () => {
           {pillarCards.map(({ key, label, value, icon: Icon, color }) => (
             <div
               key={key}
-              data-tour={key === "environmental" ? "environmental-pillar" : undefined}
+              data-tour={
+                key === "environmental" ? "environmental-pillar" : undefined
+              }
               className="rounded-lg border p-4 flex flex-col"
               style={{
                 borderColor: color + "40",
@@ -2136,11 +2403,17 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Icon className="h-5 w-5" style={{ color }} />
-                  <span className="text-sm font-medium" style={{ color: colors.text }}>
+                  <span
+                    className="text-sm font-medium"
+                    style={{ color: colors.text }}
+                  >
                     {label}
                   </span>
                 </div>
-                <span className="text-2xl font-semibold" style={{ color: colors.text }}>
+                <span
+                  className="text-2xl font-semibold"
+                  style={{ color: colors.text }}
+                >
                   {Number.isFinite(value) ? value.toFixed(1) : "N/A"}%
                 </span>
               </div>
@@ -2155,8 +2428,14 @@ const Dashboard = () => {
       {/* Main Grid: Charts & Lists */}
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.accent }} />
-          <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: colors.textMuted }}>
+          <div
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ backgroundColor: colors.accent }}
+          />
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.14em]"
+            style={{ color: colors.textMuted }}
+          >
             Analytics Workspace
           </p>
         </div>
@@ -2168,39 +2447,92 @@ const Dashboard = () => {
           icon={ScaleIcon}
           minHeight={isMobile ? 280 : 400}
           className="lg:col-span-2"
-          style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
-          empty={!data.ethicalScoreDistribution || !data.ethicalScoreDistribution.length}
-          emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No score distribution data. <a href="/suppliers/add" className="underline">Add Supplier</a></p>}
+          style={{
+            backgroundColor: colors.card,
+            borderColor: colors.accent + "20",
+          }}
+          empty={
+            !data.ethicalScoreDistribution ||
+            !data.ethicalScoreDistribution.length
+          }
+          emptyContent={
+            <p className="text-sm" style={{ color: colors.textMuted }}>
+              No score distribution data.{" "}
+              <a href="/suppliers/add" className="underline">
+                Add Supplier
+              </a>
+            </p>
+          }
         >
-          <div role="img" aria-label="Histogram of ethical score distribution across suppliers" className="w-full h-full" style={{ height: '100%' }}>
-            <EthicalScoreDistributionChart data={data.ethicalScoreDistribution} />
+          <div
+            role="img"
+            aria-label="Histogram of ethical score distribution across suppliers"
+            className="w-full h-full"
+            style={{ height: "100%" }}
+          >
+            <EthicalScoreDistributionChart
+              data={data.ethicalScoreDistribution}
+            />
           </div>
         </MetricCard>
 
         {/* Risk Breakdown */}
         <div data-tour="risk-distribution" className="h-full">
-        <MetricCard
-          title="Risk Breakdown"
-          icon={ShieldExclamationIcon}
-          minHeight={isMobile ? 260 : 400}
-          style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
-          empty={!riskPieData.length}
-          emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No risk data. Add suppliers or set risk fields.</p>}
-        >
-          <div role="img" aria-label="Pie chart of supplier risk levels" className="w-full h-full" style={{ height: '100%' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={riskPieData} cx="50%" cy="50%" innerRadius={isMobile ? 48 : 60} outerRadius={isMobile ? 80 : 100} paddingAngle={5} dataKey="value">
-                {riskPieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ backgroundColor: colors.tooltipBg, borderColor: colors.accent + "40", color: colors.text }} itemStyle={{ color: colors.textMuted }} />
-              {!isMobile && <Legend formatter={(value) => (<span style={{ color: colors.textMuted }}>{value}</span>)} />}
-            </PieChart>
-          </ResponsiveContainer>
-          </div>
-        </MetricCard>
+          <MetricCard
+            title="Risk Breakdown"
+            icon={ShieldExclamationIcon}
+            minHeight={isMobile ? 260 : 400}
+            style={{
+              backgroundColor: colors.card,
+              borderColor: colors.accent + "20",
+            }}
+            empty={!riskPieData.length}
+            emptyContent={
+              <p className="text-sm" style={{ color: colors.textMuted }}>
+                No risk data. Add suppliers or set risk fields.
+              </p>
+            }
+          >
+            <div
+              role="img"
+              aria-label="Pie chart of supplier risk levels"
+              className="w-full h-full"
+              style={{ height: "100%" }}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={riskPieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={isMobile ? 48 : 60}
+                    outerRadius={isMobile ? 80 : 100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {riskPieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      borderColor: colors.accent + "40",
+                      color: colors.text,
+                    }}
+                    itemStyle={{ color: colors.textMuted }}
+                  />
+                  {!isMobile && (
+                    <Legend
+                      formatter={(value) => (
+                        <span style={{ color: colors.textMuted }}>{value}</span>
+                      )}
+                    />
+                  )}
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </MetricCard>
         </div>
 
         {/* CO2 Emissions by Industry */}
@@ -2209,34 +2541,67 @@ const Dashboard = () => {
           icon={BeakerIcon}
           minHeight={isMobile ? 360 : 450}
           className="lg:col-span-3"
-          style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
-          empty={!data.co2EmissionsByIndustry || !data.co2EmissionsByIndustry.length}
-          emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No emission data by industry. Ensure suppliers have emissions and industry.</p>}
+          style={{
+            backgroundColor: colors.card,
+            borderColor: colors.accent + "20",
+          }}
+          empty={
+            !data.co2EmissionsByIndustry || !data.co2EmissionsByIndustry.length
+          }
+          emptyContent={
+            <p className="text-sm" style={{ color: colors.textMuted }}>
+              No emission data by industry. Ensure suppliers have emissions and
+              industry.
+            </p>
+          }
         >
-          <div role="img" aria-label="Bar chart of CO2 emissions by industry" className="w-full h-full" style={{ height: '100%' }}>
+          <div
+            role="img"
+            aria-label="Bar chart of CO2 emissions by industry"
+            className="w-full h-full"
+            style={{ height: "100%" }}
+          >
             <CO2EmissionsChart data={data.co2EmissionsByIndustry} />
           </div>
         </MetricCard>
 
-      {/* Suppliers by Country (Example of another chart) */}
-        {suppliersByCountry &&
-          Object.keys(suppliersByCountry).length > 0 && (
-            <div data-tour="top-countries" className="lg:col-span-3 h-full">
+        {/* Suppliers by Country (Example of another chart) */}
+        {suppliersByCountry && Object.keys(suppliersByCountry).length > 0 && (
+          <div data-tour="top-countries" className="lg:col-span-3 h-full">
             <MetricCard
               title="Suppliers by Country"
               icon={MapIcon}
               minHeight={isMobile ? 360 : 400}
               className="lg:col-span-3"
-              style={{ backgroundColor: colors.card, borderColor: colors.accent + "20" }}
-              empty={!suppliersByCountry || !Object.keys(suppliersByCountry).length}
-              emptyContent={<p className="text-sm" style={{ color: colors.textMuted }}>No suppliers yet. <a href="/suppliers/add" className="underline">Add Supplier</a></p>}
+              style={{
+                backgroundColor: colors.card,
+                borderColor: colors.accent + "20",
+              }}
+              empty={
+                !suppliersByCountry || !Object.keys(suppliersByCountry).length
+              }
+              emptyContent={
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  No suppliers yet.{" "}
+                  <a href="/suppliers/add" className="underline">
+                    Add Supplier
+                  </a>
+                </p>
+              }
             >
-              <div role="img" aria-label="Horizontal bar chart of supplier counts by country" className="w-full h-full" style={{ height: '100%' }}>
-                <SuppliersByCountryChart suppliersByCountry={suppliersByCountry} />
+              <div
+                role="img"
+                aria-label="Horizontal bar chart of supplier counts by country"
+                className="w-full h-full"
+                style={{ height: "100%" }}
+              >
+                <SuppliersByCountryChart
+                  suppliersByCountry={suppliersByCountry}
+                />
               </div>
             </MetricCard>
-            </div>
-          )}
+          </div>
+        )}
 
         {/* Report Generator - Add this section */}
         <motion.div
@@ -2253,396 +2618,831 @@ const Dashboard = () => {
             }}
             allSuppliers={allSuppliers}
           />
-      </motion.div>
+        </motion.div>
 
-      {/* Watchlist & Alerts */}
-      <div className="lg:col-span-3">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-        <div data-tour="supplier-table" className="h-full">
-        <DashboardCard title="Watchlist: High Risk" icon={ShieldExclamationIcon} gridSpan="col-span-1">
-          {extraAnalytics.watchHighRisk.length ? (
-            <div className="space-y-2">
-              {extraAnalytics.watchHighRisk.map((s) => (
-                <div key={(s as any)._id || s.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                  <span style={{ color: colors.text }}>{s.name}</span>
-                  <span className="px-2 py-0.5 rounded text-xs font-medium capitalize" style={{ color: colors.error, backgroundColor: colors.error + '15', border: `1px solid ${colors.error}40` }}>{s.risk_level}</span>
-                </div>
-              ))}
+        {/* Watchlist & Alerts */}
+        <div className="lg:col-span-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+            <div data-tour="supplier-table" className="h-full">
+              <DashboardCard
+                title="Watchlist: High Risk"
+                icon={ShieldExclamationIcon}
+                gridSpan="col-span-1"
+              >
+                {extraAnalytics.watchHighRisk.length ? (
+                  <div className="space-y-2">
+                    {extraAnalytics.watchHighRisk.map((s) => (
+                      <div
+                        key={(s as any)._id || s.id}
+                        className="flex items-center justify-between text-sm py-1 border-b"
+                        style={{ borderColor: colors.accent + "20" }}
+                      >
+                        <span style={{ color: colors.text }}>{s.name}</span>
+                        <span
+                          className="px-2 py-0.5 rounded text-xs font-medium capitalize"
+                          style={{
+                            color: colors.error,
+                            backgroundColor: colors.error + "15",
+                            border: `1px solid ${colors.error}40`,
+                          }}
+                        >
+                          {s.risk_level}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: colors.textMuted }}>
+                    No high‑risk suppliers found.
+                  </p>
+                )}
+              </DashboardCard>
             </div>
-          ) : (
-            <p className="text-sm" style={{ color: colors.textMuted }}>No high‑risk suppliers found.</p>
-          )}
-        </DashboardCard>
+
+            <DashboardCard
+              title="Watchlist: Low Disclosure"
+              icon={InformationCircleIcon}
+              gridSpan="col-span-1"
+            >
+              {extraAnalytics.watchLowDisclosure.length ? (
+                <div className="space-y-2">
+                  {extraAnalytics.watchLowDisclosure.map((s) => (
+                    <div
+                      key={(s as any)._id || s.id}
+                      className="flex items-center justify-between text-sm py-1 border-b"
+                      style={{ borderColor: colors.accent + "20" }}
+                    >
+                      <span style={{ color: colors.text }}>{s.name}</span>
+                      <span
+                        className="px-2 py-0.5 rounded text-xs font-medium"
+                        style={{
+                          color: colors.warning,
+                          backgroundColor: colors.warning + "15",
+                          border: `1px solid ${colors.warning}40`,
+                        }}
+                      >
+                        {Math.round((s.completeness_ratio || 0) * 100)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  All suppliers have adequate disclosure.
+                </p>
+              )}
+            </DashboardCard>
+          </div>
         </div>
 
-        <DashboardCard title="Watchlist: Low Disclosure" icon={InformationCircleIcon} gridSpan="col-span-1">
-          {extraAnalytics.watchLowDisclosure.length ? (
-            <div className="space-y-2">
-              {extraAnalytics.watchLowDisclosure.map((s) => (
-                <div key={(s as any)._id || s.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                  <span style={{ color: colors.text }}>{s.name}</span>
-                  <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ color: colors.warning, backgroundColor: colors.warning + '15', border: `1px solid ${colors.warning}40` }}>{Math.round((s.completeness_ratio || 0) * 100)}%</span>
+        {/* Data Quality Panel & Risk Penalties */}
+        <div className="lg:col-span-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
+            <DashboardCard
+              title="Data Quality: Top Missing Metrics"
+              icon={ListBulletIcon}
+              gridSpan="col-span-1"
+            >
+              {extraAnalytics.topMissing.length ? (
+                <div className="text-sm">
+                  {extraAnalytics.topMissing.map((m) => (
+                    <div
+                      key={m.metric}
+                      className="flex items-center justify-between py-1 border-b"
+                      style={{ borderColor: colors.accent + "20" }}
+                    >
+                      <span style={{ color: colors.text }}>{m.metric}</span>
+                      <span
+                        className="font-mono"
+                        style={{ color: colors.textMuted }}
+                      >
+                        {m.missing} ({m.pct}%)
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm" style={{ color: colors.textMuted }}>All suppliers have adequate disclosure.</p>
-          )}
-        </DashboardCard>
+              ) : (
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  No significant missingness detected.
+                </p>
+              )}
+            </DashboardCard>
+
+            <DashboardCard
+              title="Largest Risk Penalties"
+              icon={ExclamationTriangleIcon}
+              gridSpan="col-span-1"
+            >
+              {extraAnalytics.riskLeaders.length ? (
+                <div className="text-sm">
+                  {extraAnalytics.riskLeaders.map((s) => (
+                    <div
+                      key={(s as any)._id || s.id}
+                      className="flex items-center justify-between py-1 border-b"
+                      style={{ borderColor: colors.accent + "20" }}
+                    >
+                      <span style={{ color: colors.text }}>{s.name}</span>
+                      <span
+                        className="font-mono"
+                        style={{ color: colors.textMuted }}
+                      >
+                        {Math.round((s.risk_factor || 0) * 100)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  No risk penalty data.
+                </p>
+              )}
+            </DashboardCard>
+          </div>
         </div>
-      </div>
 
-      {/* Data Quality Panel & Risk Penalties */}
-      <div className="lg:col-span-3">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 mt-4 sm:mt-6">
-          <DashboardCard title="Data Quality: Top Missing Metrics" icon={ListBulletIcon} gridSpan="col-span-1">
-          {extraAnalytics.topMissing.length ? (
-            <div className="text-sm">
-              {extraAnalytics.topMissing.map((m) => (
-                <div key={m.metric} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                  <span style={{ color: colors.text }}>{m.metric}</span>
-                  <span className="font-mono" style={{ color: colors.textMuted }}>{m.missing} ({m.pct}%)</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm" style={{ color: colors.textMuted }}>No significant missingness detected.</p>
-          )}
-        </DashboardCard>
+        {/* Quick Insights & Alerts */}
+        {extraAnalytics.insights && extraAnalytics.insights.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="lg:col-span-3 mt-4 sm:mt-6"
+          >
+            <DashboardCard
+              title={isMobile ? "Insights" : "Quick Insights & Alerts"}
+              icon={LightBulbIcon}
+              gridSpan="col-span-1"
+            >
+              <div className="space-y-2">
+                {extraAnalytics.insights.map((insight, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex items-start gap-2 sm:gap-3 ${isMobile ? "p-2" : "p-3"} rounded-lg border`}
+                    style={{
+                      backgroundColor:
+                        insight.type === "error"
+                          ? colors.error + "10"
+                          : insight.type === "warning"
+                            ? colors.warning + "10"
+                            : colors.primary + "10",
+                      borderColor:
+                        insight.type === "error"
+                          ? colors.error + "40"
+                          : insight.type === "warning"
+                            ? colors.warning + "40"
+                            : colors.primary + "40",
+                    }}
+                  >
+                    {insight.type === "error" && (
+                      <ExclamationTriangleIcon
+                        className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0 mt-0.5`}
+                        style={{ color: colors.error }}
+                      />
+                    )}
+                    {insight.type === "warning" && (
+                      <ExclamationTriangleIcon
+                        className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0 mt-0.5`}
+                        style={{ color: colors.warning }}
+                      />
+                    )}
+                    {insight.type === "info" && (
+                      <InformationCircleIcon
+                        className={`${isMobile ? "h-4 w-4" : "h-5 w-5"} flex-shrink-0 mt-0.5`}
+                        style={{ color: colors.primary }}
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`font-medium ${isMobile ? "text-xs" : "text-sm"}`}
+                        style={{ color: colors.text }}
+                      >
+                        {insight.title}
+                      </div>
+                      <div
+                        className={`${isMobile ? "text-[10px]" : "text-xs"} mt-0.5`}
+                        style={{ color: colors.textMuted }}
+                      >
+                        {insight.message}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </DashboardCard>
+          </motion.div>
+        )}
 
-        <DashboardCard title="Largest Risk Penalties" icon={ExclamationTriangleIcon} gridSpan="col-span-1">
-          {extraAnalytics.riskLeaders.length ? (
-            <div className="text-sm">
-              {extraAnalytics.riskLeaders.map((s) => (
-                <div key={(s as any)._id || s.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                  <span style={{ color: colors.text }}>{s.name}</span>
-                  <span className="font-mono" style={{ color: colors.textMuted }}>{Math.round((s.risk_factor || 0) * 100)}%</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm" style={{ color: colors.textMuted }}>No risk penalty data.</p>
-          )}
-        </DashboardCard>
-        </div>
-      </div>
-
-      {/* Quick Insights & Alerts */}
-      {extraAnalytics.insights && extraAnalytics.insights.length > 0 && (
+        {/* Top Performers & Compliance */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          className="lg:col-span-3 mt-4 sm:mt-6"
+          transition={{ delay: 0.4 }}
+          className="lg:col-span-3 mt-6"
         >
-          <DashboardCard title={isMobile ? "Insights" : "Quick Insights & Alerts"} icon={LightBulbIcon} gridSpan="col-span-1">
-            <div className="space-y-2">
-              {extraAnalytics.insights.map((insight, idx) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <DashboardCard
+              title={isMobile ? "Top: Overall" : "Top Performers: Overall"}
+              icon={TrophyIcon}
+              gridSpan="col-span-1"
+            >
+              {extraAnalytics.topPerformers.overall.length > 0 ? (
+                <div className="space-y-1.5 sm:space-y-2">
+                  {extraAnalytics.topPerformers.overall.map((p, idx) => (
+                    <div
+                      key={p.id}
+                      className={`flex items-center justify-between ${isMobile ? "text-xs" : "text-sm"} py-1 border-b`}
+                      style={{ borderColor: colors.accent + "20" }}
+                    >
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+                        <span
+                          className={`${isMobile ? "text-[10px]" : "text-xs"} font-bold`}
+                          style={{ color: colors.primary }}
+                        >
+                          #{idx + 1}
+                        </span>
+                        <span
+                          className="truncate"
+                          style={{ color: colors.text }}
+                          title={p.name}
+                        >
+                          {p.name}
+                        </span>
+                      </div>
+                      <span
+                        className={`font-mono ${isMobile ? "text-[10px]" : "text-xs"} whitespace-nowrap ml-2`}
+                        style={{ color: colors.success }}
+                      >
+                        {p.score.toFixed(1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p
+                  className={`${isMobile ? "text-xs" : "text-sm"}`}
+                  style={{ color: colors.textMuted }}
+                >
+                  No data available.
+                </p>
+              )}
+            </DashboardCard>
+
+            <DashboardCard
+              title={
+                isMobile
+                  ? "Top: Environmental"
+                  : "Top Performers: Environmental"
+              }
+              icon={CloudIcon}
+              gridSpan="col-span-1"
+            >
+              {extraAnalytics.topPerformers.environmental.length > 0 ? (
+                <div className="space-y-2">
+                  {extraAnalytics.topPerformers.environmental.map((p, idx) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between text-sm py-1 border-b"
+                      style={{ borderColor: colors.accent + "20" }}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span
+                          className="text-xs font-bold"
+                          style={{ color: colors.primary }}
+                        >
+                          #{idx + 1}
+                        </span>
+                        <span
+                          className="truncate"
+                          style={{ color: colors.text }}
+                          title={p.name}
+                        >
+                          {p.name}
+                        </span>
+                      </div>
+                      <span
+                        className="font-mono text-xs whitespace-nowrap ml-2"
+                        style={{ color: colors.success }}
+                      >
+                        {p.score.toFixed(1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  No data available.
+                </p>
+              )}
+            </DashboardCard>
+
+            <DashboardCard
+              title={isMobile ? "Top: Social" : "Top Performers: Social"}
+              icon={UsersIcon}
+              gridSpan="col-span-1"
+            >
+              {extraAnalytics.topPerformers.social.length > 0 ? (
+                <div className="space-y-2">
+                  {extraAnalytics.topPerformers.social.map((p, idx) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between text-sm py-1 border-b"
+                      style={{ borderColor: colors.accent + "20" }}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <span
+                          className="text-xs font-bold"
+                          style={{ color: colors.primary }}
+                        >
+                          #{idx + 1}
+                        </span>
+                        <span
+                          className="truncate"
+                          style={{ color: colors.text }}
+                          title={p.name}
+                        >
+                          {p.name}
+                        </span>
+                      </div>
+                      <span
+                        className="font-mono text-xs whitespace-nowrap ml-2"
+                        style={{ color: colors.success }}
+                      >
+                        {p.score.toFixed(1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  No data available.
+                </p>
+              )}
+            </DashboardCard>
+
+            <DashboardCard
+              title={isMobile ? "Compliance" : "Compliance Status"}
+              icon={CheckBadgeIcon}
+              gridSpan="col-span-1"
+            >
+              <div className="flex flex-col items-center justify-center py-3 sm:py-4">
                 <div
-                  key={idx}
-                  className={`flex items-start gap-2 sm:gap-3 ${isMobile ? 'p-2' : 'p-3'} rounded-lg border`}
+                  className={`${isMobile ? "text-3xl" : "text-4xl"} font-bold mb-2`}
                   style={{
-                    backgroundColor: insight.type === 'error' ? colors.error + '10' :
-                                   insight.type === 'warning' ? colors.warning + '10' :
-                                   colors.primary + '10',
-                    borderColor: insight.type === 'error' ? colors.error + '40' :
-                                insight.type === 'warning' ? colors.warning + '40' :
-                                colors.primary + '40',
+                    color:
+                      extraAnalytics.complianceRate >= 80
+                        ? colors.success
+                        : extraAnalytics.complianceRate >= 60
+                          ? colors.warning
+                          : colors.error,
                   }}
                 >
-                  {insight.type === 'error' && <ExclamationTriangleIcon className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0 mt-0.5`} style={{ color: colors.error }} />}
-                  {insight.type === 'warning' && <ExclamationTriangleIcon className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0 mt-0.5`} style={{ color: colors.warning }} />}
-                  {insight.type === 'info' && <InformationCircleIcon className={`${isMobile ? 'h-4 w-4' : 'h-5 w-5'} flex-shrink-0 mt-0.5`} style={{ color: colors.primary }} />}
-                  <div className="flex-1 min-w-0">
-                    <div className={`font-medium ${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: colors.text }}>{insight.title}</div>
-                    <div className={`${isMobile ? 'text-[10px]' : 'text-xs'} mt-0.5`} style={{ color: colors.textMuted }}>{insight.message}</div>
-                  </div>
+                  {extraAnalytics.complianceRate.toFixed(1)}%
                 </div>
-              ))}
-            </div>
-          </DashboardCard>
-        </motion.div>
-      )}
-
-      {/* Top Performers & Compliance */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="lg:col-span-3 mt-6"
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <DashboardCard title={isMobile ? "Top: Overall" : "Top Performers: Overall"} icon={TrophyIcon} gridSpan="col-span-1">
-            {extraAnalytics.topPerformers.overall.length > 0 ? (
-              <div className="space-y-1.5 sm:space-y-2">
-                {extraAnalytics.topPerformers.overall.map((p, idx) => (
-                  <div key={p.id} className={`flex items-center justify-between ${isMobile ? 'text-xs' : 'text-sm'} py-1 border-b`} style={{ borderColor: colors.accent + '20' }}>
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                      <span className={`${isMobile ? 'text-[10px]' : 'text-xs'} font-bold`} style={{ color: colors.primary }}>#{idx + 1}</span>
-                      <span className="truncate" style={{ color: colors.text }} title={p.name}>{p.name}</span>
-                    </div>
-                    <span className={`font-mono ${isMobile ? 'text-[10px]' : 'text-xs'} whitespace-nowrap ml-2`} style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className={`${isMobile ? 'text-xs' : 'text-sm'}`} style={{ color: colors.textMuted }}>No data available.</p>
-            )}
-          </DashboardCard>
-
-          <DashboardCard title={isMobile ? "Top: Environmental" : "Top Performers: Environmental"} icon={CloudIcon} gridSpan="col-span-1">
-            {extraAnalytics.topPerformers.environmental.length > 0 ? (
-              <div className="space-y-2">
-                {extraAnalytics.topPerformers.environmental.map((p, idx) => (
-                  <div key={p.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-xs font-bold" style={{ color: colors.primary }}>#{idx + 1}</span>
-                      <span className="truncate" style={{ color: colors.text }} title={p.name}>{p.name}</span>
-                    </div>
-                    <span className="font-mono text-xs whitespace-nowrap ml-2" style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm" style={{ color: colors.textMuted }}>No data available.</p>
-            )}
-          </DashboardCard>
-
-          <DashboardCard title={isMobile ? "Top: Social" : "Top Performers: Social"} icon={UsersIcon} gridSpan="col-span-1">
-            {extraAnalytics.topPerformers.social.length > 0 ? (
-              <div className="space-y-2">
-                {extraAnalytics.topPerformers.social.map((p, idx) => (
-                  <div key={p.id} className="flex items-center justify-between text-sm py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <span className="text-xs font-bold" style={{ color: colors.primary }}>#{idx + 1}</span>
-                      <span className="truncate" style={{ color: colors.text }} title={p.name}>{p.name}</span>
-                    </div>
-                    <span className="font-mono text-xs whitespace-nowrap ml-2" style={{ color: colors.success }}>{p.score.toFixed(1)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm" style={{ color: colors.textMuted }}>No data available.</p>
-            )}
-          </DashboardCard>
-
-          <DashboardCard title={isMobile ? "Compliance" : "Compliance Status"} icon={CheckBadgeIcon} gridSpan="col-span-1">
-            <div className="flex flex-col items-center justify-center py-3 sm:py-4">
-              <div className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold mb-2`} style={{ 
-                color: extraAnalytics.complianceRate >= 80 ? colors.success : 
-                       extraAnalytics.complianceRate >= 60 ? colors.warning : colors.error 
-              }}>
-                {extraAnalytics.complianceRate.toFixed(1)}%
-              </div>
-              <p className={`${isMobile ? 'text-[10px]' : 'text-xs'} text-center px-1`} style={{ color: colors.textMuted }}>
-                {isMobile ? "60%+ threshold" : "Suppliers meeting 60%+ threshold"}
-              </p>
-              <div className="mt-3 w-full bg-opacity-20 rounded-full h-2" style={{ backgroundColor: colors.accent + '20' }}>
+                <p
+                  className={`${isMobile ? "text-[10px]" : "text-xs"} text-center px-1`}
+                  style={{ color: colors.textMuted }}
+                >
+                  {isMobile
+                    ? "60%+ threshold"
+                    : "Suppliers meeting 60%+ threshold"}
+                </p>
                 <div
-                  className="h-2 rounded-full transition-all"
-                  style={{
-                    width: `${Math.min(100, extraAnalytics.complianceRate)}%`,
-                    backgroundColor: extraAnalytics.complianceRate >= 80 ? colors.success : 
-                                    extraAnalytics.complianceRate >= 60 ? colors.warning : colors.error,
-                  }}
-                />
-              </div>
-            </div>
-          </DashboardCard>
-        </div>
-      </motion.div>
-
-      {/* Environmental, Social & Governance Summaries */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-        className="lg:col-span-3 mt-6"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          <div data-tour="water-usage" className="h-full">
-          <DashboardCard title={isMobile ? "Environmental Summary" : "Environmental Impact Summary"} icon={FireIcon} gridSpan="col-span-1">
-            <div className={`space-y-2 sm:space-y-3 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'CO₂' : 'Total CO₂ Emissions'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.envSummary.totalCO2.toFixed(1)}t
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Water' : 'Total Water Usage'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.envSummary.totalWater.toFixed(0)}m³
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Waste' : 'Total Waste Generated'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.envSummary.totalWaste.toFixed(1)}t
-                </span>
-              </div>
-              <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Renewable' : 'Avg Renewable Energy'}</span>
-                  <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                    {extraAnalytics.envSummary.avgRenewable.toFixed(1)}%
-                  </span>
-                </div>
-                <div className={`${isMobile ? 'text-[10px]' : 'text-xs'}`} style={{ color: colors.textMuted }}>
-                  {extraAnalytics.envSummary.suppliersWithRenewable} {isMobile ? 'suppliers' : 'suppliers reporting'}
+                  className="mt-3 w-full bg-opacity-20 rounded-full h-2"
+                  style={{ backgroundColor: colors.accent + "20" }}
+                >
+                  <div
+                    className="h-2 rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(100, extraAnalytics.complianceRate)}%`,
+                      backgroundColor:
+                        extraAnalytics.complianceRate >= 80
+                          ? colors.success
+                          : extraAnalytics.complianceRate >= 60
+                            ? colors.warning
+                            : colors.error,
+                    }}
+                  />
                 </div>
               </div>
-            </div>
-          </DashboardCard>
+            </DashboardCard>
           </div>
+        </motion.div>
 
-          <DashboardCard title={isMobile ? "Social Summary" : "Social Metrics Summary"} icon={UsersIcon} gridSpan="col-span-1">
-            <div className={`space-y-2 sm:space-y-3 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Diversity' : 'Avg Gender Diversity'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.socialSummary.avgDiversity.toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Training' : 'Avg Training Hours'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.socialSummary.avgTraining.toFixed(0)}h
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Wage Ratio' : 'Avg Living Wage Ratio'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.socialSummary.avgLivingWage.toFixed(2)}x
-                </span>
-              </div>
-              <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Injury Rate' : 'Avg Injury Rate'}</span>
-                  <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                    {extraAnalytics.socialSummary.avgInjury.toFixed(2)}
+        {/* Environmental, Social & Governance Summaries */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="lg:col-span-3 mt-6"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div data-tour="water-usage" className="h-full">
+              <DashboardCard
+                title={
+                  isMobile
+                    ? "Environmental Summary"
+                    : "Environmental Impact Summary"
+                }
+                icon={FireIcon}
+                gridSpan="col-span-1"
+              >
+                <div
+                  className={`space-y-2 sm:space-y-3 ${isMobile ? "text-xs" : "text-sm"}`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span
+                      className={isMobile ? "text-[10px]" : ""}
+                      style={{ color: colors.textMuted }}
+                    >
+                      {isMobile ? "CO₂" : "Total CO₂ Emissions"}
+                    </span>
+                    <span
+                      className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                      style={{ color: colors.text }}
+                    >
+                      {extraAnalytics.envSummary.totalCO2.toFixed(1)}t
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span
+                      className={isMobile ? "text-[10px]" : ""}
+                      style={{ color: colors.textMuted }}
+                    >
+                      {isMobile ? "Water" : "Total Water Usage"}
+                    </span>
+                    <span
+                      className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                      style={{ color: colors.text }}
+                    >
+                      {extraAnalytics.envSummary.totalWater.toFixed(0)}m³
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span
+                      className={isMobile ? "text-[10px]" : ""}
+                      style={{ color: colors.textMuted }}
+                    >
+                      {isMobile ? "Waste" : "Total Waste Generated"}
+                    </span>
+                    <span
+                      className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                      style={{ color: colors.text }}
+                    >
+                      {extraAnalytics.envSummary.totalWaste.toFixed(1)}t
+                    </span>
+                  </div>
+                  <div
+                    className="pt-2 border-t"
+                    style={{ borderColor: colors.accent + "20" }}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span
+                        className={isMobile ? "text-[10px]" : ""}
+                        style={{ color: colors.textMuted }}
+                      >
+                        {isMobile ? "Renewable" : "Avg Renewable Energy"}
+                      </span>
+                      <span
+                        className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                        style={{ color: colors.text }}
+                      >
+                        {extraAnalytics.envSummary.avgRenewable.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div
+                      className={`${isMobile ? "text-[10px]" : "text-xs"}`}
+                      style={{ color: colors.textMuted }}
+                    >
+                      {extraAnalytics.envSummary.suppliersWithRenewable}{" "}
+                      {isMobile ? "suppliers" : "suppliers reporting"}
+                    </div>
+                  </div>
+                </div>
+              </DashboardCard>
+            </div>
+
+            <DashboardCard
+              title={isMobile ? "Social Summary" : "Social Metrics Summary"}
+              icon={UsersIcon}
+              gridSpan="col-span-1"
+            >
+              <div
+                className={`space-y-2 sm:space-y-3 ${isMobile ? "text-xs" : "text-sm"}`}
+              >
+                <div className="flex justify-between items-center">
+                  <span
+                    className={isMobile ? "text-[10px]" : ""}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {isMobile ? "Diversity" : "Avg Gender Diversity"}
+                  </span>
+                  <span
+                    className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                    style={{ color: colors.text }}
+                  >
+                    {extraAnalytics.socialSummary.avgDiversity.toFixed(1)}%
                   </span>
                 </div>
-                <div className={`${isMobile ? 'text-[10px]' : 'text-xs'}`} style={{ color: colors.textMuted }}>
-                  {extraAnalytics.socialSummary.suppliersWithTraining} {isMobile ? 'with training' : 'suppliers with training data'}
-                </div>
-              </div>
-            </div>
-          </DashboardCard>
-
-          <DashboardCard title={isMobile ? "Governance Summary" : "Governance Metrics Summary"} icon={PresentationChartLineIcon} gridSpan="col-span-1">
-            <div className={`space-y-2 sm:space-y-3 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Transparency' : 'Avg Transparency'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.govSummary.avgTransparency.toFixed(1)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Board Diversity' : 'Avg Board Diversity'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.govSummary.avgBoardDiversity.toFixed(1)}%
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Board Independence' : 'Avg Board Independence'}</span>
-                <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                  {extraAnalytics.govSummary.avgBoardIndependence.toFixed(1)}%
-                </span>
-              </div>
-              <div className="pt-2 border-t" style={{ borderColor: colors.accent + '20' }}>
-                <div className="flex justify-between items-center mb-1">
-                  <span className={isMobile ? 'text-[10px]' : ''} style={{ color: colors.textMuted }}>{isMobile ? 'Anti-Corruption' : 'Anti-Corruption Policy'}</span>
-                  <span className={`font-mono font-semibold ${isMobile ? 'text-xs' : ''}`} style={{ color: colors.text }}>
-                    {extraAnalytics.govSummary.antiCorruptionRate.toFixed(1)}%
+                <div className="flex justify-between items-center">
+                  <span
+                    className={isMobile ? "text-[10px]" : ""}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {isMobile ? "Training" : "Avg Training Hours"}
+                  </span>
+                  <span
+                    className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                    style={{ color: colors.text }}
+                  >
+                    {extraAnalytics.socialSummary.avgTraining.toFixed(0)}h
                   </span>
                 </div>
-                <div className={`${isMobile ? 'text-[10px]' : 'text-xs'}`} style={{ color: colors.textMuted }}>
-                  {extraAnalytics.govSummary.suppliersWithAntiCorruption} {isMobile ? 'with policy' : 'suppliers with policy'}
+                <div className="flex justify-between items-center">
+                  <span
+                    className={isMobile ? "text-[10px]" : ""}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {isMobile ? "Wage Ratio" : "Avg Living Wage Ratio"}
+                  </span>
+                  <span
+                    className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                    style={{ color: colors.text }}
+                  >
+                    {extraAnalytics.socialSummary.avgLivingWage.toFixed(2)}x
+                  </span>
+                </div>
+                <div
+                  className="pt-2 border-t"
+                  style={{ borderColor: colors.accent + "20" }}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span
+                      className={isMobile ? "text-[10px]" : ""}
+                      style={{ color: colors.textMuted }}
+                    >
+                      {isMobile ? "Injury Rate" : "Avg Injury Rate"}
+                    </span>
+                    <span
+                      className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                      style={{ color: colors.text }}
+                    >
+                      {extraAnalytics.socialSummary.avgInjury.toFixed(2)}
+                    </span>
+                  </div>
+                  <div
+                    className={`${isMobile ? "text-[10px]" : "text-xs"}`}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {extraAnalytics.socialSummary.suppliersWithTraining}{" "}
+                    {isMobile
+                      ? "with training"
+                      : "suppliers with training data"}
+                  </div>
                 </div>
               </div>
-            </div>
-          </DashboardCard>
-        </div>
-      </motion.div>
+            </DashboardCard>
 
-      {/* Recent Activity & Top Movers */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="lg:col-span-3 mt-4 sm:mt-6"
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-          <DashboardCard title="Recent Activity" icon={CalendarIcon} gridSpan="col-span-1">
-            {allSuppliers.length ? (
-              <div className="text-sm">
-                {allSuppliers
-                  .slice()
-                  .sort((a, b) => {
-                    const ta = new Date(a.updated_at || a.created_at || 0).getTime();
-                    const tb = new Date(b.updated_at || b.created_at || 0).getTime();
-                    return tb - ta;
-                  })
-                  .slice(0, 8)
-                  .map((s) => {
-                    const t = new Date(s.updated_at || s.created_at || 0);
-                    return (
-                      <div key={(s as any)._id || s.id} className="flex items-center justify-between py-1 border-b" style={{ borderColor: colors.accent + '20' }}>
-                        <span style={{ color: colors.text }}>{s.name}</span>
-                        <span className="text-xs" style={{ color: colors.textMuted }}>{t.toLocaleString()}</span>
-                      </div>
-                    );
-                  })}
+            <DashboardCard
+              title={
+                isMobile ? "Governance Summary" : "Governance Metrics Summary"
+              }
+              icon={PresentationChartLineIcon}
+              gridSpan="col-span-1"
+            >
+              <div
+                className={`space-y-2 sm:space-y-3 ${isMobile ? "text-xs" : "text-sm"}`}
+              >
+                <div className="flex justify-between items-center">
+                  <span
+                    className={isMobile ? "text-[10px]" : ""}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {isMobile ? "Transparency" : "Avg Transparency"}
+                  </span>
+                  <span
+                    className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                    style={{ color: colors.text }}
+                  >
+                    {extraAnalytics.govSummary.avgTransparency.toFixed(1)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span
+                    className={isMobile ? "text-[10px]" : ""}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {isMobile ? "Board Diversity" : "Avg Board Diversity"}
+                  </span>
+                  <span
+                    className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                    style={{ color: colors.text }}
+                  >
+                    {extraAnalytics.govSummary.avgBoardDiversity.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span
+                    className={isMobile ? "text-[10px]" : ""}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {isMobile ? "Board Independence" : "Avg Board Independence"}
+                  </span>
+                  <span
+                    className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                    style={{ color: colors.text }}
+                  >
+                    {extraAnalytics.govSummary.avgBoardIndependence.toFixed(1)}%
+                  </span>
+                </div>
+                <div
+                  className="pt-2 border-t"
+                  style={{ borderColor: colors.accent + "20" }}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span
+                      className={isMobile ? "text-[10px]" : ""}
+                      style={{ color: colors.textMuted }}
+                    >
+                      {isMobile ? "Anti-Corruption" : "Anti-Corruption Policy"}
+                    </span>
+                    <span
+                      className={`font-mono font-semibold ${isMobile ? "text-xs" : ""}`}
+                      style={{ color: colors.text }}
+                    >
+                      {extraAnalytics.govSummary.antiCorruptionRate.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div
+                    className={`${isMobile ? "text-[10px]" : "text-xs"}`}
+                    style={{ color: colors.textMuted }}
+                  >
+                    {extraAnalytics.govSummary.suppliersWithAntiCorruption}{" "}
+                    {isMobile ? "with policy" : "suppliers with policy"}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <p className="text-sm" style={{ color: colors.textMuted }}>No recent activity.</p>
-            )}
-          </DashboardCard>
+            </DashboardCard>
+          </div>
+        </motion.div>
 
-          <DashboardCard title={isMobile ? "Top Movers" : "Top Movers (Risk Penalty Δ)"} icon={ArrowTrendingUpIcon} gridSpan="col-span-1">
-            {(topMovers.increases.length || topMovers.decreases.length) ? (
-              <div className={`grid grid-cols-1 ${isMobile ? '' : 'md:grid-cols-2'} gap-3 sm:gap-4 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                <div>
-                  <div className="text-xs mb-1 font-medium" style={{ color: colors.textMuted }}>Increases</div>
-                  {topMovers.increases.length > 0 ? (
-                    topMovers.increases.map((m) => (
-                      <div key={m.id} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: colors.accent + '20' }}>
-                        <span className="truncate flex-1 mr-2" style={{ color: colors.text }} title={m.name}>{m.name}</span>
-                        <span className="font-mono text-xs whitespace-nowrap" style={{ color: colors.error }}>
-                          +{Math.abs(m.delta) >= 0.01 ? (m.delta * 100).toFixed(1) : '<0.1'}%
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs py-1" style={{ color: colors.textMuted }}>No increases</p>
-                  )}
+        {/* Recent Activity & Top Movers */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="lg:col-span-3 mt-4 sm:mt-6"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+            <DashboardCard
+              title="Recent Activity"
+              icon={CalendarIcon}
+              gridSpan="col-span-1"
+            >
+              {allSuppliers.length ? (
+                <div className="text-sm">
+                  {allSuppliers
+                    .slice()
+                    .sort((a, b) => {
+                      const ta = new Date(
+                        a.updated_at || a.created_at || 0,
+                      ).getTime();
+                      const tb = new Date(
+                        b.updated_at || b.created_at || 0,
+                      ).getTime();
+                      return tb - ta;
+                    })
+                    .slice(0, 8)
+                    .map((s) => {
+                      const t = new Date(s.updated_at || s.created_at || 0);
+                      return (
+                        <div
+                          key={(s as any)._id || s.id}
+                          className="flex items-center justify-between py-1 border-b"
+                          style={{ borderColor: colors.accent + "20" }}
+                        >
+                          <span style={{ color: colors.text }}>{s.name}</span>
+                          <span
+                            className="text-xs"
+                            style={{ color: colors.textMuted }}
+                          >
+                            {t.toLocaleString()}
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
-                <div>
-                  <div className="text-xs mb-1 font-medium" style={{ color: colors.textMuted }}>Decreases</div>
-                  {topMovers.decreases.length > 0 ? (
-                    topMovers.decreases.map((m) => (
-                      <div key={m.id} className="flex items-center justify-between py-1.5 border-b" style={{ borderColor: colors.accent + '20' }}>
-                        <span className="truncate flex-1 mr-2" style={{ color: colors.text }} title={m.name}>{m.name}</span>
-                        <span className="font-mono text-xs whitespace-nowrap" style={{ color: colors.success }}>
-                          {Math.abs(m.delta) >= 0.01 ? (Math.abs(m.delta) * 100).toFixed(1) : '<0.1'}%
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs py-1" style={{ color: colors.textMuted }}>No decreases</p>
-                  )}
+              ) : (
+                <p className="text-sm" style={{ color: colors.textMuted }}>
+                  No recent activity.
+                </p>
+              )}
+            </DashboardCard>
+
+            <DashboardCard
+              title={isMobile ? "Top Movers" : "Top Movers (Risk Penalty Δ)"}
+              icon={ArrowTrendingUpIcon}
+              gridSpan="col-span-1"
+            >
+              {topMovers.increases.length || topMovers.decreases.length ? (
+                <div
+                  className={`grid grid-cols-1 ${isMobile ? "" : "md:grid-cols-2"} gap-3 sm:gap-4 ${isMobile ? "text-xs" : "text-sm"}`}
+                >
+                  <div>
+                    <div
+                      className="text-xs mb-1 font-medium"
+                      style={{ color: colors.textMuted }}
+                    >
+                      Increases
+                    </div>
+                    {topMovers.increases.length > 0 ? (
+                      topMovers.increases.map((m) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between py-1.5 border-b"
+                          style={{ borderColor: colors.accent + "20" }}
+                        >
+                          <span
+                            className="truncate flex-1 mr-2"
+                            style={{ color: colors.text }}
+                            title={m.name}
+                          >
+                            {m.name}
+                          </span>
+                          <span
+                            className="font-mono text-xs whitespace-nowrap"
+                            style={{ color: colors.error }}
+                          >
+                            +
+                            {Math.abs(m.delta) >= 0.01
+                              ? (m.delta * 100).toFixed(1)
+                              : "<0.1"}
+                            %
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p
+                        className="text-xs py-1"
+                        style={{ color: colors.textMuted }}
+                      >
+                        No increases
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <div
+                      className="text-xs mb-1 font-medium"
+                      style={{ color: colors.textMuted }}
+                    >
+                      Decreases
+                    </div>
+                    {topMovers.decreases.length > 0 ? (
+                      topMovers.decreases.map((m) => (
+                        <div
+                          key={m.id}
+                          className="flex items-center justify-between py-1.5 border-b"
+                          style={{ borderColor: colors.accent + "20" }}
+                        >
+                          <span
+                            className="truncate flex-1 mr-2"
+                            style={{ color: colors.text }}
+                            title={m.name}
+                          >
+                            {m.name}
+                          </span>
+                          <span
+                            className="font-mono text-xs whitespace-nowrap"
+                            style={{ color: colors.success }}
+                          >
+                            {Math.abs(m.delta) >= 0.01
+                              ? (Math.abs(m.delta) * 100).toFixed(1)
+                              : "<0.1"}
+                            %
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p
+                        className="text-xs py-1"
+                        style={{ color: colors.textMuted }}
+                      >
+                        No decreases
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-sm" style={{ color: colors.textMuted }}>
-                <p className="mb-2">No mover data yet.</p>
-                <p className="text-xs">Edit a supplier and refresh to see risk penalty changes tracked over time.</p>
-              </div>
-            )}
-          </DashboardCard>
-        </div>
-      </motion.div>
+              ) : (
+                <div className="text-sm" style={{ color: colors.textMuted }}>
+                  <p className="mb-2">No mover data yet.</p>
+                  <p className="text-xs">
+                    Edit a supplier and refresh to see risk penalty changes
+                    tracked over time.
+                  </p>
+                </div>
+              )}
+            </DashboardCard>
+          </div>
+        </motion.div>
         {/* Add more charts here based on available data */}
         {/* e.g., Water Usage Trend, Renewable Energy, etc. */}
       </div>

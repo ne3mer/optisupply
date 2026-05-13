@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
-import { getSuppliers, Supplier, exportRankings, exportIndustryMap } from "../services/api"; // Corrected path
+import {
+  getSuppliers,
+  Supplier,
+  exportRankings,
+  exportIndustryMap,
+} from "../services/api"; // Corrected path
 import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -48,7 +53,10 @@ import { useThemeColors } from "../theme/useThemeColors";
 const LoadingIndicator = () => {
   const colors = useThemeColors();
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]" style={{ backgroundColor: colors.background }}>
+    <div
+      className="flex flex-col items-center justify-center min-h-[60vh]"
+      style={{ backgroundColor: colors.background }}
+    >
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -63,10 +71,19 @@ const LoadingIndicator = () => {
 const ErrorDisplay = ({ message }) => {
   const colors = useThemeColors();
   return (
-    <div className="flex items-center justify-center min-h-[60vh]" style={{ backgroundColor: colors.background }}>
+    <div
+      className="flex items-center justify-center min-h-[60vh]"
+      style={{ backgroundColor: colors.background }}
+    >
       <div className="bg-red-900/50 border border-red-500 p-6 rounded-lg text-center max-w-md">
-        <ExclamationTriangleIcon className="h-12 w-12 mx-auto mb-4" style={{ color: colors.error }} />
-        <h3 className="text-xl font-semibold mb-2" style={{ color: colors.error }}>
+        <ExclamationTriangleIcon
+          className="h-12 w-12 mx-auto mb-4"
+          style={{ color: colors.error }}
+        />
+        <h3
+          className="text-xl font-semibold mb-2"
+          style={{ color: colors.error }}
+        >
           Access Denied
         </h3>
         <p style={{ color: colors.textMuted }}>{message}</p>
@@ -128,20 +145,14 @@ const formatScoreValue = (score: number | null | undefined, digits = 1) => {
   return normalized === null ? "N/A" : normalized.toFixed(digits);
 };
 
-const formatNumericValue = (
-  value: number | null | undefined,
-  digits = 2
-) => {
+const formatNumericValue = (value: number | null | undefined, digits = 2) => {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "N/A";
   }
   return value.toFixed(digits);
 };
 
-const formatPercent = (
-  value: number | null | undefined,
-  digits = 0
-) => {
+const formatPercent = (value: number | null | undefined, digits = 0) => {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "N/A";
   }
@@ -170,8 +181,7 @@ const scoreExplanations = {
 
 // Section-level helper texts for supplier cards
 const sectionHelp = {
-  header:
-    "Supplier identity and profile basics: name, country, and industry.",
+  header: "Supplier identity and profile basics: name, country, and industry.",
   statusBar:
     "Operational status set during onboarding. 'Active' = verified and in use. 'Under Review' = pending assessment. 'Blacklisted' = disqualified. 'Unverified' = not yet confirmed.",
   riskBadge:
@@ -270,8 +280,7 @@ const getRecommendation = (colors: any, supplier: Supplier) => {
       label: "Request ESG Data",
       color: colors.warning,
       bgColor: colors.warning + "15",
-      description:
-        `Disclosure is ${completeness}%. Scores are less reliable until core ESG fields are submitted and verified.`,
+      description: `Disclosure is ${completeness}%. Scores are less reliable until core ESG fields are submitted and verified.`,
     };
   }
 
@@ -299,8 +308,7 @@ const getRecommendation = (colors: any, supplier: Supplier) => {
       label: "Refresh Assessment",
       color: colors.textMuted,
       bgColor: colors.panel,
-      description:
-        `Last update was ${ageDays} days ago. Refresh the assessment before using this supplier in reporting decisions.`,
+      description: `Last update was ${ageDays} days ago. Refresh the assessment before using this supplier in reporting decisions.`,
     };
   }
 
@@ -433,7 +441,11 @@ const Tooltip = ({
   wrapperClassName?: string;
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number }>({ top: 0, left: 0, width: 260 });
+  const [pos, setPos] = useState<{ top: number; left: number; width: number }>({
+    top: 0,
+    left: 0,
+    width: 260,
+  });
   const triggerRef = useRef<HTMLDivElement>(null);
   const colors = useThemeColors() as any;
 
@@ -512,17 +524,17 @@ const SuppliersList = () => {
   }, []);
   const themeColors = useThemeColors() as any;
   const colors = themeColors || {
-    background: '#ffffff',
-    panel: '#ffffff',
-    primary: '#2563eb',
-    secondary: '#8B5CF6',
-    accent: '#4D5BFF',
-    text: '#111827',
-    textMuted: '#6B7280',
-    success: '#16A34A',
-    warning: '#D97706',
-    error: '#DC2626',
-    inputBg: '#F3F4F6',
+    background: "#ffffff",
+    panel: "#ffffff",
+    primary: "#2563eb",
+    secondary: "#8B5CF6",
+    accent: "#4D5BFF",
+    text: "#111827",
+    textMuted: "#6B7280",
+    success: "#16A34A",
+    warning: "#D97706",
+    error: "#DC2626",
+    inputBg: "#F3F4F6",
   };
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -552,7 +564,7 @@ const SuppliersList = () => {
 
   // Modal state
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
-    null
+    null,
   );
   const [showModal, setShowModal] = useState(false);
 
@@ -575,7 +587,7 @@ const SuppliersList = () => {
         setError(
           `Failed to retrieve supplier list. ${
             err instanceof Error ? err.message : "Unknown error"
-          }`
+          }`,
         );
         setSuppliers([]); // Reset on error
       } finally {
@@ -664,11 +676,11 @@ const SuppliersList = () => {
   // Extract unique options for filters
   const countries = useMemo(
     () => [...new Set(suppliers.map((s) => s.country).filter(Boolean))],
-    [suppliers]
+    [suppliers],
   );
   const industries = useMemo(
     () => [...new Set(suppliers.map((s) => s.industry).filter(Boolean))],
-    [suppliers]
+    [suppliers],
   );
   const riskLevels = useMemo(
     () => [
@@ -676,10 +688,10 @@ const SuppliersList = () => {
         suppliers
           .map((s) => s.risk_level)
           .filter(Boolean)
-          .map((r) => r.toLowerCase())
+          .map((r) => r.toLowerCase()),
       ),
     ],
-    [suppliers]
+    [suppliers],
   );
 
   const resetFilters = () => {
@@ -714,7 +726,7 @@ const SuppliersList = () => {
   const renderScoreSlider = (
     label: string,
     value: [number, number],
-    onChange: (value: [number, number]) => void
+    onChange: (value: [number, number]) => void,
   ) => {
     return (
       <div className="mb-5">
@@ -993,9 +1005,7 @@ const SuppliersList = () => {
       : null;
 
     const topPerformer = filteredSuppliers
-      .filter(
-        (s) => s.ethical_score !== null && s.ethical_score !== undefined
-      )
+      .filter((s) => s.ethical_score !== null && s.ethical_score !== undefined)
       .reduce<{ name: string; score: number } | null>((best, s) => {
         const v =
           s.ethical_score && s.ethical_score <= 1
@@ -1089,76 +1099,135 @@ const SuppliersList = () => {
   const formatSuppliersForExport = (suppliers: Supplier[]) => {
     return suppliers.map((supplier) => {
       const formatted: Record<string, string> = {};
-      
+
       // Basic Information
-      formatted["ID"] = supplier.id?.toString() || supplier._id?.toString() || "N/A";
+      formatted["ID"] =
+        supplier.id?.toString() || supplier._id?.toString() || "N/A";
       formatted["Supplier Name"] = supplier.name || "N/A";
       formatted["Country"] = supplier.country || "N/A";
       formatted["Industry"] = supplier.industry || "N/A";
       formatted["Description"] = (supplier as any).description || "N/A";
       formatted["Website"] = (supplier as any).website || "N/A";
-      formatted["Revenue (millions USD)"] = formatValue((supplier as any).revenue);
-      formatted["Employee Count"] = formatValue((supplier as any).employee_count);
-      
+      formatted["Revenue (millions USD)"] = formatValue(
+        (supplier as any).revenue,
+      );
+      formatted["Employee Count"] = formatValue(
+        (supplier as any).employee_count,
+      );
+
       // Overall Scores
       formatted["Ethical Score"] = formatValue(supplier.ethical_score);
-      formatted["Environmental Score"] = formatValue(supplier.environmental_score);
+      formatted["Environmental Score"] = formatValue(
+        supplier.environmental_score,
+      );
       formatted["Social Score"] = formatValue(supplier.social_score);
       formatted["Governance Score"] = formatValue(supplier.governance_score);
       formatted["Composite Score"] = formatValue(supplier.composite_score);
-      formatted["Final Score (post-penalty)"] = formatValue((supplier as any).finalScore);
-      
+      formatted["Final Score (post-penalty)"] = formatValue(
+        (supplier as any).finalScore,
+      );
+
       // Risk Information
       formatted["Risk Level"] = supplier.risk_level || "N/A";
       formatted["Risk Factor"] = formatValue(supplier.risk_factor);
       formatted["Risk Penalty"] = formatValue(supplier.risk_penalty);
-      formatted["Completeness Ratio"] = formatValue(supplier.completeness_ratio);
-      
+      formatted["Completeness Ratio"] = formatValue(
+        supplier.completeness_ratio,
+      );
+
       // Environmental Metrics
       formatted["CO2 Emissions (tons)"] = formatValue(supplier.co2_emissions);
-      formatted["Total Emissions"] = formatValue((supplier as any).total_emissions);
-      formatted["Water Usage (cubic meters)"] = formatValue(supplier.water_usage);
-      formatted["Waste Generated"] = formatValue((supplier as any).waste_generated);
-      formatted["Energy Efficiency"] = formatValue((supplier as any).energy_efficiency);
-      formatted["Waste Management Score"] = formatValue(supplier.waste_management_score);
-      formatted["Renewable Energy Percent"] = formatValue(supplier.renewable_energy_percent);
-      formatted["Pollution Control"] = formatValue((supplier as any).pollution_control);
-      
+      formatted["Total Emissions"] = formatValue(
+        (supplier as any).total_emissions,
+      );
+      formatted["Water Usage (cubic meters)"] = formatValue(
+        supplier.water_usage,
+      );
+      formatted["Waste Generated"] = formatValue(
+        (supplier as any).waste_generated,
+      );
+      formatted["Energy Efficiency"] = formatValue(
+        (supplier as any).energy_efficiency,
+      );
+      formatted["Waste Management Score"] = formatValue(
+        supplier.waste_management_score,
+      );
+      formatted["Renewable Energy Percent"] = formatValue(
+        supplier.renewable_energy_percent,
+      );
+      formatted["Pollution Control"] = formatValue(
+        (supplier as any).pollution_control,
+      );
+
       // Social Metrics
       formatted["Wage Fairness"] = formatValue(supplier.wage_fairness);
-      formatted["Human Rights Index"] = formatValue(supplier.human_rights_index);
-      formatted["Diversity Inclusion Score"] = formatValue((supplier as any).diversity_inclusion_score);
-      formatted["Community Engagement"] = formatValue((supplier as any).community_engagement);
+      formatted["Human Rights Index"] = formatValue(
+        supplier.human_rights_index,
+      );
+      formatted["Diversity Inclusion Score"] = formatValue(
+        (supplier as any).diversity_inclusion_score,
+      );
+      formatted["Community Engagement"] = formatValue(
+        (supplier as any).community_engagement,
+      );
       formatted["Worker Safety"] = formatValue((supplier as any).worker_safety);
       formatted["Injury Rate"] = formatValue((supplier as any).injury_rate);
-      formatted["Training Hours"] = formatValue((supplier as any).training_hours);
-      formatted["Living Wage Ratio"] = formatValue((supplier as any).living_wage_ratio);
-      formatted["Gender Diversity Percent"] = formatValue((supplier as any).gender_diversity_percent);
-      
+      formatted["Training Hours"] = formatValue(
+        (supplier as any).training_hours,
+      );
+      formatted["Living Wage Ratio"] = formatValue(
+        (supplier as any).living_wage_ratio,
+      );
+      formatted["Gender Diversity Percent"] = formatValue(
+        (supplier as any).gender_diversity_percent,
+      );
+
       // Governance Metrics
-      formatted["Transparency Score"] = formatValue(supplier.transparency_score);
-      formatted["Corruption Risk"] = formatValue((supplier as any).corruption_risk);
+      formatted["Transparency Score"] = formatValue(
+        supplier.transparency_score,
+      );
+      formatted["Corruption Risk"] = formatValue(
+        (supplier as any).corruption_risk,
+      );
       formatted["Board Diversity"] = formatValue(supplier.board_diversity);
-      formatted["Board Independence"] = formatValue((supplier as any).board_independence);
-      formatted["Ethics Program"] = formatValue((supplier as any).ethics_program);
-      formatted["Compliance Systems"] = formatValue((supplier as any).compliance_systems);
-      formatted["Anti-Corruption Policy"] = formatValue((supplier as any).anti_corruption_policy);
-      
+      formatted["Board Independence"] = formatValue(
+        (supplier as any).board_independence,
+      );
+      formatted["Ethics Program"] = formatValue(
+        (supplier as any).ethics_program,
+      );
+      formatted["Compliance Systems"] = formatValue(
+        (supplier as any).compliance_systems,
+      );
+      formatted["Anti-Corruption Policy"] = formatValue(
+        (supplier as any).anti_corruption_policy,
+      );
+
       // Supply Chain Metrics
-      formatted["Delivery Efficiency"] = formatValue(supplier.delivery_efficiency);
-      formatted["Quality Control Score"] = formatValue((supplier as any).quality_control_score);
-      formatted["Supplier Diversity"] = formatValue((supplier as any).supplier_diversity);
+      formatted["Delivery Efficiency"] = formatValue(
+        supplier.delivery_efficiency,
+      );
+      formatted["Quality Control Score"] = formatValue(
+        (supplier as any).quality_control_score,
+      );
+      formatted["Supplier Diversity"] = formatValue(
+        (supplier as any).supplier_diversity,
+      );
       formatted["Traceability"] = formatValue((supplier as any).traceability);
-      
+
       // Risk Factors
       formatted["Geopolitical Risk"] = formatValue(supplier.geopolitical_risk);
       formatted["Climate Risk"] = formatValue(supplier.climate_risk);
-      formatted["Labor Dispute Risk"] = formatValue(supplier.labor_dispute_risk);
-      
+      formatted["Labor Dispute Risk"] = formatValue(
+        supplier.labor_dispute_risk,
+      );
+
       // Timestamps
-      formatted["Created At"] = supplier.created_at || (supplier as any).createdAt || "N/A";
-      formatted["Updated At"] = supplier.updated_at || (supplier as any).updatedAt || "N/A";
-      
+      formatted["Created At"] =
+        supplier.created_at || (supplier as any).createdAt || "N/A";
+      formatted["Updated At"] =
+        supplier.updated_at || (supplier as any).updatedAt || "N/A";
+
       return formatted;
     });
   };
@@ -1187,7 +1256,7 @@ const SuppliersList = () => {
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
       saveAs(
         blob,
-        `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`
+        `suppliers_export_${new Date().toISOString().split("T")[0]}.csv`,
       );
 
       setShowExportMenu(false);
@@ -1215,7 +1284,7 @@ const SuppliersList = () => {
       });
       saveAs(
         blob,
-        `suppliers_export_${new Date().toISOString().split("T")[0]}.xlsx`
+        `suppliers_export_${new Date().toISOString().split("T")[0]}.xlsx`,
       );
 
       setShowExportMenu(false);
@@ -1231,7 +1300,7 @@ const SuppliersList = () => {
       const exportData = formatSuppliersForExport(filteredSuppliers);
       const headers = Object.keys(exportData[0]);
       const rows = exportData.map((row) =>
-        headers.map((header) => row[header])
+        headers.map((header) => row[header]),
       );
 
       // Create PDF document
@@ -1256,7 +1325,7 @@ const SuppliersList = () => {
 
       // Save the PDF
       doc.save(
-        `suppliers_export_${new Date().toISOString().split("T")[0]}.pdf`
+        `suppliers_export_${new Date().toISOString().split("T")[0]}.pdf`,
       );
 
       setShowExportMenu(false);
@@ -1273,7 +1342,11 @@ const SuppliersList = () => {
       setShowExportMenu(false);
     } catch (error) {
       console.error("Error exporting rankings:", error);
-      alert(error instanceof Error ? error.message : "Failed to export rankings. Please try again.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to export rankings. Please try again.",
+      );
     }
   };
 
@@ -1284,7 +1357,11 @@ const SuppliersList = () => {
       setShowExportMenu(false);
     } catch (error) {
       console.error("Error exporting industry map:", error);
-      alert(error instanceof Error ? error.message : "Failed to export industry map. Please try again.");
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to export industry map. Please try again.",
+      );
     }
   };
 
@@ -1300,15 +1377,12 @@ const SuppliersList = () => {
       doc.text("Supplier Comparison", 14, 22);
 
       const tableData = [
-        ["Metric", ...selectedSuppliers.map((s) => s.name || "Unnamed Supplier")],
         [
-          "Country",
-          ...selectedSuppliers.map((s) => s.country || "N/A"),
+          "Metric",
+          ...selectedSuppliers.map((s) => s.name || "Unnamed Supplier"),
         ],
-        [
-          "Industry",
-          ...selectedSuppliers.map((s) => s.industry || "N/A"),
-        ],
+        ["Country", ...selectedSuppliers.map((s) => s.country || "N/A")],
+        ["Industry", ...selectedSuppliers.map((s) => s.industry || "N/A")],
         [
           "Ethical Score",
           ...selectedSuppliers.map((s) => formatScoreValue(s.ethical_score)),
@@ -1316,7 +1390,7 @@ const SuppliersList = () => {
         [
           "Environmental Score",
           ...selectedSuppliers.map((s) =>
-            formatScoreValue(s.environmental_score)
+            formatScoreValue(s.environmental_score),
           ),
         ],
         [
@@ -1329,7 +1403,9 @@ const SuppliersList = () => {
         ],
         [
           "Delivery Efficiency",
-          ...selectedSuppliers.map((s) => formatScoreValue(s.delivery_efficiency)),
+          ...selectedSuppliers.map((s) =>
+            formatScoreValue(s.delivery_efficiency),
+          ),
         ],
         [
           "Wage Fairness",
@@ -1337,20 +1413,21 @@ const SuppliersList = () => {
         ],
         [
           "Human Rights Index",
-          ...selectedSuppliers.map((s) => formatScoreValue(s.human_rights_index)),
+          ...selectedSuppliers.map((s) =>
+            formatScoreValue(s.human_rights_index),
+          ),
         ],
         [
           "Waste Management",
-          ...selectedSuppliers.map((s) => formatScoreValue(s.waste_management_score)),
+          ...selectedSuppliers.map((s) =>
+            formatScoreValue(s.waste_management_score),
+          ),
         ],
         [
           "CO₂ Emissions (t)",
           ...selectedSuppliers.map((s) => formatNumericValue(s.co2_emissions)),
         ],
-        [
-          "Risk Level",
-          ...selectedSuppliers.map((s) => s.risk_level || "N/A"),
-        ],
+        ["Risk Level", ...selectedSuppliers.map((s) => s.risk_level || "N/A")],
       ];
 
       doc.autoTable({
@@ -1365,7 +1442,7 @@ const SuppliersList = () => {
       });
 
       doc.save(
-        `supplier_comparison_${new Date().toISOString().split("T")[0]}.pdf`
+        `supplier_comparison_${new Date().toISOString().split("T")[0]}.pdf`,
       );
     } catch (error) {
       console.error("Error exporting comparison:", error);
@@ -1374,86 +1451,85 @@ const SuppliersList = () => {
   };
 
   const comparisonMetrics = useMemo(
-    () =>
-      [
-        {
-          key: "ethical_score",
-          label: "Ethical Score",
-          getValue: (s: Supplier) => s.ethical_score,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "environmental_score",
-          label: "Environmental Score",
-          getValue: (s: Supplier) => s.environmental_score,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "social_score",
-          label: "Social Score",
-          getValue: (s: Supplier) => s.social_score,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "governance_score",
-          label: "Governance Score",
-          getValue: (s: Supplier) => s.governance_score,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "delivery_efficiency",
-          label: "Delivery Efficiency",
-          getValue: (s: Supplier) => s.delivery_efficiency,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "wage_fairness",
-          label: "Wage Fairness",
-          getValue: (s: Supplier) => s.wage_fairness,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "human_rights_index",
-          label: "Human Rights Index",
-          getValue: (s: Supplier) => s.human_rights_index,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "waste_management_score",
-          label: "Waste Management",
-          getValue: (s: Supplier) => s.waste_management_score,
-          format: formatScoreValue,
-          normalize: normalizeScoreTo100,
-          higherIsBetter: true,
-        },
-        {
-          key: "co2_emissions",
-          label: "CO₂ Emissions (t)",
-          getValue: (s: Supplier) => s.co2_emissions,
-          format: (value: number | null | undefined) =>
-            formatNumericValue(value, 2),
-          normalize: (value: number | null | undefined) =>
-            value === null || value === undefined || Number.isNaN(value)
-              ? null
-              : value,
-          higherIsBetter: false,
-        },
-      ],
-    []
+    () => [
+      {
+        key: "ethical_score",
+        label: "Ethical Score",
+        getValue: (s: Supplier) => s.ethical_score,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "environmental_score",
+        label: "Environmental Score",
+        getValue: (s: Supplier) => s.environmental_score,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "social_score",
+        label: "Social Score",
+        getValue: (s: Supplier) => s.social_score,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "governance_score",
+        label: "Governance Score",
+        getValue: (s: Supplier) => s.governance_score,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "delivery_efficiency",
+        label: "Delivery Efficiency",
+        getValue: (s: Supplier) => s.delivery_efficiency,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "wage_fairness",
+        label: "Wage Fairness",
+        getValue: (s: Supplier) => s.wage_fairness,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "human_rights_index",
+        label: "Human Rights Index",
+        getValue: (s: Supplier) => s.human_rights_index,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "waste_management_score",
+        label: "Waste Management",
+        getValue: (s: Supplier) => s.waste_management_score,
+        format: formatScoreValue,
+        normalize: normalizeScoreTo100,
+        higherIsBetter: true,
+      },
+      {
+        key: "co2_emissions",
+        label: "CO₂ Emissions (t)",
+        getValue: (s: Supplier) => s.co2_emissions,
+        format: (value: number | null | undefined) =>
+          formatNumericValue(value, 2),
+        normalize: (value: number | null | undefined) =>
+          value === null || value === undefined || Number.isNaN(value)
+            ? null
+            : value,
+        higherIsBetter: false,
+      },
+    ],
+    [],
   );
 
   const topPerformer = useMemo(() => {
@@ -1480,7 +1556,7 @@ const SuppliersList = () => {
     setSelectedSuppliers((prev) => {
       const isSelected = prev.some(
         (s) =>
-          (s._id && s._id === supplier._id) || (s.id && s.id === supplier.id)
+          (s._id && s._id === supplier._id) || (s.id && s.id === supplier.id),
       );
 
       if (isSelected) {
@@ -1490,7 +1566,7 @@ const SuppliersList = () => {
             !(
               (s._id && s._id === supplier._id) ||
               (s.id && s.id === supplier.id)
-            )
+            ),
         );
       } else {
         // Add to selection (max 4)
@@ -1506,7 +1582,8 @@ const SuppliersList = () => {
   // Check if a supplier is selected
   const isSupplierSelected = (supplier: Supplier) => {
     return selectedSuppliers.some(
-      (s) => (s._id && s._id === supplier._id) || (s.id && s.id === supplier.id)
+      (s) =>
+        (s._id && s._id === supplier._id) || (s.id && s.id === supplier.id),
     );
   };
 
@@ -1530,2056 +1607,2340 @@ const SuppliersList = () => {
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
       <div className="mx-auto w-full max-w-[1600px]">
-      {/* Header and Controls */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-6 md:mb-8"
-      >
-        {/* Hero header */}
-        <div
-          className="relative mb-5 md:mb-6 rounded-3xl border overflow-hidden"
-          style={{
-            borderColor: colors.accent + "30",
-            background: `radial-gradient(circle at 0% 0%, ${colors.primary}1f 0%, transparent 55%), radial-gradient(circle at 100% 0%, ${colors.accent}24 0%, transparent 55%), linear-gradient(180deg, ${colors.panel} 0%, ${colors.background}cc 100%)`,
-          }}
+        {/* Header and Controls */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6 md:mb-8"
         >
-          {/* subtle grid pattern */}
+          {/* Hero header */}
           <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            className="relative mb-5 md:mb-6 rounded-3xl border overflow-hidden"
             style={{
-              backgroundImage: `linear-gradient(${colors.text} 1px, transparent 1px), linear-gradient(90deg, ${colors.text} 1px, transparent 1px)`,
-              backgroundSize: "32px 32px",
+              borderColor: colors.accent + "30",
+              background: `radial-gradient(circle at 0% 0%, ${colors.primary}1f 0%, transparent 55%), radial-gradient(circle at 100% 0%, ${colors.accent}24 0%, transparent 55%), linear-gradient(180deg, ${colors.panel} 0%, ${colors.background}cc 100%)`,
             }}
-          />
-
-          <div className="relative p-5 sm:p-6 lg:p-7">
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4">
-              <div>
-                <span
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
-                  style={{
-                    color: colors.primary,
-                    backgroundColor: colors.primary + "15",
-                    border: `1px solid ${colors.primary}30`,
-                  }}
-                >
-                  <SparklesIcon className="h-3.5 w-3.5" />
-                  Supplier Intelligence
-                </span>
-                <h1
-                  className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
-                  style={{
-                    background: `linear-gradient(120deg, ${colors.text} 0%, ${colors.primary} 60%, ${colors.accent} 100%)`,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    backgroundClip: "text",
-                  }}
-                >
-                  Supplier Registry
-                </h1>
-                <p
-                  className="mt-2 text-sm max-w-xl"
-                  style={{ color: colors.textMuted }}
-                >
-                  Track, evaluate and act on every supplier in your network — risk-adjusted ESG scores, live coverage and AI-driven recommendations in one command center.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full lg:w-auto">
-            {/* Export Menu */}
-            <div className="relative w-full sm:w-auto">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex items-center justify-center w-full sm:w-auto px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                style={{
-                  backgroundColor: showExportMenu
-                    ? colors.primary
-                    : colors.panel,
-                  color: showExportMenu ? colors.background : colors.textMuted,
-                }}
-                onClick={() => setShowExportMenu(!showExportMenu)}
-              >
-                <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
-                Export Data
-              </motion.button>
-
-              {/* Export Dropdown Menu */}
-              <AnimatePresence>
-                {showExportMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-2 z-10 w-48 rounded-md shadow-lg"
-                    style={{ backgroundColor: colors.panel }}
-                  >
-                    <div className="py-1 rounded-md">
-                      <button
-                        onClick={exportToCSV}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <DocumentIcon className="h-4 w-4 mr-3" />
-                        Export as CSV
-                      </button>
-                      <button
-                        onClick={exportToExcel}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <TableCellsIcon className="h-4 w-4 mr-3" />
-                        Export as Excel
-                      </button>
-                      <button
-                        onClick={exportToPDF}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <DocumentIcon className="h-4 w-4 mr-3" />
-                        Export as PDF
-                      </button>
-                      
-                      {/* Divider */}
-                      <div className="border-t my-1" style={{ borderColor: colors.border }} />
-                      
-                      {/* Server-side exports with rate limiting */}
-                      <div className="px-4 py-2 text-xs font-semibold" style={{ color: colors.textMuted }}>
-                        Rankings & Analysis
-                      </div>
-                      <button
-                        onClick={() => handleExportRankings("baseline")}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <ArrowTrendingUpIcon className="h-4 w-4 mr-3" />
-                        Rankings (Baseline)
-                      </button>
-                      <button
-                        onClick={handleExportIndustryMap}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <MapPinIcon className="h-4 w-4 mr-3" />
-                        Industry Map
-                      </button>
-                      
-                      {/* Scenario exports */}
-                      <div className="px-4 py-2 text-xs font-semibold" style={{ color: colors.textMuted }}>
-                        Scenario Analysis
-                      </div>
-                      <button
-                        onClick={() => handleExportRankings("s1")}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <SparklesIcon className="h-4 w-4 mr-3" />
-                        S1: Utility
-                      </button>
-                      <button
-                        onClick={() => handleExportRankings("s2")}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <AdjustmentsHorizontalIcon className="h-4 w-4 mr-3" />
-                        S2: Sensitivity
-                      </button>
-                      <button
-                        onClick={() => handleExportRankings("s3")}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <ExclamationCircleIcon className="h-4 w-4 mr-3" />
-                        S3: Missingness
-                      </button>
-                      <button
-                        onClick={() => handleExportRankings("s4")}
-                        className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
-                        style={{ color: colors.text }}
-                      >
-                        <ScaleIcon className="h-4 w-4 mr-3" />
-                        S4: Ablation
-                      </button>
-                      
-                      <div className="px-4 py-2 text-xs italic" style={{ color: colors.textMuted }}>
-                        Rate limit: 10 exports/hour
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center justify-center w-full sm:w-auto px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-              style={{
-                backgroundColor: showAdvancedFilters
-                  ? colors.primary
-                  : colors.panel,
-                color: showAdvancedFilters
-                  ? colors.background
-                  : colors.textMuted,
-              }}
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            >
-              <AdjustmentsHorizontalIcon className="h-5 w-5 mr-1" />
-              <span className="truncate">{getFilterButtonLabel()}</span>
-            </motion.button>
-
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="col-span-2 sm:col-span-1"
-            >
-              <Link
-                to="/suppliers/add"
-                className="flex items-center justify-center w-full sm:w-auto px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
-                style={{
-                  backgroundColor: colors.accent,
-                  color: colors.background,
-                }}
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                <span className="hidden sm:inline">Register New Supplier</span>
-                <span className="sm:hidden">New Supplier</span>
-              </Link>
-            </motion.div>
-              </div>
-            </div>
-
-            {/* KPI Strip */}
-            <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                {
-                  label: "Suppliers in View",
-                  value: portfolioStats.total.toLocaleString(),
-                  hint:
-                    portfolioStats.total === suppliers.length
-                      ? "Full network"
-                      : `of ${suppliers.length} total`,
-                  icon: <BuildingOfficeIcon className="h-4 w-4" />,
-                  color: colors.primary,
-                },
-                {
-                  label: "Avg ESG (Risk-adj.)",
-                  value:
-                    portfolioStats.avgEsg !== null
-                      ? portfolioStats.avgEsg.toFixed(1)
-                      : "—",
-                  hint:
-                    portfolioStats.avgEsg !== null
-                      ? portfolioStats.avgEsg >= 70
-                        ? "Strong portfolio"
-                        : portfolioStats.avgEsg >= 50
-                        ? "Mixed performance"
-                        : "Needs attention"
-                      : "No data",
-                  icon: <ScaleIcon className="h-4 w-4" />,
-                  color: colors.success,
-                },
-                {
-                  label: "High / Critical Risk",
-                  value: portfolioStats.highRisk.toLocaleString(),
-                  hint:
-                    portfolioStats.total > 0
-                      ? `${(
-                          (portfolioStats.highRisk / portfolioStats.total) *
-                          100
-                        ).toFixed(0)}% of view`
-                      : "—",
-                  icon: <ShieldExclamationIcon className="h-4 w-4" />,
-                  color: colors.error,
-                },
-                {
-                  label: "Avg Data Coverage",
-                  value:
-                    portfolioStats.avgCoverage !== null
-                      ? `${(portfolioStats.avgCoverage * 100).toFixed(0)}%`
-                      : "—",
-                  hint:
-                    portfolioStats.topPerformer
-                      ? `Top: ${portfolioStats.topPerformer.name}`
-                      : "Disclosure quality",
-                  icon: <SparklesIcon className="h-4 w-4" />,
-                  color: colors.accent,
-                },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-xl border px-4 py-3 backdrop-blur-sm flex items-start justify-between gap-3"
-                  style={{
-                    borderColor: colors.accent + "25",
-                    backgroundColor: colors.panel + "cc",
-                  }}
-                >
-                  <div className="min-w-0">
-                    <div
-                      className="text-[10px] font-semibold uppercase tracking-wider"
-                      style={{ color: colors.textMuted }}
-                    >
-                      {stat.label}
-                    </div>
-                    <div
-                      className="mt-1 text-2xl font-bold font-mono leading-none"
-                      style={{ color: colors.text }}
-                    >
-                      {stat.value}
-                    </div>
-                    <div
-                      className="mt-1 text-[11px] truncate"
-                      style={{ color: colors.textMuted }}
-                    >
-                      {stat.hint}
-                    </div>
-                  </div>
-                  <div
-                    className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
-                    style={{
-                      color: stat.color,
-                      backgroundColor: stat.color + "18",
-                      border: `1px solid ${stat.color}30`,
-                    }}
-                  >
-                    {stat.icon}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Filters and Search */}
-        <div
-          className="mb-5 md:mb-6 rounded-2xl border p-3 sm:p-4 md:p-5"
-          style={{
-            backgroundColor: colors.panel + "99",
-            borderColor: colors.accent + "25",
-          }}
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-3.5 mb-3 sm:mb-4">
-            {/* Search */}
-            <div className="relative">
-              <MagnifyingGlassIcon
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5"
-                style={{ color: colors.textMuted }}
-              />
-              <input
-                type="text"
-                placeholder="Search by name, ID, or country..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: colors.inputBg,
-                  borderColor: colors.accent + "50",
-                  color: colors.text,
-                  "--tw-ring-color": colors.primary, // For focus ring
-                }}
-              />
-            </div>
-
-            {/* Country Filter */}
-            <div className="relative">
-              <select
-                value={filterCountry}
-                onChange={(e) => setFilterCountry(e.target.value)}
-                className="w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: colors.inputBg,
-                  borderColor: colors.accent + "50",
-                  color: colors.text,
-                  "--tw-ring-color": colors.primary,
-                }}
-              >
-                <option value="" style={{ color: colors.textMuted }}>
-                  All Countries
-                </option>
-                {countries.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <ChevronDownIcon
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
-                style={{ color: colors.textMuted }}
-              />
-            </div>
-            {/* Industry Filter */}
-            <div className="relative">
-              <select
-                value={filterIndustry}
-                onChange={(e) => setFilterIndustry(e.target.value)}
-                className="w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: colors.inputBg,
-                  borderColor: colors.accent + "50",
-                  color: colors.text,
-                  "--tw-ring-color": colors.primary,
-                }}
-              >
-                <option value="" style={{ color: colors.textMuted }}>
-                  All Industries
-                </option>
-                {industries.map((i) => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                ))}
-              </select>
-              <ChevronDownIcon
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
-                style={{ color: colors.textMuted }}
-              />
-            </div>
-            {/* Risk Filter */}
-            <div className="relative">
-              <select
-                value={filterRisk}
-                onChange={(e) => setFilterRisk(e.target.value)}
-                className="w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2"
-                style={{
-                  backgroundColor: colors.inputBg,
-                  borderColor: colors.accent + "50",
-                  color: colors.text,
-                  "--tw-ring-color": colors.primary,
-                }}
-              >
-                <option value="" style={{ color: colors.textMuted }}>
-                  All Risk Levels
-                </option>
-                {riskLevels.map((r) => (
-                  <option key={r} value={r} className="capitalize">
-                    {r}
-                  </option>
-                ))}
-              </select>
-              <ChevronDownIcon
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
-                style={{ color: colors.textMuted }}
-              />
-            </div>
-          </div>
-
-          {/* Advanced Filters Accordion */}
-          {showAdvancedFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="p-4 rounded-xl mb-1 border"
-              style={{
-                backgroundColor: colors.background + "66",
-                borderColor: colors.accent + "25",
-              }}
-            >
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-semibold">
-                  ESG Score Range Filters (0-100%)
-                </h3>
-                <button
-                  onClick={resetFilters}
-                  className="text-xs py-1 px-3 rounded flex items-center"
-                  style={{
-                    backgroundColor: colors.accent + "30",
-                    color: colors.text,
-                  }}
-                >
-                  <XMarkIcon className="h-3.5 w-3.5 mr-1" />
-                  Reset All Filters
-                </button>
-              </div>
-
-              {renderScoreSlider(
-                "Environmental Score",
-                environmentalFilter,
-                setEnvironmentalFilter
-              )}
-              {renderScoreSlider("Social Score", socialFilter, setSocialFilter)}
-              {renderScoreSlider(
-                "Governance Score",
-                governanceFilter,
-                setGovernanceFilter
-              )}
-
-              <div className="mt-2 text-xs" style={{ color: colors.textMuted }}>
-                Showing {filteredSuppliers.length} of {suppliers.length}{" "}
-                suppliers
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-
-      {/* Sorting Controls */}
-      <div
-        className="mb-5 md:mb-6 px-3 sm:px-4 py-2.5 rounded-xl border flex items-center gap-2"
-        style={{
-          backgroundColor: colors.panel + "cc",
-          borderColor: colors.accent + "25",
-        }}
-      >
-        <span className="text-[11px] font-mono uppercase tracking-widest shrink-0 mr-1" style={{ color: colors.textMuted }}>
-          Sort
-        </span>
-        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-nowrap"
-             style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}>
-
-          {([
-            { key: "name",                 label: "Name" },
-            { key: "ethical_score",        label: "ESG Score" },
-            { key: "environmental_score",  label: "Env" },
-            { key: "social_score",         label: "Social" },
-            { key: "governance_score",     label: "Gov" },
-            { key: "risk_level",           label: "Risk" },
-          ] as { key: string; label: string }[]).map(({ key, label }) => {
-            const active = sortField === key;
-            return (
-              <button
-                key={key}
-                onClick={() => handleSort(key)}
-                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono rounded whitespace-nowrap transition-all"
-                style={{
-                  backgroundColor: active ? colors.primary : "transparent",
-                  color: active ? "#0A0A0A" : colors.textMuted,
-                  border: `1px solid ${active ? colors.primary : colors.accent + "25"}`,
-                  fontWeight: active ? 600 : 400,
-                }}
-              >
-                {label} <SortIcon field={key} />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Supplier List/Grid */}
-      {loading && <LoadingIndicator />}
-      {error && !loading && <ErrorDisplay message={error} />}
-      {!loading && !error && (
-        <>
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 xl:gap-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
           >
-            {sortedAndPaginatedSuppliers.length > 0 ? (
-              sortedAndPaginatedSuppliers.map((supplier, idx) => {
-                const absoluteRank =
-                  (currentPage - 1) * itemsPerPage + idx + 1;
-                const riskColor = getRiskColor(colors, supplier.risk_level);
-                const riskIcon = getRiskIcon(supplier.risk_level);
-                const scoreColor = getScoreColor(colors, supplier.ethical_score);
-                const riskAdjustedScore =
-                  supplier.ethical_score !== null &&
-                  supplier.ethical_score !== undefined
-                    ? supplier.ethical_score
-                    : null;
-                const scorePercent = Math.max(
-                  0,
-                  Math.min(100, normalizeScoreTo100(riskAdjustedScore) ?? 0)
-                );
-                const compositeScore =
-                  supplier.composite_score !== undefined
-                    ? supplier.composite_score
-                    : null;
-                const completenessRatio =
-                  supplier.completeness_ratio !== undefined
-                    ? supplier.completeness_ratio
-                    : null;
-                const supplierId = supplier._id || supplier.id; // Handle both ID types
-                const isSelected = isSupplierSelected(supplier);
-                const statusStyles = getStatusStyles(colors, supplier.status);
-                const recommendation = getRecommendation(colors, supplier);
-                const lastUpdatedBadge = getLastUpdatedBadge(colors, supplier.last_updated);
+            {/* subtle grid pattern */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.06]"
+              style={{
+                backgroundImage: `linear-gradient(${colors.text} 1px, transparent 1px), linear-gradient(90deg, ${colors.text} 1px, transparent 1px)`,
+                backgroundSize: "32px 32px",
+              }}
+            />
 
-                const formatPillar = (val: number | null | undefined) => {
-                  if (val === null || val === undefined || Number.isNaN(val)) return "N/A";
-                  return (val > 0 && val <= 1 ? val * 100 : val).toFixed(0);
-                };
-
-                return (
-                  <motion.div
-                    key={supplierId}
-                    variants={itemVariants}
-                    className="flex flex-col overflow-hidden transition-shadow duration-200"
+            <div className="relative p-5 sm:p-6 lg:p-7">
+              <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4">
+                <div>
+                  <span
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase"
                     style={{
-                      backgroundColor: colors.card,
-                      border: `1px solid ${isSelected ? colors.primary + "50" : "rgba(128,128,128,0.10)"}`,
-                      borderRadius: "8px",
-                      outline: isSelected ? `2px solid ${colors.primary}30` : "none",
-                      outlineOffset: "2px",
+                      color: colors.primary,
+                      backgroundColor: colors.primary + "15",
+                      border: `1px solid ${colors.primary}30`,
                     }}
-                    whileHover={{ y: -2, transition: { duration: 0.15 } }}
                   >
-                    {/* Risk-coded accent line */}
-                    <Tooltip content={sectionHelp.riskAccent}>
-                      <div className="h-[3px] shrink-0 cursor-help" style={{ background: riskColor }} />
-                    </Tooltip>
-
-                    {/* ── HEADER ─────────────────────────────────────── */}
-                    <div
-                      className="px-4 pt-3 pb-3"
-                      style={{ borderBottom: "1px solid rgba(128,128,128,0.08)" }}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        {/* Rank badge */}
-                        <Tooltip content={`Rank #${absoluteRank} — sorted by ${sortField}`}>
-                          <div
-                            className="shrink-0 h-7 w-7 rounded flex items-center justify-center text-[11px] font-bold font-mono leading-none"
-                            style={{
-                              backgroundColor:
-                                absoluteRank <= 3
-                                  ? colors.primary + "22"
-                                  : "rgba(128,128,128,0.08)",
-                              color: absoluteRank <= 3 ? colors.primary : colors.textMuted,
-                              border: `1px solid ${absoluteRank <= 3 ? colors.primary + "40" : "rgba(128,128,128,0.14)"}`,
-                            }}
-                          >
-                            {absoluteRank}
-                          </div>
-                        </Tooltip>
-
-                        {/* Name + location */}
-                        <div className="min-w-0 flex-1">
-                          <h2
-                            className="text-[14px] font-semibold leading-tight truncate"
-                            style={{ color: colors.text, letterSpacing: "-0.01em" }}
-                          >
-                            {supplier.name}
-                          </h2>
-                          <div
-                            className="mt-0.5 text-[11px] truncate"
-                            style={{ color: colors.textMuted }}
-                          >
-                            {supplier.country || "N/A"}
-                            <span className="mx-1 opacity-40">·</span>
-                            {supplier.industry || "N/A"}
-                          </div>
-                        </div>
-
-                        {/* Select toggle */}
-                        <Tooltip content={sectionHelp.select}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSupplierSelection(supplier);
-                            }}
-                            className="shrink-0 p-0.5 rounded transition-colors"
-                            aria-label={isSelected ? "Deselect" : "Select"}
-                          >
-                            {isSelected ? (
-                              <CheckCircleIcon className="h-4 w-4" style={{ color: colors.primary }} />
-                            ) : (
-                              <Square2StackIcon className="h-4 w-4" style={{ color: colors.textMuted, opacity: 0.5 }} />
-                            )}
-                          </button>
-                        </Tooltip>
-                      </div>
-
-                      {/* 2 badges max: status + risk */}
-                      <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                        <Tooltip content={sectionHelp.statusBar}>
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase"
-                            style={{
-                              borderRadius: "4px",
-                              color: statusStyles.color,
-                              backgroundColor: statusStyles.bgColor,
-                              border: statusStyles.border,
-                              letterSpacing: "0.05em",
-                            }}
-                          >
-                            {statusStyles.icon}
-                            {supplier.status || "Unverified"}
-                          </span>
-                        </Tooltip>
-                        <Tooltip content={supplier.risk_level
-                          ? (scoreExplanations.risk_levels as Record<string, string>)[supplier.risk_level.toLowerCase()] || sectionHelp.riskBadge
-                          : sectionHelp.riskBadge}>
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase cursor-help"
-                            style={{
-                              borderRadius: "4px",
-                              color: supplier.risk_level ? riskColor : colors.textMuted,
-                              backgroundColor: supplier.risk_level ? riskColor + "15" : "transparent",
-                              border: supplier.risk_level ? `1px solid ${riskColor}30` : `1px dashed ${colors.textMuted}40`,
-                              letterSpacing: "0.05em",
-                            }}
-                          >
-                            {supplier.risk_level ? (
-                              <>{getRiskIcon(supplier.risk_level)} {supplier.risk_level} risk</>
-                            ) : (
-                              "No Risk Data"
-                            )}
-                          </span>
-                        </Tooltip>
-                        <Tooltip content={recommendation.description}>
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase cursor-help"
-                            style={{
-                              borderRadius: "4px",
-                              color: recommendation.color,
-                              backgroundColor: recommendation.bgColor,
-                              border: `1px solid ${recommendation.color}25`,
-                              letterSpacing: "0.05em",
-                            }}
-                          >
-                            {recommendation.icon}
-                            {recommendation.label}
-                          </span>
-                        </Tooltip>
-                      </div>
-                    </div>
-
-                    {/* ── SCORE BODY ─────────────────────────────────── */}
-                    <div className="px-4 py-4 flex-grow flex items-start gap-4">
-                      {/* Left: gauge ring + E/S/G below */}
-                      <div className="shrink-0 flex flex-col items-center gap-2">
-                        <Tooltip content={sectionHelp.esgRiskAdjusted}>
-                          <div className="relative h-[76px] w-[76px]">
-                            <svg viewBox="0 0 100 100" className="absolute inset-0 -rotate-90">
-                              <circle
-                                cx="50" cy="50" r="42" fill="none"
-                                stroke="rgba(128,128,128,0.12)" strokeWidth="9"
-                              />
-                              <motion.circle
-                                cx="50" cy="50" r="42" fill="none"
-                                stroke={`url(#g-${supplierId})`}
-                                strokeWidth="9" strokeLinecap="round"
-                                strokeDasharray={2 * Math.PI * 42}
-                                initial={{ strokeDashoffset: 2 * Math.PI * 42 }}
-                                animate={{
-                                  strokeDashoffset: 2 * Math.PI * 42 * (1 - scorePercent / 100),
-                                }}
-                                transition={{ duration: 0.9, ease: "easeOut" }}
-                              />
-                              <defs>
-                                <linearGradient id={`g-${supplierId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                                  <stop offset="0%" stopColor={scoreColor} />
-                                  <stop offset="100%" stopColor={colors.primary} />
-                                </linearGradient>
-                              </defs>
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                              <span
-                                className="text-[18px] font-bold font-mono leading-none"
-                                style={{ color: scoreColor, letterSpacing: "-0.03em" }}
-                              >
-                                {riskAdjustedScore !== null
-                                  ? riskAdjustedScore.toFixed(0)
-                                  : "—"}
-                              </span>
-                              <span
-                                className="text-[8px] font-semibold uppercase mt-0.5"
-                                style={{ color: colors.textMuted, letterSpacing: "0.06em" }}
-                              >
-                                /100
-                              </span>
-                            </div>
-                          </div>
-                        </Tooltip>
-
-                        {/* E · S · G mini */}
-                        <div className="flex items-center gap-3">
-                          {[
-                            { key: "E", val: supplier.environmental_score, color: colors.primary, tip: sectionHelp.pillarEnv },
-                            { key: "S", val: supplier.social_score, color: colors.accent, tip: sectionHelp.pillarSoc },
-                            { key: "G", val: supplier.governance_score, color: colors.secondary, tip: sectionHelp.pillarGov },
-                          ].map((p) => (
-                            <Tooltip key={p.key} content={p.tip}>
-                              <div className="flex flex-col items-center cursor-help">
-                                <span
-                                  className="text-[9px] font-bold uppercase leading-none"
-                                  style={{ color: colors.textMuted, letterSpacing: "0.07em" }}
-                                >
-                                  {p.key}
-                                </span>
-                                <span
-                                  className="text-[13px] font-bold font-mono leading-tight"
-                                  style={{ color: p.color }}
-                                >
-                                  {formatPillar(p.val)}
-                                </span>
-                              </div>
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Right: rating + key stats */}
-                      <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
-                        {/* Rating chip */}
-                        <div className="flex items-center gap-2">
-                          <Tooltip content={sectionHelp.rating}>
-                            <span
-                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase cursor-help"
-                              style={{
-                                borderRadius: "4px",
-                                backgroundColor: scoreColor + "18",
-                                color: scoreColor,
-                                letterSpacing: "0.06em",
-                              }}
-                            >
-                              <ScaleIcon className="h-3 w-3" />
-                              {scorePercent >= 80
-                                ? "Excellent"
-                                : scorePercent >= 60
-                                ? "Strong"
-                                : scorePercent >= 40
-                                ? "Average"
-                                : "At Risk"}
-                            </span>
-                          </Tooltip>
-                        </div>
-
-                        {/* Stat rows */}
-                        <div className="flex flex-col gap-1.5">
-                          {[
-                            {
-                              label: "Composite",
-                              value:
-                                compositeScore !== null
-                                  ? compositeScore.toFixed(1)
-                                  : "N/A",
-                              tooltip: sectionHelp.esgComposite,
-                              color: colors.text,
-                            },
-                            {
-                              label: "Coverage",
-                              value:
-                                completenessRatio !== null
-                                  ? formatPercent(completenessRatio, 0)
-                                  : "N/A",
-                              tooltip: sectionHelp.coverage,
-                              color: colors.text,
-                            },
-                            {
-                              label: "Risk Factor",
-                              value:
-                                typeof supplier.risk_factor === "number"
-                                  ? formatPercent(supplier.risk_factor, 0)
-                                  : "N/A",
-                              tooltip: sectionHelp.riskExposure,
-                              color: riskColor,
-                            },
-                          ].map((stat) => (
-                            <Tooltip key={stat.label} content={stat.tooltip}>
-                              <div className="flex items-center justify-between gap-1 cursor-help">
-                                <span
-                                  className="text-[10px] font-medium uppercase shrink-0"
-                                  style={{
-                                    color: colors.textMuted,
-                                    letterSpacing: "0.07em",
-                                  }}
-                                >
-                                  {stat.label}
-                                </span>
-                                <span
-                                  className="text-[13px] font-bold font-mono"
-                                  style={{ color: stat.color }}
-                                >
-                                  {stat.value}
-                                </span>
-                              </div>
-                            </Tooltip>
-                          ))}
-                        </div>
-
-                        {/* Action Brief — premium recommendation block */}
-                        <Tooltip content={recommendation.description}>
-                          <div
-                            className="mt-2 overflow-hidden rounded-md cursor-help"
-                            style={{
-                              border: `1px solid ${recommendation.color}25`,
-                              background:
-                                `linear-gradient(135deg, ${recommendation.bgColor} 0%, rgba(0,0,0,0) 65%)`,
-                            }}
-                          >
-                            <div className="flex items-stretch">
-                              {/* Accent rail */}
-                              <div
-                                className="w-[3px] shrink-0"
-                                style={{ backgroundColor: recommendation.color }}
-                              />
-
-                              <div className="px-3 py-2.5 flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="min-w-0">
-                                    <div
-                                      className="text-[10px] font-mono uppercase tracking-widest"
-                                      style={{ color: colors.textMuted }}
-                                    >
-                                      Action brief
-                                    </div>
-                                    <div className="mt-0.5 flex items-center gap-2">
-                                      <span
-                                        className="inline-flex items-center justify-center h-6 w-6 rounded"
-                                        style={{
-                                          backgroundColor: recommendation.color + "18",
-                                          border: `1px solid ${recommendation.color}30`,
-                                          color: recommendation.color,
-                                        }}
-                                      >
-                                        {recommendation.icon}
-                                      </span>
-                                      <div className="min-w-0">
-                                        <div
-                                          className="text-[12px] font-semibold leading-snug truncate"
-                                          style={{ color: colors.text }}
-                                        >
-                                          {recommendation.label}
-                                        </div>
-                                        <div
-                                          className="text-[11px] leading-snug truncate"
-                                          style={{ color: colors.textMuted }}
-                                        >
-                                          {recommendation.description}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Micro CTA chips */}
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/suppliers/${supplierId}/assessment`);
-                                      }}
-                                      className="px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80"
-                                      style={{
-                                        backgroundColor: colors.primary,
-                                        color: "#0A0A0A",
-                                      }}
-                                    >
-                                      Assess
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleViewDetails(supplierId);
-                                      }}
-                                      className="px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80"
-                                      style={{
-                                        backgroundColor: "transparent",
-                                        border: `1px solid ${colors.accent}30`,
-                                        color: colors.textMuted,
-                                      }}
-                                    >
-                                      Profile
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Context line */}
-                                <div className="mt-2 flex items-center justify-between gap-2">
-                                  <span
-                                    className="text-[10px] font-mono uppercase tracking-widest"
-                                    style={{ color: colors.textMuted }}
-                                  >
-                                    {recommendation.type === "data"
-                                      ? "Priority: unlock reliable scoring"
-                                      : recommendation.type === "risk"
-                                      ? "Priority: reduce disruption exposure"
-                                      : recommendation.type === "stale"
-                                      ? "Priority: refresh signal quality"
-                                      : recommendation.type === "recommended"
-                                      ? "Priority: expand with confidence"
-                                      : recommendation.type === "warning"
-                                      ? "Priority: improvement plan"
-                                      : "Priority: ongoing monitoring"}
-                                  </span>
-                                  <span
-                                    className="text-[10px] font-mono"
-                                    style={{ color: recommendation.color }}
-                                  >
-                                    {supplier.risk_level ? `${supplier.risk_level.toUpperCase()} RISK` : "RISK N/A"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Tooltip>
-
-                        {/* Last updated — small, at bottom */}
-                        <Tooltip content={sectionHelp.lastUpdated}>
-                          <div className="flex items-center gap-1 cursor-help" style={{ color: colors.textMuted }}>
-                            <ClockIcon className="h-3 w-3" />
-                            <span className="text-[10px]">{lastUpdatedBadge.label}</span>
-                          </div>
-                        </Tooltip>
-                      </div>
-                    </div>
-
-                    {/* ── FOOTER ACTIONS ─────────────────────────────── */}
-                    <div
-                      className="px-4 py-3 flex gap-2"
-                      style={{ borderTop: "1px solid rgba(128,128,128,0.08)" }}
-                    >
-                      <Tooltip content={sectionHelp.quickView} wrapperClassName="flex flex-1">
-                        <button
-                          onClick={() => handleQuickView(supplier)}
-                          className="w-full flex items-center justify-center gap-1.5 text-[12px] py-2 font-medium transition-opacity hover:opacity-75"
-                          style={{
-                            borderRadius: "6px",
-                            color: colors.primary,
-                            border: `1px solid ${colors.primary}30`,
-                            backgroundColor: colors.primary + "08",
-                          }}
-                        >
-                          <EyeIcon className="h-3.5 w-3.5" /> Quick View
-                        </button>
-                      </Tooltip>
-                      <Tooltip content={sectionHelp.openProfile} wrapperClassName="flex flex-[1.4]">
-                        <button
-                          onClick={() => handleViewDetails(supplierId)}
-                          className="w-full flex items-center justify-center gap-1.5 text-[12px] py-2 font-semibold transition-opacity hover:opacity-88"
-                          style={{
-                            borderRadius: "6px",
-                            background: "#C8F05A",
-                            color: "#0A0A0A",
-                          }}
-                        >
-                          Open Profile <ArrowRightIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </Tooltip>
-                    </div>
-                  </motion.div>
-                );
-              })
-            ) : (
-              <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
-                <div
-                  className="h-16 w-16 rounded-xl flex items-center justify-center"
-                  style={{ background: "rgba(128,128,128,0.08)", border: "1px solid rgba(128,128,128,0.12)" }}
-                >
-                  <MagnifyingGlassIcon className="h-8 w-8" style={{ color: colors.textMuted, opacity: 0.5 }} />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold" style={{ color: colors.text }}>No suppliers found</p>
-                  <p className="text-[12px] mt-1" style={{ color: colors.textMuted }}>
-                    Try adjusting your filters or search query
+                    <SparklesIcon className="h-3.5 w-3.5" />
+                    Supplier Intelligence
+                  </span>
+                  <h1
+                    className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight"
+                    style={{
+                      background: `linear-gradient(120deg, ${colors.text} 0%, ${colors.primary} 60%, ${colors.accent} 100%)`,
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      backgroundClip: "text",
+                    }}
+                  >
+                    Supplier Registry
+                  </h1>
+                  <p
+                    className="mt-2 text-sm max-w-xl"
+                    style={{ color: colors.textMuted }}
+                  >
+                    Track, evaluate and act on every supplier in your network —
+                    risk-adjusted ESG scores, live coverage and AI-driven
+                    recommendations in one command center.
                   </p>
                 </div>
-                <button
-                  onClick={resetFilters}
-                  className="text-[12px] font-semibold px-4 py-2 rounded-md transition-opacity hover:opacity-80"
-                  style={{ background: colors.primary + "18", color: colors.primary, border: `1px solid ${colors.primary}25` }}
-                >
-                  Clear all filters
-                </button>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Pagination Controls */}
-          {filteredSuppliers.length > 0 && (
-            <div className="mt-8 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
-              <div className="text-sm" style={{ color: colors.textMuted }}>
-                Showing {Math.min(itemsPerPage, filteredSuppliers.length)} of{" "}
-                {filteredSuppliers.length} suppliers
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="p-1.5 rounded-md"
-                  style={{
-                    backgroundColor:
-                      currentPage === 1 ? "transparent" : colors.panel,
-                    color: currentPage === 1 ? colors.textMuted : colors.text,
-                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <ChevronLeftIcon className="h-5 w-5" />
-                </button>
-
-                <div
-                  className="px-4 py-1.5 rounded-md"
-                  style={{ backgroundColor: colors.panel }}
-                >
-                  <span style={{ color: colors.text }}>{currentPage}</span>
-                  <span style={{ color: colors.textMuted }}>{" of "}</span>
-                  <span style={{ color: colors.text }}>{totalPages}</span>
-                </div>
-
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-md"
-                  style={{
-                    backgroundColor:
-                      currentPage === totalPages ? "transparent" : colors.panel,
-                    color:
-                      currentPage === totalPages
-                        ? colors.textMuted
-                        : colors.text,
-                    cursor:
-                      currentPage === totalPages ? "not-allowed" : "pointer",
-                  }}
-                >
-                  <ChevronRightIcon className="h-5 w-5" />
-                </button>
-
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1); // Reset to first page when changing items per page
-                  }}
-                  className="sm:ml-4 py-1.5 pl-3 pr-8 rounded-md appearance-none text-sm"
-                  style={{
-                    backgroundColor: colors.panel,
-                    color: colors.text,
-                    border: `1px solid ${colors.accent}30`,
-                  }}
-                >
-                  <option value={9}>9 / page</option>
-                  <option value={18}>18 / page</option>
-                  <option value={27}>27 / page</option>
-                  <option value={36}>36 / page</option>
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* Comparison Floating Panel */}
-          <AnimatePresence>
-            {selectedSuppliers.length > 0 && (
-              <motion.div
-                className="fixed bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-4 sm:max-w-sm z-30 p-3 sm:p-4 rounded-xl shadow-xl border"
-                style={{
-                  backgroundColor: colors.panel,
-                  borderLeft: `4px solid ${colors.primary}`,
-                  borderColor: colors.accent + "30",
-                }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold flex items-center">
-                    <Square2StackIcon
-                      className="h-5 w-5 mr-2"
-                      style={{ color: colors.primary }}
-                    />
-                    {selectedSuppliers.length}
-                    <span className="ml-1">
-                      {selectedSuppliers.length === 1
-                        ? "supplier"
-                        : "suppliers"}{" "}
-                      selected
-                    </span>
-                  </h3>
-                  <button
-                    onClick={clearSelections}
-                    className="p-1 rounded-full hover:bg-black/20"
-                    title="Clear all"
-                  >
-                    <XMarkIcon
-                      className="h-4 w-4"
-                      style={{ color: colors.textMuted }}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={clearSelections}
-                    className="flex-1 py-1.5 px-3 rounded text-sm"
-                    style={{
-                      backgroundColor: colors.panel,
-                      border: `1px solid ${colors.accent}40`,
-                      color: colors.textMuted,
-                    }}
-                  >
-                    Clear
-                  </button>
-                  <button
-                    onClick={openComparison}
-                    className="flex-1 py-1.5 px-3 rounded text-sm font-medium flex items-center justify-center"
-                    style={{
-                      backgroundColor:
-                        selectedSuppliers.length >= 2
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full lg:w-auto">
+                  {/* Export Menu */}
+                  <div className="relative w-full sm:w-auto">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex items-center justify-center w-full sm:w-auto px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                      style={{
+                        backgroundColor: showExportMenu
                           ? colors.primary
                           : colors.panel,
-                      color:
-                        selectedSuppliers.length >= 2
+                        color: showExportMenu
                           ? colors.background
                           : colors.textMuted,
-                      opacity: selectedSuppliers.length >= 2 ? 1 : 0.5,
+                      }}
+                      onClick={() => setShowExportMenu(!showExportMenu)}
+                    >
+                      <DocumentArrowDownIcon className="h-5 w-5 mr-2" />
+                      Export Data
+                    </motion.button>
+
+                    {/* Export Dropdown Menu */}
+                    <AnimatePresence>
+                      {showExportMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute right-0 mt-2 z-10 w-48 rounded-md shadow-lg"
+                          style={{ backgroundColor: colors.panel }}
+                        >
+                          <div className="py-1 rounded-md">
+                            <button
+                              onClick={exportToCSV}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <DocumentIcon className="h-4 w-4 mr-3" />
+                              Export as CSV
+                            </button>
+                            <button
+                              onClick={exportToExcel}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <TableCellsIcon className="h-4 w-4 mr-3" />
+                              Export as Excel
+                            </button>
+                            <button
+                              onClick={exportToPDF}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <DocumentIcon className="h-4 w-4 mr-3" />
+                              Export as PDF
+                            </button>
+
+                            {/* Divider */}
+                            <div
+                              className="border-t my-1"
+                              style={{ borderColor: colors.border }}
+                            />
+
+                            {/* Server-side exports with rate limiting */}
+                            <div
+                              className="px-4 py-2 text-xs font-semibold"
+                              style={{ color: colors.textMuted }}
+                            >
+                              Rankings & Analysis
+                            </div>
+                            <button
+                              onClick={() => handleExportRankings("baseline")}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <ArrowTrendingUpIcon className="h-4 w-4 mr-3" />
+                              Rankings (Baseline)
+                            </button>
+                            <button
+                              onClick={handleExportIndustryMap}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <MapPinIcon className="h-4 w-4 mr-3" />
+                              Industry Map
+                            </button>
+
+                            {/* Scenario exports */}
+                            <div
+                              className="px-4 py-2 text-xs font-semibold"
+                              style={{ color: colors.textMuted }}
+                            >
+                              Scenario Analysis
+                            </div>
+                            <button
+                              onClick={() => handleExportRankings("s1")}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <SparklesIcon className="h-4 w-4 mr-3" />
+                              S1: Utility
+                            </button>
+                            <button
+                              onClick={() => handleExportRankings("s2")}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <AdjustmentsHorizontalIcon className="h-4 w-4 mr-3" />
+                              S2: Sensitivity
+                            </button>
+                            <button
+                              onClick={() => handleExportRankings("s3")}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <ExclamationCircleIcon className="h-4 w-4 mr-3" />
+                              S3: Missingness
+                            </button>
+                            <button
+                              onClick={() => handleExportRankings("s4")}
+                              className="w-full px-4 py-2 text-sm flex items-center hover:bg-black/20"
+                              style={{ color: colors.text }}
+                            >
+                              <ScaleIcon className="h-4 w-4 mr-3" />
+                              S4: Ablation
+                            </button>
+
+                            <div
+                              className="px-4 py-2 text-xs italic"
+                              style={{ color: colors.textMuted }}
+                            >
+                              Rate limit: 10 exports/hour
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center justify-center w-full sm:w-auto px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                    style={{
+                      backgroundColor: showAdvancedFilters
+                        ? colors.primary
+                        : colors.panel,
+                      color: showAdvancedFilters
+                        ? colors.background
+                        : colors.textMuted,
                     }}
-                    disabled={selectedSuppliers.length < 2}
+                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                   >
-                    <Square2StackIcon className="h-4 w-4 mr-1.5" />
-                    Compare
+                    <AdjustmentsHorizontalIcon className="h-5 w-5 mr-1" />
+                    <span className="truncate">{getFilterButtonLabel()}</span>
+                  </motion.button>
+
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="col-span-2 sm:col-span-1"
+                  >
+                    <Link
+                      to="/suppliers/add"
+                      className="flex items-center justify-center w-full sm:w-auto px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200"
+                      style={{
+                        backgroundColor: colors.accent,
+                        color: colors.background,
+                      }}
+                    >
+                      <PlusIcon className="h-5 w-5 mr-2" />
+                      <span className="hidden sm:inline">
+                        Register New Supplier
+                      </span>
+                      <span className="sm:hidden">New Supplier</span>
+                    </Link>
+                  </motion.div>
+                </div>
+              </div>
+
+              {/* KPI Strip */}
+              <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  {
+                    label: "Suppliers in View",
+                    value: portfolioStats.total.toLocaleString(),
+                    hint:
+                      portfolioStats.total === suppliers.length
+                        ? "Full network"
+                        : `of ${suppliers.length} total`,
+                    icon: <BuildingOfficeIcon className="h-4 w-4" />,
+                    color: colors.primary,
+                  },
+                  {
+                    label: "Avg ESG (Risk-adj.)",
+                    value:
+                      portfolioStats.avgEsg !== null
+                        ? portfolioStats.avgEsg.toFixed(1)
+                        : "—",
+                    hint:
+                      portfolioStats.avgEsg !== null
+                        ? portfolioStats.avgEsg >= 70
+                          ? "Strong portfolio"
+                          : portfolioStats.avgEsg >= 50
+                            ? "Mixed performance"
+                            : "Needs attention"
+                        : "No data",
+                    icon: <ScaleIcon className="h-4 w-4" />,
+                    color: colors.success,
+                  },
+                  {
+                    label: "High / Critical Risk",
+                    value: portfolioStats.highRisk.toLocaleString(),
+                    hint:
+                      portfolioStats.total > 0
+                        ? `${(
+                            (portfolioStats.highRisk / portfolioStats.total) *
+                            100
+                          ).toFixed(0)}% of view`
+                        : "—",
+                    icon: <ShieldExclamationIcon className="h-4 w-4" />,
+                    color: colors.error,
+                  },
+                  {
+                    label: "Avg Data Coverage",
+                    value:
+                      portfolioStats.avgCoverage !== null
+                        ? `${(portfolioStats.avgCoverage * 100).toFixed(0)}%`
+                        : "—",
+                    hint: portfolioStats.topPerformer
+                      ? `Top: ${portfolioStats.topPerformer.name}`
+                      : "Disclosure quality",
+                    icon: <SparklesIcon className="h-4 w-4" />,
+                    color: colors.accent,
+                  },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-xl border px-4 py-3 backdrop-blur-sm flex items-start justify-between gap-3"
+                    style={{
+                      borderColor: colors.accent + "25",
+                      backgroundColor: colors.panel + "cc",
+                    }}
+                  >
+                    <div className="min-w-0">
+                      <div
+                        className="text-[10px] font-semibold uppercase tracking-wider"
+                        style={{ color: colors.textMuted }}
+                      >
+                        {stat.label}
+                      </div>
+                      <div
+                        className="mt-1 text-2xl font-bold font-mono leading-none"
+                        style={{ color: colors.text }}
+                      >
+                        {stat.value}
+                      </div>
+                      <div
+                        className="mt-1 text-[11px] truncate"
+                        style={{ color: colors.textMuted }}
+                      >
+                        {stat.hint}
+                      </div>
+                    </div>
+                    <div
+                      className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
+                      style={{
+                        color: stat.color,
+                        backgroundColor: stat.color + "18",
+                        border: `1px solid ${stat.color}30`,
+                      }}
+                    >
+                      {stat.icon}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Filters and Search */}
+          <div
+            className="mb-5 md:mb-6 rounded-2xl border p-3 sm:p-4 md:p-5"
+            style={{
+              backgroundColor: colors.panel + "99",
+              borderColor: colors.accent + "25",
+            }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-3.5 mb-3 sm:mb-4">
+              {/* Search */}
+              <div className="relative">
+                <MagnifyingGlassIcon
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5"
+                  style={{ color: colors.textMuted }}
+                />
+                <input
+                  type="text"
+                  placeholder="Search by name, ID, or country..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 rounded-md border focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.accent + "50",
+                    color: colors.text,
+                    "--tw-ring-color": colors.primary, // For focus ring
+                  }}
+                />
+              </div>
+
+              {/* Country Filter */}
+              <div className="relative">
+                <select
+                  value={filterCountry}
+                  onChange={(e) => setFilterCountry(e.target.value)}
+                  className="w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.accent + "50",
+                    color: colors.text,
+                    "--tw-ring-color": colors.primary,
+                  }}
+                >
+                  <option value="" style={{ color: colors.textMuted }}>
+                    All Countries
+                  </option>
+                  {countries.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
+                  style={{ color: colors.textMuted }}
+                />
+              </div>
+              {/* Industry Filter */}
+              <div className="relative">
+                <select
+                  value={filterIndustry}
+                  onChange={(e) => setFilterIndustry(e.target.value)}
+                  className="w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.accent + "50",
+                    color: colors.text,
+                    "--tw-ring-color": colors.primary,
+                  }}
+                >
+                  <option value="" style={{ color: colors.textMuted }}>
+                    All Industries
+                  </option>
+                  {industries.map((i) => (
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
+                  style={{ color: colors.textMuted }}
+                />
+              </div>
+              {/* Risk Filter */}
+              <div className="relative">
+                <select
+                  value={filterRisk}
+                  onChange={(e) => setFilterRisk(e.target.value)}
+                  className="w-full appearance-none pl-3 pr-10 py-2 rounded-md border focus:outline-none focus:ring-2"
+                  style={{
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.accent + "50",
+                    color: colors.text,
+                    "--tw-ring-color": colors.primary,
+                  }}
+                >
+                  <option value="" style={{ color: colors.textMuted }}>
+                    All Risk Levels
+                  </option>
+                  {riskLevels.map((r) => (
+                    <option key={r} value={r} className="capitalize">
+                      {r}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDownIcon
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none"
+                  style={{ color: colors.textMuted }}
+                />
+              </div>
+            </div>
+
+            {/* Advanced Filters Accordion */}
+            {showAdvancedFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-4 rounded-xl mb-1 border"
+                style={{
+                  backgroundColor: colors.background + "66",
+                  borderColor: colors.accent + "25",
+                }}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold">
+                    ESG Score Range Filters (0-100%)
+                  </h3>
+                  <button
+                    onClick={resetFilters}
+                    className="text-xs py-1 px-3 rounded flex items-center"
+                    style={{
+                      backgroundColor: colors.accent + "30",
+                      color: colors.text,
+                    }}
+                  >
+                    <XMarkIcon className="h-3.5 w-3.5 mr-1" />
+                    Reset All Filters
                   </button>
+                </div>
+
+                {renderScoreSlider(
+                  "Environmental Score",
+                  environmentalFilter,
+                  setEnvironmentalFilter,
+                )}
+                {renderScoreSlider(
+                  "Social Score",
+                  socialFilter,
+                  setSocialFilter,
+                )}
+                {renderScoreSlider(
+                  "Governance Score",
+                  governanceFilter,
+                  setGovernanceFilter,
+                )}
+
+                <div
+                  className="mt-2 text-xs"
+                  style={{ color: colors.textMuted }}
+                >
+                  Showing {filteredSuppliers.length} of {suppliers.length}{" "}
+                  suppliers
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
+          </div>
+        </motion.div>
 
-          {/* Comparison Modal */}
-          <AnimatePresence>
-            {showComparisonModal && selectedSuppliers.length >= 2 && (
-              <motion.div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowComparisonModal(false)}
-              >
-                <motion.div
-                  className="relative w-full max-w-6xl rounded-xl overflow-hidden"
+        {/* Sorting Controls */}
+        <div
+          className="mb-5 md:mb-6 px-3 sm:px-4 py-2.5 rounded-xl border flex items-center gap-2"
+          style={{
+            backgroundColor: colors.panel + "cc",
+            borderColor: colors.accent + "25",
+          }}
+        >
+          <span
+            className="text-[11px] font-mono uppercase tracking-widest shrink-0 mr-1"
+            style={{ color: colors.textMuted }}
+          >
+            Sort
+          </span>
+          <div
+            className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-nowrap"
+            style={{ msOverflowStyle: "none", scrollbarWidth: "none" }}
+          >
+            {(
+              [
+                { key: "name", label: "Name" },
+                { key: "ethical_score", label: "ESG Score" },
+                { key: "environmental_score", label: "Env" },
+                { key: "social_score", label: "Social" },
+                { key: "governance_score", label: "Gov" },
+                { key: "risk_level", label: "Risk" },
+              ] as { key: string; label: string }[]
+            ).map(({ key, label }) => {
+              const active = sortField === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleSort(key)}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono rounded whitespace-nowrap transition-all"
                   style={{
-                    backgroundColor: colors.background,
-                    border: `1px solid ${colors.accent}30`,
+                    backgroundColor: active ? colors.primary : "transparent",
+                    color: active ? "#0A0A0A" : colors.textMuted,
+                    border: `1px solid ${active ? colors.primary : colors.accent + "25"}`,
+                    fontWeight: active ? 600 : 400,
                   }}
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.95, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}
                 >
-                  <div
-                    className="p-5 border-b flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
-                    style={{ borderColor: colors.accent + "30" }}
-                  >
-                    <div>
-                      <h2
-                        className="text-2xl font-bold"
-                        style={{ color: colors.text }}
-                      >
-                        Supplier Comparison
-                      </h2>
-                      <p
-                        className="text-sm mt-1"
-                        style={{ color: colors.textMuted }}
-                      >
-                        Comparing {selectedSuppliers.length} suppliers across
-                        key ESG and operational metrics.
-                      </p>
-                      {topPerformer && (
-                        <p className="text-xs" style={{ color: colors.primary }}>
-                          Top performer: {topPerformer.supplier.name} (
-                          {topPerformer.score.toFixed(1)})
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 self-end md:self-auto">
-                      <button
-                        onClick={exportComparison}
-                        className="px-3 py-2 rounded text-sm font-medium flex items-center"
+                  {label} <SortIcon field={key} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Supplier List/Grid */}
+        {loading && <LoadingIndicator />}
+        {error && !loading && <ErrorDisplay message={error} />}
+        {!loading && !error && (
+          <>
+            <motion.div
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 xl:gap-6"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {sortedAndPaginatedSuppliers.length > 0 ? (
+                sortedAndPaginatedSuppliers.map((supplier, idx) => {
+                  const absoluteRank =
+                    (currentPage - 1) * itemsPerPage + idx + 1;
+                  const riskColor = getRiskColor(colors, supplier.risk_level);
+                  const riskIcon = getRiskIcon(supplier.risk_level);
+                  const scoreColor = getScoreColor(
+                    colors,
+                    supplier.ethical_score,
+                  );
+                  const riskAdjustedScore =
+                    supplier.ethical_score !== null &&
+                    supplier.ethical_score !== undefined
+                      ? supplier.ethical_score
+                      : null;
+                  const scorePercent = Math.max(
+                    0,
+                    Math.min(100, normalizeScoreTo100(riskAdjustedScore) ?? 0),
+                  );
+                  const compositeScore =
+                    supplier.composite_score !== undefined
+                      ? supplier.composite_score
+                      : null;
+                  const completenessRatio =
+                    supplier.completeness_ratio !== undefined
+                      ? supplier.completeness_ratio
+                      : null;
+                  const supplierId = supplier._id || supplier.id; // Handle both ID types
+                  const isSelected = isSupplierSelected(supplier);
+                  const statusStyles = getStatusStyles(colors, supplier.status);
+                  const recommendation = getRecommendation(colors, supplier);
+                  const lastUpdatedBadge = getLastUpdatedBadge(
+                    colors,
+                    supplier.last_updated,
+                  );
+
+                  const formatPillar = (val: number | null | undefined) => {
+                    if (val === null || val === undefined || Number.isNaN(val))
+                      return "N/A";
+                    return (val > 0 && val <= 1 ? val * 100 : val).toFixed(0);
+                  };
+
+                  return (
+                    <motion.div
+                      key={supplierId}
+                      variants={itemVariants}
+                      className="flex flex-col overflow-hidden transition-shadow duration-200"
+                      style={{
+                        backgroundColor: colors.card,
+                        border: `1px solid ${isSelected ? colors.primary + "50" : "rgba(128,128,128,0.10)"}`,
+                        borderRadius: "8px",
+                        outline: isSelected
+                          ? `2px solid ${colors.primary}30`
+                          : "none",
+                        outlineOffset: "2px",
+                      }}
+                      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                    >
+                      {/* Risk-coded accent line */}
+                      <Tooltip content={sectionHelp.riskAccent}>
+                        <div
+                          className="h-[3px] shrink-0 cursor-help"
+                          style={{ background: riskColor }}
+                        />
+                      </Tooltip>
+
+                      {/* ── HEADER ─────────────────────────────────────── */}
+                      <div
+                        className="px-4 pt-3 pb-3"
                         style={{
-                          backgroundColor: colors.accent,
-                          color: colors.background,
+                          borderBottom: "1px solid rgba(128,128,128,0.08)",
                         }}
                       >
-                        <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
-                        Export
-                      </button>
-                      <button
-                        onClick={() => setShowComparisonModal(false)}
-                        className="p-2 rounded-full hover:bg-white/10"
-                        style={{ color: colors.textMuted }}
-                        aria-label="Close comparison"
-                      >
-                        <XMarkIcon className="h-6 w-6" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-5 space-y-6 max-h-[75vh] overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                      {selectedSuppliers.map((supplier) => {
-                        const supplierId = supplier._id || supplier.id || supplier.name;
-                        const statusStyles = getStatusStyles(colors, supplier.status);
-                        return (
-                          <div
-                            key={`summary-${supplierId}`}
-                            className="p-4 rounded-lg border"
-                            style={{
-                              backgroundColor: colors.panel,
-                              borderColor: colors.accent + "30",
-                            }}
+                        <div className="flex items-start gap-2.5">
+                          {/* Rank badge */}
+                          <Tooltip
+                            content={`Rank #${absoluteRank} — sorted by ${sortField}`}
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <h3
-                                  className="text-lg font-semibold"
-                                  style={{ color: colors.text }}
-                                >
-                                  {supplier.name}
-                                </h3>
-                                <div
-                                  className="text-xs flex flex-wrap gap-2 mt-2"
-                                  style={{ color: colors.textMuted }}
-                                >
-                                  {supplier.country && (
-                                    <span className="flex items-center gap-1">
-                                      <MapPinIcon className="h-3.5 w-3.5" />
-                                      {supplier.country}
-                                    </span>
-                                  )}
-                                  {supplier.industry && (
-                                    <span className="flex items-center gap-1">
-                                      <BuildingOfficeIcon className="h-3.5 w-3.5" />
-                                      {supplier.industry}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <span
-                                className="text-sm font-semibold"
-                                style={{ color: colors.primary }}
-                              >
-                                {formatScoreValue(supplier.ethical_score)}
-                              </span>
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                              <span
-                                className="px-2 py-1 rounded-full flex items-center"
-                                style={{
-                                  backgroundColor:
-                                    getRiskColor(colors, supplier.risk_level) + "20",
-                                  color: getRiskColor(colors, supplier.risk_level),
-                                  border: `1px solid ${getRiskColor(
-                                    colors,
-                                    supplier.risk_level
-                                  )}40`,
-                                }}
-                              >
-                                {getRiskIcon(supplier.risk_level) && (
-                                  <span className="mr-1">{getRiskIcon(supplier.risk_level)}</span>
-                                )}
-                                {supplier.risk_level || "No Risk Data"}
-                              </span>
-                              <span
-                                className="px-2 py-1 rounded-full flex items-center"
-                                style={{
-                                  color: statusStyles.color,
-                                  backgroundColor: statusStyles.bgColor,
-                                  border: statusStyles.border,
-                                }}
-                              >
-                                {statusStyles.icon}
-                                {supplier.status || "Unverified"}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div
-                      className="overflow-x-auto rounded-lg border"
-                      style={{ borderColor: colors.accent + "30" }}
-                    >
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr>
-                            <th
-                              className="px-4 py-3 text-left font-semibold"
+                            <div
+                              className="shrink-0 h-7 w-7 rounded flex items-center justify-center text-[11px] font-bold font-mono leading-none"
                               style={{
-                                color: colors.textMuted,
-                                backgroundColor: colors.panel,
+                                backgroundColor:
+                                  absoluteRank <= 3
+                                    ? colors.primary + "22"
+                                    : "rgba(128,128,128,0.08)",
+                                color:
+                                  absoluteRank <= 3
+                                    ? colors.primary
+                                    : colors.textMuted,
+                                border: `1px solid ${absoluteRank <= 3 ? colors.primary + "40" : "rgba(128,128,128,0.14)"}`,
                               }}
                             >
-                              Metric
-                            </th>
-                            {selectedSuppliers.map((supplier) => (
+                              {absoluteRank}
+                            </div>
+                          </Tooltip>
+
+                          {/* Name + location */}
+                          <div className="min-w-0 flex-1">
+                            <h2
+                              className="text-[14px] font-semibold leading-tight truncate"
+                              style={{
+                                color: colors.text,
+                                letterSpacing: "-0.01em",
+                              }}
+                            >
+                              {supplier.name}
+                            </h2>
+                            <div
+                              className="mt-0.5 text-[11px] truncate"
+                              style={{ color: colors.textMuted }}
+                            >
+                              {supplier.country || "N/A"}
+                              <span className="mx-1 opacity-40">·</span>
+                              {supplier.industry || "N/A"}
+                            </div>
+                          </div>
+
+                          {/* Select toggle */}
+                          <Tooltip content={sectionHelp.select}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSupplierSelection(supplier);
+                              }}
+                              className="shrink-0 p-0.5 rounded transition-colors"
+                              aria-label={isSelected ? "Deselect" : "Select"}
+                            >
+                              {isSelected ? (
+                                <CheckCircleIcon
+                                  className="h-4 w-4"
+                                  style={{ color: colors.primary }}
+                                />
+                              ) : (
+                                <Square2StackIcon
+                                  className="h-4 w-4"
+                                  style={{
+                                    color: colors.textMuted,
+                                    opacity: 0.5,
+                                  }}
+                                />
+                              )}
+                            </button>
+                          </Tooltip>
+                        </div>
+
+                        {/* 2 badges max: status + risk */}
+                        <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                          <Tooltip content={sectionHelp.statusBar}>
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase"
+                              style={{
+                                borderRadius: "4px",
+                                color: statusStyles.color,
+                                backgroundColor: statusStyles.bgColor,
+                                border: statusStyles.border,
+                                letterSpacing: "0.05em",
+                              }}
+                            >
+                              {statusStyles.icon}
+                              {supplier.status || "Unverified"}
+                            </span>
+                          </Tooltip>
+                          <Tooltip
+                            content={
+                              supplier.risk_level
+                                ? (
+                                    scoreExplanations.risk_levels as Record<
+                                      string,
+                                      string
+                                    >
+                                  )[supplier.risk_level.toLowerCase()] ||
+                                  sectionHelp.riskBadge
+                                : sectionHelp.riskBadge
+                            }
+                          >
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase cursor-help"
+                              style={{
+                                borderRadius: "4px",
+                                color: supplier.risk_level
+                                  ? riskColor
+                                  : colors.textMuted,
+                                backgroundColor: supplier.risk_level
+                                  ? riskColor + "15"
+                                  : "transparent",
+                                border: supplier.risk_level
+                                  ? `1px solid ${riskColor}30`
+                                  : `1px dashed ${colors.textMuted}40`,
+                                letterSpacing: "0.05em",
+                              }}
+                            >
+                              {supplier.risk_level ? (
+                                <>
+                                  {getRiskIcon(supplier.risk_level)}{" "}
+                                  {supplier.risk_level} risk
+                                </>
+                              ) : (
+                                "No Risk Data"
+                              )}
+                            </span>
+                          </Tooltip>
+                          <Tooltip content={recommendation.description}>
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase cursor-help"
+                              style={{
+                                borderRadius: "4px",
+                                color: recommendation.color,
+                                backgroundColor: recommendation.bgColor,
+                                border: `1px solid ${recommendation.color}25`,
+                                letterSpacing: "0.05em",
+                              }}
+                            >
+                              {recommendation.icon}
+                              {recommendation.label}
+                            </span>
+                          </Tooltip>
+                        </div>
+                      </div>
+
+                      {/* ── SCORE BODY ─────────────────────────────────── */}
+                      <div className="px-4 py-4 flex-grow flex items-start gap-4">
+                        {/* Left: gauge ring + E/S/G below */}
+                        <div className="shrink-0 flex flex-col items-center gap-2">
+                          <Tooltip content={sectionHelp.esgRiskAdjusted}>
+                            <div className="relative h-[76px] w-[76px]">
+                              <svg
+                                viewBox="0 0 100 100"
+                                className="absolute inset-0 -rotate-90"
+                              >
+                                <circle
+                                  cx="50"
+                                  cy="50"
+                                  r="42"
+                                  fill="none"
+                                  stroke="rgba(128,128,128,0.12)"
+                                  strokeWidth="9"
+                                />
+                                <motion.circle
+                                  cx="50"
+                                  cy="50"
+                                  r="42"
+                                  fill="none"
+                                  stroke={`url(#g-${supplierId})`}
+                                  strokeWidth="9"
+                                  strokeLinecap="round"
+                                  strokeDasharray={2 * Math.PI * 42}
+                                  initial={{
+                                    strokeDashoffset: 2 * Math.PI * 42,
+                                  }}
+                                  animate={{
+                                    strokeDashoffset:
+                                      2 *
+                                      Math.PI *
+                                      42 *
+                                      (1 - scorePercent / 100),
+                                  }}
+                                  transition={{
+                                    duration: 0.9,
+                                    ease: "easeOut",
+                                  }}
+                                />
+                                <defs>
+                                  <linearGradient
+                                    id={`g-${supplierId}`}
+                                    x1="0%"
+                                    y1="0%"
+                                    x2="100%"
+                                    y2="0%"
+                                  >
+                                    <stop offset="0%" stopColor={scoreColor} />
+                                    <stop
+                                      offset="100%"
+                                      stopColor={colors.primary}
+                                    />
+                                  </linearGradient>
+                                </defs>
+                              </svg>
+                              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span
+                                  className="text-[18px] font-bold font-mono leading-none"
+                                  style={{
+                                    color: scoreColor,
+                                    letterSpacing: "-0.03em",
+                                  }}
+                                >
+                                  {riskAdjustedScore !== null
+                                    ? riskAdjustedScore.toFixed(0)
+                                    : "—"}
+                                </span>
+                                <span
+                                  className="text-[8px] font-semibold uppercase mt-0.5"
+                                  style={{
+                                    color: colors.textMuted,
+                                    letterSpacing: "0.06em",
+                                  }}
+                                >
+                                  /100
+                                </span>
+                              </div>
+                            </div>
+                          </Tooltip>
+
+                          {/* E · S · G mini */}
+                          <div className="flex items-center gap-3">
+                            {[
+                              {
+                                key: "E",
+                                val: supplier.environmental_score,
+                                color: colors.primary,
+                                tip: sectionHelp.pillarEnv,
+                              },
+                              {
+                                key: "S",
+                                val: supplier.social_score,
+                                color: colors.accent,
+                                tip: sectionHelp.pillarSoc,
+                              },
+                              {
+                                key: "G",
+                                val: supplier.governance_score,
+                                color: colors.secondary,
+                                tip: sectionHelp.pillarGov,
+                              },
+                            ].map((p) => (
+                              <Tooltip key={p.key} content={p.tip}>
+                                <div className="flex flex-col items-center cursor-help">
+                                  <span
+                                    className="text-[9px] font-bold uppercase leading-none"
+                                    style={{
+                                      color: colors.textMuted,
+                                      letterSpacing: "0.07em",
+                                    }}
+                                  >
+                                    {p.key}
+                                  </span>
+                                  <span
+                                    className="text-[13px] font-bold font-mono leading-tight"
+                                    style={{ color: p.color }}
+                                  >
+                                    {formatPillar(p.val)}
+                                  </span>
+                                </div>
+                              </Tooltip>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Right: rating + key stats */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
+                          {/* Rating chip */}
+                          <div className="flex items-center gap-2">
+                            <Tooltip content={sectionHelp.rating}>
+                              <span
+                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold uppercase cursor-help"
+                                style={{
+                                  borderRadius: "4px",
+                                  backgroundColor: scoreColor + "18",
+                                  color: scoreColor,
+                                  letterSpacing: "0.06em",
+                                }}
+                              >
+                                <ScaleIcon className="h-3 w-3" />
+                                {scorePercent >= 80
+                                  ? "Excellent"
+                                  : scorePercent >= 60
+                                    ? "Strong"
+                                    : scorePercent >= 40
+                                      ? "Average"
+                                      : "At Risk"}
+                              </span>
+                            </Tooltip>
+                          </div>
+
+                          {/* Stat rows */}
+                          <div className="flex flex-col gap-1.5">
+                            {[
+                              {
+                                label: "Composite",
+                                value:
+                                  compositeScore !== null
+                                    ? compositeScore.toFixed(1)
+                                    : "N/A",
+                                tooltip: sectionHelp.esgComposite,
+                                color: colors.text,
+                              },
+                              {
+                                label: "Coverage",
+                                value:
+                                  completenessRatio !== null
+                                    ? formatPercent(completenessRatio, 0)
+                                    : "N/A",
+                                tooltip: sectionHelp.coverage,
+                                color: colors.text,
+                              },
+                              {
+                                label: "Risk Factor",
+                                value:
+                                  typeof supplier.risk_factor === "number"
+                                    ? formatPercent(supplier.risk_factor, 0)
+                                    : "N/A",
+                                tooltip: sectionHelp.riskExposure,
+                                color: riskColor,
+                              },
+                            ].map((stat) => (
+                              <Tooltip key={stat.label} content={stat.tooltip}>
+                                <div className="flex items-center justify-between gap-1 cursor-help">
+                                  <span
+                                    className="text-[10px] font-medium uppercase shrink-0"
+                                    style={{
+                                      color: colors.textMuted,
+                                      letterSpacing: "0.07em",
+                                    }}
+                                  >
+                                    {stat.label}
+                                  </span>
+                                  <span
+                                    className="text-[13px] font-bold font-mono"
+                                    style={{ color: stat.color }}
+                                  >
+                                    {stat.value}
+                                  </span>
+                                </div>
+                              </Tooltip>
+                            ))}
+                          </div>
+
+                          {/* Action Brief — premium recommendation block */}
+                          <Tooltip content={recommendation.description}>
+                            <div
+                              className="mt-2 overflow-hidden rounded-md cursor-help"
+                              style={{
+                                border: `1px solid ${recommendation.color}25`,
+                                background: `linear-gradient(135deg, ${recommendation.bgColor} 0%, rgba(0,0,0,0) 65%)`,
+                              }}
+                            >
+                              <div className="flex items-stretch">
+                                {/* Accent rail */}
+                                <div
+                                  className="w-[3px] shrink-0"
+                                  style={{
+                                    backgroundColor: recommendation.color,
+                                  }}
+                                />
+
+                                <div className="px-3 py-2.5 flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <div
+                                        className="text-[10px] font-mono uppercase tracking-widest"
+                                        style={{ color: colors.textMuted }}
+                                      >
+                                        Action brief
+                                      </div>
+                                      <div className="mt-0.5 flex items-center gap-2">
+                                        <span
+                                          className="inline-flex items-center justify-center h-6 w-6 rounded"
+                                          style={{
+                                            backgroundColor:
+                                              recommendation.color + "18",
+                                            border: `1px solid ${recommendation.color}30`,
+                                            color: recommendation.color,
+                                          }}
+                                        >
+                                          {recommendation.icon}
+                                        </span>
+                                        <div className="min-w-0">
+                                          <div
+                                            className="text-[12px] font-semibold leading-snug truncate"
+                                            style={{ color: colors.text }}
+                                          >
+                                            {recommendation.label}
+                                          </div>
+                                          <div
+                                            className="text-[11px] leading-snug truncate"
+                                            style={{ color: colors.textMuted }}
+                                          >
+                                            {recommendation.description}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Micro CTA chips */}
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigate(
+                                            `/suppliers/${supplierId}/assessment`,
+                                          );
+                                        }}
+                                        className="px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80"
+                                        style={{
+                                          backgroundColor: colors.primary,
+                                          color: "#0A0A0A",
+                                        }}
+                                      >
+                                        Assess
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleViewDetails(supplierId);
+                                        }}
+                                        className="px-2 py-1 rounded text-[10px] font-mono uppercase tracking-widest transition-opacity hover:opacity-80"
+                                        style={{
+                                          backgroundColor: "transparent",
+                                          border: `1px solid ${colors.accent}30`,
+                                          color: colors.textMuted,
+                                        }}
+                                      >
+                                        Profile
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Context line */}
+                                  <div className="mt-2 flex items-center justify-between gap-2">
+                                    <span
+                                      className="text-[10px] font-mono uppercase tracking-widest"
+                                      style={{ color: colors.textMuted }}
+                                    >
+                                      {recommendation.type === "data"
+                                        ? "Priority: unlock reliable scoring"
+                                        : recommendation.type === "risk"
+                                          ? "Priority: reduce disruption exposure"
+                                          : recommendation.type === "stale"
+                                            ? "Priority: refresh signal quality"
+                                            : recommendation.type ===
+                                                "recommended"
+                                              ? "Priority: expand with confidence"
+                                              : recommendation.type ===
+                                                  "warning"
+                                                ? "Priority: improvement plan"
+                                                : "Priority: ongoing monitoring"}
+                                    </span>
+                                    <span
+                                      className="text-[10px] font-mono"
+                                      style={{ color: recommendation.color }}
+                                    >
+                                      {supplier.risk_level
+                                        ? `${supplier.risk_level.toUpperCase()} RISK`
+                                        : "RISK N/A"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </Tooltip>
+
+                          {/* Last updated — small, at bottom */}
+                          <Tooltip content={sectionHelp.lastUpdated}>
+                            <div
+                              className="flex items-center gap-1 cursor-help"
+                              style={{ color: colors.textMuted }}
+                            >
+                              <ClockIcon className="h-3 w-3" />
+                              <span className="text-[10px]">
+                                {lastUpdatedBadge.label}
+                              </span>
+                            </div>
+                          </Tooltip>
+                        </div>
+                      </div>
+
+                      {/* ── FOOTER ACTIONS ─────────────────────────────── */}
+                      <div
+                        className="px-4 py-3 flex gap-2"
+                        style={{
+                          borderTop: "1px solid rgba(128,128,128,0.08)",
+                        }}
+                      >
+                        <Tooltip
+                          content={sectionHelp.quickView}
+                          wrapperClassName="flex flex-1"
+                        >
+                          <button
+                            onClick={() => handleQuickView(supplier)}
+                            className="w-full flex items-center justify-center gap-1.5 text-[12px] py-2 font-medium transition-opacity hover:opacity-75"
+                            style={{
+                              borderRadius: "6px",
+                              color: colors.primary,
+                              border: `1px solid ${colors.primary}30`,
+                              backgroundColor: colors.primary + "08",
+                            }}
+                          >
+                            <EyeIcon className="h-3.5 w-3.5" /> Quick View
+                          </button>
+                        </Tooltip>
+                        <Tooltip
+                          content={sectionHelp.openProfile}
+                          wrapperClassName="flex flex-[1.4]"
+                        >
+                          <button
+                            onClick={() => handleViewDetails(supplierId)}
+                            className="w-full flex items-center justify-center gap-1.5 text-[12px] py-2 font-semibold transition-opacity hover:opacity-88"
+                            style={{
+                              borderRadius: "6px",
+                              background: "#C8F05A",
+                              color: "#0A0A0A",
+                            }}
+                          >
+                            Open Profile{" "}
+                            <ArrowRightIcon className="h-3.5 w-3.5" />
+                          </button>
+                        </Tooltip>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              ) : (
+                <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+                  <div
+                    className="h-16 w-16 rounded-xl flex items-center justify-center"
+                    style={{
+                      background: "rgba(128,128,128,0.08)",
+                      border: "1px solid rgba(128,128,128,0.12)",
+                    }}
+                  >
+                    <MagnifyingGlassIcon
+                      className="h-8 w-8"
+                      style={{ color: colors.textMuted, opacity: 0.5 }}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: colors.text }}
+                    >
+                      No suppliers found
+                    </p>
+                    <p
+                      className="text-[12px] mt-1"
+                      style={{ color: colors.textMuted }}
+                    >
+                      Try adjusting your filters or search query
+                    </p>
+                  </div>
+                  <button
+                    onClick={resetFilters}
+                    className="text-[12px] font-semibold px-4 py-2 rounded-md transition-opacity hover:opacity-80"
+                    style={{
+                      background: colors.primary + "18",
+                      color: colors.primary,
+                      border: `1px solid ${colors.primary}25`,
+                    }}
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Pagination Controls */}
+            {filteredSuppliers.length > 0 && (
+              <div className="mt-8 flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
+                <div className="text-sm" style={{ color: colors.textMuted }}>
+                  Showing {Math.min(itemsPerPage, filteredSuppliers.length)} of{" "}
+                  {filteredSuppliers.length} suppliers
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-md"
+                    style={{
+                      backgroundColor:
+                        currentPage === 1 ? "transparent" : colors.panel,
+                      color: currentPage === 1 ? colors.textMuted : colors.text,
+                      cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <ChevronLeftIcon className="h-5 w-5" />
+                  </button>
+
+                  <div
+                    className="px-4 py-1.5 rounded-md"
+                    style={{ backgroundColor: colors.panel }}
+                  >
+                    <span style={{ color: colors.text }}>{currentPage}</span>
+                    <span style={{ color: colors.textMuted }}>{" of "}</span>
+                    <span style={{ color: colors.text }}>{totalPages}</span>
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-md"
+                    style={{
+                      backgroundColor:
+                        currentPage === totalPages
+                          ? "transparent"
+                          : colors.panel,
+                      color:
+                        currentPage === totalPages
+                          ? colors.textMuted
+                          : colors.text,
+                      cursor:
+                        currentPage === totalPages ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    <ChevronRightIcon className="h-5 w-5" />
+                  </button>
+
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1); // Reset to first page when changing items per page
+                    }}
+                    className="sm:ml-4 py-1.5 pl-3 pr-8 rounded-md appearance-none text-sm"
+                    style={{
+                      backgroundColor: colors.panel,
+                      color: colors.text,
+                      border: `1px solid ${colors.accent}30`,
+                    }}
+                  >
+                    <option value={9}>9 / page</option>
+                    <option value={18}>18 / page</option>
+                    <option value={27}>27 / page</option>
+                    <option value={36}>36 / page</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Comparison Floating Panel */}
+            <AnimatePresence>
+              {selectedSuppliers.length > 0 && (
+                <motion.div
+                  className="fixed bottom-3 left-3 right-3 sm:left-auto sm:right-4 sm:bottom-4 sm:max-w-sm z-30 p-3 sm:p-4 rounded-xl shadow-xl border"
+                  style={{
+                    backgroundColor: colors.panel,
+                    borderLeft: `4px solid ${colors.primary}`,
+                    borderColor: colors.accent + "30",
+                  }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                >
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="font-semibold flex items-center">
+                      <Square2StackIcon
+                        className="h-5 w-5 mr-2"
+                        style={{ color: colors.primary }}
+                      />
+                      {selectedSuppliers.length}
+                      <span className="ml-1">
+                        {selectedSuppliers.length === 1
+                          ? "supplier"
+                          : "suppliers"}{" "}
+                        selected
+                      </span>
+                    </h3>
+                    <button
+                      onClick={clearSelections}
+                      className="p-1 rounded-full hover:bg-black/20"
+                      title="Clear all"
+                    >
+                      <XMarkIcon
+                        className="h-4 w-4"
+                        style={{ color: colors.textMuted }}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={clearSelections}
+                      className="flex-1 py-1.5 px-3 rounded text-sm"
+                      style={{
+                        backgroundColor: colors.panel,
+                        border: `1px solid ${colors.accent}40`,
+                        color: colors.textMuted,
+                      }}
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={openComparison}
+                      className="flex-1 py-1.5 px-3 rounded text-sm font-medium flex items-center justify-center"
+                      style={{
+                        backgroundColor:
+                          selectedSuppliers.length >= 2
+                            ? colors.primary
+                            : colors.panel,
+                        color:
+                          selectedSuppliers.length >= 2
+                            ? colors.background
+                            : colors.textMuted,
+                        opacity: selectedSuppliers.length >= 2 ? 1 : 0.5,
+                      }}
+                      disabled={selectedSuppliers.length < 2}
+                    >
+                      <Square2StackIcon className="h-4 w-4 mr-1.5" />
+                      Compare
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Comparison Modal */}
+            <AnimatePresence>
+              {showComparisonModal && selectedSuppliers.length >= 2 && (
+                <motion.div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowComparisonModal(false)}
+                >
+                  <motion.div
+                    className="relative w-full max-w-6xl rounded-xl overflow-hidden"
+                    style={{
+                      backgroundColor: colors.background,
+                      border: `1px solid ${colors.accent}30`,
+                    }}
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div
+                      className="p-5 border-b flex flex-col gap-3 md:flex-row md:items-start md:justify-between"
+                      style={{ borderColor: colors.accent + "30" }}
+                    >
+                      <div>
+                        <h2
+                          className="text-2xl font-bold"
+                          style={{ color: colors.text }}
+                        >
+                          Supplier Comparison
+                        </h2>
+                        <p
+                          className="text-sm mt-1"
+                          style={{ color: colors.textMuted }}
+                        >
+                          Comparing {selectedSuppliers.length} suppliers across
+                          key ESG and operational metrics.
+                        </p>
+                        {topPerformer && (
+                          <p
+                            className="text-xs"
+                            style={{ color: colors.primary }}
+                          >
+                            Top performer: {topPerformer.supplier.name} (
+                            {topPerformer.score.toFixed(1)})
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 self-end md:self-auto">
+                        <button
+                          onClick={exportComparison}
+                          className="px-3 py-2 rounded text-sm font-medium flex items-center"
+                          style={{
+                            backgroundColor: colors.accent,
+                            color: colors.background,
+                          }}
+                        >
+                          <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+                          Export
+                        </button>
+                        <button
+                          onClick={() => setShowComparisonModal(false)}
+                          className="p-2 rounded-full hover:bg-white/10"
+                          style={{ color: colors.textMuted }}
+                          aria-label="Close comparison"
+                        >
+                          <XMarkIcon className="h-6 w-6" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-5 space-y-6 max-h-[75vh] overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                        {selectedSuppliers.map((supplier) => {
+                          const supplierId =
+                            supplier._id || supplier.id || supplier.name;
+                          const statusStyles = getStatusStyles(
+                            colors,
+                            supplier.status,
+                          );
+                          return (
+                            <div
+                              key={`summary-${supplierId}`}
+                              className="p-4 rounded-lg border"
+                              style={{
+                                backgroundColor: colors.panel,
+                                borderColor: colors.accent + "30",
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <h3
+                                    className="text-lg font-semibold"
+                                    style={{ color: colors.text }}
+                                  >
+                                    {supplier.name}
+                                  </h3>
+                                  <div
+                                    className="text-xs flex flex-wrap gap-2 mt-2"
+                                    style={{ color: colors.textMuted }}
+                                  >
+                                    {supplier.country && (
+                                      <span className="flex items-center gap-1">
+                                        <MapPinIcon className="h-3.5 w-3.5" />
+                                        {supplier.country}
+                                      </span>
+                                    )}
+                                    {supplier.industry && (
+                                      <span className="flex items-center gap-1">
+                                        <BuildingOfficeIcon className="h-3.5 w-3.5" />
+                                        {supplier.industry}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span
+                                  className="text-sm font-semibold"
+                                  style={{ color: colors.primary }}
+                                >
+                                  {formatScoreValue(supplier.ethical_score)}
+                                </span>
+                              </div>
+
+                              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                                <span
+                                  className="px-2 py-1 rounded-full flex items-center"
+                                  style={{
+                                    backgroundColor:
+                                      getRiskColor(
+                                        colors,
+                                        supplier.risk_level,
+                                      ) + "20",
+                                    color: getRiskColor(
+                                      colors,
+                                      supplier.risk_level,
+                                    ),
+                                    border: `1px solid ${getRiskColor(
+                                      colors,
+                                      supplier.risk_level,
+                                    )}40`,
+                                  }}
+                                >
+                                  {getRiskIcon(supplier.risk_level) && (
+                                    <span className="mr-1">
+                                      {getRiskIcon(supplier.risk_level)}
+                                    </span>
+                                  )}
+                                  {supplier.risk_level || "No Risk Data"}
+                                </span>
+                                <span
+                                  className="px-2 py-1 rounded-full flex items-center"
+                                  style={{
+                                    color: statusStyles.color,
+                                    backgroundColor: statusStyles.bgColor,
+                                    border: statusStyles.border,
+                                  }}
+                                >
+                                  {statusStyles.icon}
+                                  {supplier.status || "Unverified"}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div
+                        className="overflow-x-auto rounded-lg border"
+                        style={{ borderColor: colors.accent + "30" }}
+                      >
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr>
                               <th
-                                key={`metric-header-${
-                                  supplier._id || supplier.id || supplier.name
-                                }`}
                                 className="px-4 py-3 text-left font-semibold"
                                 style={{
                                   color: colors.textMuted,
                                   backgroundColor: colors.panel,
                                 }}
                               >
-                                {supplier.name}
+                                Metric
                               </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {comparisonMetrics.map((metric) => {
-                            const normalizedValues = selectedSuppliers.map((supplier) =>
-                              metric.normalize(metric.getValue(supplier))
-                            );
-
-                            const numericEntries = normalizedValues
-                              .map((value, index) =>
-                                typeof value === "number" && !Number.isNaN(value)
-                                  ? { value, index }
-                                  : null
-                              )
-                              .filter(Boolean) as Array<{ value: number; index: number }>;
-
-                            let highlightIndex = -1;
-                            if (numericEntries.length > 0) {
-                              highlightIndex = metric.higherIsBetter
-                                ? numericEntries.reduce((best, current) =>
-                                    current.value > best.value ? current : best
-                                  ).index
-                                : numericEntries.reduce((best, current) =>
-                                    current.value < best.value ? current : best
-                                  ).index;
-                            }
-
-                            return (
-                              <tr
-                                key={metric.key}
-                                className="border-t"
-                                style={{ borderColor: colors.accent + "20" }}
-                              >
-                                <td
-                                  className="px-4 py-3 font-medium"
-                                  style={{ color: colors.text }}
+                              {selectedSuppliers.map((supplier) => (
+                                <th
+                                  key={`metric-header-${
+                                    supplier._id || supplier.id || supplier.name
+                                  }`}
+                                  className="px-4 py-3 text-left font-semibold"
+                                  style={{
+                                    color: colors.textMuted,
+                                    backgroundColor: colors.panel,
+                                  }}
                                 >
-                                  {metric.label}
-                                </td>
-                                {selectedSuppliers.map((supplier, index) => {
-                                  const value = metric.getValue(supplier);
-                                  const isHighlighted = index === highlightIndex;
-                                  return (
-                                    <td
-                                      key={`${metric.key}-${
-                                        supplier._id || supplier.id || supplier.name
-                                      }`}
-                                      className="px-4 py-3"
-                                      style={{
-                                        color: isHighlighted
-                                          ? colors.primary
-                                          : colors.textMuted,
-                                      }}
-                                    >
-                                      {metric.format(value)}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                                  {supplier.name}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {comparisonMetrics.map((metric) => {
+                              const normalizedValues = selectedSuppliers.map(
+                                (supplier) =>
+                                  metric.normalize(metric.getValue(supplier)),
+                              );
 
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSuppliers.map((supplier) => (
-                          <span
-                            key={`tag-${supplier._id || supplier.id || supplier.name}`}
-                            className="px-3 py-1 rounded-full text-xs"
+                              const numericEntries = normalizedValues
+                                .map((value, index) =>
+                                  typeof value === "number" &&
+                                  !Number.isNaN(value)
+                                    ? { value, index }
+                                    : null,
+                                )
+                                .filter(Boolean) as Array<{
+                                value: number;
+                                index: number;
+                              }>;
+
+                              let highlightIndex = -1;
+                              if (numericEntries.length > 0) {
+                                highlightIndex = metric.higherIsBetter
+                                  ? numericEntries.reduce((best, current) =>
+                                      current.value > best.value
+                                        ? current
+                                        : best,
+                                    ).index
+                                  : numericEntries.reduce((best, current) =>
+                                      current.value < best.value
+                                        ? current
+                                        : best,
+                                    ).index;
+                              }
+
+                              return (
+                                <tr
+                                  key={metric.key}
+                                  className="border-t"
+                                  style={{ borderColor: colors.accent + "20" }}
+                                >
+                                  <td
+                                    className="px-4 py-3 font-medium"
+                                    style={{ color: colors.text }}
+                                  >
+                                    {metric.label}
+                                  </td>
+                                  {selectedSuppliers.map((supplier, index) => {
+                                    const value = metric.getValue(supplier);
+                                    const isHighlighted =
+                                      index === highlightIndex;
+                                    return (
+                                      <td
+                                        key={`${metric.key}-${
+                                          supplier._id ||
+                                          supplier.id ||
+                                          supplier.name
+                                        }`}
+                                        className="px-4 py-3"
+                                        style={{
+                                          color: isHighlighted
+                                            ? colors.primary
+                                            : colors.textMuted,
+                                        }}
+                                      >
+                                        {metric.format(value)}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap gap-2">
+                          {selectedSuppliers.map((supplier) => (
+                            <span
+                              key={`tag-${supplier._id || supplier.id || supplier.name}`}
+                              className="px-3 py-1 rounded-full text-xs"
+                              style={{
+                                backgroundColor: colors.panel,
+                                color: colors.textMuted,
+                                border: `1px solid ${colors.accent}30`,
+                              }}
+                            >
+                              {supplier.name}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={clearSelections}
+                            className="px-4 py-2 rounded text-sm"
                             style={{
                               backgroundColor: colors.panel,
                               color: colors.textMuted,
                               border: `1px solid ${colors.accent}30`,
                             }}
                           >
-                            {supplier.name}
-                          </span>
-                        ))}
+                            Clear Selection
+                          </button>
+                          <button
+                            onClick={() => setShowComparisonModal(false)}
+                            className="px-4 py-2 rounded text-sm font-medium"
+                            style={{
+                              backgroundColor: colors.primary,
+                              color: colors.background,
+                            }}
+                          >
+                            Done
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={clearSelections}
-                          className="px-4 py-2 rounded text-sm"
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Detailed View Modal */}
+            <AnimatePresence>
+              {showModal && selectedSupplier && (
+                <motion.div
+                  className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={closeModal}
+                >
+                  <motion.div
+                    className="relative w-full max-w-4xl rounded-lg overflow-hidden"
+                    style={{ backgroundColor: colors.background }}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Modal Header */}
+                    <div
+                      className="p-4 border-b flex justify-between items-center"
+                      style={{ borderColor: colors.accent + "30" }}
+                    >
+                      <div>
+                        <h2
+                          className="text-xl font-bold"
+                          style={{ color: colors.text }}
+                        >
+                          {selectedSupplier.name}
+
+                          {/* AI Recommendation Tag in Modal */}
+                          {(() => {
+                            const rec = getRecommendation(
+                              colors,
+                              selectedSupplier,
+                            );
+                            return (
+                              <Tooltip
+                                content={rec.description}
+                                wrapperClassName="ml-3 inline-flex"
+                              >
+                                <span
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-help"
+                                  style={{
+                                    backgroundColor: rec.bgColor,
+                                    color: rec.color,
+                                    border: `1px solid ${rec.color}40`,
+                                  }}
+                                >
+                                  {rec.icon}
+                                  {rec.label}
+                                </span>
+                              </Tooltip>
+                            );
+                          })()}
+                        </h2>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span
+                            className="text-sm flex items-center"
+                            style={{ color: colors.textMuted }}
+                          >
+                            <MapPinIcon className="h-4 w-4 mr-1" />{" "}
+                            {selectedSupplier.country || "N/A"}
+                          </span>
+                          <span
+                            className="text-sm flex items-center"
+                            style={{ color: colors.textMuted }}
+                          >
+                            <BuildingOfficeIcon className="h-4 w-4 mr-1" />{" "}
+                            {selectedSupplier.industry || "N/A"}
+                          </span>
+
+                          {/* Status Indicator in Modal */}
+                          <span
+                            className="px-2 py-0.5 rounded-full flex items-center text-xs"
+                            style={{
+                              color: getStatusStyles(
+                                colors,
+                                selectedSupplier.status,
+                              ).color,
+                              backgroundColor: getStatusStyles(
+                                colors,
+                                selectedSupplier.status,
+                              ).bgColor,
+                              border: getStatusStyles(
+                                colors,
+                                selectedSupplier.status,
+                              ).border,
+                            }}
+                          >
+                            {
+                              getStatusStyles(colors, selectedSupplier.status)
+                                .icon
+                            }
+                            {selectedSupplier.status || "Unverified"}
+                          </span>
+
+                          {/* Last Updated in Modal */}
+                          {(() => {
+                            const badge = getLastUpdatedBadge(
+                              colors,
+                              selectedSupplier.last_updated,
+                            );
+                            return (
+                              <Tooltip content={badge.tooltip}>
+                                <span
+                                  className="text-xs flex items-center px-2 py-1 rounded-full"
+                                  style={badge.style}
+                                >
+                                  {badge.icon}
+                                  {badge.label}
+                                </span>
+                              </Tooltip>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                      <button
+                        onClick={closeModal}
+                        className="p-1 rounded-full hover:bg-white/10"
+                        style={{ color: colors.textMuted }}
+                      >
+                        <XMarkIcon className="h-6 w-6" />
+                      </button>
+                    </div>
+
+                    {/* Modal Body */}
+                    <div className="p-4 max-h-[70vh] overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                        <div
+                          className="rounded-lg p-3"
                           style={{
                             backgroundColor: colors.panel,
-                            color: colors.textMuted,
+                            border: `1px solid ${colors.primary}30`,
+                          }}
+                        >
+                          <p
+                            className="text-xs uppercase"
+                            style={{ color: colors.textMuted }}
+                          >
+                            ESG Score (Risk-Adjusted)
+                          </p>
+                          <p
+                            className="text-2xl font-semibold"
+                            style={{ color: colors.text }}
+                          >
+                            {formatScoreValue(selectedSupplier.ethical_score)}
+                          </p>
+                          <p
+                            className="text-xs mt-1"
+                            style={{ color: colors.textMuted }}
+                          >
+                            Includes average risk penalty.
+                          </p>
+                        </div>
+                        <div
+                          className="rounded-lg p-3"
+                          style={{
+                            backgroundColor: colors.panel,
                             border: `1px solid ${colors.accent}30`,
                           }}
                         >
-                          Clear Selection
-                        </button>
-                        <button
-                          onClick={() => setShowComparisonModal(false)}
-                          className="px-4 py-2 rounded text-sm font-medium"
+                          <p
+                            className="text-xs uppercase"
+                            style={{ color: colors.textMuted }}
+                          >
+                            Composite ESG Score (Pre-Risk)
+                          </p>
+                          <p
+                            className="text-2xl font-semibold"
+                            style={{ color: colors.text }}
+                          >
+                            {formatScoreValue(selectedSupplier.composite_score)}
+                          </p>
+                          <p
+                            className="text-xs mt-1"
+                            style={{ color: colors.textMuted }}
+                          >
+                            Weighted blend of Environmental, Social, Governance
+                            pillars.
+                          </p>
+                        </div>
+                        <div
+                          className="rounded-lg p-3"
                           style={{
-                            backgroundColor: colors.primary,
-                            color: colors.background,
+                            backgroundColor: colors.panel,
+                            border: `1px solid ${colors.secondary}30`,
                           }}
                         >
-                          Done
-                        </button>
+                          <p
+                            className="text-xs uppercase"
+                            style={{ color: colors.textMuted }}
+                          >
+                            Data Completeness
+                          </p>
+                          <p
+                            className="text-2xl font-semibold"
+                            style={{ color: colors.text }}
+                          >
+                            {formatPercent(
+                              selectedSupplier.completeness_ratio,
+                              0,
+                            )}
+                          </p>
+                          <p
+                            className="text-xs mt-1"
+                            style={{ color: colors.textMuted }}
+                          >
+                            Scores capped at 50 when disclosure &lt; 70%.
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Detailed View Modal */}
-          <AnimatePresence>
-            {showModal && selectedSupplier && (
-              <motion.div
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={closeModal}
-              >
-                <motion.div
-                  className="relative w-full max-w-4xl rounded-lg overflow-hidden"
-                  style={{ backgroundColor: colors.background }}
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Modal Header */}
-                  <div
-                    className="p-4 border-b flex justify-between items-center"
-                    style={{ borderColor: colors.accent + "30" }}
-                  >
-                    <div>
-                      <h2
-                        className="text-xl font-bold"
-                        style={{ color: colors.text }}
-                      >
-                        {selectedSupplier.name}
-
-                        {/* AI Recommendation Tag in Modal */}
-                        {(() => {
-                          const rec = getRecommendation(colors, selectedSupplier);
-                          return (
-                            <Tooltip content={rec.description} wrapperClassName="ml-3 inline-flex">
-                              <span
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-help"
-                                style={{
-                                  backgroundColor: rec.bgColor,
-                                  color: rec.color,
-                                  border: `1px solid ${rec.color}40`,
-                                }}
-                              >
-                                {rec.icon}
-                                {rec.label}
-                              </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* ESG Breakdown */}
+                        <div
+                          className="rounded-lg p-4"
+                          style={{ backgroundColor: colors.panel }}
+                        >
+                          <h3
+                            className="text-lg font-semibold mb-4 flex items-center justify-between"
+                            style={{ color: colors.text }}
+                          >
+                            <span>ESG Breakdown</span>
+                            <Tooltip content="Environmental, Social, and Governance (ESG) scores evaluate a supplier's sustainability and ethical business practices across three key dimensions.">
+                              <InformationCircleIcon
+                                className="h-5 w-5 opacity-70"
+                                style={{ color: colors.primary }}
+                              />
                             </Tooltip>
-                          );
-                        })()}
-                      </h2>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <span
-                          className="text-sm flex items-center"
-                          style={{ color: colors.textMuted }}
-                        >
-                          <MapPinIcon className="h-4 w-4 mr-1" />{" "}
-                          {selectedSupplier.country || "N/A"}
-                        </span>
-                        <span
-                          className="text-sm flex items-center"
-                          style={{ color: colors.textMuted }}
-                        >
-                          <BuildingOfficeIcon className="h-4 w-4 mr-1" />{" "}
-                          {selectedSupplier.industry || "N/A"}
-                        </span>
+                          </h3>
 
-                        {/* Status Indicator in Modal */}
-                        <span
-                          className="px-2 py-0.5 rounded-full flex items-center text-xs"
-                          style={{
-                            color: getStatusStyles(colors, selectedSupplier.status)
-                              .color,
-                            backgroundColor: getStatusStyles(
-                              colors,
-                              selectedSupplier.status
-                            ).bgColor,
-                            border: getStatusStyles(colors, selectedSupplier.status)
-                              .border,
-                          }}
-                        >
-                          {getStatusStyles(colors, selectedSupplier.status).icon}
-                          {selectedSupplier.status || "Unverified"}
-                        </span>
-
-                        {/* Last Updated in Modal */}
-                        {(() => {
-                          const badge = getLastUpdatedBadge(
-                            colors,
-                            selectedSupplier.last_updated
-                          );
-                          return (
-                            <Tooltip content={badge.tooltip}>
-                              <span
-                                className="text-xs flex items-center px-2 py-1 rounded-full"
-                                style={badge.style}
-                              >
-                                {badge.icon}
-                                {badge.label}
-                              </span>
-                            </Tooltip>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                    <button
-                      onClick={closeModal}
-                      className="p-1 rounded-full hover:bg-white/10"
-                      style={{ color: colors.textMuted }}
-                    >
-                      <XMarkIcon className="h-6 w-6" />
-                    </button>
-                  </div>
-
-                  {/* Modal Body */}
-                  <div className="p-4 max-h-[70vh] overflow-y-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                      <div
-                        className="rounded-lg p-3"
-                        style={{
-                          backgroundColor: colors.panel,
-                          border: `1px solid ${colors.primary}30`,
-                        }}
-                      >
-                        <p className="text-xs uppercase" style={{ color: colors.textMuted }}>
-                          ESG Score (Risk-Adjusted)
-                        </p>
-                        <p className="text-2xl font-semibold" style={{ color: colors.text }}>
-                          {formatScoreValue(selectedSupplier.ethical_score)}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
-                          Includes average risk penalty.
-                        </p>
-                      </div>
-                      <div
-                        className="rounded-lg p-3"
-                        style={{
-                          backgroundColor: colors.panel,
-                          border: `1px solid ${colors.accent}30`,
-                        }}
-                      >
-                        <p className="text-xs uppercase" style={{ color: colors.textMuted }}>
-                          Composite ESG Score (Pre-Risk)
-                        </p>
-                        <p className="text-2xl font-semibold" style={{ color: colors.text }}>
-                          {formatScoreValue(selectedSupplier.composite_score)}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
-                          Weighted blend of Environmental, Social, Governance pillars.
-                        </p>
-                      </div>
-                      <div
-                        className="rounded-lg p-3"
-                        style={{
-                          backgroundColor: colors.panel,
-                          border: `1px solid ${colors.secondary}30`,
-                        }}
-                      >
-                        <p className="text-xs uppercase" style={{ color: colors.textMuted }}>
-                          Data Completeness
-                        </p>
-                        <p className="text-2xl font-semibold" style={{ color: colors.text }}>
-                          {formatPercent(selectedSupplier.completeness_ratio, 0)}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: colors.textMuted }}>
-                          Scores capped at 50 when disclosure &lt; 70%.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* ESG Breakdown */}
-                      <div
-                        className="rounded-lg p-4"
-                        style={{ backgroundColor: colors.panel }}
-                      >
-                        <h3
-                          className="text-lg font-semibold mb-4 flex items-center justify-between"
-                          style={{ color: colors.text }}
-                        >
-                          <span>ESG Breakdown</span>
-                          <Tooltip content="Environmental, Social, and Governance (ESG) scores evaluate a supplier's sustainability and ethical business practices across three key dimensions.">
-                            <InformationCircleIcon
-                              className="h-5 w-5 opacity-70"
-                              style={{ color: colors.primary }}
-                            />
-                          </Tooltip>
-                        </h3>
-
-                        <div className="space-y-4">
-                          {/* Ethical Score with Tooltip */}
-                          <div>
-                            <div className="flex justify-between mb-1 items-center">
-                              <span
-                                className="flex items-center"
-                                style={{ color: colors.textMuted }}
-                              >
-                                Overall Ethical Score
-                                <Tooltip
-                                  content={scoreExplanations.ethical_score}
+                          <div className="space-y-4">
+                            {/* Ethical Score with Tooltip */}
+                            <div>
+                              <div className="flex justify-between mb-1 items-center">
+                                <span
+                                  className="flex items-center"
+                                  style={{ color: colors.textMuted }}
                                 >
-                                  <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
-                                </Tooltip>
-                              </span>
-                              <span
-                                className="font-bold"
-                                style={{
-                                  color: getScoreColor(
-                                    colors,
-                                    selectedSupplier.ethical_score
-                                  ),
-                                }}
-                              >
-                                {selectedSupplier.ethical_score !== null &&
-                                selectedSupplier.ethical_score !== undefined
-                                  ? selectedSupplier.ethical_score > 0 &&
-                                    selectedSupplier.ethical_score <= 1
-                                    ? (
-                                        selectedSupplier.ethical_score * 100
-                                      ).toFixed(1)
-                                    : selectedSupplier.ethical_score.toFixed(1)
-                                  : "N/A"}
-                              </span>
+                                  Overall Ethical Score
+                                  <Tooltip
+                                    content={scoreExplanations.ethical_score}
+                                  >
+                                    <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
+                                  </Tooltip>
+                                </span>
+                                <span
+                                  className="font-bold"
+                                  style={{
+                                    color: getScoreColor(
+                                      colors,
+                                      selectedSupplier.ethical_score,
+                                    ),
+                                  }}
+                                >
+                                  {selectedSupplier.ethical_score !== null &&
+                                  selectedSupplier.ethical_score !== undefined
+                                    ? selectedSupplier.ethical_score > 0 &&
+                                      selectedSupplier.ethical_score <= 1
+                                      ? (
+                                          selectedSupplier.ethical_score * 100
+                                        ).toFixed(1)
+                                      : selectedSupplier.ethical_score.toFixed(
+                                          1,
+                                        )
+                                    : "N/A"}
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${
+                                      selectedSupplier.ethical_score &&
+                                      selectedSupplier.ethical_score <= 1
+                                        ? selectedSupplier.ethical_score * 100
+                                        : selectedSupplier.ethical_score || 0
+                                    }%`,
+                                    backgroundColor: getScoreColor(
+                                      colors,
+                                      selectedSupplier.ethical_score,
+                                    ),
+                                  }}
+                                ></div>
+                              </div>
                             </div>
-                            <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${
-                                    selectedSupplier.ethical_score &&
-                                    selectedSupplier.ethical_score <= 1
-                                      ? selectedSupplier.ethical_score * 100
-                                      : selectedSupplier.ethical_score || 0
-                                  }%`,
-                                  backgroundColor: getScoreColor(
-                                    colors,
-                                    selectedSupplier.ethical_score
-                                  ),
-                                }}
-                              ></div>
-                            </div>
-                          </div>
 
-                          {/* Environmental Score with Tooltip */}
-                          <div>
-                            <div className="flex justify-between mb-1 items-center">
+                            {/* Environmental Score with Tooltip */}
+                            <div>
+                              <div className="flex justify-between mb-1 items-center">
+                                <span
+                                  className="flex items-center"
+                                  style={{ color: colors.textMuted }}
+                                >
+                                  Environmental
+                                  <Tooltip
+                                    content={
+                                      scoreExplanations.environmental_score
+                                    }
+                                  >
+                                    <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
+                                  </Tooltip>
+                                </span>
+                                <span
+                                  className="font-bold"
+                                  style={{ color: colors.primary }}
+                                >
+                                  {selectedSupplier.environmental_score !==
+                                    null &&
+                                  selectedSupplier.environmental_score !==
+                                    undefined
+                                    ? selectedSupplier.environmental_score >
+                                        0 &&
+                                      selectedSupplier.environmental_score <= 1
+                                      ? (
+                                          selectedSupplier.environmental_score *
+                                          100
+                                        ).toFixed(1)
+                                      : selectedSupplier.environmental_score.toFixed(
+                                          1,
+                                        )
+                                    : "N/A"}
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${
+                                      selectedSupplier.environmental_score &&
+                                      selectedSupplier.environmental_score <= 1
+                                        ? selectedSupplier.environmental_score *
+                                          100
+                                        : selectedSupplier.environmental_score ||
+                                          0
+                                    }%`,
+                                    backgroundColor: colors.primary,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            {/* Social Score with Tooltip */}
+                            <div>
+                              <div className="flex justify-between mb-1 items-center">
+                                <span
+                                  className="flex items-center"
+                                  style={{ color: colors.textMuted }}
+                                >
+                                  Social
+                                  <Tooltip
+                                    content={scoreExplanations.social_score}
+                                  >
+                                    <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
+                                  </Tooltip>
+                                </span>
+                                <span
+                                  className="font-bold"
+                                  style={{ color: colors.accent }}
+                                >
+                                  {selectedSupplier.social_score !== null &&
+                                  selectedSupplier.social_score !== undefined
+                                    ? selectedSupplier.social_score > 0 &&
+                                      selectedSupplier.social_score <= 1
+                                      ? (
+                                          selectedSupplier.social_score * 100
+                                        ).toFixed(1)
+                                      : selectedSupplier.social_score.toFixed(1)
+                                    : "N/A"}
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${
+                                      selectedSupplier.social_score &&
+                                      selectedSupplier.social_score <= 1
+                                        ? selectedSupplier.social_score * 100
+                                        : selectedSupplier.social_score || 0
+                                    }%`,
+                                    backgroundColor: colors.accent,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            {/* Governance Score with Tooltip */}
+                            <div>
+                              <div className="flex justify-between mb-1 items-center">
+                                <span
+                                  className="flex items-center"
+                                  style={{ color: colors.textMuted }}
+                                >
+                                  Governance
+                                  <Tooltip
+                                    content={scoreExplanations.governance_score}
+                                  >
+                                    <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
+                                  </Tooltip>
+                                </span>
+                                <span
+                                  className="font-bold"
+                                  style={{ color: colors.secondary }}
+                                >
+                                  {selectedSupplier.governance_score !== null &&
+                                  selectedSupplier.governance_score !==
+                                    undefined
+                                    ? selectedSupplier.governance_score > 0 &&
+                                      selectedSupplier.governance_score <= 1
+                                      ? (
+                                          selectedSupplier.governance_score *
+                                          100
+                                        ).toFixed(1)
+                                      : selectedSupplier.governance_score.toFixed(
+                                          1,
+                                        )
+                                    : "N/A"}
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: `${
+                                      selectedSupplier.governance_score &&
+                                      selectedSupplier.governance_score <= 1
+                                        ? selectedSupplier.governance_score *
+                                          100
+                                        : selectedSupplier.governance_score || 0
+                                    }%`,
+                                    backgroundColor: colors.secondary,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            {/* Risk Level with Tooltip */}
+                            <div className="flex justify-between mt-6 items-center">
                               <span
                                 className="flex items-center"
                                 style={{ color: colors.textMuted }}
                               >
-                                Environmental
+                                Risk Level
                                 <Tooltip
                                   content={
-                                    scoreExplanations.environmental_score
+                                    selectedSupplier.risk_level
+                                      ? scoreExplanations.risk_levels[
+                                          selectedSupplier.risk_level.toLowerCase()
+                                        ]
+                                      : "Risk level not available"
                                   }
                                 >
                                   <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
                                 </Tooltip>
                               </span>
-                              <span
-                                className="font-bold"
-                                style={{ color: colors.primary }}
-                              >
-                                {selectedSupplier.environmental_score !==
-                                  null &&
-                                selectedSupplier.environmental_score !==
-                                  undefined
-                                  ? selectedSupplier.environmental_score > 0 &&
-                                    selectedSupplier.environmental_score <= 1
-                                    ? (
-                                        selectedSupplier.environmental_score *
-                                        100
-                                      ).toFixed(1)
-                                    : selectedSupplier.environmental_score.toFixed(
-                                        1
-                                      )
-                                  : "N/A"}
-                              </span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${
-                                    selectedSupplier.environmental_score &&
-                                    selectedSupplier.environmental_score <= 1
-                                      ? selectedSupplier.environmental_score *
-                                        100
-                                      : selectedSupplier.environmental_score ||
-                                        0
-                                  }%`,
-                                  backgroundColor: colors.primary,
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Social Score with Tooltip */}
-                          <div>
-                            <div className="flex justify-between mb-1 items-center">
-                              <span
-                                className="flex items-center"
-                                style={{ color: colors.textMuted }}
-                              >
-                                Social
-                                <Tooltip
-                                  content={scoreExplanations.social_score}
+                              <div className="flex items-center">
+                                <span className="mr-2">
+                                  {getRiskIcon(selectedSupplier.risk_level)}
+                                </span>
+                                <span
+                                  className="px-3 py-1 rounded text-xs font-medium capitalize flex items-center"
+                                  style={{
+                                    backgroundColor:
+                                      getRiskColor(
+                                        colors,
+                                        selectedSupplier.risk_level,
+                                      ) + "20",
+                                    color: getRiskColor(
+                                      colors,
+                                      selectedSupplier.risk_level,
+                                    ),
+                                    border: `1px solid ${getRiskColor(
+                                      colors,
+                                      selectedSupplier.risk_level,
+                                    )}40`,
+                                  }}
                                 >
-                                  <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
-                                </Tooltip>
-                              </span>
-                              <span
-                                className="font-bold"
-                                style={{ color: colors.accent }}
-                              >
-                                {selectedSupplier.social_score !== null &&
-                                selectedSupplier.social_score !== undefined
-                                  ? selectedSupplier.social_score > 0 &&
-                                    selectedSupplier.social_score <= 1
-                                    ? (
-                                        selectedSupplier.social_score * 100
-                                      ).toFixed(1)
-                                    : selectedSupplier.social_score.toFixed(1)
-                                  : "N/A"}
-                              </span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${
-                                    selectedSupplier.social_score &&
-                                    selectedSupplier.social_score <= 1
-                                      ? selectedSupplier.social_score * 100
-                                      : selectedSupplier.social_score || 0
-                                  }%`,
-                                  backgroundColor: colors.accent,
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Governance Score with Tooltip */}
-                          <div>
-                            <div className="flex justify-between mb-1 items-center">
-                              <span
-                                className="flex items-center"
-                                style={{ color: colors.textMuted }}
-                              >
-                                Governance
-                                <Tooltip
-                                  content={scoreExplanations.governance_score}
-                                >
-                                  <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
-                                </Tooltip>
-                              </span>
-                              <span
-                                className="font-bold"
-                                style={{ color: colors.secondary }}
-                              >
-                                {selectedSupplier.governance_score !== null &&
-                                selectedSupplier.governance_score !== undefined
-                                  ? selectedSupplier.governance_score > 0 &&
-                                    selectedSupplier.governance_score <= 1
-                                    ? (
-                                        selectedSupplier.governance_score * 100
-                                      ).toFixed(1)
-                                    : selectedSupplier.governance_score.toFixed(
-                                        1
-                                      )
-                                  : "N/A"}
-                              </span>
-                            </div>
-                            <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${
-                                    selectedSupplier.governance_score &&
-                                    selectedSupplier.governance_score <= 1
-                                      ? selectedSupplier.governance_score * 100
-                                      : selectedSupplier.governance_score || 0
-                                  }%`,
-                                  backgroundColor: colors.secondary,
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {/* Risk Level with Tooltip */}
-                          <div className="flex justify-between mt-6 items-center">
-                            <span
-                              className="flex items-center"
-                              style={{ color: colors.textMuted }}
-                            >
-                              Risk Level
-                              <Tooltip
-                                content={
-                                  selectedSupplier.risk_level
-                                    ? scoreExplanations.risk_levels[
-                                        selectedSupplier.risk_level.toLowerCase()
-                                      ]
-                                    : "Risk level not available"
-                                }
-                              >
-                                <QuestionMarkCircleIcon className="h-3.5 w-3.5 ml-1 opacity-70" />
-                              </Tooltip>
-                            </span>
-                            <div className="flex items-center">
-                              <span className="mr-2">
-                                {getRiskIcon(selectedSupplier.risk_level)}
-                              </span>
-                              <span
-                                className="px-3 py-1 rounded text-xs font-medium capitalize flex items-center"
-                                style={{
-                                  backgroundColor:
-                                    getRiskColor(colors, selectedSupplier.risk_level) +
-                                    "20",
-                                  color: getRiskColor(
-                                    colors,
-                                    selectedSupplier.risk_level
-                                  ),
-                                  border: `1px solid ${getRiskColor(
-                                    colors,
-                                    selectedSupplier.risk_level
-                                  )}40`,
-                                }}
-                              >
-                                {selectedSupplier.risk_level || "No Data"}
-                              </span>
+                                  {selectedSupplier.risk_level || "No Data"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Controversies */}
-                      <div
-                        className="rounded-lg p-4"
-                        style={{ backgroundColor: colors.panel }}
-                      >
-                        <h3
-                          className="text-lg font-semibold mb-4"
-                          style={{ color: colors.text }}
+                        {/* Controversies */}
+                        <div
+                          className="rounded-lg p-4"
+                          style={{ backgroundColor: colors.panel }}
                         >
-                          <BellAlertIcon
-                            className="h-5 w-5 inline mr-2"
-                            style={{ color: colors.error }}
-                          />
-                          Controversies
-                        </h3>
+                          <h3
+                            className="text-lg font-semibold mb-4"
+                            style={{ color: colors.text }}
+                          >
+                            <BellAlertIcon
+                              className="h-5 w-5 inline mr-2"
+                              style={{ color: colors.error }}
+                            />
+                            Controversies
+                          </h3>
 
-                        {mockControversies.length > 0 ? (
-                          <div className="space-y-3">
-                            {mockControversies.map((controversy, index) => (
-                              <div
-                                key={index}
-                                className="p-3 rounded-md border"
-                                style={{
-                                  borderColor:
-                                    controversy.severity === "high"
-                                      ? colors.error + "40"
-                                      : controversy.severity === "medium"
-                                      ? colors.warning + "40"
-                                      : colors.accent + "40",
-                                  backgroundColor:
-                                    controversy.severity === "high"
-                                      ? colors.error + "10"
-                                      : controversy.severity === "medium"
-                                      ? colors.warning + "10"
-                                      : colors.accent + "10",
-                                }}
-                              >
-                                <div className="flex justify-between items-start mb-1">
-                                  <h4
-                                    className="font-medium"
-                                    style={{ color: colors.text }}
+                          {mockControversies.length > 0 ? (
+                            <div className="space-y-3">
+                              {mockControversies.map((controversy, index) => (
+                                <div
+                                  key={index}
+                                  className="p-3 rounded-md border"
+                                  style={{
+                                    borderColor:
+                                      controversy.severity === "high"
+                                        ? colors.error + "40"
+                                        : controversy.severity === "medium"
+                                          ? colors.warning + "40"
+                                          : colors.accent + "40",
+                                    backgroundColor:
+                                      controversy.severity === "high"
+                                        ? colors.error + "10"
+                                        : controversy.severity === "medium"
+                                          ? colors.warning + "10"
+                                          : colors.accent + "10",
+                                  }}
+                                >
+                                  <div className="flex justify-between items-start mb-1">
+                                    <h4
+                                      className="font-medium"
+                                      style={{ color: colors.text }}
+                                    >
+                                      {controversy.title}
+                                    </h4>
+                                    <div
+                                      className="px-2 py-0.5 rounded text-xs font-medium capitalize"
+                                      style={{
+                                        backgroundColor:
+                                          controversy.severity === "high"
+                                            ? colors.error
+                                            : controversy.severity === "medium"
+                                              ? colors.warning
+                                              : colors.accent,
+                                        color: colors.background,
+                                      }}
+                                    >
+                                      {controversy.severity}
+                                    </div>
+                                  </div>
+                                  <p
+                                    className="text-sm mb-2"
+                                    style={{ color: colors.textMuted }}
                                   >
-                                    {controversy.title}
-                                  </h4>
-                                  <div
-                                    className="px-2 py-0.5 rounded text-xs font-medium capitalize"
-                                    style={{
-                                      backgroundColor:
-                                        controversy.severity === "high"
-                                          ? colors.error
-                                          : controversy.severity === "medium"
-                                          ? colors.warning
-                                          : colors.accent,
-                                      color: colors.background,
-                                    }}
-                                  >
-                                    {controversy.severity}
+                                    {controversy.description}
+                                  </p>
+                                  <div className="flex justify-between text-xs">
+                                    <span style={{ color: colors.textMuted }}>
+                                      <ClockIcon className="h-3.5 w-3.5 inline mr-1" />
+                                      {controversy.date}
+                                    </span>
+                                    <span
+                                      style={{
+                                        color: controversy.resolved
+                                          ? colors.success
+                                          : colors.warning,
+                                      }}
+                                    >
+                                      {controversy.resolved
+                                        ? "Resolved"
+                                        : "Active"}
+                                    </span>
                                   </div>
                                 </div>
-                                <p
-                                  className="text-sm mb-2"
-                                  style={{ color: colors.textMuted }}
-                                >
-                                  {controversy.description}
-                                </p>
-                                <div className="flex justify-between text-xs">
-                                  <span style={{ color: colors.textMuted }}>
-                                    <ClockIcon className="h-3.5 w-3.5 inline mr-1" />
-                                    {controversy.date}
-                                  </span>
-                                  <span
+                              ))}
+                            </div>
+                          ) : (
+                            <div
+                              className="text-center py-4"
+                              style={{ color: colors.textMuted }}
+                            >
+                              No controversies reported
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Score History */}
+                        <div
+                          className="rounded-lg p-4"
+                          style={{ backgroundColor: colors.panel }}
+                        >
+                          <h3
+                            className="text-lg font-semibold mb-4"
+                            style={{ color: colors.text }}
+                          >
+                            <ClockIcon
+                              className="h-5 w-5 inline mr-2"
+                              style={{ color: colors.text }}
+                            />
+                            Score History
+                          </h3>
+
+                          <div className="space-y-2">
+                            {mockScoreHistory.map((entry, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between p-2 rounded-md"
+                                style={{
+                                  backgroundColor:
+                                    index === mockScoreHistory.length - 1
+                                      ? colors.accent + "20"
+                                      : "transparent",
+                                }}
+                              >
+                                <div className="flex items-center">
+                                  <div
+                                    className="mr-3"
                                     style={{
-                                      color: controversy.resolved
-                                        ? colors.success
-                                        : colors.warning,
+                                      color:
+                                        entry.change >= 0
+                                          ? colors.success
+                                          : colors.error,
                                     }}
                                   >
-                                    {controversy.resolved
-                                      ? "Resolved"
-                                      : "Active"}
-                                  </span>
+                                    {entry.change >= 0 ? (
+                                      <ArrowTrendingUpIcon className="h-5 w-5" />
+                                    ) : (
+                                      <ArrowTrendingDownIcon className="h-5 w-5" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <div
+                                      className="text-sm font-medium"
+                                      style={{ color: colors.text }}
+                                    >
+                                      {entry.score.toFixed(1)}
+                                    </div>
+                                    <div
+                                      className="text-xs"
+                                      style={{ color: colors.textMuted }}
+                                    >
+                                      {entry.date}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div
-                            className="text-center py-4"
-                            style={{ color: colors.textMuted }}
-                          >
-                            No controversies reported
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Score History */}
-                      <div
-                        className="rounded-lg p-4"
-                        style={{ backgroundColor: colors.panel }}
-                      >
-                        <h3
-                          className="text-lg font-semibold mb-4"
-                          style={{ color: colors.text }}
-                        >
-                          <ClockIcon
-                            className="h-5 w-5 inline mr-2"
-                            style={{ color: colors.text }}
-                          />
-                          Score History
-                        </h3>
-
-                        <div className="space-y-2">
-                          {mockScoreHistory.map((entry, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 rounded-md"
-                              style={{
-                                backgroundColor:
-                                  index === mockScoreHistory.length - 1
-                                    ? colors.accent + "20"
-                                    : "transparent",
-                              }}
-                            >
-                              <div className="flex items-center">
                                 <div
-                                  className="mr-3"
+                                  className="text-sm font-mono"
                                   style={{
                                     color:
                                       entry.change >= 0
@@ -3587,132 +3948,102 @@ const SuppliersList = () => {
                                         : colors.error,
                                   }}
                                 >
-                                  {entry.change >= 0 ? (
-                                    <ArrowTrendingUpIcon className="h-5 w-5" />
-                                  ) : (
-                                    <ArrowTrendingDownIcon className="h-5 w-5" />
-                                  )}
-                                </div>
-                                <div>
-                                  <div
-                                    className="text-sm font-medium"
-                                    style={{ color: colors.text }}
-                                  >
-                                    {entry.score.toFixed(1)}
-                                  </div>
-                                  <div
-                                    className="text-xs"
-                                    style={{ color: colors.textMuted }}
-                                  >
-                                    {entry.date}
-                                  </div>
+                                  {entry.change >= 0 ? "+" : ""}
+                                  {entry.change.toFixed(1)}
                                 </div>
                               </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Suggested Actions */}
+                        <div
+                          className="rounded-lg p-4"
+                          style={{ backgroundColor: colors.panel }}
+                        >
+                          <h3
+                            className="text-lg font-semibold mb-4"
+                            style={{ color: colors.text }}
+                          >
+                            Suggested Actions
+                          </h3>
+
+                          <div className="space-y-3">
+                            {mockActions.map((action, index) => (
                               <div
-                                className="text-sm font-mono"
+                                key={index}
+                                className="p-3 rounded-md border"
                                 style={{
-                                  color:
-                                    entry.change >= 0
-                                      ? colors.success
-                                      : colors.error,
+                                  borderColor:
+                                    action.priority === "high"
+                                      ? colors.error + "40"
+                                      : action.priority === "medium"
+                                        ? colors.warning + "40"
+                                        : colors.accent + "40",
+                                  backgroundColor: colors.background + "50",
                                 }}
                               >
-                                {entry.change >= 0 ? "+" : ""}
-                                {entry.change.toFixed(1)}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Suggested Actions */}
-                      <div
-                        className="rounded-lg p-4"
-                        style={{ backgroundColor: colors.panel }}
-                      >
-                        <h3
-                          className="text-lg font-semibold mb-4"
-                          style={{ color: colors.text }}
-                        >
-                          Suggested Actions
-                        </h3>
-
-                        <div className="space-y-3">
-                          {mockActions.map((action, index) => (
-                            <div
-                              key={index}
-                              className="p-3 rounded-md border"
-                              style={{
-                                borderColor:
-                                  action.priority === "high"
-                                    ? colors.error + "40"
-                                    : action.priority === "medium"
-                                    ? colors.warning + "40"
-                                    : colors.accent + "40",
-                                backgroundColor: colors.background + "50",
-                              }}
-                            >
-                              <div className="flex justify-between items-start mb-1">
-                                <h4
-                                  className="font-medium"
-                                  style={{ color: colors.text }}
-                                >
-                                  {action.action}
-                                </h4>
+                                <div className="flex justify-between items-start mb-1">
+                                  <h4
+                                    className="font-medium"
+                                    style={{ color: colors.text }}
+                                  >
+                                    {action.action}
+                                  </h4>
+                                  <div
+                                    className="px-2 py-0.5 rounded text-xs font-medium capitalize"
+                                    style={{
+                                      backgroundColor:
+                                        action.priority === "high"
+                                          ? colors.error
+                                          : action.priority === "medium"
+                                            ? colors.warning
+                                            : colors.accent,
+                                      color: colors.background,
+                                    }}
+                                  >
+                                    {action.priority} priority
+                                  </div>
+                                </div>
                                 <div
-                                  className="px-2 py-0.5 rounded text-xs font-medium capitalize"
-                                  style={{
-                                    backgroundColor:
-                                      action.priority === "high"
-                                        ? colors.error
-                                        : action.priority === "medium"
-                                        ? colors.warning
-                                        : colors.accent,
-                                    color: colors.background,
-                                  }}
+                                  className="text-xs"
+                                  style={{ color: colors.textMuted }}
                                 >
-                                  {action.priority} priority
+                                  <ClockIcon className="h-3.5 w-3.5 inline mr-1" />
+                                  Timeframe: {action.timeframe}
                                 </div>
                               </div>
-                              <div
-                                className="text-xs"
-                                style={{ color: colors.textMuted }}
-                              >
-                                <ClockIcon className="h-3.5 w-3.5 inline mr-1" />
-                                Timeframe: {action.timeframe}
-                              </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Modal Footer */}
-                  <div
-                    className="p-4 border-t flex justify-end items-center gap-3 sticky bottom-0"
-                    style={{
-                      borderColor: colors.accent + "30",
-                      backgroundColor: colors.background,
-                    }}
-                  >
-                    <button
-                      onClick={closeModal}
-                      className="px-4 py-2 rounded"
+                    {/* Modal Footer */}
+                    <div
+                      className="p-4 border-t flex justify-end items-center gap-3 sticky bottom-0"
                       style={{
-                        backgroundColor: colors.panel,
-                        color: colors.textMuted,
+                        borderColor: colors.accent + "30",
+                        backgroundColor: colors.background,
                       }}
                     >
-                      Close
-                    </button>
-                  </div>
+                      <button
+                        onClick={closeModal}
+                        className="px-4 py-2 rounded"
+                        style={{
+                          backgroundColor: colors.panel,
+                          color: colors.textMuted,
+                        }}
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
+              )}
+            </AnimatePresence>
+          </>
+        )}
       </div>
     </div>
   );

@@ -63,7 +63,11 @@ const Navbar = () => {
   const primaryNav: NavItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: <BarChart3 size={16} /> },
     { name: "Suppliers", path: "/suppliers", icon: <List size={16} /> },
-    { name: "Recommend", path: "/recommendations", icon: <TrendingUp size={16} /> },
+    {
+      name: "Recommend",
+      path: "/recommendations",
+      icon: <TrendingUp size={16} />,
+    },
     { name: "Graph", path: "/supply-chain-graph", icon: <Globe size={16} /> },
     { name: "Geo Risk", path: "/geo-risk-mapping", icon: <Map size={16} /> },
   ];
@@ -71,7 +75,11 @@ const Navbar = () => {
   // Secondary nav — hidden behind "More" dropdown on desktop
   const secondaryNav: NavItem[] = [
     { name: "Scenarios", path: "/scenarios", icon: <TestTube size={16} /> },
-    { name: "Methodology", path: "/methodology", icon: <FlaskConical size={16} /> },
+    {
+      name: "Methodology",
+      path: "/methodology",
+      icon: <FlaskConical size={16} />,
+    },
     { name: "About", path: "/about", icon: <Info size={16} /> },
   ];
 
@@ -84,9 +92,17 @@ const Navbar = () => {
         location.pathname.startsWith("/supplier-details/") ||
         location.pathname.startsWith("/supplier-scorecard/")));
 
-  const anySecondaryActive = secondaryNav.some((item) => isActivePath(item.path));
+  const anySecondaryActive = secondaryNav.some((item) =>
+    isActivePath(item.path),
+  );
 
-  const NavLink = ({ item, compact = false }: { item: NavItem; compact?: boolean }) => {
+  const NavLink = ({
+    item,
+    compact = false,
+  }: {
+    item: NavItem;
+    compact?: boolean;
+  }) => {
     const active = isActivePath(item.path);
     return (
       <Link
@@ -95,7 +111,9 @@ const Navbar = () => {
         style={
           active
             ? { color: "#0A0A0A" }
-            : { color: darkMode ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)" }
+            : {
+                color: darkMode ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)",
+              }
         }
       >
         {active && (
@@ -111,7 +129,11 @@ const Navbar = () => {
         )}
         <span className="relative z-10 flex items-center gap-1.5">
           <span className="shrink-0">{item.icon}</span>
-          {!compact && <span className="hidden lg:inline whitespace-nowrap">{item.name}</span>}
+          {!compact && (
+            <span className="hidden lg:inline whitespace-nowrap">
+              {item.name}
+            </span>
+          )}
         </span>
       </Link>
     );
@@ -121,9 +143,14 @@ const Navbar = () => {
     <nav
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        background: isScrolled || isMobileMenuOpen
-          ? darkMode ? "rgba(10,10,10,0.88)" : "rgba(245,245,240,0.88)"
-          : darkMode ? "rgba(10,10,10,0.70)" : "rgba(245,245,240,0.70)",
+        background:
+          isScrolled || isMobileMenuOpen
+            ? darkMode
+              ? "rgba(10,10,10,0.88)"
+              : "rgba(245,245,240,0.88)"
+            : darkMode
+              ? "rgba(10,10,10,0.70)"
+              : "rgba(245,245,240,0.70)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: darkMode
@@ -133,7 +160,6 @@ const Navbar = () => {
     >
       <div className="mx-auto max-w-[1600px] px-4 sm:px-5 lg:px-8">
         <div className="flex items-center h-14 gap-2 sm:gap-3">
-
           {/* ── Logo ──────────────────────────────────────────── */}
           <Link
             to="/dashboard"
@@ -142,9 +168,16 @@ const Navbar = () => {
           >
             <div
               className="h-8 w-8 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
-              style={{ background: "#C8F05A", boxShadow: "0 3px 12px -3px rgba(200,240,90,0.5)" }}
+              style={{
+                background: "#C8F05A",
+                boxShadow: "0 3px 12px -3px rgba(200,240,90,0.5)",
+              }}
             >
-              <Activity className="h-4 w-4" style={{ color: "#0A0A0A" }} strokeWidth={2.5} />
+              <Activity
+                className="h-4 w-4"
+                style={{ color: "#0A0A0A" }}
+                strokeWidth={2.5}
+              />
             </div>
             <div className="hidden sm:flex flex-col leading-none">
               <span
@@ -186,12 +219,15 @@ const Navbar = () => {
                   color: anySecondaryActive
                     ? "#0A0A0A"
                     : darkMode
-                    ? "rgba(255,255,255,0.55)"
-                    : "rgba(0,0,0,0.55)",
+                      ? "rgba(255,255,255,0.55)"
+                      : "rgba(0,0,0,0.55)",
                   background: anySecondaryActive ? "#C8F05A" : undefined,
                 }}
               >
-                <ChevronDown size={13} className={`transition-transform ${isMoreOpen ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  size={13}
+                  className={`transition-transform ${isMoreOpen ? "rotate-180" : ""}`}
+                />
                 <span className="hidden lg:inline">More</span>
               </button>
 
@@ -219,12 +255,18 @@ const Navbar = () => {
                             color: active
                               ? "#C8F05A"
                               : darkMode
-                              ? "rgba(255,255,255,0.7)"
-                              : "rgba(0,0,0,0.7)",
-                            background: active ? "rgba(200,240,90,0.08)" : undefined,
+                                ? "rgba(255,255,255,0.7)"
+                                : "rgba(0,0,0,0.7)",
+                            background: active
+                              ? "rgba(200,240,90,0.08)"
+                              : undefined,
                           }}
                         >
-                          <span style={{ color: active ? "#C8F05A" : "#808080" }}>{item.icon}</span>
+                          <span
+                            style={{ color: active ? "#C8F05A" : "#808080" }}
+                          >
+                            {item.icon}
+                          </span>
                           {item.name}
                         </Link>
                       );
@@ -326,9 +368,15 @@ const Navbar = () => {
               aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? (
-                <X size={18} style={{ color: darkMode ? "#F5F5F0" : "#0A0A0A" }} />
+                <X
+                  size={18}
+                  style={{ color: darkMode ? "#F5F5F0" : "#0A0A0A" }}
+                />
               ) : (
-                <Menu size={18} style={{ color: darkMode ? "#F5F5F0" : "#0A0A0A" }} />
+                <Menu
+                  size={18}
+                  style={{ color: darkMode ? "#F5F5F0" : "#0A0A0A" }}
+                />
               )}
             </button>
           </div>
@@ -345,7 +393,9 @@ const Navbar = () => {
             transition={{ duration: 0.22, ease: "easeInOut" }}
             className="md:hidden overflow-hidden"
             style={{
-              background: darkMode ? "rgba(10,10,10,0.97)" : "rgba(245,245,240,0.97)",
+              background: darkMode
+                ? "rgba(10,10,10,0.97)"
+                : "rgba(245,245,240,0.97)",
               borderTop: "1px solid rgba(128,128,128,0.10)",
             }}
           >
@@ -359,15 +409,19 @@ const Navbar = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-2.5 px-3 py-2.5 rounded-md text-sm font-medium transition-colors"
                     style={{
-                      background: active ? "rgba(200,240,90,0.10)" : "transparent",
+                      background: active
+                        ? "rgba(200,240,90,0.10)"
+                        : "transparent",
                       color: active
                         ? "#C8F05A"
                         : darkMode
-                        ? "rgba(255,255,255,0.65)"
-                        : "rgba(0,0,0,0.65)",
+                          ? "rgba(255,255,255,0.65)"
+                          : "rgba(0,0,0,0.65)",
                     }}
                   >
-                    <span style={{ color: active ? "#C8F05A" : "#808080" }}>{item.icon}</span>
+                    <span style={{ color: active ? "#C8F05A" : "#808080" }}>
+                      {item.icon}
+                    </span>
                     {item.name}
                   </Link>
                 );
@@ -392,7 +446,11 @@ const Navbar = () => {
                   to="/settings"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm font-medium"
-                  style={{ color: darkMode ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.55)" }}
+                  style={{
+                    color: darkMode
+                      ? "rgba(255,255,255,0.55)"
+                      : "rgba(0,0,0,0.55)",
+                  }}
                 >
                   <Settings size={16} /> Settings
                 </Link>

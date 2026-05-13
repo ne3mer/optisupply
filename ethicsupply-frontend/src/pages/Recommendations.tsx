@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getRecommendations, getSuppliers, Recommendation } from "../services/api";
+import {
+  getRecommendations,
+  getSuppliers,
+  Recommendation,
+} from "../services/api";
 import {
   AlertTriangle,
   ArrowDownUp,
@@ -216,7 +220,10 @@ const normalizeRecCategory = (raw: unknown): RecCategory | undefined => {
   if (s.includes("social")) return "social";
   if (s.includes("govern")) return "governance";
   if (s.includes("environment")) return "environmental";
-  if (s.includes("supply chain") || (s.includes("supply") && s.includes("chain")))
+  if (
+    s.includes("supply chain") ||
+    (s.includes("supply") && s.includes("chain"))
+  )
     return "environmental";
   return undefined;
 };
@@ -232,7 +239,10 @@ const normalizeRecPriority = (raw: unknown): RecPriority | undefined => {
 
 const normalizeRecStatus = (raw: unknown): RecStatus | undefined => {
   if (typeof raw !== "string") return undefined;
-  const s = raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const s = raw
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
   if (s === "pending" || s === "open" || s === "new") return "pending";
   if (
     s === "in_progress" ||
@@ -241,12 +251,7 @@ const normalizeRecStatus = (raw: unknown): RecStatus | undefined => {
     s === "started"
   )
     return "in_progress";
-  if (
-    s === "completed" ||
-    s === "done" ||
-    s === "closed" ||
-    s === "resolved"
-  )
+  if (s === "completed" || s === "done" || s === "closed" || s === "resolved")
     return "completed";
   return undefined;
 };
@@ -276,7 +281,7 @@ const looksLikeTechnicalId = (raw: string): boolean => {
   if (/^[0-9a-f]{24}$/i.test(s)) return true;
   if (
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      s
+      s,
     )
   )
     return true;
@@ -285,20 +290,23 @@ const looksLikeTechnicalId = (raw: string): boolean => {
   return false;
 };
 
-const priorityRank = (p: RecPriority) => (p === "high" ? 3 : p === "medium" ? 2 : 1);
+const priorityRank = (p: RecPriority) =>
+  p === "high" ? 3 : p === "medium" ? 2 : 1;
 
 /** Prefer the strongest signal when API defaults everything to "low". */
 const mergePriorities = (
-  candidates: Array<RecPriority | undefined | null>
+  candidates: Array<RecPriority | undefined | null>,
 ): RecPriority => {
   const defined = candidates.filter((x): x is RecPriority => Boolean(x));
   if (defined.length === 0) return "medium";
   return defined.reduce((best, cur) =>
-    priorityRank(cur) > priorityRank(best) ? cur : best
+    priorityRank(cur) > priorityRank(best) ? cur : best,
   );
 };
 
-const normalizeRecPriorityFlexible = (raw: unknown): RecPriority | undefined => {
+const normalizeRecPriorityFlexible = (
+  raw: unknown,
+): RecPriority | undefined => {
   if (raw === undefined || raw === null) return undefined;
   if (typeof raw === "number" && Number.isFinite(raw)) {
     const n = raw;
@@ -314,11 +322,14 @@ const normalizeRecPriorityFlexible = (raw: unknown): RecPriority | undefined => 
 
   const criticalish =
     /\b(critical|p0|p1\b|severe|immediate|violat|breach|catastrophic)\b/;
-  if (criticalish.test(sl) || /\b(high|elevated|severe)\s*(risk|impact)?\b/.test(sl))
+  if (
+    criticalish.test(sl) ||
+    /\b(high|elevated|severe)\s*(risk|impact)?\b/.test(sl)
+  )
     return "high";
   if (
     /\b(medium|moderate|moderately|somewhat\s+elevated|watchlist|attention)\b/.test(
-      sl
+      sl,
     )
   )
     return "medium";
@@ -336,7 +347,9 @@ const priorityHintFromImpact = (impact: unknown): RecPriority | undefined => {
   return undefined;
 };
 
-const priorityHintFromSupplierScore = (r: Recommendation): RecPriority | undefined => {
+const priorityHintFromSupplierScore = (
+  r: Recommendation,
+): RecPriority | undefined => {
   if (typeof r.supplier !== "object" || !r.supplier) return undefined;
   const raw = (r.supplier as { ethical_score?: number | null }).ethical_score;
   if (typeof raw !== "number" || Number.isNaN(raw)) return undefined;
@@ -364,20 +377,26 @@ const recommendationTextHaystack = (r: Recommendation): string => {
   else if (ai && typeof ai === "object") {
     bits.push(JSON.stringify(ai));
   }
-  return bits.filter((x) => x !== undefined && x !== null).join(" ").toLowerCase();
+  return bits
+    .filter((x) => x !== undefined && x !== null)
+    .join(" ")
+    .toLowerCase();
 };
 
 const inferCategory = (r: Recommendation): RecCategory => {
   const hinted = normalizeRecCategory(r.category);
   if (hinted) return hinted;
-  const hay = `${r.title || ""} ${r.description || ""} ${r.action || ""}`.toLowerCase();
+  const hay =
+    `${r.title || ""} ${r.description || ""} ${r.action || ""}`.toLowerCase();
   if (
     /(co2|carbon|emission|water|waste|energy|renewable|pollution|climate)/.test(
-      hay
+      hay,
     )
   )
     return "environmental";
-  if (/(worker|labor|safety|wage|human rights|diversity|dei|community)/.test(hay))
+  if (
+    /(worker|labor|safety|wage|human rights|diversity|dei|community)/.test(hay)
+  )
     return "social";
   return "governance";
 };
@@ -387,19 +406,19 @@ const inferPriority = (r: Recommendation): RecPriority => {
   const hay = recommendationTextHaystack(r);
   if (
     /\b(critical|immediate\b|severe|high\s*risk|\bviolat|breach|urgent|catastrophic|non-?compliance\s+finding|acute)\b/i.test(
-      hay
+      hay,
     )
   )
     return "high";
   if (
     /\b(medium|moderate|gap(s)?(\s|$)|elevated\b|benchmark\s*gap|\bbelow\s*basic|attention\s+required|remediation|corrective)\b/i.test(
-      hay
+      hay,
     )
   )
     return "medium";
   if (
     /\b(low\s*risk|opportunit|stretch\s*goal|\bminimal\b|deferr|routine\b|maintain\s+steady)\b/i.test(
-      hay
+      hay,
     )
   )
     return "low";
@@ -414,7 +433,8 @@ const inferTimeframe = (p: RecPriority) =>
   p === "high" ? "3 months" : p === "medium" ? "6 months" : "12 months";
 
 const timeframeFromImplementationDays = (days?: number): string | undefined => {
-  if (typeof days !== "number" || Number.isNaN(days) || days <= 0) return undefined;
+  if (typeof days !== "number" || Number.isNaN(days) || days <= 0)
+    return undefined;
   if (days <= 35) return "1 month";
   if (days <= 100) return "3 months";
   if (days <= 183) return "6 months";
@@ -425,7 +445,7 @@ const timeframeFromImplementationDays = (days?: number): string | undefined => {
 
 const resolveSupplierName = (
   r: EnhancedRecommendation,
-  ctx?: EnrichContext
+  ctx?: EnrichContext,
 ): string => {
   const flat = r.supplier_name?.trim();
   if (flat && !looksLikeTechnicalId(flat)) return flat;
@@ -471,16 +491,18 @@ const resolveSupplierName = (
 /** Keep Impact label aligned with merged priority when the API echoes a mismatched canned value. */
 const normalizeImpactAgainstPriority = (
   impact: string,
-  priority: RecPriority
+  priority: RecPriority,
 ): string => {
   const hint = priorityHintFromImpact(impact);
   if (!hint) return impact;
-  return priorityRank(priority) !== priorityRank(hint) ? inferImpact(priority) : impact;
+  return priorityRank(priority) !== priorityRank(hint)
+    ? inferImpact(priority)
+    : impact;
 };
 
 const enrichRecommendation = (
   r: EnhancedRecommendation,
-  ctx?: EnrichContext
+  ctx?: EnrichContext,
 ): EnhancedRecommendation => {
   const category = normalizeRecCategory(r.category) ?? inferCategory(r);
 
@@ -559,16 +581,16 @@ const enrichRecommendation = (
     (impact === "High"
       ? "High expected upside: measurable risk reduction and a clear ESG score lift within one reporting cycle."
       : impact === "Medium"
-      ? "Moderate expected upside: improves compliance confidence and trend stability over the next quarter."
-      : "Low expected upside: strengthens governance hygiene and keeps reporting consistent.");
+        ? "Moderate expected upside: improves compliance confidence and trend stability over the next quarter."
+        : "Low expected upside: strengthens governance hygiene and keeps reporting consistent.");
 
   const details =
     r.details ||
     (category === "environmental"
       ? "Start with the top-emitting process line. Verify baselines before rolling out changes."
       : category === "social"
-      ? "Start with training + incident reporting. Then audit compliance quarterly."
-      : "Start with policy + controls. Then publish a lightweight evidence pack for audits.");
+        ? "Start with training + incident reporting. Then audit compliance quarterly."
+        : "Start with policy + controls. Then publish a lightweight evidence pack for audits.");
 
   return {
     ...r,
@@ -615,7 +637,7 @@ const loadActionState = (): Record<string, Partial<EnhancedRecommendation>> => {
 };
 
 const persistActionState = (
-  state: Record<string, Partial<EnhancedRecommendation>>
+  state: Record<string, Partial<EnhancedRecommendation>>,
 ) => {
   if (typeof window === "undefined") return;
   try {
@@ -626,7 +648,7 @@ const persistActionState = (
 };
 
 const applyStoredActionState = (
-  recommendations: EnhancedRecommendation[]
+  recommendations: EnhancedRecommendation[],
 ): EnhancedRecommendation[] => {
   const storedState = loadActionState();
   if (!storedState || Object.keys(storedState).length === 0) {
@@ -636,7 +658,7 @@ const applyStoredActionState = (
   console.log("[Recommendations] Applying stored action state:", storedState);
   console.log(
     "[Recommendations] Recommendations IDs:",
-    recommendations.map((r) => r._id)
+    recommendations.map((r) => r._id),
   );
 
   return recommendations.map((rec) => {
@@ -651,20 +673,20 @@ const applyStoredActionState = (
               (typeof rec.supplier === "object" &&
                 typeof s.supplier === "object" &&
                 rec.supplier?.name === s.supplier?.name &&
-                rec.category === s.category)
+                rec.category === s.category),
           )
         : null);
 
     if (!stored) {
       console.log(
-        `[Recommendations] No stored state for recommendation ${rec._id}`
+        `[Recommendations] No stored state for recommendation ${rec._id}`,
       );
       return rec;
     }
 
     console.log(
       `[Recommendations] Merging stored state for ${rec._id}:`,
-      stored
+      stored,
     );
 
     // Merge stored state, ensuring all action fields are preserved
@@ -685,7 +707,7 @@ const applyStoredActionState = (
 };
 
 const persistActionStateFromArray = (
-  recommendations: EnhancedRecommendation[]
+  recommendations: EnhancedRecommendation[],
 ) => {
   const stateIndex: Record<string, Partial<EnhancedRecommendation>> = {};
 
@@ -996,7 +1018,7 @@ const RecommendationCard = ({
 
   const actionStartedAgo = getRelativeTime(recommendation.action_started_at);
   const actionCompletedAgo = getRelativeTime(
-    recommendation.action_completed_at
+    recommendation.action_completed_at,
   );
   const isCompleted = currentStatus === "completed";
   const hasActivePlan =
@@ -1005,14 +1027,14 @@ const RecommendationCard = ({
   const actionButtonLabel = isCompleted
     ? "View Action Record"
     : hasActivePlan
-    ? "Update Plan"
-    : "Launch Action Plan";
+      ? "Update Plan"
+      : "Launch Action Plan";
 
   const actionButtonColor = isCompleted
     ? colors.success
     : hasActivePlan
-    ? colors.primary
-    : colors.accent;
+      ? colors.primary
+      : colors.accent;
 
   const actionButtonIcon = isCompleted ? (
     <ThumbsUp className="h-4 w-4" />
@@ -1063,7 +1085,10 @@ const RecommendationCard = ({
       }}
     >
       {/* Accent rail */}
-      <div className="h-[4px] w-full" style={{ backgroundColor: categoryInfo.rail }} />
+      <div
+        className="h-[4px] w-full"
+        style={{ backgroundColor: categoryInfo.rail }}
+      />
 
       <button
         onClick={onToggleExpand}
@@ -1191,23 +1216,32 @@ const RecommendationCard = ({
             </div>
           )}
 
-          <h3 className="text-xl font-bold mb-2" style={{ color: colors.text, letterSpacing: "-0.02em" }}>
+          <h3
+            className="text-xl font-bold mb-2"
+            style={{ color: colors.text, letterSpacing: "-0.02em" }}
+          >
             {recommendation.title || "Untitled Recommendation"}
           </h3>
 
-          <p className="text-sm mb-3 flex items-center gap-4" style={{ color: colors.textMuted }}>
+          <p
+            className="text-sm mb-3 flex items-center gap-4"
+            style={{ color: colors.textMuted }}
+          >
             <span className="inline-flex items-center gap-1.5">
-              <Building2 className="h-4 w-4" style={{ color: colors.primary }} />
+              <Building2
+                className="h-4 w-4"
+                style={{ color: colors.primary }}
+              />
               <span style={{ color: colors.primary }} className="font-medium">
                 {typeof recommendation.supplier === "object" &&
                 recommendation.supplier &&
                 "name" in recommendation.supplier
                   ? String(
-                      (recommendation.supplier as { name?: string }).name || ""
+                      (recommendation.supplier as { name?: string }).name || "",
                     ) || "Unknown Supplier"
                   : typeof recommendation.supplier === "string"
-                  ? recommendation.supplier
-                  : "Unknown Supplier"}
+                    ? recommendation.supplier
+                    : "Unknown Supplier"}
               </span>
             </span>
 
@@ -1401,14 +1435,14 @@ const ActionPlanModal = ({
   }) => void;
 }) => {
   const [owner, setOwner] = useState(
-    recommendation.action_owner || actionOwners[0]
+    recommendation.action_owner || actionOwners[0],
   );
   const [notes, setNotes] = useState("");
   const colors = useThemeColors() as any;
 
   const steps = useMemo(
     () => buildActionSteps(recommendation),
-    [recommendation]
+    [recommendation],
   );
   const hasActivePlan = Boolean(recommendation.action_started_at);
   const isCompleted = recommendation.status === "completed";
@@ -1701,7 +1735,7 @@ const RecommendationsPage = () => {
         console.log(`API returned object. isMockData: ${isMock}`);
       } else {
         console.warn(
-          "Unexpected API response structure. Using fallback mock data."
+          "Unexpected API response structure. Using fallback mock data.",
         );
         fetchedData = generateMockRecommendationsFallback();
         isMock = true;
@@ -1710,7 +1744,7 @@ const RecommendationsPage = () => {
       // Normalize IDs and enrich missing fields for a complete UI
       const normalized: EnhancedRecommendation[] = fetchedData.map((r) => {
         const id = String(
-          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
+          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
         );
         return enrichRecommendation(
           {
@@ -1718,14 +1752,14 @@ const RecommendationsPage = () => {
             _id: id,
             id: id, // Also set id field for consistency
           } as EnhancedRecommendation,
-          enrichCtx
+          enrichCtx,
         );
       });
 
       // Apply stored action state BEFORE setting recommendations
       const merged = applyStoredActionState(normalized);
       const enrichedMerged = merged.map((rec) =>
-        enrichRecommendation(rec, enrichCtx)
+        enrichRecommendation(rec, enrichCtx),
       );
 
       setRecommendations(enrichedMerged);
@@ -1737,7 +1771,7 @@ const RecommendationsPage = () => {
       setError("Failed to fetch recommendations. Using mock data instead.");
       const fallback = generateMockRecommendationsFallback().map((r) => {
         const id = String(
-          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`
+          r._id || r.id || `tmp-${Math.random().toString(36).substring(2)}`,
         );
         return {
           ...r,
@@ -1747,7 +1781,7 @@ const RecommendationsPage = () => {
       });
       const mergedFallback = applyStoredActionState(fallback);
       const enrichedFallback = mergedFallback.map((rec) =>
-        enrichRecommendation(rec, enrichCtx)
+        enrichRecommendation(rec, enrichCtx),
       );
       setRecommendations(enrichedFallback);
       persistActionStateFromArray(enrichedFallback);
@@ -1794,7 +1828,7 @@ const RecommendationsPage = () => {
         if (String(rec._id) !== String(activeActionPlan._id)) return rec;
 
         console.log(
-          `[Recommendations] Updating action plan for ${rec._id}, mode: ${mode}`
+          `[Recommendations] Updating action plan for ${rec._id}, mode: ${mode}`,
         );
 
         let updatedRec: EnhancedRecommendation = {
@@ -1851,7 +1885,7 @@ const RecommendationsPage = () => {
     setActionFeedback(
       mode === "complete"
         ? "Action plan marked as completed."
-        : "Action plan launched and assigned."
+        : "Action plan launched and assigned.",
     );
   };
 
@@ -1865,13 +1899,13 @@ const RecommendationsPage = () => {
   const stats = useMemo(() => {
     const total = recommendations.length;
     const highPriority = recommendations.filter(
-      (r) => r.priority === "high"
+      (r) => r.priority === "high",
     ).length;
     const inProgress = recommendations.filter(
-      (r) => r.status === "in_progress"
+      (r) => r.status === "in_progress",
     ).length;
     const completed = recommendations.filter(
-      (r) => r.status === "completed"
+      (r) => r.status === "completed",
     ).length;
     const completionRate = total > 0 ? (completed / total) * 100 : 0;
 
@@ -1909,7 +1943,7 @@ const RecommendationsPage = () => {
           (typeof rec.ai_explanation === "string" &&
             rec.ai_explanation?.toLowerCase().includes(query)) ||
           (typeof rec.ai_explanation === "object" &&
-            rec.ai_explanation?.reasoning?.toLowerCase().includes(query))
+            rec.ai_explanation?.reasoning?.toLowerCase().includes(query)),
       );
     }
 
@@ -1957,14 +1991,14 @@ const RecommendationsPage = () => {
             typeof a.supplier === "object" && a.supplier && "name" in a.supplier
               ? String((a.supplier as { name?: string }).name || "")
               : typeof a.supplier === "string"
-              ? a.supplier
-              : "";
+                ? a.supplier
+                : "";
           const nameB =
             typeof b.supplier === "object" && b.supplier && "name" in b.supplier
               ? String((b.supplier as { name?: string }).name || "")
               : typeof b.supplier === "string"
-              ? b.supplier
-              : "";
+                ? b.supplier
+                : "";
           comparison = nameA.localeCompare(nameB);
           break;
         case "createdAt":
@@ -2092,9 +2126,9 @@ const RecommendationsPage = () => {
                     className="mt-2 text-sm md:text-base max-w-2xl leading-relaxed"
                     style={{ color: colors.textMuted }}
                   >
-                    Live action briefs from your catalogue — priorities, horizons,
-                    and supplier context regenerated from fresh API data whenever
-                    you refresh.
+                    Live action briefs from your catalogue — priorities,
+                    horizons, and supplier context regenerated from fresh API
+                    data whenever you refresh.
                   </p>
                 </div>
               </div>
@@ -2159,11 +2193,13 @@ const RecommendationsPage = () => {
                       r.category || "",
                       r.priority || "",
                       r.status || "",
-                      typeof r.supplier === "object" && r.supplier && "name" in r.supplier
+                      typeof r.supplier === "object" &&
+                      r.supplier &&
+                      "name" in r.supplier
                         ? String((r.supplier as { name?: string }).name || "")
                         : typeof r.supplier === "string"
-                        ? r.supplier
-                        : "",
+                          ? r.supplier
+                          : "",
                       r.impact || "",
                       r.timeframe || "",
                     ]),
@@ -2411,7 +2447,9 @@ const RecommendationsPage = () => {
                                   color: isActive
                                     ? config.color
                                     : colors.textMuted,
-                                  backgroundColor: isActive ? config.bg : colors.inputBg,
+                                  backgroundColor: isActive
+                                    ? config.bg
+                                    : colors.inputBg,
                                   borderColor: isActive
                                     ? config.borderColor
                                     : colors.accent + "50",
@@ -2435,7 +2473,7 @@ const RecommendationsPage = () => {
                                 )}
                               </button>
                             );
-                          }
+                          },
                         )}
                       </div>
                     </div>
@@ -2462,7 +2500,9 @@ const RecommendationsPage = () => {
                                 color: isActive
                                   ? config.color
                                   : colors.textMuted,
-                                backgroundColor: isActive ? config.bg : colors.inputBg,
+                                backgroundColor: isActive
+                                  ? config.bg
+                                  : colors.inputBg,
                                 borderColor: isActive
                                   ? config.borderColor
                                   : colors.accent + "50",
@@ -2511,7 +2551,9 @@ const RecommendationsPage = () => {
                                   color: isActive
                                     ? config.color
                                     : colors.textMuted,
-                                  backgroundColor: isActive ? config.bg : colors.inputBg,
+                                  backgroundColor: isActive
+                                    ? config.bg
+                                    : colors.inputBg,
                                   borderColor: isActive
                                     ? config.borderColor
                                     : colors.accent + "50",
@@ -2533,7 +2575,7 @@ const RecommendationsPage = () => {
                                 )}
                               </button>
                             );
-                          }
+                          },
                         )}
                       </div>
                     </div>
@@ -2685,7 +2727,8 @@ const RecommendationsPage = () => {
                     className="text-sm max-w-xl"
                     style={{ color: colors.textMuted }}
                   >
-                    Hover a card for depth; expand for AI rationale, horizon, and programme steps.
+                    Hover a card for depth; expand for AI rationale, horizon,
+                    and programme steps.
                   </p>
                 </div>
                 <div className="flex justify-between items-center">
@@ -2736,16 +2779,22 @@ const RecommendationsPage = () => {
                       : "space-y-0"
                   }
                 >
-                  {filteredAndSortedRecommendations.map((recommendation, index) => (
-                    <RecommendationCard
-                      key={recommendation._id}
-                      recommendation={recommendation}
-                      isExpanded={expandedCardId === recommendation._id}
-                      onToggleExpand={() => handleToggleExpand(recommendation._id)}
-                      onActionClick={() => handleTakeAction(recommendation._id)}
-                      index={index}
-                    />
-                  ))}
+                  {filteredAndSortedRecommendations.map(
+                    (recommendation, index) => (
+                      <RecommendationCard
+                        key={recommendation._id}
+                        recommendation={recommendation}
+                        isExpanded={expandedCardId === recommendation._id}
+                        onToggleExpand={() =>
+                          handleToggleExpand(recommendation._id)
+                        }
+                        onActionClick={() =>
+                          handleTakeAction(recommendation._id)
+                        }
+                        index={index}
+                      />
+                    ),
+                  )}
                 </div>
               </div>
             </>

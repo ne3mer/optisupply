@@ -97,7 +97,7 @@ const nodeHeight = 50; // Adjust based on custom node size
 const getLayoutedElements = (
   nodes: Node[],
   edges: Edge[],
-  direction = "TB"
+  direction = "TB",
 ) => {
   const isHorizontal = direction === "LR";
   dagreGraph.setGraph({ rankdir: direction });
@@ -140,8 +140,8 @@ const CustomNode = React.memo(({ data, colors }) => {
     score >= 75
       ? colors.success + "10"
       : score >= 50
-      ? colors.warning + "10"
-      : colors.error + "10";
+        ? colors.warning + "10"
+        : colors.error + "10";
 
   return (
     <>
@@ -215,7 +215,7 @@ const SupplyChainGraph = () => {
   // UI state
   const [filterPanelOpen, setFilterPanelOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [layoutDirection, setLayoutDirection] = useState<'TB' | 'LR'>("TB");
+  const [layoutDirection, setLayoutDirection] = useState<"TB" | "LR">("TB");
 
   // Create a ref for the root container
   const containerRef = useRef<HTMLDivElement>(null);
@@ -280,14 +280,14 @@ const SupplyChainGraph = () => {
         // Validate links (ensure source/target exist in nodesWithCoords)
         const validLinks = data.links.filter((link) => {
           const sourceExists = nodesWithCoords.some(
-            (n) => n.id === link.source
+            (n) => n.id === link.source,
           );
           const targetExists = nodesWithCoords.some(
-            (n) => n.id === link.target
+            (n) => n.id === link.target,
           );
           if (!sourceExists || !targetExists) {
             console.warn(
-              `Link removed due to missing node: ${link.source} -> ${link.target}`
+              `Link removed due to missing node: ${link.source} -> ${link.target}`,
             );
           }
           return sourceExists && targetExists;
@@ -295,18 +295,18 @@ const SupplyChainGraph = () => {
 
         // Merge user-saved links
         const userLinks = loadUserLinks().filter((l) => {
-          const s = typeof l.source === 'string' ? l.source : l.source.id;
-          const t = typeof l.target === 'string' ? l.target : l.target.id;
+          const s = typeof l.source === "string" ? l.source : l.source.id;
+          const t = typeof l.target === "string" ? l.target : l.target.id;
           const sourceExists = nodesWithCoords.some((n) => n.id === s);
           const targetExists = nodesWithCoords.some((n) => n.id === t);
           return sourceExists && targetExists;
         });
         // Deduplicate by source-target pair
-        const seen = new Set(validLinks.map(l => `${l.source}->${l.target}`));
+        const seen = new Set(validLinks.map((l) => `${l.source}->${l.target}`));
         const mergedLinks: LinkObject[] = [...validLinks];
-        userLinks.forEach(l => {
-          const s = typeof l.source === 'string' ? l.source : l.source.id;
-          const t = typeof l.target === 'string' ? l.target : l.target.id;
+        userLinks.forEach((l) => {
+          const s = typeof l.source === "string" ? l.source : l.source.id;
+          const t = typeof l.target === "string" ? l.target : l.target.id;
           const key = `${s}->${t}`;
           if (!seen.has(key)) {
             seen.add(key);
@@ -340,7 +340,7 @@ const SupplyChainGraph = () => {
     // Filter nodes by ethical score
     if (filterEthicalScore > 0) {
       filteredNodes = filteredNodes.filter(
-        (node) => (node.ethical_score ?? 0) >= filterEthicalScore
+        (node) => (node.ethical_score ?? 0) >= filterEthicalScore,
       );
     }
 
@@ -351,7 +351,7 @@ const SupplyChainGraph = () => {
         (node) =>
           node.name.toLowerCase().includes(query) ||
           node.country?.toLowerCase().includes(query) ||
-          node.industry?.toLowerCase().includes(query)
+          node.industry?.toLowerCase().includes(query),
       );
     }
 
@@ -384,7 +384,7 @@ const SupplyChainGraph = () => {
       !filteredGraphData.links
     ) {
       console.log(
-        "[SupplyChainGraph] Filtered graph data is missing nodes or links."
+        "[SupplyChainGraph] Filtered graph data is missing nodes or links.",
       );
       setRfNodes([]);
       setRfEdges([]);
@@ -394,12 +394,12 @@ const SupplyChainGraph = () => {
     console.log(
       "[SupplyChainGraph] Filtered Nodes for Layout:",
       filteredGraphData.nodes.length,
-      filteredGraphData.nodes
+      filteredGraphData.nodes,
     );
     console.log(
       "[SupplyChainGraph] Filtered Links for Layout:",
       filteredGraphData.links.length,
-      filteredGraphData.links
+      filteredGraphData.links,
     );
 
     // Create initial nodes for layout calculation
@@ -434,7 +434,7 @@ const SupplyChainGraph = () => {
     console.log(
       "[SupplyChainGraph] Generated Initial Edges for React Flow:",
       initialEdges.length,
-      initialEdges
+      initialEdges,
     );
 
     // Calculate layout
@@ -451,14 +451,14 @@ const SupplyChainGraph = () => {
         getLayoutedElements(
           initialNodes,
           initialEdges,
-          layoutDirection // Layout direction: Top-to-Bottom ('LR' for Left-to-Right)
+          layoutDirection, // Layout direction: Top-to-Bottom ('LR' for Left-to-Right)
         );
 
       console.log("[SupplyChainGraph] Layouted Nodes:", layoutedNodes.length);
       console.log(
         "[SupplyChainGraph] Layouted Edges:",
         layoutedEdges.length,
-        layoutedEdges
+        layoutedEdges,
       ); // Log after layout
 
       setRfNodes(layoutedNodes);
@@ -471,41 +471,52 @@ const SupplyChainGraph = () => {
           fitView({ padding: 0.2 });
         } else {
           console.warn(
-            "[SupplyChainGraph] fitView function not available from useReactFlow."
+            "[SupplyChainGraph] fitView function not available from useReactFlow.",
           );
         }
       }, 50); // Increased delay slightly
     } catch (layoutError) {
       console.error(
         "[SupplyChainGraph] Error during Dagre layout:",
-        layoutError
+        layoutError,
       );
       // Fallback: Set nodes without layout if Dagre fails
       setRfNodes(
         initialNodes.map((n) => ({
           ...n,
           position: { x: Math.random() * 400, y: Math.random() * 400 },
-        }))
+        })),
       ); // Random positions
       setRfEdges(initialEdges);
       setError("Failed to calculate graph layout.");
     }
-  }, [filteredGraphData, setRfNodes, setRfEdges, fitView, colors, layoutDirection]); // include layoutDirection
+  }, [
+    filteredGraphData,
+    setRfNodes,
+    setRfEdges,
+    fitView,
+    colors,
+    layoutDirection,
+  ]); // include layoutDirection
 
   // Neighbor highlighting when a node is selected
   useEffect(() => {
     if (!selectedNodeApiData) {
       // reset opacity
-      setRfNodes((nodes) => nodes.map((n) => ({ ...n, style: { ...(n.style || {}), opacity: 1 } })));
-      setRfEdges((edges) => edges.map((e) => ({ ...e, style: { ...(e.style || {}), opacity: 1 } })));
+      setRfNodes((nodes) =>
+        nodes.map((n) => ({ ...n, style: { ...(n.style || {}), opacity: 1 } })),
+      );
+      setRfEdges((edges) =>
+        edges.map((e) => ({ ...e, style: { ...(e.style || {}), opacity: 1 } })),
+      );
       return;
     }
 
     const selectedId = selectedNodeApiData.id;
     const neighborIds = new Set<string>();
     filteredGraphData.links.forEach((l) => {
-      const s = typeof l.source === 'string' ? l.source : l.source.id;
-      const t = typeof l.target === 'string' ? l.target : l.target.id;
+      const s = typeof l.source === "string" ? l.source : l.source.id;
+      const t = typeof l.target === "string" ? l.target : l.target.id;
       if (s === selectedId) neighborIds.add(t);
       if (t === selectedId) neighborIds.add(s);
     });
@@ -517,13 +528,20 @@ const SupplyChainGraph = () => {
           ...(n.style || {}),
           opacity: n.id === selectedId || neighborIds.has(n.id) ? 1 : 0.25,
         },
-      }))
+      })),
     );
     setRfEdges((edges) =>
       edges.map((e) => {
-        const isConnected = e.source === selectedId || e.target === selectedId || neighborIds.has(e.source) || neighborIds.has(e.target);
-        return { ...e, style: { ...(e.style || {}), opacity: isConnected ? 1 : 0.2 } };
-      })
+        const isConnected =
+          e.source === selectedId ||
+          e.target === selectedId ||
+          neighborIds.has(e.source) ||
+          neighborIds.has(e.target);
+        return {
+          ...e,
+          style: { ...(e.style || {}), opacity: isConnected ? 1 : 0.2 },
+        };
+      }),
     );
   }, [selectedNodeApiData, filteredGraphData.links, setRfNodes, setRfEdges]);
 
@@ -586,11 +604,22 @@ const SupplyChainGraph = () => {
       const s = nodes[Math.floor(Math.random() * nodes.length)].id;
       let t = nodes[Math.floor(Math.random() * nodes.length)].id;
       let safety = 0;
-      while (t === s && safety++ < 10) t = nodes[Math.floor(Math.random() * nodes.length)].id;
-      newLinks.push({ id: `seed-${Date.now()}-${i}`, source: s, target: t, relationship: "seed", ethical: Math.random() > 0.6 });
+      while (t === s && safety++ < 10)
+        t = nodes[Math.floor(Math.random() * nodes.length)].id;
+      newLinks.push({
+        id: `seed-${Date.now()}-${i}`,
+        source: s,
+        target: t,
+        relationship: "seed",
+        ethical: Math.random() > 0.6,
+      });
     }
     const merged = [...(graphData.links || []), ...newLinks];
-    setGraphData({ ...(graphData || { nodes: [], links: [] }), links: merged, nodes: graphData.nodes });
+    setGraphData({
+      ...(graphData || { nodes: [], links: [] }),
+      links: merged,
+      nodes: graphData.nodes,
+    });
     // persist to localStorage for demo consistency
     const current = loadUserLinks();
     saveUserLinks([...current, ...newLinks]);
@@ -626,7 +655,7 @@ const SupplyChainGraph = () => {
       setSelectedConnection,
       isCreatingConnection,
       handleNodeSelectionForConnection,
-    ]
+    ],
   );
 
   // Handle edge click in React Flow
@@ -636,7 +665,7 @@ const SupplyChainGraph = () => {
       setSelectedConnection(edge.data.apiData); // Update panel with API data
       setSelectedNodeApiData(null); // Clear node selection
     },
-    [setSelectedConnection, setSelectedNodeApiData]
+    [setSelectedConnection, setSelectedNodeApiData],
   );
 
   // Toggle node expansion
@@ -653,11 +682,11 @@ const SupplyChainGraph = () => {
       });
       // Also select in the detail panel
       setSelectedNodeApiData(
-        graphData.nodes.find((n) => n.id === nodeId) || null
+        graphData.nodes.find((n) => n.id === nodeId) || null,
       );
       setSelectedConnection(null);
     },
-    [graphData.nodes, setSelectedNodeApiData, setSelectedConnection]
+    [graphData.nodes, setSelectedNodeApiData, setSelectedConnection],
   );
 
   // Get connection details
@@ -668,11 +697,11 @@ const SupplyChainGraph = () => {
         graphData.nodes.find(
           (n) =>
             n.id ===
-            (typeof link.source === "string" ? link.source : link.source.id)
-        ) || null
+            (typeof link.source === "string" ? link.source : link.source.id),
+        ) || null,
       );
     },
-    [graphData.nodes, setSelectedConnection, setSelectedNodeApiData]
+    [graphData.nodes, setSelectedConnection, setSelectedNodeApiData],
   );
 
   // Handle fullscreen toggle
@@ -681,7 +710,7 @@ const SupplyChainGraph = () => {
     if (!document.fullscreenElement) {
       elem.requestFullscreen().catch((err) => {
         alert(
-          `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+          `Error attempting to enable full-screen mode: ${err.message} (${err.name})`,
         );
       });
       setIsFullscreen(true);
@@ -777,26 +806,30 @@ const SupplyChainGraph = () => {
               <Plus size={18} />
             </button>
             <button
-              onClick={() => setLayoutDirection((d) => (d === 'TB' ? 'LR' : 'TB'))}
+              onClick={() =>
+                setLayoutDirection((d) => (d === "TB" ? "LR" : "TB"))
+              }
               className="px-2 py-1 rounded border text-xs"
               title="Toggle Layout Direction"
               style={{
                 backgroundColor: colors.panel,
-                borderColor: colors.accent + '50',
+                borderColor: colors.accent + "50",
                 color: colors.text,
               }}
             >
-              {layoutDirection === 'TB' ? 'Top-Bottom' : 'Left-Right'}
+              {layoutDirection === "TB" ? "Top-Bottom" : "Left-Right"}
             </button>
             <button
               onClick={() => {
-                try { fitView && fitView({ padding: 0.2 }); } catch {}
+                try {
+                  fitView && fitView({ padding: 0.2 });
+                } catch {}
               }}
               className="px-2 py-1 rounded border text-xs"
               title="Fit to View"
               style={{
                 backgroundColor: colors.panel,
-                borderColor: colors.accent + '50',
+                borderColor: colors.accent + "50",
                 color: colors.text,
               }}
             >
@@ -827,7 +860,7 @@ const SupplyChainGraph = () => {
               title="Toggle Fullscreen"
               style={{
                 backgroundColor: colors.panel,
-                borderColor: colors.accent + '50',
+                borderColor: colors.accent + "50",
                 color: colors.text,
               }}
             >
@@ -841,26 +874,45 @@ const SupplyChainGraph = () => {
           {(() => {
             const nodeCount = filteredGraphData.nodes.length;
             const linkCount = filteredGraphData.links.length;
-            const ethicalLinks = filteredGraphData.links.filter((l) => l.ethical).length;
-            const ethicalPct = linkCount ? Math.round((ethicalLinks / linkCount) * 100) : 0;
+            const ethicalLinks = filteredGraphData.links.filter(
+              (l) => l.ethical,
+            ).length;
+            const ethicalPct = linkCount
+              ? Math.round((ethicalLinks / linkCount) * 100)
+              : 0;
             const avgScore = nodeCount
               ? (
-                  filteredGraphData.nodes.reduce((sum, n) => sum + (n.ethical_score ?? 0), 0) /
-                  nodeCount
+                  filteredGraphData.nodes.reduce(
+                    (sum, n) => sum + (n.ethical_score ?? 0),
+                    0,
+                  ) / nodeCount
                 ).toFixed(1)
-              : '0.0';
+              : "0.0";
             const kpiBox = (label: string, value: string, color: string) => (
-              <div className="p-3 rounded border text-center" style={{ borderColor: color + '40', backgroundColor: color + '10' }}>
-                <div className="text-xs" style={{ color: colors.textMuted }}>{label}</div>
-                <div className="text-xl font-bold" style={{ color: colors.text }}>{value}</div>
+              <div
+                className="p-3 rounded border text-center"
+                style={{
+                  borderColor: color + "40",
+                  backgroundColor: color + "10",
+                }}
+              >
+                <div className="text-xs" style={{ color: colors.textMuted }}>
+                  {label}
+                </div>
+                <div
+                  className="text-xl font-bold"
+                  style={{ color: colors.text }}
+                >
+                  {value}
+                </div>
               </div>
             );
             return (
               <>
-                {kpiBox('Suppliers', String(nodeCount), colors.accent)}
-                {kpiBox('Connections', String(linkCount), colors.primary)}
-                {kpiBox('Ethical Paths', `${ethicalPct}%`, colors.success)}
-                {kpiBox('Avg. Score', `${avgScore}`, colors.warning)}
+                {kpiBox("Suppliers", String(nodeCount), colors.accent)}
+                {kpiBox("Connections", String(linkCount), colors.primary)}
+                {kpiBox("Ethical Paths", `${ethicalPct}%`, colors.success)}
+                {kpiBox("Avg. Score", `${avgScore}`, colors.warning)}
               </>
             );
           })()}
@@ -903,52 +955,52 @@ const SupplyChainGraph = () => {
       >
         {/* container for fullscreen */}
         <div ref={containerRef} className="w-full h-full">
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader
-              className="h-12 w-12 animate-spin"
-              style={{ color: colors.primary }}
-            />
-          </div>
-        ) : (
-          <ReactFlow
-            nodes={rfNodes}
-            edges={rfEdges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeClick={onNodeClick}
-            onEdgeClick={onEdgeClick}
-            nodeTypes={nodeTypes}
-            edgeTypes={defaultEdgeTypes}
-            defaultEdgeOptions={{
-              type: "default",
-              markerEnd: {
-                type: MarkerType.ArrowClosed,
-              },
-            }}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.1}
-            maxZoom={2}
-            attributionPosition="bottom-left"
-            className="dark-flow"
-          >
-            <Controls
-              style={{
-                button: {
-                  backgroundColor: colors.inputBg,
-                  color: colors.text,
-                  border: `1px solid ${colors.accent}50`,
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader
+                className="h-12 w-12 animate-spin"
+                style={{ color: colors.primary }}
+              />
+            </div>
+          ) : (
+            <ReactFlow
+              nodes={rfNodes}
+              edges={rfEdges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onNodeClick={onNodeClick}
+              onEdgeClick={onEdgeClick}
+              nodeTypes={nodeTypes}
+              edgeTypes={defaultEdgeTypes}
+              defaultEdgeOptions={{
+                type: "default",
+                markerEnd: {
+                  type: MarkerType.ArrowClosed,
                 },
               }}
-            />
-            <Background
-              color={colors.accent}
-              gap={16}
-              style={{ backgroundColor: colors.background }}
-            />
-          </ReactFlow>
-        )}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              minZoom={0.1}
+              maxZoom={2}
+              attributionPosition="bottom-left"
+              className="dark-flow"
+            >
+              <Controls
+                style={{
+                  button: {
+                    backgroundColor: colors.inputBg,
+                    color: colors.text,
+                    border: `1px solid ${colors.accent}50`,
+                  },
+                }}
+              />
+              <Background
+                color={colors.accent}
+                gap={16}
+                style={{ backgroundColor: colors.background }}
+              />
+            </ReactFlow>
+          )}
         </div>
       </motion.div>
 
@@ -959,13 +1011,41 @@ const SupplyChainGraph = () => {
         const minExpected = Math.max(1, Math.floor(nodeCount / 10));
         if (nodeCount > 0 && linkCount < minExpected) {
           return (
-            <div className="mb-4 p-3 rounded border flex items-center justify-between" style={{ backgroundColor: colors.warning + '10', borderColor: colors.warning + '40', color: colors.warning }}>
+            <div
+              className="mb-4 p-3 rounded border flex items-center justify-between"
+              style={{
+                backgroundColor: colors.warning + "10",
+                borderColor: colors.warning + "40",
+                color: colors.warning,
+              }}
+            >
               <div>
-                This graph contains <strong>{nodeCount}</strong> suppliers but only <strong>{linkCount}</strong> connections. If you expected relationships, try refreshing or seed sample connections for the demo.
+                This graph contains <strong>{nodeCount}</strong> suppliers but
+                only <strong>{linkCount}</strong> connections. If you expected
+                relationships, try refreshing or seed sample connections for the
+                demo.
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => window.dispatchEvent(new Event('fetchData'))} className="px-3 py-1 rounded border" style={{ backgroundColor: colors.panel, borderColor: colors.accent + '40' }}>Refresh</button>
-                <button onClick={seedRelationships} className="px-3 py-1 rounded border" style={{ backgroundColor: colors.panel, borderColor: colors.accent + '40' }}>Seed sample relationships</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={() => window.dispatchEvent(new Event("fetchData"))}
+                  className="px-3 py-1 rounded border"
+                  style={{
+                    backgroundColor: colors.panel,
+                    borderColor: colors.accent + "40",
+                  }}
+                >
+                  Refresh
+                </button>
+                <button
+                  onClick={seedRelationships}
+                  className="px-3 py-1 rounded border"
+                  style={{
+                    backgroundColor: colors.panel,
+                    borderColor: colors.accent + "40",
+                  }}
+                >
+                  Seed sample relationships
+                </button>
               </div>
             </div>
           );
@@ -975,32 +1055,94 @@ const SupplyChainGraph = () => {
 
       {/* Legend */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="p-3 rounded border" style={{ borderColor: colors.accent + '30', backgroundColor: colors.panel }}>
-          <div className="text-sm font-medium mb-2" style={{ color: colors.text }}>Legend</div>
-          <div className="flex flex-wrap gap-4 text-xs" style={{ color: colors.textMuted }}>
+        <div
+          className="p-3 rounded border"
+          style={{
+            borderColor: colors.accent + "30",
+            backgroundColor: colors.panel,
+          }}
+        >
+          <div
+            className="text-sm font-medium mb-2"
+            style={{ color: colors.text }}
+          >
+            Legend
+          </div>
+          <div
+            className="flex flex-wrap gap-4 text-xs"
+            style={{ color: colors.textMuted }}
+          >
             <span className="inline-flex items-center gap-2">
-              <span className="w-4 h-1 inline-block" style={{ backgroundColor: colors.success }} /> Ethical connection
+              <span
+                className="w-4 h-1 inline-block"
+                style={{ backgroundColor: colors.success }}
+              />{" "}
+              Ethical connection
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="w-4 h-1 inline-block" style={{ backgroundColor: colors.error }} /> Risky connection
+              <span
+                className="w-4 h-1 inline-block"
+                style={{ backgroundColor: colors.error }}
+              />{" "}
+              Risky connection
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: colors.success + '40', border: `1px solid ${colors.success}` }} /> High score node
+              <span
+                className="w-3 h-3 rounded-sm inline-block"
+                style={{
+                  backgroundColor: colors.success + "40",
+                  border: `1px solid ${colors.success}`,
+                }}
+              />{" "}
+              High score node
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: colors.warning + '40', border: `1px solid ${colors.warning}` }} /> Medium score node
+              <span
+                className="w-3 h-3 rounded-sm inline-block"
+                style={{
+                  backgroundColor: colors.warning + "40",
+                  border: `1px solid ${colors.warning}`,
+                }}
+              />{" "}
+              Medium score node
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: colors.error + '40', border: `1px solid ${colors.error}` }} /> Low score node
+              <span
+                className="w-3 h-3 rounded-sm inline-block"
+                style={{
+                  backgroundColor: colors.error + "40",
+                  border: `1px solid ${colors.error}`,
+                }}
+              />{" "}
+              Low score node
             </span>
           </div>
         </div>
-        <div className="p-3 rounded border" style={{ borderColor: colors.accent + '30', backgroundColor: colors.panel }}>
-          <div className="text-sm font-medium mb-2" style={{ color: colors.text }}>Tips</div>
-          <ul className="text-xs list-disc pl-5" style={{ color: colors.textMuted }}>
+        <div
+          className="p-3 rounded border"
+          style={{
+            borderColor: colors.accent + "30",
+            backgroundColor: colors.panel,
+          }}
+        >
+          <div
+            className="text-sm font-medium mb-2"
+            style={{ color: colors.text }}
+          >
+            Tips
+          </div>
+          <ul
+            className="text-xs list-disc pl-5"
+            style={{ color: colors.textMuted }}
+          >
             <li>Click a node to focus and dim unrelated nodes.</li>
-            <li>Use the layout toggle to switch between top-to-bottom and left-to-right.</li>
-            <li>Adjust the minimum score or enable Ethical Only to filter paths.</li>
+            <li>
+              Use the layout toggle to switch between top-to-bottom and
+              left-to-right.
+            </li>
+            <li>
+              Adjust the minimum score or enable Ethical Only to filter paths.
+            </li>
             <li>Use Fit to refocus after filtering or panning.</li>
           </ul>
         </div>
@@ -1155,8 +1297,8 @@ const SupplyChainGraph = () => {
                               node.ethical_score >= 75
                                 ? colors.success
                                 : node.ethical_score >= 50
-                                ? colors.warning
-                                : colors.error,
+                                  ? colors.warning
+                                  : colors.error,
                           }}
                         ></span>
                         <span
@@ -1197,12 +1339,12 @@ const SupplyChainGraph = () => {
                             .filter((link) => link.source === node.id)
                             .map((link) => {
                               const targetNode = graphData.nodes.find(
-                                (n) => n.id === link.target
+                                (n) => n.id === link.target,
                               );
                               // Only show if target node also passes filters
                               if (
                                 !filteredGraphData.nodes.some(
-                                  (n) => n.id === link.target
+                                  (n) => n.id === link.target,
                                 )
                               )
                                 return null;
@@ -1279,7 +1421,7 @@ const SupplyChainGraph = () => {
                       <span style={{ color: colors.accent }}>
                         {" "}
                         {graphData.nodes.find(
-                          (n) => n.id === selectedConnection.source
+                          (n) => n.id === selectedConnection.source,
                         )?.name || "Unknown"}
                       </span>
                     </p>
@@ -1288,7 +1430,7 @@ const SupplyChainGraph = () => {
                       <span style={{ color: colors.accent }}>
                         {" "}
                         {graphData.nodes.find(
-                          (n) => n.id === selectedConnection.target
+                          (n) => n.id === selectedConnection.target,
                         )?.name || "Unknown"}
                       </span>
                     </p>
@@ -1329,18 +1471,36 @@ const SupplyChainGraph = () => {
                     </button>
                     <button
                       className="px-2 py-1 rounded text-xs border"
-                      style={{ color: colors.error, borderColor: colors.error + '60', backgroundColor: colors.error + '15' }}
+                      style={{
+                        color: colors.error,
+                        borderColor: colors.error + "60",
+                        backgroundColor: colors.error + "15",
+                      }}
                       onClick={() => {
                         // remove from graphData and storage
                         setGraphData((prev) => ({
                           ...prev,
-                          links: prev.links.filter((l) => !(l.source === selectedConnection.source && l.target === selectedConnection.target)),
+                          links: prev.links.filter(
+                            (l) =>
+                              !(
+                                l.source === selectedConnection.source &&
+                                l.target === selectedConnection.target
+                              ),
+                          ),
                         }));
                         try {
                           const key = "supplyChain:userLinks";
                           const raw = localStorage.getItem(key);
                           const arr = raw ? JSON.parse(raw) : [];
-                          const filtered = Array.isArray(arr) ? arr.filter((l:any) => !(l.source === selectedConnection.source && l.target === selectedConnection.target)) : [];
+                          const filtered = Array.isArray(arr)
+                            ? arr.filter(
+                                (l: any) =>
+                                  !(
+                                    l.source === selectedConnection.source &&
+                                    l.target === selectedConnection.target
+                                  ),
+                              )
+                            : [];
                           localStorage.setItem(key, JSON.stringify(filtered));
                         } catch {}
                         setSelectedConnection(null);
@@ -1390,20 +1550,20 @@ const SupplyChainGraph = () => {
                           selectedNodeApiData.ethical_score >= 75
                             ? colors.success
                             : selectedNodeApiData.ethical_score >= 50
-                            ? colors.warning
-                            : colors.error,
+                              ? colors.warning
+                              : colors.error,
                         backgroundColor:
                           selectedNodeApiData.ethical_score >= 75
                             ? colors.success + "15"
                             : selectedNodeApiData.ethical_score >= 50
-                            ? colors.warning + "15"
-                            : colors.error + "15",
+                              ? colors.warning + "15"
+                              : colors.error + "15",
                         borderColor:
                           selectedNodeApiData.ethical_score >= 75
                             ? colors.success + "50"
                             : selectedNodeApiData.ethical_score >= 50
-                            ? colors.warning + "50"
-                            : colors.error + "50",
+                              ? colors.warning + "50"
+                              : colors.error + "50",
                       }}
                     >
                       {selectedNodeApiData.ethical_score?.toFixed(1) ?? "N/A"}%
