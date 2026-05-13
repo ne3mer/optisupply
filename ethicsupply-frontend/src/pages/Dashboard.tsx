@@ -58,14 +58,12 @@ import {
   getDatasetMeta,
   getBands,
   getSuppliers,
-} from "../services/api";
-import { fmtRawMetric, fmtDate } from "../lib/formatters";
-} from "../services/api";
-import { fmtRiskFactor, fmtPenalty, fmtScore, fmtRawMetric } from "../lib/formatters";
+  getSupplyChainGraphData,
+  GraphData,
   Supplier,
   BandsMap,
 } from "../services/api";
-import { getSupplyChainGraphData, GraphData } from "../services/api";
+import { fmtRiskFactor, fmtPenalty, fmtScore, fmtRawMetric, fmtDate } from "../lib/formatters";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import MachineLearningStatus from "../components/MachineLearningStatus";
