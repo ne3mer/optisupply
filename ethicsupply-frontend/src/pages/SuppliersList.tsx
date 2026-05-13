@@ -56,7 +56,7 @@ import {
   fmtRawMetric,
   fmtDate,
 } from "../lib/formatters";
-import { scoreBandColor } from "../lib/scoreThresholds";
+import { scoreBandColor, scorePerformanceLabel } from "../lib/scoreThresholds";
 
 const LoadingIndicator = () => {
   const colors = useThemeColors();
@@ -236,7 +236,7 @@ const sectionHelp = {
   pillarGov:
     "Governance score (G): anti-corruption measures, board independence, executive-pay transparency, regulatory compliance, and whistleblower policies.",
   rating:
-    "Performance tier based on the risk-adjusted ESG score. Excellent ≥ 80 · Strong ≥ 60 · Average ≥ 40 · At Risk < 40.",
+    "Performance tier based on the risk-adjusted ESG score (same bands as profile pillars). Excellent ≥ 80 · Strong ≥ 65 · Average ≥ 45 · At Risk < 45.",
   lastUpdated:
     "When this supplier's data was last synced or reassessed. Stale data (> 90 days) may affect score reliability.",
   quickView:
@@ -2585,13 +2585,7 @@ const SuppliersList = () => {
                                 }}
                               >
                                 <ScaleIcon className="h-3 w-3" />
-                                {scorePercent >= 80
-                                  ? "Excellent"
-                                  : scorePercent >= 60
-                                    ? "Strong"
-                                    : scorePercent >= 40
-                                      ? "Average"
-                                      : "At Risk"}
+                                {scorePerformanceLabel(riskAdjustedScore)}
                               </span>
                             </Tooltip>
                           </div>

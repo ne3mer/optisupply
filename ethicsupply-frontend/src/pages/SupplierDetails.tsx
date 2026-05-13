@@ -423,11 +423,9 @@ const SupplierDetails = () => {
     return <ErrorDisplay message={error || "Supplier not found."} />;
 
   const initials = supplier.name?.slice(0, 2).toUpperCase() || "??";
-  const pillarColors = {
-    environmental: colors.success,
-    social: colors.primary,
-    governance: colors.secondary,
-  };
+  const pillarEnvColor = scoreBandColor(colors, supplier.environmental_score);
+  const pillarSocColor = scoreBandColor(colors, supplier.social_score);
+  const pillarGovColor = scoreBandColor(colors, supplier.governance_score);
 
   return (
     <div
@@ -766,17 +764,17 @@ const SupplierDetails = () => {
               <PillarBar
                 label="Environmental"
                 value={supplier.environmental_score}
-                color={pillarColors.environmental}
+                color={pillarEnvColor}
               />
               <PillarBar
                 label="Social"
                 value={supplier.social_score}
-                color={pillarColors.social}
+                color={pillarSocColor}
               />
               <PillarBar
                 label="Governance"
                 value={supplier.governance_score}
-                color={pillarColors.governance}
+                color={pillarGovColor}
               />
             </div>
           </SectionCard>
@@ -792,19 +790,19 @@ const SupplierDetails = () => {
                 {
                   label: "Environmental",
                   value: supplier.environmental_score,
-                  color: pillarColors.environmental,
+                  color: pillarEnvColor,
                   icon: BeakerIcon,
                 },
                 {
                   label: "Social",
                   value: supplier.social_score,
-                  color: pillarColors.social,
+                  color: pillarSocColor,
                   icon: UserGroupIcon,
                 },
                 {
                   label: "Governance",
                   value: supplier.governance_score,
-                  color: pillarColors.governance,
+                  color: pillarGovColor,
                   icon: ShieldCheckIcon,
                 },
               ].map((p) => {
