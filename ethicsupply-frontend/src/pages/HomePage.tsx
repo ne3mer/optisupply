@@ -613,7 +613,8 @@ const HomePage = () => {
         }
         .lp-hero-right { position: relative; z-index: 1; }
 
-        .lp-section-pad { padding: 120px 80px; }
+        /* Tighter vertical rhythm between PROCESS / PLATFORM / NUMBERS */
+        .lp-section-pad { padding: 72px 80px 80px; }
 
         .lp-how-grid {
           display: grid; grid-template-columns: repeat(3, 1fr);
@@ -658,7 +659,7 @@ const HomePage = () => {
           .lp-nav-links { gap: 20px; }
           .lp-hero { grid-template-columns: 1fr; gap: 48px; padding: 100px 40px 60px; }
           .lp-hero-right { max-width: 560px; }
-          .lp-section-pad { padding: 80px 40px; }
+          .lp-section-pad { padding: 56px 40px 64px; }
           .lp-how-grid { grid-template-columns: 1fr; }
           .lp-features-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
           .lp-features-big { grid-row: auto; }
@@ -679,7 +680,7 @@ const HomePage = () => {
           .lp-nav-cta { display: none; }
           .lp-hero { padding: 80px 20px 48px; gap: 36px; }
           .lp-hero-right { display: none; }
-          .lp-section-pad { padding: 64px 20px; }
+          .lp-section-pad { padding: 48px 20px 56px; }
           .lp-numbers-grid { grid-template-columns: repeat(2, 1fr); }
           .lp-number-cell { padding: 36px 16px; }
           .lp-number-cell:nth-child(2) { border-right: none; }

@@ -29,6 +29,7 @@ import { ReactFlowProvider } from "reactflow";
 import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./components/Layout";
+import ScrollToTop from "./components/ScrollToTop";
 import Settings from "./pages/Settings";
 import Scenarios from "./pages/Scenarios";
 import NotFound from "./pages/NotFound";
@@ -64,6 +65,7 @@ function App() {
     <ThemeProvider>
       <RecoilRoot>
         <Router>
+          <ScrollToTop />
           <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
             <Routes>
               {/* Public Landing Page - No Navigation Bar */}

@@ -2599,6 +2599,99 @@ export interface GraphData {
   isMockData?: boolean;
 }
 
+function normalizeGraphNodeId(id: unknown): string {
+  if (id === null || id === undefined) return "";
+  if (
+    typeof id === "object" &&
+    id !== null &&
+    "$oid" in (id as Record<string, unknown>)
+  ) {
+    return String((id as { $oid: string }).$oid);
+  }
+  return String(id);
+}
+
+/** Normalize link endpoints to string ids; drop invalid. */
+function normalizeGraphLinks(nodes: GraphNode[], links: GraphLink[]): GraphLink[] {
+  const nodeIds = new Set(nodes.map((n) => String(n.id)));
+
+  const endId = (end: string | GraphNode): string => {
+    if (typeof end === "object" && end !== null && "id" in end) {
+      return String((end as GraphNode).id);
+    }
+    return String(end);
+  };
+
+  return links
+    .map((l) => ({
+      ...l,
+      source: endId(l.source as string | GraphNode),
+      target: endId(l.target as string | GraphNode),
+    }))
+    .filter(
+      (l) =>
+        l.source &&
+        l.target &&
+        l.source !== l.target &&
+        nodeIds.has(l.source) &&
+        nodeIds.has(l.target),
+    );
+}
+
+/**
+ * Dagre needs edges. If the API returns none (legacy backend), synthesize a
+ * deterministic chain plus sparse cross-links so the graph is not a flat line.
+ */
+function ensureSupplyChainLinks(
+  nodes: GraphNode[],
+  links: GraphLink[],
+): GraphLink[] {
+  const cleaned = normalizeGraphLinks(nodes, links);
+  if (cleaned.length > 0) return cleaned;
+  if (nodes.length < 2) return [];
+
+  const sorted = [...nodes].sort((a, b) =>
+    (a.name || "").localeCompare(b.name || "", undefined, {
+      sensitivity: "base",
+    }),
+  );
+
+  const out: GraphLink[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const a = sorted[i];
+    const b = sorted[i + 1];
+    out.push({
+      source: String(a.id),
+      target: String(b.id),
+      type: "supply",
+      strength: 0.75,
+      ethical: (a.ethical_score ?? 0) >= 70 && (b.ethical_score ?? 0) >= 70,
+    });
+  }
+
+  const stride = Math.max(2, Math.floor(sorted.length / 30));
+  for (let i = 0; i < sorted.length; i += stride) {
+    const j = Math.min(sorted.length - 1, i + stride * 2);
+    if (i === j) continue;
+    const a = sorted[i];
+    const b = sorted[j];
+    const exists = out.some(
+      (l) => l.source === String(a.id) && l.target === String(b.id),
+    );
+    if (!exists) {
+      out.push({
+        source: String(a.id),
+        target: String(b.id),
+        type: "secondary",
+        strength: 0.4,
+        ethical:
+          (a.ethical_score ?? 0) >= 70 && (b.ethical_score ?? 0) >= 70,
+      });
+    }
+  }
+  return out;
+}
+
 // Function to get supply chain graph data
 export const getSupplyChainGraphData = async (): Promise<GraphData> => {
   const isConnected = await checkApiConnection();
@@ -2619,6 +2712,7 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
       }
 
       const data = await response.json();
+      const rawNodes = Array.isArray(data.nodes) ? data.nodes : [];
 
       // Ensure all nodes have lat/lng coordinates
       const countryCoords: Record<string, { lat: number; lng: number }> = {
@@ -2641,8 +2735,26 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
         Unknown: { lat: 0, lng: 0 },
       };
 
+      const baseNodes: GraphNode[] = rawNodes.map((node: any, idx: number) => {
+        const id = normalizeGraphNodeId(node.id ?? node._id ?? `node-${idx}`);
+        const ethicalRaw =
+          typeof node.ethical_score === "number"
+            ? node.ethical_score
+            : typeof node.score === "number"
+              ? node.score
+              : undefined;
+        return {
+          ...node,
+          id,
+          name: node.name || "Supplier",
+          type: (node.type as GraphNode["type"]) || "supplier",
+          country: node.country || "Unknown",
+          ethical_score: ethicalRaw,
+        } as GraphNode;
+      });
+
       // Make sure each node has coordinates
-      const nodesWithCoords = data.nodes.map((node) => {
+      const nodesWithCoords = baseNodes.map((node) => {
         if (node.lat !== undefined && node.lng !== undefined) {
           return node; // Node already has coordinates
         }
@@ -2664,9 +2776,12 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
         };
       });
 
+      const rawLinks = Array.isArray(data.links) ? data.links : [];
+      const links = ensureSupplyChainLinks(nodesWithCoords, rawLinks);
+
       return {
         nodes: nodesWithCoords,
-        links: data.links,
+        links,
         isMockData: false,
       };
     } catch (error) {

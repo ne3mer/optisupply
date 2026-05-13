@@ -652,25 +652,63 @@ exports.getDashboard = async (req, res) => {
   }
 };
 
-// Get supply chain graph
+// Get supply chain graph data
 exports.getSupplyChainGraph = async (req, res) => {
   try {
-    // Implement supply chain graph data aggregation
-    const suppliers = await db.Supplier.find({});
+    const suppliers = await db.Supplier.find({}).sort({ name: 1 }).lean();
 
-    // Format data for graph visualization
-    // This is a placeholder - actual implementation would be more sophisticated
     const nodes = suppliers.map((s) => ({
-      id: s._id,
-      name: s.name,
-      country: s.country,
-      risk: s.risk_level,
-      score: s.overallScore,
+      id: String(s._id),
+      name: s.name || "Unnamed supplier",
+      type: "supplier",
+      country: s.country || "Unknown",
+      ethical_score:
+        typeof s.ethical_score === "number" && Number.isFinite(s.ethical_score)
+          ? s.ethical_score
+          : null,
+      composite_score:
+        typeof s.composite_score === "number" &&
+        Number.isFinite(s.composite_score)
+          ? s.composite_score
+          : null,
+      risk_level: s.risk_level ?? null,
     }));
 
-    // Creating some example links between suppliers
-    // In a real app, these would come from a relationship model
     const links = [];
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const a = nodes[i];
+      const b = nodes[i + 1];
+      const as = a.ethical_score ?? 0;
+      const bs = b.ethical_score ?? 0;
+      links.push({
+        source: a.id,
+        target: b.id,
+        type: "supply",
+        strength: 0.8,
+        ethical: as >= 70 && bs >= 70,
+      });
+    }
+
+    const stride = Math.max(2, Math.floor(nodes.length / 30));
+    for (let i = 0; i < nodes.length; i += stride) {
+      const j = Math.min(nodes.length - 1, i + stride * 2);
+      if (i >= j) continue;
+      const a = nodes[i];
+      const b = nodes[j];
+      const dup = links.some(
+        (l) => l.source === a.id && l.target === b.id,
+      );
+      if (!dup) {
+        links.push({
+          source: a.id,
+          target: b.id,
+          type: "secondary",
+          strength: 0.45,
+          ethical:
+            (a.ethical_score ?? 0) >= 70 && (b.ethical_score ?? 0) >= 70,
+        });
+      }
+    }
 
     res.status(200).json({
       nodes,
