@@ -1656,10 +1656,10 @@ const SuppliersList = () => {
 
   return (
     <div
-      className="min-h-screen p-3 sm:p-4 md:p-6 lg:p-8"
+      className="min-h-screen overflow-x-hidden p-3 sm:p-4 md:p-6 lg:p-8"
       style={{ backgroundColor: colors.background, color: colors.text }}
     >
-      <div className="mx-auto w-full max-w-[1600px]">
+      <div className="mx-auto w-full max-w-[1600px] min-w-0">
         {/* Header and Controls */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -1747,7 +1747,7 @@ const SuppliersList = () => {
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          className="absolute right-0 mt-2 z-10 w-48 rounded-md shadow-lg"
+                          className="absolute left-0 right-0 sm:left-auto sm:right-0 mt-2 z-10 w-full sm:w-48 max-h-[min(70vh,480px)] overflow-y-auto rounded-md shadow-lg"
                           style={{ backgroundColor: colors.panel }}
                         >
                           <div className="py-1 rounded-md">
@@ -1971,7 +1971,7 @@ const SuppliersList = () => {
                         {stat.label}
                       </div>
                       <div
-                        className="mt-1 text-2xl font-bold font-mono leading-none"
+                        className="mt-1 text-lg sm:text-2xl font-bold font-mono leading-none tabular-nums truncate w-full"
                         style={{ color: colors.text }}
                       >
                         {stat.value}
@@ -2268,7 +2268,7 @@ const SuppliersList = () => {
                     <motion.div
                       key={supplierId}
                       variants={itemVariants}
-                      className="flex flex-col overflow-hidden transition-shadow duration-200"
+                      className="flex flex-col overflow-hidden transition-shadow duration-200 min-w-0"
                       style={{
                         backgroundColor: colors.card,
                         border: `1px solid ${isSelected ? colors.primary + "50" : "rgba(128,128,128,0.10)"}`,
@@ -2290,7 +2290,7 @@ const SuppliersList = () => {
 
                       {/* ── HEADER ─────────────────────────────────────── */}
                       <div
-                        className="px-4 pt-3 pb-3"
+                        className="px-3 sm:px-4 pt-3 pb-3"
                         style={{
                           borderBottom: "1px solid rgba(128,128,128,0.08)",
                         }}
@@ -2321,7 +2321,7 @@ const SuppliersList = () => {
                           {/* Name + location */}
                           <div className="min-w-0 flex-1">
                             <h2
-                              className="text-[14px] font-semibold leading-tight truncate"
+                              className="text-[14px] sm:text-[15px] font-semibold leading-snug break-words"
                               style={{
                                 color: colors.text,
                                 letterSpacing: "-0.01em",
@@ -2331,7 +2331,7 @@ const SuppliersList = () => {
                               {supplier.name}
                             </h2>
                             <div
-                              className="mt-0.5 text-[11px] truncate"
+                              className="mt-0.5 text-[11px] break-words line-clamp-2 sm:truncate"
                               style={{ color: colors.textMuted }}
                             >
                               {supplier.country || "N/A"}
@@ -2443,9 +2443,9 @@ const SuppliersList = () => {
                       </div>
 
                       {/* ── SCORE BODY ─────────────────────────────────── */}
-                      <div className="px-4 py-4 flex-grow flex items-start gap-4">
+                      <div className="px-3 sm:px-4 py-4 flex-grow flex flex-col items-center gap-4 min-[420px]:flex-row min-[420px]:items-start">
                         {/* Left: gauge ring + E/S/G below */}
-                        <div className="shrink-0 flex flex-col items-center gap-2">
+                        <div className="shrink-0 flex flex-col items-center gap-2 w-full min-[420px]:w-auto">
                           <Tooltip content={sectionHelp.esgRiskAdjusted}>
                             <div className="relative h-[76px] w-[76px]">
                               <svg
@@ -2571,7 +2571,7 @@ const SuppliersList = () => {
                         </div>
 
                         {/* Right: rating + key stats */}
-                        <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
+                        <div className="flex-1 min-w-0 w-full flex flex-col justify-center gap-2.5">
                           {/* Rating chip */}
                           <div className="flex items-center gap-2">
                             <Tooltip content={sectionHelp.rating}>
@@ -2662,8 +2662,8 @@ const SuppliersList = () => {
                                 />
 
                                 <div className="px-3 py-2.5 flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="min-w-0">
+                                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-2 min-w-0">
+                                    <div className="min-w-0 flex-1">
                                       <div
                                         className="text-[10px] font-mono uppercase tracking-widest"
                                         style={{ color: colors.textMuted }}
@@ -2690,7 +2690,7 @@ const SuppliersList = () => {
                                             {recommendation.label}
                                           </div>
                                           <div
-                                            className="text-[11px] leading-snug truncate"
+                                            className="text-[11px] leading-snug line-clamp-2 sm:truncate break-words"
                                             style={{ color: colors.textMuted }}
                                           >
                                             {recommendation.description}
@@ -2700,7 +2700,7 @@ const SuppliersList = () => {
                                     </div>
 
                                     {/* Micro CTA chips */}
-                                    <div className="flex items-center gap-1.5 shrink-0">
+                                    <div className="flex flex-wrap items-center gap-1.5 shrink-0 w-full sm:w-auto sm:justify-end pt-1 sm:pt-0">
                                       <button
                                         type="button"
                                         onClick={(e) => {
@@ -2736,7 +2736,7 @@ const SuppliersList = () => {
                                   </div>
 
                                   {/* Context line */}
-                                  <div className="mt-2 flex items-center justify-between gap-2">
+                                  <div className="mt-2 flex flex-col gap-1 min-[400px]:flex-row min-[400px]:items-center min-[400px]:justify-between min-[400px]:gap-2">
                                     <span
                                       className="text-[10px] font-mono uppercase tracking-widest"
                                       style={{ color: colors.textMuted }}
@@ -2786,7 +2786,7 @@ const SuppliersList = () => {
 
                       {/* ── FOOTER ACTIONS ─────────────────────────────── */}
                       <div
-                        className="px-4 py-3 flex gap-2"
+                        className="px-3 sm:px-4 py-3 flex flex-col sm:flex-row gap-2"
                         style={{
                           borderTop: "1px solid rgba(128,128,128,0.08)",
                         }}

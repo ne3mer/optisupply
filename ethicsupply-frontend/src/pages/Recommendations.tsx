@@ -902,23 +902,23 @@ const ImpactScoreCard = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
-      className="p-4 rounded-2xl border backdrop-blur-md"
+      className="min-w-0 p-3 sm:p-4 rounded-2xl border backdrop-blur-md"
       style={{
         background: `linear-gradient(135deg, ${color}12 0%, ${color}06 100%)`,
         borderColor: color + "38",
         boxShadow: `0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 ${color}22`,
       }}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           <div
-            className="p-2 rounded-lg"
+            className="p-2 rounded-lg shrink-0"
             style={{ backgroundColor: color + "25" }}
           >
             {icon}
           </div>
           <span
-            className="text-sm font-medium"
+            className="text-xs sm:text-sm font-medium truncate"
             style={{ color: colors.textMuted }}
           >
             {label}
@@ -943,7 +943,10 @@ const ImpactScoreCard = ({
           </motion.div>
         )}
       </div>
-      <div className="text-2xl font-bold" style={{ color: color }}>
+      <div
+        className="text-xl sm:text-2xl font-bold tabular-nums truncate"
+        style={{ color: color }}
+      >
         {value}
       </div>
     </motion.div>
@@ -1123,7 +1126,7 @@ const RecommendationCard = ({
         boxShadow: `0 18px 48px rgba(0,0,0,0.14), 0 0 0 1px ${categoryInfo.rail}55`,
         y: -2,
       }}
-      className="rounded-2xl overflow-hidden transition-all duration-300 mb-5 group/card"
+      className="rounded-2xl overflow-hidden transition-all duration-300 mb-5 group/card min-w-0"
       style={{
         backgroundColor: colors.panel,
         border: `1px solid ${colors.primary}14`,
@@ -1138,11 +1141,11 @@ const RecommendationCard = ({
 
       <button
         onClick={onToggleExpand}
-        className="flex items-start justify-between w-full p-5 text-left transition-colors focus:outline-none"
+        className="flex items-start justify-between w-full min-w-0 gap-3 p-4 sm:p-5 text-left transition-colors focus:outline-none"
         style={{ backgroundColor: "transparent" }}
       >
-        <div className="flex-1 pr-4">
-          <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex-1 min-w-0 pr-1 sm:pr-4">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
             <AnimatedBadge
               className="px-3 py-1 border"
               style={{
@@ -1277,22 +1280,25 @@ const RecommendationCard = ({
           )}
 
           <h3
-            className="text-xl font-bold mb-2"
+            className="text-base sm:text-xl font-bold mb-2 break-words hyphens-auto"
             style={{ color: colors.text, letterSpacing: "-0.02em" }}
           >
             {recommendation.title || "Untitled Recommendation"}
           </h3>
 
           <p
-            className="text-sm mb-3 flex items-center gap-4"
+            className="text-sm mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 min-w-0"
             style={{ color: colors.textMuted }}
           >
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-start gap-1.5 min-w-0">
               <Building2
-                className="h-4 w-4"
+                className="h-4 w-4 shrink-0 mt-0.5"
                 style={{ color: colors.primary }}
               />
-              <span style={{ color: colors.primary }} className="font-medium">
+              <span
+                style={{ color: colors.primary }}
+                className="font-medium break-words"
+              >
                 {typeof recommendation.supplier === "object" &&
                 recommendation.supplier &&
                 "name" in recommendation.supplier
@@ -1305,9 +1311,9 @@ const RecommendationCard = ({
               </span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1.5 shrink-0">
               <Calendar
-                className="h-4 w-4"
+                className="h-4 w-4 shrink-0"
                 style={{ color: colors.textMuted }}
               />
               {createdDate}
@@ -1324,7 +1330,7 @@ const RecommendationCard = ({
           )}
         </div>
 
-        <div className="flex-shrink-0 p-1">
+        <div className="flex-shrink-0 p-1 self-start pt-1">
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.3, type: "spring" }}
@@ -1351,8 +1357,8 @@ const RecommendationCard = ({
             className="overflow-hidden border-t"
             style={{ borderColor: colors.accent + "20" }}
           >
-            <div className="p-6 space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 sm:p-6 space-y-5 min-w-0 overflow-x-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-w-0">
                 <div className="space-y-2">
                   <div
                     className="flex items-center gap-2 text-sm font-semibold"
@@ -1362,7 +1368,7 @@ const RecommendationCard = ({
                     Description
                   </div>
                   <p
-                    className="pl-6 leading-relaxed"
+                    className="pl-0 sm:pl-6 leading-relaxed break-words"
                     style={{ color: colors.text }}
                   >
                     {recommendation.description || "No description available."}
@@ -1382,14 +1388,14 @@ const RecommendationCard = ({
                       AI Insights
                     </div>
                     <div
-                      className="pl-6 p-4 rounded-md border backdrop-blur-sm"
+                      className="pl-0 sm:pl-6 p-3 sm:p-4 rounded-md border backdrop-blur-sm min-w-0"
                       style={{
                         backgroundColor: categoryInfo.bg,
                         borderColor: categoryInfo.borderColor,
                         color: colors.text,
                       }}
                     >
-                      <p className="leading-relaxed">
+                      <p className="leading-relaxed break-words">
                         {typeof recommendation.ai_explanation === "object"
                           ? recommendation.ai_explanation.reasoning ||
                             "No AI explanation available."
@@ -1413,14 +1419,14 @@ const RecommendationCard = ({
                     Estimated Impact
                   </div>
                   <div
-                    className="pl-6 p-4 rounded-lg border"
+                    className="pl-0 sm:pl-6 p-3 sm:p-4 rounded-lg border min-w-0"
                     style={{
                       backgroundColor: colors.success + "10",
                       borderColor: colors.success + "30",
                     }}
                   >
                     <p
-                      className="leading-relaxed font-medium"
+                      className="leading-relaxed font-medium break-words"
                       style={{ color: colors.text }}
                     >
                       {typeof recommendation.estimated_impact === "object"
@@ -1441,11 +1447,11 @@ const RecommendationCard = ({
               )}
 
               <div
-                className="pt-4 flex justify-between items-center border-t"
+                className="pt-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center border-t min-w-0"
                 style={{ borderColor: colors.accent + "20" }}
               >
                 <div
-                  className="text-xs flex items-center gap-1.5"
+                  className="text-xs flex items-center gap-1.5 min-w-0 break-words"
                   style={{ color: colors.textMuted }}
                 >
                   <Clock className="h-3.5 w-3.5" />
@@ -1459,7 +1465,7 @@ const RecommendationCard = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onActionClick}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg border transition-all shadow-sm hover:shadow-md"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border transition-all shadow-sm hover:shadow-md shrink-0"
                   style={{
                     color: colors.background,
                     backgroundColor: actionButtonColor,
@@ -2097,7 +2103,7 @@ const RecommendationsPage = () => {
   // Component Renderer
   return (
     <div
-      className="min-h-screen p-4 md:p-8 font-sans"
+      className="min-h-screen overflow-x-hidden px-3 py-4 sm:px-4 md:p-8 font-sans"
       style={{
         backgroundColor: colors.background,
         color: colors.text,
@@ -2126,7 +2132,7 @@ const RecommendationsPage = () => {
           mixBlendMode: "screen",
         }}
       />
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10 w-full min-w-0">
         {/* Enhanced Page Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -2172,7 +2178,7 @@ const RecommendationsPage = () => {
                     Supplier intelligence
                   </p>
                   <h1
-                    className="text-3xl md:text-5xl font-display font-bold tracking-tight leading-tight"
+                    className="text-2xl sm:text-3xl md:text-5xl font-display font-bold tracking-tight leading-tight break-words"
                     style={{
                       color: colors.text,
                       letterSpacing: "-0.03em",
@@ -2304,7 +2310,7 @@ const RecommendationsPage = () => {
           </div>
 
           {/* Enhanced Stats Dashboard */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 mb-6 min-w-0">
             <ImpactScoreCard
               label="Total"
               value={stats.total}
@@ -2347,7 +2353,7 @@ const RecommendationsPage = () => {
               </>
             ) : (
               <div
-                className="col-span-2 md:col-span-4 lg:col-span-3 flex items-center rounded-xl border px-4 py-3"
+                className="col-span-2 md:col-span-4 lg:col-span-3 flex items-center rounded-xl border px-3 sm:px-4 py-3 min-w-0"
                 style={{
                   borderColor: colors.accent + "30",
                   backgroundColor: colors.background + "80",
@@ -2372,14 +2378,14 @@ const RecommendationsPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="mb-6 p-6 rounded-2xl border backdrop-blur-md"
+            className="mb-6 p-4 sm:p-6 rounded-2xl border backdrop-blur-md min-w-0"
             style={{
               background: `linear-gradient(160deg, ${colors.panel} 0%, ${colors.background}99 100%)`,
               borderColor: colors.primary + "28",
               boxShadow: `0 12px 40px rgba(0,0,0,0.08), inset 0 1px 0 ${colors.primary}14`,
             }}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4 min-w-0">
               <h3
                 className="text-lg font-semibold flex items-center gap-2"
                 style={{ color: colors.text }}
@@ -2412,8 +2418,8 @@ const RecommendationsPage = () => {
               borderColor: colors.accent + "30",
             }}
           >
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-              <div className="relative w-full md:w-96">
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 items-stretch md:items-center min-w-0">
+              <div className="relative w-full md:w-96 min-w-0 shrink-0">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
                   style={{ color: colors.textMuted }}
@@ -2432,10 +2438,10 @@ const RecommendationsPage = () => {
                 />
               </div>
 
-              <div className="flex-1 flex items-center gap-2">
+              <div className="w-full md:flex-1 flex flex-col sm:flex-row flex-wrap gap-2 min-w-0">
                 <button
                   onClick={() => setFiltersVisible(!filtersVisible)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors shrink-0"
                   style={{
                     borderColor: colors.accent + "50",
                     color: colors.text,
@@ -2459,14 +2465,14 @@ const RecommendationsPage = () => {
                     const [field, dir] = sortBy.split("_");
                     setSortBy(`${field}_${dir === "asc" ? "desc" : "asc"}`);
                   }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-lg border hover:bg-gray-700/30 font-medium transition-colors min-w-0 flex-1 sm:flex-initial"
                   style={{
                     borderColor: colors.accent + "50",
                     color: colors.text,
                   }}
                 >
-                  <ArrowDownUp className="h-4 w-4" />
-                  <span>
+                  <ArrowDownUp className="h-4 w-4 shrink-0" />
+                  <span className="truncate min-w-0 text-left">
                     {SORT_FIELD_LABELS[sortBy.split("_")[0]] ??
                       sortBy.split("_")[0]}
                   </span>
@@ -2486,7 +2492,7 @@ const RecommendationsPage = () => {
                       setFilterPriority("all");
                       setFilterStatus("all");
                     }}
-                    className="ml-auto flex items-center gap-1 px-4 py-2.5 rounded-lg border font-medium hover:bg-red-900/50 transition-colors"
+                    className="w-full sm:w-auto sm:ml-auto flex items-center justify-center gap-1 px-4 py-2.5 rounded-lg border font-medium hover:bg-red-900/50 transition-colors"
                     style={{
                       borderColor: colors.error + "80",
                       backgroundColor: colors.error + "20",
@@ -2820,9 +2826,9 @@ const RecommendationsPage = () => {
                     and programme steps.
                   </p>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start w-full min-w-0">
                   <p
-                    className="text-sm font-medium"
+                    className="text-sm font-medium min-w-0"
                     style={{ color: colors.textMuted }}
                   >
                     Showing {filteredAndSortedRecommendations.length}{" "}
@@ -2830,9 +2836,9 @@ const RecommendationsPage = () => {
                     {filteredAndSortedRecommendations.length !== 1 ? "s" : ""}
                   </p>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto min-w-0">
                     <label
-                      className="text-sm font-medium"
+                      className="text-sm font-medium shrink-0"
                       style={{ color: colors.textMuted }}
                     >
                       Sort by:
@@ -2840,7 +2846,7 @@ const RecommendationsPage = () => {
                     <select
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="rounded-xl border text-sm py-2.5 px-3 focus:ring-2 focus:outline-none font-medium shadow-sm"
+                      className="w-full sm:w-auto min-w-0 max-w-full rounded-xl border text-sm py-2.5 px-3 focus:ring-2 focus:outline-none font-medium shadow-sm"
                       style={{
                         backgroundColor: colors.inputBg,
                         borderColor: colors.accent + "50",
