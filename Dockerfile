@@ -9,9 +9,9 @@ RUN npm install --omit=dev
 COPY ethicsupply-node-backend/. ./
 
 RUN mkdir -p public
-EXPOSE 10000
+EXPOSE 8080
 
 ENV NODE_ENV=production
-ENV PORT=10000
+ENV PORT=8080
 
 CMD ["node", "start.js"]

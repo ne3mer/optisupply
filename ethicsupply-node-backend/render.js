@@ -599,9 +599,9 @@ async function setupServer() {
   });
 
   // Start the server
-  const PORT = process.env.PORT || 10000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT} (Render deployment)`);
+  const PORT = Number(process.env.PORT) || 8080;
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT} (production)`);
     console.log(`API accessible at http://localhost:${PORT}/api`);
   });
 }

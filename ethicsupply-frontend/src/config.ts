@@ -1,40 +1,72 @@
 // Configuration variables for the OptiEthic frontend application
 
-const formatApiBaseUrl = (url: string) =>
+export const formatApiBaseUrl = (url: string) =>
   url.replace(/\/+$/, "").replace(/([^:]\/)\/+/g, "$1");
 
-/**
- * Base URL for API requests (normalized, no trailing slash).
- * Use `apiEndpoint()` for paths so slashes stay consistent.
- *
- * Priority: `VITE_API_URL` → local dev → production Render API.
- * (Previously the non-local default pointed at a different host than `api.ts`,
- * which made dashboard vs other pages hit different backends.)
- */
-const rawApiBaseUrl =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" && window.location.hostname === "localhost"
-    ? "http://localhost:8080/api"
-    : "https://optisupply.onrender.com/api");
+const isLocalhost =
+  typeof window !== "undefined" && window.location.hostname === "localhost";
 
-export const API_BASE_URL = formatApiBaseUrl(String(rawApiBaseUrl));
+/** Build ordered list of API roots (deduped). First entry is the default until a host succeeds. */
+export function getApiBaseUrlCandidates(): string[] {
+  const urls: string[] = [];
 
-/** Same as API_BASE_URL; kept for call sites that prefer the name `API_URL`. */
-export const API_URL = API_BASE_URL;
+  const primary = import.meta.env.VITE_API_URL;
+  if (primary && String(primary).trim()) {
+    urls.push(formatApiBaseUrl(String(primary)));
+  }
+
+  const fallback = import.meta.env.VITE_API_FALLBACK_URL;
+  if (fallback && String(fallback).trim()) {
+    urls.push(formatApiBaseUrl(String(fallback)));
+  }
+
+  if (isLocalhost) {
+    urls.push("http://localhost:8080/api");
+  }
+
+  // Public Render deployment (verified health-check). Used when Leapcell/custom host is down.
+  urls.push("https://optisupply.onrender.com/api");
+
+  return [...new Set(urls)];
+}
+
+let activeApiBaseUrl =
+  getApiBaseUrlCandidates()[0] ?? "https://optisupply.onrender.com/api";
+
+export function getActiveApiBaseUrl(): string {
+  return activeApiBaseUrl;
+}
+
+export function setActiveApiBaseUrl(url: string): void {
+  activeApiBaseUrl = formatApiBaseUrl(url);
+}
+
+/** Current API root (updates after a successful request via apiClient). */
+export const API_BASE_URL = formatApiBaseUrl(
+  getApiBaseUrlCandidates()[0] ?? "https://optisupply.onrender.com/api",
+);
+
+/** Same as active base at call time — prefer for new code. */
+export function getApiBaseUrl(): string {
+  return getActiveApiBaseUrl();
+}
 
 export function apiEndpoint(path: string): string {
   const cleanPath = path.replace(/^\/+|\/+$/g, "");
-  return `${API_BASE_URL}/${cleanPath}`;
+  return `${getActiveApiBaseUrl()}/${cleanPath}`;
 }
 
 /**
  * Feature flags to enable/disable certain features
  */
 export const FEATURES = {
-  ENABLE_MOCK_DATA: import.meta.env.VITE_ENABLE_MOCK_DATA === "true" || false, // When true, fallback to mock data if API fails
-  ENABLE_ANALYTICS: true, // Analytics features
-  ENABLE_ML_FEATURES: true, // Machine learning features
+  ENABLE_MOCK_DATA: import.meta.env.VITE_ENABLE_MOCK_DATA === "true" || false,
+  ENABLE_ANALYTICS: true,
+  ENABLE_ML_FEATURES: true,
 };
+
+/** @deprecated Use getApiBaseUrl() — kept for older imports. */
+export const API_URL = API_BASE_URL;
 
 /**
  * Application-wide constants
@@ -49,6 +81,6 @@ export const APP_CONSTANTS = {
     "#F59E0B",
     "#EF4444",
   ],
-  MAP_CENTER: [0, 20], // Default map center [lat, lng]
-  MAP_ZOOM: 2, // Default map zoom level
+  MAP_CENTER: [0, 20],
+  MAP_ZOOM: 2,
 };

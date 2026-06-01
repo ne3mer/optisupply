@@ -24,6 +24,10 @@ import AboutMethodology from "./pages/AboutMethodology";
 import SupplierEditForm from "./pages/SupplierEditForm";
 import Methodology from "./pages/Methodology";
 import { useEffect } from "react";
+import {
+  checkApiConnection,
+  initApiBaseFromCache,
+} from "./services/apiClient";
 import { RecoilRoot } from "recoil";
 import { ReactFlowProvider } from "reactflow";
 import { Toaster } from "react-hot-toast";
@@ -61,6 +65,11 @@ const Redirect3D = () => {
 };
 
 function App() {
+  useEffect(() => {
+    initApiBaseFromCache();
+    void checkApiConnection();
+  }, []);
+
   return (
     <ThemeProvider>
       <RecoilRoot>

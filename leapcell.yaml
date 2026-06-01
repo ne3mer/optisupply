@@ -1,0 +1,12 @@
+# Leapcell service config (root). Platform health checks must match the Node listen port.
+port: 8080
+
+build:
+  command: npm install --prefix ethicsupply-node-backend
+
+start:
+  command: node ethicsupply-node-backend/start.js
+
+env:
+  NODE_ENV: production
+  PORT: "8080"

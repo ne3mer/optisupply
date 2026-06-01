@@ -1,10 +1,13 @@
 // API URL and service functions for the application
 import { apiEndpoint } from "../config";
+import { apiFetch, checkApiConnection } from "./apiClient";
 import {
   buildVariedListTitle,
   shortSupplierDisplayName,
 } from "../lib/recommendationTitles";
 import logger from "../utils/log";
+
+export { checkApiConnection };
 
 const getEndpoint = apiEndpoint;
 
@@ -307,7 +310,7 @@ export interface DatasetMeta {
 
 export const getDatasetMeta = async (): Promise<DatasetMeta | null> => {
   try {
-    const resp = await fetch(getEndpoint("dataset/meta"), {
+    const resp = await apiFetch("dataset/meta", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -331,7 +334,7 @@ export type BandsMap = Record<string, Record<string, BandsEntry>>; // industry -
 
 export const getBands = async (): Promise<BandsMap | null> => {
   try {
-    const resp = await fetch(getEndpoint("bands"), {
+    const resp = await apiFetch("bands", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -568,7 +571,7 @@ const mockSuppliers: Supplier[] = [
 
 export const getSuppliers = async (): Promise<Supplier[]> => {
   try {
-    const response = await fetch(getEndpoint("suppliers"), {
+    const response = await apiFetch("suppliers", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -589,7 +592,7 @@ export const getSuppliers = async (): Promise<Supplier[]> => {
 
 export const getSupplier = async (id: number | string): Promise<Supplier> => {
   try {
-    const response = await fetch(getEndpoint(`suppliers/${id}`), {
+    const response = await apiFetch(`suppliers/${id}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -633,7 +636,7 @@ export const evaluateSupplier = async (
   supplierData: SupplierEvaluation
 ): Promise<EvaluationResult> => {
   try {
-    const response = await fetch(getEndpoint("suppliers/evaluate"), {
+    const response = await apiFetch("suppliers/evaluate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(supplierData),
@@ -1159,7 +1162,7 @@ function seedMockRecommendationStatus(
 export const getRecommendations = async () => {
   try {
     console.log("Fetching AI-powered recommendations from API...");
-    const response = await fetch(getEndpoint("suppliers/recommendations"));
+    const response = await apiFetch("suppliers/recommendations"));
 
     if (!response.ok) {
       console.warn(
@@ -1521,7 +1524,7 @@ export const getRecommendations = async () => {
 
 export const getDashboardData = async (): Promise<DashboardData> => {
   try {
-    const response = await fetch(getEndpoint("dashboard"), {
+    const response = await apiFetch("dashboard", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -2053,7 +2056,7 @@ export const bulkImportSuppliers = async (
   }>;
 }> => {
   try {
-    const response = await fetch(getEndpoint("suppliers/bulk"), {
+    const response = await apiFetch("suppliers/bulk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ suppliers }),
@@ -2079,7 +2082,7 @@ export const addSupplier = async (
   supplierData: Record<string, any>
 ): Promise<Supplier> => {
   try {
-    const response = await fetch(getEndpoint("suppliers"), {
+    const response = await apiFetch("suppliers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(supplierData),
@@ -2517,7 +2520,7 @@ export interface MLStatus {
 // Get Machine Learning Status from the API
 export const getMLStatus = async (): Promise<MLStatus> => {
   try {
-    const response = await fetch(getEndpoint("ml/status"), {
+    const response = await apiFetch("ml/status", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -2577,21 +2580,6 @@ function getMockMLStatus(): MLStatus {
     isMockData: true,
   };
 }
-
-// Export a function to check if the API is available
-export const checkApiConnection = async (): Promise<boolean> => {
-  try {
-    const response = await fetch(getEndpoint("health-check"), {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    });
-    return response.ok;
-  } catch (error) {
-    console.error("API connection check failed:", error);
-    return false;
-  }
-};
 
 // Add new interfaces for supply chain graph
 export interface GraphNode {
@@ -2725,7 +2713,7 @@ export const getSupplyChainGraphData = async (): Promise<GraphData> => {
 
   if (isConnected) {
     try {
-      const response = await fetch(getEndpoint("supply-chain-graph"), {
+      const response = await apiFetch("supply-chain-graph", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -2938,7 +2926,7 @@ export interface GeoRiskAlert {
 // Function to fetch geo risk alerts
 export async function getGeoRiskAlerts(): Promise<GeoRiskAlert[]> {
   try {
-    const response = await fetch(getEndpoint("geo-risk-alerts"), {
+    const response = await apiFetch("geo-risk-alerts", {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -3039,7 +3027,7 @@ function subtractDays(date: Date, days: number): Date {
  */
 export const recomputeAllSuppliers = async (): Promise<{ message: string; results: any; idempotent: boolean }> => {
   try {
-    const response = await fetch(getEndpoint("admin/recompute-all"), {
+    const response = await apiFetch("admin/recompute-all", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -3064,7 +3052,7 @@ export const recomputeAllSuppliers = async (): Promise<{ message: string; result
 // Recompute supplier scores with current settings
 export const recomputeSupplierScores = async (id: string | number): Promise<Supplier> => {
   try {
-    const response = await fetch(getEndpoint(`suppliers/${id}/recompute`), {
+    const response = await apiFetch(`suppliers/${id}/recompute`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -3091,7 +3079,7 @@ export const updateSupplier = async (
   supplierData: Partial<Supplier> // Use Partial as we might only send updated fields
 ): Promise<Supplier> => {
   try {
-    const response = await fetch(getEndpoint(`suppliers/${id}`), {
+    const response = await apiFetch(`suppliers/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(supplierData),
@@ -3153,7 +3141,7 @@ export const getSupplierAnalyticsData = async (
   id: string
 ): Promise<SupplierAnalyticsData> => {
   try {
-    const response = await fetch(getEndpoint(`suppliers/${id}/analytics`), {
+    const response = await apiFetch(`suppliers/${id}/analytics`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -3731,7 +3719,7 @@ export interface ScoringSettings {
 // Get scoring settings
 export const getScoringSettings = async (): Promise<ScoringSettings> => {
   try {
-    const response = await fetch(getEndpoint("settings"));
+    const response = await apiFetch("settings"));
     if (!response.ok) throw new Error("Failed to fetch settings");
     return await response.json();
   } catch (error) {
@@ -3743,7 +3731,7 @@ export const getScoringSettings = async (): Promise<ScoringSettings> => {
 // Update scoring settings
 export const updateScoringSettings = async (settings: Partial<ScoringSettings>): Promise<ScoringSettings> => {
   try {
-    const response = await fetch(getEndpoint("settings"), {
+    const response = await apiFetch("settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(settings),
@@ -3759,7 +3747,7 @@ export const updateScoringSettings = async (settings: Partial<ScoringSettings>):
 // Reset settings to defaults
 export const resetScoringSettings = async (): Promise<ScoringSettings> => {
   try {
-    const response = await fetch(getEndpoint("settings/reset"), {
+    const response = await apiFetch("settings/reset", {
       method: "POST",
     });
     if (!response.ok) throw new Error("Failed to reset settings");
@@ -3773,7 +3761,7 @@ export const resetScoringSettings = async (): Promise<ScoringSettings> => {
 // Export suppliers as CSV
 export const exportSuppliersCSV = async (): Promise<void> => {
   try {
-    const response = await fetch(getEndpoint("suppliers/export/csv"));
+    const response = await apiFetch("suppliers/export/csv"));
     if (!response.ok) throw new Error("Failed to export CSV");
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -3819,7 +3807,7 @@ export const getCalculationTrace = async (supplierId: string | number, options?:
 // Get traceability metrics
 export const getTraceabilityMetrics = async (): Promise<{ traceabilityRate: number; meanStepsCount: number; totalTraces: number }> => {
   try {
-    const response = await fetch(getEndpoint("traceability/metrics"));
+    const response = await apiFetch("traceability/metrics"));
     if (!response.ok) throw new Error("Failed to fetch traceability metrics");
     return await response.json();
   } catch (error) {
@@ -3832,7 +3820,7 @@ export const getTraceabilityMetrics = async (): Promise<{ traceabilityRate: numb
 // S1 Utility: constraint-based filtering
 export const runScenarioS1 = async (constraint: { marginMin?: number }): Promise<{ deltaObjectivePct: number; ranksCsvUrl: string }> => {
   try {
-    const response = await fetch(getEndpoint("scenarios/s1"), {
+    const response = await apiFetch("scenarios/s1", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ constraint }),
@@ -3848,7 +3836,7 @@ export const runScenarioS1 = async (constraint: { marginMin?: number }): Promise
 // S2 Sensitivity: weight perturbations
 export const runScenarioS2 = async (perturbation: "+10" | "-10" | "+20" | "-20"): Promise<{ tau: number; meanRankShift: number; maxRankShift: number; ranksCsvUrl: string }> => {
   try {
-    const response = await fetch(getEndpoint("scenarios/s2"), {
+    const response = await apiFetch("scenarios/s2", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ perturbation }),
@@ -3864,7 +3852,7 @@ export const runScenarioS2 = async (perturbation: "+10" | "-10" | "+20" | "-20")
 // S3 Missingness: imputation strategies
 export const runScenarioS3 = async (missingPct: 5 | 10, imputation: "industryMean" | "knn", k?: number): Promise<{ top3PreservationPct: number; mae: number; ranksCsvUrl: string }> => {
   try {
-    const response = await fetch(getEndpoint("scenarios/s3"), {
+    const response = await apiFetch("scenarios/s3", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ missingPct, imputation, k }),
@@ -3880,7 +3868,7 @@ export const runScenarioS3 = async (missingPct: 5 | 10, imputation: "industryMea
 // S4 Fairness/Ablation: normalization toggle
 export const runScenarioS4 = async (normalization: "off" | "on"): Promise<{ D: number; tau: number; ranksCsvUrl: string }> => {
   try {
-    const response = await fetch(getEndpoint("scenarios/s4"), {
+    const response = await apiFetch("scenarios/s4", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ normalization }),
@@ -3906,7 +3894,7 @@ export const runScenario = async (
   filename?: string
 ): Promise<void> => {
   try {
-    const response = await fetch(getEndpoint("scenarios/run"), {
+    const response = await apiFetch("scenarios/run", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -3951,7 +3939,7 @@ export const exportSuppliersFull = async (apiKey?: string): Promise<void> => {
       headers["X-API-Key"] = apiKey;
     }
 
-    const response = await fetch(getEndpoint("suppliers/export/csv"), {
+    const response = await apiFetch("suppliers/export/csv", {
       method: "GET",
       headers,
     });
@@ -3986,7 +3974,7 @@ export const exportRankings = async (scenario: string = "baseline", apiKey?: str
       headers["X-API-Key"] = apiKey;
     }
 
-    const response = await fetch(getEndpoint(`exports/rankings?scenario=${scenario}`), {
+    const response = await apiFetch(`exports/rankings?scenario=${scenario}`, {
       method: "GET",
       headers,
     });
@@ -4020,7 +4008,7 @@ export const exportIndustryMap = async (apiKey?: string): Promise<void> => {
       headers["X-API-Key"] = apiKey;
     }
 
-    const response = await fetch(getEndpoint("exports/industry-map"), {
+    const response = await apiFetch("exports/industry-map", {
       method: "GET",
       headers,
     });
@@ -4050,7 +4038,7 @@ export async function fetchBaseline(): Promise<{
   generatedAt: string;
 }> {
   try {
-    const response = await fetch(getEndpoint("scenarios/baseline"), {
+    const response = await apiFetch("scenarios/baseline", {
       method: "GET",
       credentials: "include",
     });
@@ -4071,7 +4059,7 @@ export async function fetchBaseline(): Promise<{
  */
 export async function downloadBaselineCsv(): Promise<void> {
   try {
-    const response = await fetch(getEndpoint("scenarios/baseline?format=csv"), {
+    const response = await apiFetch("scenarios/baseline?format=csv", {
       method: "GET",
       credentials: "include",
     });

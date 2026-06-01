@@ -146,11 +146,11 @@ module.exports = startServer;
 
 // If this file is run directly (not imported), start the server
 if (require.main === module) {
-  const PORT = process.env.PORT || 8000;
+  const PORT = Number(process.env.PORT) || 8080;
 
   startServer()
     .then((app) => {
-      app.listen(PORT, () => {
+      app.listen(PORT, "0.0.0.0", () => {
         console.log(`Server running on port ${PORT}`);
         console.log(`API accessible at http://localhost:${PORT}/api`);
       });

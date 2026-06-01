@@ -1,22 +1,22 @@
-import { API_BASE_URL } from "../config";
+import { getApiBaseUrl } from "../config";
+import { apiFetch, checkApiConnection } from "./apiClient";
 import logger from "../utils/log";
+
+export { checkApiConnection };
 
 // Update the dashboard data interface to match API response
 export interface DashboardData {
-  totalSuppliers: number; // Use camelCase
-  avgEthicalScore: string; // Expect string
+  totalSuppliers: number;
+  avgEthicalScore: string;
   riskBreakdown?: {
-    // Add optional riskBreakdown
     high: number;
     low: number;
     medium: number;
   };
-  // Use the correct key name from the API response
-  avgCo2Emissions?: number; // Changed from avg_co2_emissions
+  avgCo2Emissions?: number;
   suppliers_by_country?: Record<string, number>;
   ethical_score_distribution?: Array<{ range: string; count: number }>;
   co2_emissions_by_industry?: Array<{ name: string; value: number }>;
-  // Add new optional fields for the other charts
   water_usage_trend?: Array<{ month: string; usage: number }>;
   renewable_energy_mix?: Array<{ name: string; value: number }>;
   sustainable_practices?: Array<{
@@ -39,34 +39,25 @@ export interface DatasetMeta {
   bandsVersion: string | null;
 }
 
-/**
- * Helper function to convert 0-1 values to 0-100 scale
- * @param data The dashboard data object
- * @returns The dashboard data with values scaled from 0-100
- */
 const convertToPercentage = (data: Partial<DashboardData>): DashboardData => {
-  // Create a copy of the data to avoid mutating the original
   const result = { ...data };
 
-  // Convert avgEthicalScore from 0-1 to 0-100 only when needed
   if (typeof result.avgEthicalScore === "number") {
     const v = result.avgEthicalScore;
-    result.avgEthicalScore = ((v >= 0 && v <= 1 ? v * 100 : v)).toFixed(1);
+    result.avgEthicalScore = (v >= 0 && v <= 1 ? v * 100 : v).toFixed(1);
   } else if (
     typeof result.avgEthicalScore === "string" &&
     !isNaN(parseFloat(result.avgEthicalScore))
   ) {
     const numScore = parseFloat(result.avgEthicalScore);
-    // Check if the score is in 0-1 range
     if (numScore >= 0 && numScore <= 1) {
       result.avgEthicalScore = (numScore * 100).toFixed(1);
     }
   }
 
-  // Process sustainability_performance metrics
   if (result.sustainability_performance) {
     result.sustainability_performance = result.sustainability_performance.map(
-      (item: { metric: string; current: number; industry: number }) => ({
+      (item) => ({
         ...item,
         current:
           item.current >= 0 && item.current <= 1
@@ -76,72 +67,63 @@ const convertToPercentage = (data: Partial<DashboardData>): DashboardData => {
           item.industry >= 0 && item.industry <= 1
             ? Math.round(item.industry * 100)
             : item.industry,
-      })
+      }),
     );
   }
 
-  // Process sustainable_practices values
   if (result.sustainable_practices) {
-    result.sustainable_practices = result.sustainable_practices.map(
-      (item: { practice: string; adoption: number; target: number }) => ({
-        ...item,
-        adoption:
-          item.adoption >= 0 && item.adoption <= 1
-            ? Math.round(item.adoption * 100)
-            : item.adoption,
-        target:
-          item.target >= 0 && item.target <= 1
-            ? Math.round(item.target * 100)
-            : item.target,
-      })
-    );
+    result.sustainable_practices = result.sustainable_practices.map((item) => ({
+      ...item,
+      adoption:
+        item.adoption >= 0 && item.adoption <= 1
+          ? Math.round(item.adoption * 100)
+          : item.adoption,
+      target:
+        item.target >= 0 && item.target <= 1
+          ? Math.round(item.target * 100)
+          : item.target,
+    }));
   }
 
   return result as DashboardData;
 };
 
-/**
- * Fetches dashboard data from the API
- * Falls back to mock data if the API request fails
- */
 export const getDashboardData = async (): Promise<DashboardData> => {
   try {
-    logger.log("Fetching dashboard data from API...");
-    const response = await fetch(`${API_BASE_URL}/dashboard/`);
+    logger.log(
+      `Fetching dashboard data from API (${getApiBaseUrl()})...`,
+    );
+    const response = await apiFetch("dashboard", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
 
     if (!response.ok) {
       logger.warn(
-        `Dashboard API returned status ${response.status}. Using mock data.`
+        `Dashboard API returned status ${response.status}. Using mock data.`,
       );
       return getMockDashboardData();
     }
 
     const data = await response.json();
-    logger.log("Dashboard API response:", data);
-    logger.log("Raw API Data Received:", JSON.stringify(data));
-
-    // Convert any 0-1 values to 0-100 scale
     const convertedData = convertToPercentage(data);
-    logger.log("Converted dashboard data (0-100 scale):", convertedData);
 
-    // Ensure the returned data conforms to the interface
     return {
       ...convertedData,
       isMockData: false,
     };
   } catch (error) {
     logger.error("Error fetching dashboard data:", error);
-    // Return mock data in case of error
     return getMockDashboardData();
   }
 };
 
-/**
- * Fetch dataset metadata for display (version/seed/timestamps)
- */
 export const getDatasetMeta = async (): Promise<DatasetMeta | null> => {
   try {
-    const resp = await fetch(`${API_BASE_URL}/dataset/meta`);
+    const resp = await apiFetch("dataset/meta", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
     if (!resp.ok) return null;
     const data = await resp.json();
     return {
@@ -156,33 +138,12 @@ export const getDatasetMeta = async (): Promise<DatasetMeta | null> => {
   }
 };
 
-/**
- * Checks if the API is connected and responding
- */
-export const checkApiConnection = async (): Promise<boolean> => {
-  try {
-    logger.log("Checking API connection...");
-    const response = await fetch(`${API_BASE_URL}/health-check/`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.ok;
-  } catch (error) {
-    logger.error("API connection check failed:", error);
-    return false;
-  }
-};
-
-// Mock dashboard data - ADJUST to new interface or handle in component
 export const getMockDashboardData = (): DashboardData => {
   logger.log("Using mock dashboard data");
 
-  // Create mock data
-  const mockData = {
+  return {
     totalSuppliers: 12,
-    avgEthicalScore: "75.3", // Already in 0-100 format
+    avgEthicalScore: "75.3",
     riskBreakdown: { high: 1, medium: 4, low: 7 },
     avgCo2Emissions: 23.9,
     suppliers_by_country: {
@@ -246,6 +207,4 @@ export const getMockDashboardData = (): DashboardData => {
     ],
     isMockData: true,
   };
-
-  return mockData;
 };

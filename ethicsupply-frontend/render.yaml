@@ -11,7 +11,9 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
-        value: https://optiethic-backend.onrender.com/api
+        value: https://optisupply.onrender.com/api
+      - key: VITE_API_FALLBACK_URL
+        value: https://optisupply.onrender.com/api
       - key: VITE_ENABLE_MOCK_DATA
         value: false
       - key: NODE_VERSION
