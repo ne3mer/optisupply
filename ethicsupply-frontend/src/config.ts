@@ -24,14 +24,11 @@ export function getApiBaseUrlCandidates(): string[] {
     urls.push("http://localhost:8080/api");
   }
 
-  // Public Render deployment (verified health-check). Used when Leapcell/custom host is down.
-  urls.push("https://optisupply.onrender.com/api");
-
   return [...new Set(urls)];
 }
 
 let activeApiBaseUrl =
-  getApiBaseUrlCandidates()[0] ?? "https://optisupply.onrender.com/api";
+  getApiBaseUrlCandidates()[0] ?? "https://octopus-app-j6min.ondigitalocean.app/api";
 
 export function getActiveApiBaseUrl(): string {
   return activeApiBaseUrl;
@@ -43,7 +40,7 @@ export function setActiveApiBaseUrl(url: string): void {
 
 /** Current API root (updates after a successful request via apiClient). */
 export const API_BASE_URL = formatApiBaseUrl(
-  getApiBaseUrlCandidates()[0] ?? "https://optisupply.onrender.com/api",
+  getApiBaseUrlCandidates()[0] ?? "https://octopus-app-j6min.ondigitalocean.app/api",
 );
 
 /** Same as active base at call time — prefer for new code. */
