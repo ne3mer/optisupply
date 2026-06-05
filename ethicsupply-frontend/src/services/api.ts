@@ -2921,6 +2921,10 @@ export interface GeoRiskAlert {
   type: string;
   country: string;
   read: boolean;
+  severity?: "low" | "medium" | "high" | "critical";
+  source?: string;
+  url?: string;
+  isLive?: boolean;
 }
 
 // Function to fetch geo risk alerts
@@ -2939,7 +2943,7 @@ export async function getGeoRiskAlerts(): Promise<GeoRiskAlert[]> {
     const data = await response.json();
     return data.map((alert: any) => ({
       ...alert,
-      read: false, // Default all fetched alerts to unread
+      read: false,
     }));
   } catch (error) {
     console.error("Error fetching geo risk alerts:", error);

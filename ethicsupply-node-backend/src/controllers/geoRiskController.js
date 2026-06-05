@@ -1,14 +1,40 @@
 const { GeoRiskAlert } = require("../models");
 const Supplier = require("../models/Supplier");
+const newsApiService = require("../services/newsApiService");
+
+const NEWS_API_KEY = process.env.NEWS_API_KEY;
 
 /**
- * Get all geo risk alerts
+ * Get all geo risk alerts — tries live NewsAPI first, falls back to MongoDB
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
 exports.getGeoRiskAlerts = async (req, res) => {
+  const forceRefresh = req.query.refresh === "true";
+  const source = req.query.source; // "live" | "db" | undefined (auto)
+
+  // ── 1. Live NewsAPI path ─────────────────────────────────────────────────
+  if (NEWS_API_KEY && source !== "db") {
+    try {
+      const liveAlerts = await newsApiService.fetchLiveGeoRiskNews(NEWS_API_KEY, {
+        forceRefresh,
+        maxResults: 30,
+      });
+
+      return res.status(200).json(liveAlerts);
+    } catch (err) {
+      console.warn("[GeoRisk] NewsAPI fetch failed, falling back to DB:", err.message);
+
+      // Try to serve stale cache before going to DB
+      const stale = newsApiService.getCachedNews();
+      if (stale && stale.length > 0) {
+        return res.status(200).json(stale);
+      }
+    }
+  }
+
+  // ── 2. MongoDB fallback ──────────────────────────────────────────────────
   try {
-    // Get all alerts, sorted by date descending (most recent first)
     const alerts = await GeoRiskAlert.find()
       .sort({ date: -1 })
       .populate("impact_suppliers", "name country industry");

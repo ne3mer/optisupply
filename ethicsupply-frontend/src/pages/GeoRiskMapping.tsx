@@ -1072,12 +1072,28 @@ const GeoRiskMapping = () => {
               style={{ borderBottom: "1px solid rgba(128,128,128,0.08)" }}
             >
               <div>
-                <p
-                  className="text-[10px] uppercase font-semibold"
-                  style={{ color: "#808080", letterSpacing: "0.09em" }}
-                >
-                  Live Feed
-                </p>
+                <div className="flex items-center gap-2">
+                  <p
+                    className="text-[10px] uppercase font-semibold"
+                    style={{ color: "#808080", letterSpacing: "0.09em" }}
+                  >
+                    Live Feed
+                  </p>
+                  {alerts.some((a) => (a as any).isLive) && (
+                    <span className="flex items-center gap-1">
+                      <span
+                        className="inline-block h-1.5 w-1.5 rounded-full animate-pulse"
+                        style={{ background: "#22c55e" }}
+                      />
+                      <span
+                        className="text-[9px] font-bold uppercase"
+                        style={{ color: "#22c55e", letterSpacing: "0.06em" }}
+                      >
+                        Real News
+                      </span>
+                    </span>
+                  )}
+                </div>
                 <h2
                   className="text-[13px] font-semibold"
                   style={{ color: colors.text, letterSpacing: "-0.01em" }}
@@ -1145,32 +1161,68 @@ const GeoRiskMapping = () => {
                         >
                           {rt?.icon ?? <BellIcon className="h-3.5 w-3.5" />}
                         </div>
-                        <div className="min-w-0">
-                          <p
-                            className="text-[12px] font-semibold leading-tight"
-                            style={{
-                              color: colors.text,
-                              letterSpacing: "-0.01em",
-                            }}
-                          >
-                            {alert.title}
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-1">
+                            <p
+                              className="text-[12px] font-semibold leading-tight"
+                              style={{
+                                color: colors.text,
+                                letterSpacing: "-0.01em",
+                              }}
+                            >
+                              {(alert as any).url ? (
+                                <a
+                                  href={(alert as any).url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                  style={{ color: colors.text }}
+                                >
+                                  {alert.title}
+                                </a>
+                              ) : (
+                                alert.title
+                              )}
+                            </p>
+                            {(alert as any).isLive && (
+                              <span
+                                className="shrink-0 text-[9px] font-bold px-1 py-0.5 rounded"
+                                style={{
+                                  background: "rgba(34,197,94,0.15)",
+                                  color: "#22c55e",
+                                  letterSpacing: "0.06em",
+                                }}
+                              >
+                                LIVE
+                              </span>
+                            )}
+                          </div>
                           <p
                             className="text-[11px] mt-0.5 leading-snug"
                             style={{ color: "#808080" }}
                           >
                             {alert.description}
                           </p>
-                          <div className="flex items-center justify-between mt-1.5">
-                            <span
-                              className="text-[10px] font-semibold uppercase"
-                              style={{
-                                color: rt?.color ?? "#808080",
-                                letterSpacing: "0.05em",
-                              }}
-                            >
-                              {alert.country}
-                            </span>
+                          <div className="flex items-center justify-between mt-1.5 flex-wrap gap-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-[10px] font-semibold uppercase"
+                                style={{
+                                  color: rt?.color ?? "#808080",
+                                  letterSpacing: "0.05em",
+                                }}
+                              >
+                                {alert.country}
+                              </span>
+                              {(alert as any).source && (
+                                <span
+                                  className="text-[10px]"
+                                  style={{ color: "#606060" }}
+                                >
+                                  · {(alert as any).source}
+                                </span>
+                              )}
+                            </div>
                             <span
                               className="text-[10px]"
                               style={{ color: "#808080" }}
