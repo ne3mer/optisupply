@@ -2,7 +2,7 @@
 
 > Ethical supply chain intelligence platform — evaluate, monitor, and optimise supplier networks across ESG dimensions.
 
-[![Frontend](https://img.shields.io/badge/frontend-Vercel-black)](https://optisupply.vercel.app)
+[![Live](https://img.shields.io/badge/live-optisupply.tech-brightgreen)](https://optisupply.tech)
 [![Backend](https://img.shields.io/badge/backend-DigitalOcean-0080FF)](https://octopus-app-j6min.ondigitalocean.app/api/health-check)
 
 ---
@@ -11,7 +11,7 @@
 
 | Layer    | Technology                          | Deployment                        | URL                                       |
 |----------|-------------------------------------|-----------------------------------|-------------------------------------------|
-| Frontend | React 18 · TypeScript · Vite        | Vercel                            | https://optisupply.vercel.app             |
+| Frontend | React 18 · TypeScript · Vite        | Vercel                            | https://optisupply.tech                   |
 | Backend  | Node.js · Express · Mongoose        | DigitalOcean App Platform (Docker)| https://octopus-app-j6min.ondigitalocean.app |
 | Database | MongoDB Atlas                       | Cloud (M0 free tier cluster)      | `cluster0.pf5lru1.mongodb.net/optisupply` |
 

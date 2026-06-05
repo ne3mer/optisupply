@@ -23,5 +23,5 @@ services:
       - key: PORT
         value: "8080"
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://optisupply-front.onrender.com,https://optisupply.vercel.app,https://optisupply-frontend.vercel.app,https://ethicsupply-frontend.vercel.app,https://optisupp.netlify.app,https://octopus-app-j6min.ondigitalocean.app"
+        value: "https://optisupply.tech,https://www.optisupply.tech,https://optisupply.vercel.app,https://optisupply-front.onrender.com,https://octopus-app-j6min.ondigitalocean.app"
       # MONGODB_URI and JWT_SECRET are managed via the DO dashboard (Secrets) — do NOT put them here
