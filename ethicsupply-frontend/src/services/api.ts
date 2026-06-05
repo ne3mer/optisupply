@@ -1162,7 +1162,7 @@ function seedMockRecommendationStatus(
 export const getRecommendations = async () => {
   try {
     console.log("Fetching AI-powered recommendations from API...");
-    const response = await apiFetch("suppliers/recommendations"));
+    const response = await apiFetch("suppliers/recommendations");
 
     if (!response.ok) {
       console.warn(
@@ -3719,7 +3719,7 @@ export interface ScoringSettings {
 // Get scoring settings
 export const getScoringSettings = async (): Promise<ScoringSettings> => {
   try {
-    const response = await apiFetch("settings"));
+    const response = await apiFetch("settings");
     if (!response.ok) throw new Error("Failed to fetch settings");
     return await response.json();
   } catch (error) {
@@ -3761,7 +3761,7 @@ export const resetScoringSettings = async (): Promise<ScoringSettings> => {
 // Export suppliers as CSV
 export const exportSuppliersCSV = async (): Promise<void> => {
   try {
-    const response = await apiFetch("suppliers/export/csv"));
+    const response = await apiFetch("suppliers/export/csv");
     if (!response.ok) throw new Error("Failed to export CSV");
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -3807,7 +3807,7 @@ export const getCalculationTrace = async (supplierId: string | number, options?:
 // Get traceability metrics
 export const getTraceabilityMetrics = async (): Promise<{ traceabilityRate: number; meanStepsCount: number; totalTraces: number }> => {
   try {
-    const response = await apiFetch("traceability/metrics"));
+    const response = await apiFetch("traceability/metrics");
     if (!response.ok) throw new Error("Failed to fetch traceability metrics");
     return await response.json();
   } catch (error) {

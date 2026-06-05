@@ -19,7 +19,7 @@ const Settings: React.FC = () => {
   const { darkMode, toggleDarkMode } = useTheme();
   const colors = useThemeColors();
   const [apiEndpoint, setApiEndpoint] = useState<string>(
-    localStorage.getItem("apiEndpoint") || "http://localhost:8000"
+    localStorage.getItem("apiEndpoint") || "http://localhost:8080"
   );
   const [settings, setSettings] = useState<ScoringSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -725,7 +725,7 @@ const Settings: React.FC = () => {
                         color: colors.text,
                         focusRingColor: colors.primary,
                       }}
-                      placeholder="http://localhost:8000"
+                      placeholder="http://localhost:8080"
                     />
                   </div>
                   <button

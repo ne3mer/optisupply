@@ -10,8 +10,9 @@ import {
 import logger from "../utils/log";
 
 const CACHE_KEY = "optisupply-active-api-base";
-const DEFAULT_TIMEOUT_MS = 10_000;
-const HEALTH_TIMEOUT_MS = 6_000;
+// Render free tier can take up to 60s to wake from sleep — use generous timeouts.
+const DEFAULT_TIMEOUT_MS = 45_000;
+const HEALTH_TIMEOUT_MS = 60_000;
 
 function buildUrl(base: string, path: string): string {
   const cleanPath = path.replace(/^\/+|\/+$/g, "");
@@ -85,12 +86,16 @@ export async function apiFetch(
     const url = buildUrl(base, path);
     try {
       const response = await fetchWithTimeout(url, init, timeoutMs);
-      const hostReachable =
-        response.ok || (response.status < 500 && !retryOnHttpError);
 
-      if (hostReachable) {
+      if (response.ok) {
         rememberWorkingBase(base);
         return response;
+      }
+
+      if (retryOnHttpError && response.status < 500) {
+        lastError = new Error(`HTTP ${response.status} from ${base}`);
+        logger.warn(`API ${path} returned ${response.status} on ${base}, trying next host`);
+        continue;
       }
 
       lastError = new Error(`HTTP ${response.status} from ${base}`);
