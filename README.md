@@ -1,126 +1,160 @@
-# OptiEthic - Ethical Supply Chain Management
+# OptiSupply
 
-A full-stack application for managing and analyzing ethical supply chains.
+> Ethical supply chain intelligence platform — evaluate, monitor, and optimise supplier networks across ESG dimensions.
 
-## Project Structure
+[![Frontend](https://img.shields.io/badge/frontend-Vercel-black)](https://optisupply.vercel.app)
+[![Backend](https://img.shields.io/badge/backend-DigitalOcean-0080FF)](https://octopus-app-j6min.ondigitalocean.app/api/health-check)
 
-- **ethicsupply-frontend**: React frontend built with Vite, TypeScript, and Tailwind CSS
-- **ethicsupply-node-backend**: Node.js/Express REST API backed by MongoDB
+---
 
-## Deployment Guide (Render + MongoDB Atlas)
+## Architecture
 
-### 1) Set Up Accounts
+| Layer    | Technology                          | Deployment                        | URL                                       |
+|----------|-------------------------------------|-----------------------------------|-------------------------------------------|
+| Frontend | React 18 · TypeScript · Vite        | Vercel                            | https://optisupply.vercel.app             |
+| Backend  | Node.js · Express · Mongoose        | DigitalOcean App Platform (Docker)| https://octopus-app-j6min.ondigitalocean.app |
+| Database | MongoDB Atlas                       | Cloud (M0 free tier cluster)      | `cluster0.pf5lru1.mongodb.net/optisupply` |
 
-1. Sign up at [Render.com](https://render.com) and [MongoDB Atlas](https://www.mongodb.com/atlas)
-2. Connect this GitHub repository to Render
+---
 
-### 2) Deploy Backend API (Render Web Service)
+## Repository Structure
 
-1. In Render, click **New > Web Service**
-2. Select this repository
-3. Configure:
-   - **Name**: `optiethic-backend`
-   - **Runtime**: `Node`
-   - **Root Directory**: `ethicsupply-node-backend`
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm run start:render` (or `npm start`)
-4. Add environment variables:
-   - `NODE_ENV=production`
-   - `PORT=8000`
-   - `MONGODB_URI=<your-atlas-connection-string>`
-   - `CORS_ALLOWED_ORIGINS=https://your-frontend-domain.onrender.com`
-   - `JWT_SECRET=<strong-random-secret>`
+```
+optisupply/
+├── ethicsupply-frontend/       # React/TypeScript SPA
+│   ├── src/
+│   │   ├── components/         # Reusable UI components
+│   │   ├── pages/              # Route-level page components
+│   │   ├── services/           # API client + data fetching
+│   │   └── store/              # Recoil state atoms
+│   ├── .env.production         # Non-secret VITE_ vars (committed)
+│   └── build.sh                # Production build script
+│
+├── ethicsupply-node-backend/   # Express REST API
+│   ├── routes/                 # API route handlers
+│   ├── models/                 # Mongoose data models
+│   ├── services/               # Business logic + ML scoring
+│   └── start.js                # Production entry point
+│
+├── docs/                       # Documentation + reference data
+├── tools/                      # ESG report generation utilities (Python/JS)
+│
+├── Dockerfile                  # Backend Docker image (used by DigitalOcean)
+├── .do/app.yaml                # DigitalOcean App Platform spec
+├── render.yaml                 # Render deployment spec (frontend only)
+└── package.json                # Monorepo workspace root
+```
 
-### 3) Deploy Frontend (Render Static Site)
-
-1. In Render, click **New > Static Site**
-2. Select this repository
-3. Configure:
-   - **Name**: `optiethic-frontend`
-   - **Root Directory**: `ethicsupply-frontend`
-   - **Build Command**: `npm install && npm run build`
-   - **Publish Directory**: `dist`
-4. Add environment variable:
-   - `VITE_API_URL=https://your-backend-domain.onrender.com/api`
-5. Add rewrite rule for SPA routing:
-   - Source: `/*`
-   - Destination: `/index.html`
-   - Type: `Rewrite`
-
-### 4) Verify Deployment
-
-1. Wait for both services to finish deployment
-2. Open the frontend URL
-3. Confirm frontend requests succeed against `/api/health-check` and other endpoints
+---
 
 ## Local Development
 
-### Backend Setup
+### Prerequisites
+
+- Node.js 20+
+- A MongoDB Atlas connection string (or local MongoDB)
+
+### 1. Backend
 
 ```bash
 cd ethicsupply-node-backend
 npm install
-npm run dev
 ```
 
-The backend runs on `http://localhost:8000` by default.
+Create `ethicsupply-node-backend/.env`:
 
-Create `ethicsupply-node-backend/.env` with:
+```env
+NODE_ENV=development
+PORT=8080
+MONGODB_URI=mongodb://localhost:27017/optisupply
+JWT_SECRET=change-me-in-dev
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+```
 
 ```bash
-NODE_ENV=development
-PORT=8000
-MONGODB_URI=mongodb://localhost:27017/ethicsupply
-CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174
-JWT_SECRET=change-me-in-production
+node start.js          # → http://localhost:8080
 ```
 
-### Frontend Setup
+### 2. Frontend
 
 ```bash
 cd ethicsupply-frontend
 npm install
-npm run dev
 ```
 
-Set `ethicsupply-frontend/.env`:
+Create `ethicsupply-frontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:8080/api
+```
 
 ```bash
-VITE_API_URL=http://localhost:8000/api
+npm run dev            # → http://localhost:5173
 ```
 
-## Features
+---
 
-- Dashboard metrics for supplier ethical performance
-- Supplier evaluation and scoring workflows
-- Supplier list, detail views, and analytics pages
-- Recommendations and scenario analysis tools
-- Supply chain graph and geo-risk views
+## Deployment
+
+### Backend — DigitalOcean App Platform
+
+Deploys automatically on every push to `main` via `.do/app.yaml`.
+
+The `Dockerfile` at the repo root builds the backend image.
+
+**Secrets managed in the DO dashboard (never committed):**
+
+| Variable      | Description                           |
+|---------------|---------------------------------------|
+| `MONGODB_URI` | MongoDB Atlas connection string       |
+| `JWT_SECRET`  | JWT signing secret                    |
+
+**Non-secret env vars in `.do/app.yaml`:**
+
+| Variable               | Description                          |
+|------------------------|--------------------------------------|
+| `NODE_ENV`             | `production`                         |
+| `PORT`                 | `8080`                               |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed origins |
+
+### Frontend — Vercel
+
+Deploys automatically on every push to `main`.
+
+**Env var set in Vercel dashboard:**
+
+| Variable       | Value                                               |
+|----------------|-----------------------------------------------------|
+| `VITE_API_URL` | `https://octopus-app-j6min.ondigitalocean.app/api`  |
+
+The committed `ethicsupply-frontend/.env.production` also sets `VITE_API_URL` as a fallback during `vite build`.
+
+---
+
+## API Reference
+
+| Method | Endpoint                  | Description                     |
+|--------|---------------------------|---------------------------------|
+| GET    | `/api/health-check`       | Service health status           |
+| GET    | `/api/suppliers`          | List all suppliers               |
+| POST   | `/api/suppliers`          | Create a new supplier            |
+| GET    | `/api/suppliers/:id`      | Get supplier details             |
+| POST   | `/api/suppliers/evaluate` | Run ESG evaluation               |
+| GET    | `/api/dashboard`          | Aggregate dashboard metrics      |
+| GET    | `/api/recommendations`    | AI-generated recommendations     |
+
+---
 
 ## Tech Stack
 
-### Backend
+**Frontend** — React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Recharts, React Flow, React Router, Recoil
 
-- Node.js + Express
-- MongoDB + Mongoose
-- Authentication/security with JWT, bcrypt, CORS, Helmet
-- Built-in ML helpers for scoring and analytics
+**Backend** — Node.js, Express, Mongoose, JWT, bcrypt, Helmet, CORS
 
-### Frontend
+**Infrastructure** — DigitalOcean App Platform, Vercel, MongoDB Atlas, Docker, GitHub Actions (auto-deploy)
 
-- React 18 + TypeScript + Vite
-- Tailwind CSS + Radix UI
-- Recharts, React Flow, Three.js ecosystem
-- React Router + Recoil
-
-## Example API Endpoints
-
-- `GET /api/health-check`: API health check
-- `GET /api/suppliers`: List suppliers
-- `POST /api/suppliers`: Create supplier
-- `POST /api/suppliers/evaluate`: Evaluate supplier
-- `GET /api/dashboard`: Dashboard data
+---
 
 ## License
 
-MIT License
+MIT
