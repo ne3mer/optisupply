@@ -18,6 +18,8 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Filter,
   Info,
   ListChecks,
@@ -1733,6 +1735,166 @@ const ActionPlanModal = ({
   );
 };
 
+// ─── Pagination Controls ─────────────────────────────────────────────────────
+const PaginationControls = ({
+  currentPage,
+  totalPages,
+  totalItems,
+  itemsPerPage,
+  onPageChange,
+  onItemsPerPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange: (n: number) => void;
+}) => {
+  const colors = useThemeColors() as any;
+
+  if (totalItems === 0) return null;
+
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  /** Smart page list: always show first, last, and ±2 around current. */
+  const getPageNumbers = (): (number | "...")[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | "...")[] = [1];
+    if (currentPage > 4) pages.push("...");
+    for (
+      let i = Math.max(2, currentPage - 2);
+      i <= Math.min(totalPages - 1, currentPage + 2);
+      i++
+    ) {
+      pages.push(i);
+    }
+    if (currentPage < totalPages - 3) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  };
+
+  const btnBase: React.CSSProperties = {
+    backgroundColor: colors.panel,
+    borderColor: colors.accent + "40",
+    color: colors.text,
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t"
+      style={{ borderColor: colors.accent + "25" }}
+    >
+      {/* Left: rows-per-page + range */}
+      <div
+        className="flex items-center gap-3 text-sm"
+        style={{ color: colors.textMuted }}
+      >
+        <span className="hidden sm:inline">Rows per page:</span>
+        <select
+          value={itemsPerPage}
+          onChange={(e) => {
+            onItemsPerPageChange(Number(e.target.value));
+            onPageChange(1);
+          }}
+          className="px-2 py-1.5 rounded-lg border text-sm font-medium focus:outline-none"
+          style={{
+            backgroundColor: colors.inputBg ?? colors.panel,
+            borderColor: colors.accent + "50",
+            color: colors.text,
+          }}
+        >
+          {[10, 20, 50].map((n) => (
+            <option key={n} value={n} style={{ color: "#000" }}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <span>
+          <span style={{ color: colors.text, fontWeight: 600 }}>
+            {startItem}–{endItem}
+          </span>{" "}
+          of{" "}
+          <span style={{ color: colors.text, fontWeight: 600 }}>
+            {totalItems}
+          </span>
+        </span>
+      </div>
+
+      {/* Right: page buttons */}
+      {totalPages > 1 && (
+        <div className="flex items-center gap-1">
+          {/* Prev */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+            style={btnBase}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Prev</span>
+          </motion.button>
+
+          {/* Page numbers */}
+          {getPageNumbers().map((page, i) =>
+            page === "..." ? (
+              <span
+                key={`dots-${i}`}
+                className="px-2 py-2 text-sm select-none"
+                style={{ color: colors.textMuted }}
+              >
+                …
+              </span>
+            ) : (
+              <motion.button
+                key={page}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => onPageChange(page)}
+                className="min-w-[36px] px-2 py-2 rounded-lg text-sm border transition-all"
+                style={{
+                  backgroundColor:
+                    currentPage === page ? colors.primary : colors.panel,
+                  borderColor:
+                    currentPage === page ? colors.primary : colors.accent + "40",
+                  color: currentPage === page ? "#0A0A0A" : colors.text,
+                  fontWeight: currentPage === page ? 700 : 500,
+                  boxShadow:
+                    currentPage === page
+                      ? `0 4px 16px ${colors.primary}44`
+                      : "none",
+                }}
+              >
+                {page}
+              </motion.button>
+            ),
+          )}
+
+          {/* Next */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium border transition-all disabled:opacity-35 disabled:cursor-not-allowed"
+            style={btnBase}
+          >
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRight className="h-4 w-4" />
+          </motion.button>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 // Main Page Component (Enhanced)
 const RecommendationsPage = () => {
   useEffect(() => {
@@ -1759,6 +1921,11 @@ const RecommendationsPage = () => {
     useState<EnhancedRecommendation | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+
+  /** Ref to scroll back to when page changes */
+  const listTopRef = React.useRef<HTMLDivElement>(null);
 
   const fetchRecommendations = useCallback(async () => {
     setIsLoading(true);
@@ -1860,6 +2027,11 @@ const RecommendationsPage = () => {
   useEffect(() => {
     fetchRecommendations();
   }, [fetchRecommendations]);
+
+  /** Reset to page 1 whenever filters/search/sort change. */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterCategory, filterPriority, filterStatus, sortBy]);
 
   const handleToggleExpand = (id: string | undefined) => {
     if (!id) return;
@@ -2099,6 +2271,22 @@ const RecommendationsPage = () => {
     filterStatus,
     sortBy,
   ]);
+
+  // Pagination
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredAndSortedRecommendations.length / itemsPerPage),
+  );
+  const paginatedRecommendations = filteredAndSortedRecommendations.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  const handlePageChange = (page: number) => {
+    const clamped = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(clamped);
+    listTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   // Component Renderer
   return (
@@ -2682,7 +2870,7 @@ const RecommendationsPage = () => {
         </motion.div>
 
         {/* Main Content */}
-        <div>
+        <div ref={listTopRef}>
           {/* Loading State */}
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
@@ -2831,7 +3019,22 @@ const RecommendationsPage = () => {
                     className="text-sm font-medium min-w-0"
                     style={{ color: colors.textMuted }}
                   >
-                    Showing {filteredAndSortedRecommendations.length}{" "}
+                    Showing{" "}
+                    <span style={{ color: colors.text, fontWeight: 600 }}>
+                      {Math.min(
+                        (currentPage - 1) * itemsPerPage + 1,
+                        filteredAndSortedRecommendations.length,
+                      )}
+                      –
+                      {Math.min(
+                        currentPage * itemsPerPage,
+                        filteredAndSortedRecommendations.length,
+                      )}
+                    </span>{" "}
+                    of{" "}
+                    <span style={{ color: colors.text, fontWeight: 600 }}>
+                      {filteredAndSortedRecommendations.length}
+                    </span>{" "}
                     recommendation
                     {filteredAndSortedRecommendations.length !== 1 ? "s" : ""}
                   </p>
@@ -2876,23 +3079,33 @@ const RecommendationsPage = () => {
                       : "space-y-0"
                   }
                 >
-                  {filteredAndSortedRecommendations.map(
-                    (recommendation, index) => (
-                      <RecommendationCard
-                        key={recommendation._id}
-                        recommendation={recommendation}
-                        isExpanded={expandedCardId === recommendation._id}
-                        onToggleExpand={() =>
-                          handleToggleExpand(recommendation._id)
-                        }
-                        onActionClick={() =>
-                          handleTakeAction(recommendation._id)
-                        }
-                        index={index}
-                      />
-                    ),
-                  )}
+                  {paginatedRecommendations.map((recommendation, index) => (
+                    <RecommendationCard
+                      key={recommendation._id}
+                      recommendation={recommendation}
+                      isExpanded={expandedCardId === recommendation._id}
+                      onToggleExpand={() =>
+                        handleToggleExpand(recommendation._id)
+                      }
+                      onActionClick={() =>
+                        handleTakeAction(recommendation._id)
+                      }
+                      index={index}
+                    />
+                  ))}
                 </div>
+
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={filteredAndSortedRecommendations.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={(n) => {
+                    setItemsPerPage(n);
+                    setCurrentPage(1);
+                  }}
+                />
               </div>
             </>
           )}
