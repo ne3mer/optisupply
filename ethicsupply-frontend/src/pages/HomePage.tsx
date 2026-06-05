@@ -25,7 +25,7 @@ const TICKER_ITEMS = [
   "AVG LEAD TIME  4.2d",
   "CO₂ SAVED  1.2M kg",
   "COMPLIANCE RATE  97.8%",
-  "CHAIN COVERAGE  340+ enterprises",
+  "SUPPLIER PROFILES  1,200+",
   "UPTIME  99.7%",
   "RISK ZONES MONITORED  47 countries",
   "SUPPLIERS TRACKED  12,000+",
@@ -37,17 +37,23 @@ function useInView(ref: React.RefObject<Element>, once = true) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // Fallback: force visible after 2.5s in case IntersectionObserver never fires
+    const fallback = setTimeout(() => setVisible(true), 2500);
     const obs = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting) {
           setVisible(true);
+          clearTimeout(fallback);
           if (once) obs.disconnect();
         }
       },
-      { threshold: 0.12 },
+      { threshold: 0.01, rootMargin: "0px 0px -40px 0px" },
     );
     obs.observe(el);
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      clearTimeout(fallback);
+    };
   }, [ref, once]);
   return visible;
 }
@@ -1582,13 +1588,13 @@ const HomePage = () => {
 
           <div ref={numbersRef} className="lp-numbers-grid">
             {[
-              { target: 340, suffix: "+", label: "Enterprise Clients" },
-              { prefix: "", target: 99, suffix: ".7%", label: "Uptime" },
+              { target: 1200, suffix: "+", label: "Supplier Profiles" },
+              { prefix: "", target: 99, suffix: ".7%", label: "Platform Uptime" },
               {
-                prefix: "$",
-                target: 2,
-                suffix: ".4B",
-                label: "Supply Value Monitored",
+                prefix: "",
+                target: 40,
+                suffix: "+",
+                label: "ESG Metrics Tracked",
               },
               { target: 47, suffix: "", label: "Countries Covered" },
             ].map((n, i) => (
@@ -1661,7 +1667,7 @@ const HomePage = () => {
                     letterSpacing: "0.12em",
                   }}
                 >
-                  CLIENT VOICE
+                  EARLY FEEDBACK
                 </span>
               </div>
 
@@ -1701,7 +1707,7 @@ const HomePage = () => {
                     flexShrink: 0,
                   }}
                 >
-                  M
+                  β
                 </div>
                 <div>
                   <div
@@ -1712,7 +1718,7 @@ const HomePage = () => {
                       color: "#F5F5F0",
                     }}
                   >
-                    Marcus Heidler
+                    Beta Pilot Participant
                   </div>
                   <div
                     style={{
@@ -1723,7 +1729,7 @@ const HomePage = () => {
                       marginTop: 2,
                     }}
                   >
-                    CPO — Helvetia Industries AG
+                    Early Access Programme — Q2 2025
                   </div>
                 </div>
               </div>
@@ -1772,7 +1778,7 @@ const HomePage = () => {
                 maxWidth: 380,
               }}
             >
-              Join 340+ enterprises using OptiSupply to build more ethical,
+              Join forward-thinking procurement teams building more ethical,
               resilient and transparent supply chains.
             </p>
           </Reveal>
