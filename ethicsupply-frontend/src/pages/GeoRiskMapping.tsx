@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, Html, useTexture } from "@react-three/drei";
 import {
@@ -203,10 +203,12 @@ const GlobeScene = ({
   suppliers,
   activeRiskTypes,
   onCountryClick,
+  countryRiskData,
 }: {
   suppliers: Supplier[];
   activeRiskTypes: string[];
   onCountryClick: (c: string) => void;
+  countryRiskData: Record<string, string[]>;
 }) => {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
 
@@ -323,6 +325,24 @@ const GeoRiskMapping = () => {
   const colors = useThemeColors() as any;
   const { darkMode } = useTheme();
 
+  // Compute country risk data from live alerts; fall back to static if insufficient
+  const liveCountryRiskData = useMemo<Record<string, string[]>>(() => {
+    if (alerts.length === 0) return countryRiskData;
+
+    const computed: Record<string, string[]> = {};
+    alerts.forEach((alert) => {
+      if (!alert.country || alert.country === "Global") return;
+      if (!computed[alert.country]) computed[alert.country] = [];
+      if (!computed[alert.country].includes(alert.type)) {
+        computed[alert.country].push(alert.type);
+      }
+    });
+
+    // If live news covers very few countries, supplement with static baseline
+    if (Object.keys(computed).length < 5) return countryRiskData;
+    return computed;
+  }, [alerts]);
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -435,7 +455,7 @@ const GeoRiskMapping = () => {
     count: alerts.filter((a) => a.type === t).length,
     color: riskTypes[t].color,
   }));
-  const countriesByRisk = Object.entries(countryRiskData)
+  const countriesByRisk = Object.entries(liveCountryRiskData)
     .map(([c, risks]) => ({ country: c, risks: risks.length }))
     .sort((a, b) => b.risks - a.risks)
     .slice(0, 12);
@@ -496,7 +516,7 @@ const GeoRiskMapping = () => {
               style={{ color: "#808080", letterSpacing: "0.08em" }}
             >
               {suppliers.length} suppliers ·{" "}
-              {Object.keys(countryRiskData).length} risk zones
+              {Object.keys(liveCountryRiskData).length} risk zones
             </p>
           </div>
         </div>
@@ -589,6 +609,7 @@ const GeoRiskMapping = () => {
                 suppliers={suppliers}
                 activeRiskTypes={activeRiskTypes}
                 onCountryClick={setSelectedCountry}
+                countryRiskData={liveCountryRiskData}
               />
               <OrbitControls
                 enableZoom
@@ -612,11 +633,11 @@ const GeoRiskMapping = () => {
                   .filter(([c]) => c !== "Other")
                   .sort(
                     (a, b) =>
-                      (countryRiskData[b[0]]?.length || 0) -
-                      (countryRiskData[a[0]]?.length || 0),
+                      (liveCountryRiskData[b[0]]?.length || 0) -
+                      (liveCountryRiskData[a[0]]?.length || 0),
                   )
                   .map(([country]) => {
-                    const risks = countryRiskData[country] || [];
+                    const risks = liveCountryRiskData[country] || [];
                     const supplierCount = suppliers.filter(
                       (s) => s.country === country,
                     ).length;
@@ -907,7 +928,7 @@ const GeoRiskMapping = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {Object.entries(riskTypes).map(([key, rt]) => {
                     const count = alerts.filter((a) => a.type === key).length;
-                    const countries = Object.entries(countryRiskData).filter(
+                    const countries = Object.entries(liveCountryRiskData).filter(
                       ([, r]) => r.includes(key),
                     ).length;
                     return (
@@ -1294,7 +1315,7 @@ const GeoRiskMapping = () => {
                   Active Risks
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                  {(countryRiskData[selectedCountry] ?? []).length === 0 ? (
+                  {(liveCountryRiskData[selectedCountry] ?? []).length === 0 ? (
                     <span
                       className="text-[11px] px-2 py-1 rounded"
                       style={{
@@ -1306,7 +1327,7 @@ const GeoRiskMapping = () => {
                       No active risks
                     </span>
                   ) : (
-                    countryRiskData[selectedCountry]?.map((risk) => {
+                    liveCountryRiskData[selectedCountry]?.map((risk) => {
                       const rt = riskTypes[risk];
                       return (
                         <span
