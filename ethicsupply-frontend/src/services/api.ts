@@ -2593,17 +2593,21 @@ export interface GraphNode {
     | "distributor"
     | "retailer";
   country?: string;
-  ethical_score?: number;
+  industry?: string | null;
+  ethical_score?: number | null;
+  composite_score?: number | null;
+  risk_level?: string | null;
   group?: number;
   level?: number;
-  lat?: number; // Added latitude
-  lng?: number; // Added longitude
+  lat?: number;
+  lng?: number;
 }
 
 export interface GraphLink {
   source: string | GraphNode;
   target: string | GraphNode;
   type?: string;
+  relationship?: string;
   strength?: number;
   ethical?: boolean;
 }

@@ -662,6 +662,7 @@ exports.getSupplyChainGraph = async (req, res) => {
       name: s.name || "Unnamed supplier",
       type: "supplier",
       country: s.country || "Unknown",
+      industry: s.industry || null,
       ethical_score:
         typeof s.ethical_score === "number" && Number.isFinite(s.ethical_score)
           ? s.ethical_score
@@ -684,6 +685,7 @@ exports.getSupplyChainGraph = async (req, res) => {
         source: a.id,
         target: b.id,
         type: "supply",
+        relationship: "Supply",
         strength: 0.8,
         ethical: as >= 70 && bs >= 70,
       });
@@ -703,6 +705,7 @@ exports.getSupplyChainGraph = async (req, res) => {
           source: a.id,
           target: b.id,
           type: "secondary",
+          relationship: "Secondary",
           strength: 0.45,
           ethical:
             (a.ethical_score ?? 0) >= 70 && (b.ethical_score ?? 0) >= 70,

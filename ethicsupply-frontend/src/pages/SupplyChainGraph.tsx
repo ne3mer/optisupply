@@ -21,15 +21,10 @@ import {
   Info,
   Eye,
   EyeOff,
-  Filter,
   Search,
   SlidersHorizontal,
   Loader,
-  Sun,
-  Moon,
   CheckCircle,
-  ArrowLeft,
-  ChevronDown,
   ChevronRight,
   Link as LinkIcon,
   ExternalLink,
@@ -43,7 +38,6 @@ import ReactFlow, {
   Background,
   useNodesState,
   useEdgesState,
-  addEdge,
   Node,
   Edge,
   Position,
@@ -54,10 +48,6 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import dagre from "dagre";
 import { ReactFlowProvider } from "reactflow";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Stars } from "@react-three/drei";
-import * as THREE from "three";
-import Globe from "react-globe.gl";
 import { useThemeColors } from "../theme/useThemeColors";
 import { fmtScore } from "../lib/formatters";
 import logger from "../utils/log";
@@ -191,8 +181,6 @@ const SupplyChainGraph = () => {
   useEffect(() => {
     document.title = "OptiSupply — Supply Chain Graph";
   }, []);
-  const globeEl = useRef<Globe | null>(null);
-  const controlsRef = useRef<any>(); // For OrbitControls
   const colors = useThemeColors() as any;
 
   // Memoize nodeTypes to prevent recreation on every render
@@ -214,7 +202,6 @@ const SupplyChainGraph = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   // UI state
-  const [filterPanelOpen, setFilterPanelOpen] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [layoutDirection, setLayoutDirection] = useState<"TB" | "LR">("TB");
 
@@ -261,22 +248,19 @@ const SupplyChainGraph = () => {
     }
   };
 
-  // Load data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setUsingMockData(false);
-        const data = await getSupplyChainGraphData();
+  // Load data — extracted to useCallback so Refresh button can call it
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setUsingMockData(false);
+      const data = await getSupplyChainGraphData();
 
-        // Add basic lat/lng fallback if missing (replace with better logic if possible)
-        const nodesWithCoords = data.nodes.map((n, i) => ({
-          ...n,
-          lat: n.lat ?? Math.random() * 180 - 90, // Random fallback lat
-          lng: n.lng ?? Math.random() * 360 - 180, // Random fallback lng
-          ethical_score: n.ethical_score ?? Math.floor(Math.random() * 100),
-        })) as NodeObject[];
+      const nodesWithCoords = data.nodes.map((n) => ({
+        ...n,
+        // ethical_score stays null if missing — don't fabricate random values
+        ethical_score: typeof n.ethical_score === "number" ? n.ethical_score : null,
+      })) as NodeObject[];
 
         // Validate links (ensure source/target exist in nodesWithCoords)
         const validLinks = data.links.filter((link) => {
@@ -321,17 +305,19 @@ const SupplyChainGraph = () => {
           isMockData: data.isMockData ?? false, // Handle potential mock flag
         });
         setUsingMockData(data.isMockData ?? false);
-      } catch (err) {
-        console.error("Error fetching graph data:", err);
-        setError("Failed to load supply chain data.");
-        setUsingMockData(true); // Assume mock on error for display
-        setGraphData({ nodes: [], links: [], isMockData: true }); // Set empty data
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    } catch (err) {
+      console.error("Error fetching graph data:", err);
+      setError("Failed to load supply chain data.");
+      setUsingMockData(true);
+      setGraphData({ nodes: [], links: [], isMockData: true });
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // Filtered data for the globe
   const filteredGraphData = useMemo(() => {
@@ -721,55 +707,7 @@ const SupplyChainGraph = () => {
     }
   };
 
-  // --- Fetch Data Listener (Remains the same) ---
-  useEffect(() => {
-    const handleFetch = () => {
-      console.log("Simulating data refresh...");
-      setLoading(true);
-      setTimeout(() => {
-        setGraphData({ nodes: [], links: [], isMockData: true });
-        setUsingMockData(true);
-        setLoading(false);
-      }, 500);
-    };
-    window.addEventListener("fetchData", handleFetch);
-    return () => window.removeEventListener("fetchData", handleFetch);
-  }, []);
 
-  const Earth = () => {
-    // ... globe setup ...
-
-    return (
-      <Canvas style={{ background: colors.background }}>
-        <ambientLight intensity={1.5} /> {/* Increased intensity */}
-        <directionalLight position={[5, 5, 5]} intensity={2.0} />{" "}
-        {/* Increased intensity */}
-        <Stars
-          radius={100}
-          depth={50}
-          count={5000}
-          factor={4}
-          saturation={0}
-          fade
-        />
-        {/* The actual Globe component */}
-        <mesh>
-          {/* Use a slightly lighter, bluer material */}
-          <sphereGeometry args={[1, 64, 64]} />
-          <meshPhongMaterial
-            color={new THREE.Color(colors.accent).multiplyScalar(0.6)} // Lighter base color
-            specular={new THREE.Color(0x111111)} // Reduced specular highlights
-            shininess={5} // Reduced shininess
-            transparent
-            opacity={0.9}
-          />
-        </mesh>
-        {/* Orbit Controls - If you re-enable, ensure it's INSIDE Canvas */}
-        {/* <OrbitControls ref={controlsRef} enablePan={true} enableZoom={true} enableRotate={true} minDistance={1.5} maxDistance={5} target={[0, 0, 0]} /> */}
-        {/* Add points or other globe elements here, passing filteredGraphData */}
-      </Canvas>
-    );
-  };
 
   return (
     <div
@@ -837,9 +775,7 @@ const SupplyChainGraph = () => {
               Fit
             </button>
             <button
-              onClick={() => {
-                /* Add refresh logic */
-              }}
+              onClick={() => fetchData()}
               className="p-2 rounded border border-gray-600 hover:bg-gray-700/50 transition"
               title="Refresh Data"
               style={{ color: colors.textMuted }}
@@ -1289,17 +1225,20 @@ const SupplyChainGraph = () => {
                             ? colors.accent + "20"
                             : "transparent",
                       }}
+                      onClick={() => toggleNode(node.id)}
                     >
                       <div className="flex items-center gap-2">
                         <span
                           className={`h-2 w-2 rounded-full`}
                           style={{
                             backgroundColor:
-                              node.ethical_score >= 75
-                                ? colors.success
-                                : node.ethical_score >= 50
-                                  ? colors.warning
-                                  : colors.error,
+                              node.ethical_score == null
+                                ? colors.textMuted
+                                : node.ethical_score >= 75
+                                  ? colors.success
+                                  : node.ethical_score >= 50
+                                    ? colors.warning
+                                    : colors.error,
                           }}
                         ></span>
                         <span
