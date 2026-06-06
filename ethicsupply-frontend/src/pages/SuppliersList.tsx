@@ -46,6 +46,7 @@ import {
   SparklesIcon,
   ArrowPathIcon,
   ClockIcon as ClockIconSolid,
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { CheckBadgeIcon as CheckBadgeSolid } from "@heroicons/react/24/solid";
 import { useThemeColors } from "../theme/useThemeColors";
@@ -300,8 +301,9 @@ const getRecommendation = (colors: any, supplier: Supplier) => {
       ? Math.round(supplier.completeness_ratio * 100)
       : null;
 
-  const lastUpdatedMs = supplier.last_updated
-    ? new Date(supplier.last_updated).getTime()
+  const lastUpdatedRaw = (supplier as any).updated_at || (supplier as any).updatedAt || (supplier as any).last_updated;
+  const lastUpdatedMs = lastUpdatedRaw
+    ? new Date(lastUpdatedRaw).getTime()
     : null;
   const ageDays =
     lastUpdatedMs !== null
@@ -1072,47 +1074,28 @@ const SuppliersList = () => {
     setTimeout(() => setSelectedSupplier(null), 300);
   };
 
-  // Mock data for the modal
-  const mockScoreHistory = [
-    { date: "2023-04-15", score: 68.4, change: +2.3 },
-    { date: "2023-07-22", score: 72.9, change: +4.5 },
-    { date: "2023-10-10", score: 69.8, change: -3.1 },
-    { date: "2024-01-05", score: 74.2, change: +4.4 },
-    { date: "2024-04-01", score: 76.5, change: +2.3 },
-  ];
+  // Derive suggested actions from real supplier data
+  const getSupplierActions = (s: Supplier | null) => {
+    if (!s) return [];
+    const actions: { action: string; priority: string; timeframe: string }[] = [];
+    const score = (s as any).finalScore ?? s.composite_score ?? s.ethical_score ?? null;
+    const risk = s.risk_level?.toLowerCase() ?? "";
+    const completeness = s.completeness_ratio ?? null;
 
-  const mockControversies = [
-    {
-      date: "2023-09-18",
-      title: "Supply Chain Labor Concerns",
-      severity: "medium",
-      resolved: true,
-      description:
-        "Reports of labor standard violations at tier 2 supplier factories.",
-    },
-    {
-      date: "2024-02-14",
-      title: "Environmental Compliance Issue",
-      severity: "high",
-      resolved: false,
-      description:
-        "Regulatory non-compliance with wastewater treatment requirements discovered during audit.",
-    },
-  ];
-
-  const mockActions = [
-    {
-      action: "Schedule Compliance Review",
-      priority: "high",
-      timeframe: "1-2 weeks",
-    },
-    {
-      action: "Request Updated ESG Documentation",
-      priority: "medium",
-      timeframe: "1 month",
-    },
-    { action: "Monitor News Coverage", priority: "low", timeframe: "Ongoing" },
-  ];
+    if (completeness !== null && completeness < 0.6)
+      actions.push({ action: "Request Updated ESG Documentation", priority: "high", timeframe: "1-2 weeks" });
+    if (risk === "high" || risk === "critical")
+      actions.push({ action: "Schedule Compliance Review", priority: "high", timeframe: "1-2 weeks" });
+    if (score !== null && (score <= 1 ? score * 100 : score) < 50)
+      actions.push({ action: "Initiate Supplier Improvement Plan", priority: "high", timeframe: "1 month" });
+    if (risk === "medium")
+      actions.push({ action: "Request Audit Report", priority: "medium", timeframe: "1 month" });
+    if (!risk || risk === "low")
+      actions.push({ action: "Monitor ESG Performance", priority: "low", timeframe: "Ongoing" });
+    if (actions.length === 0)
+      actions.push({ action: "Conduct Annual ESG Review", priority: "low", timeframe: "Ongoing" });
+    return actions;
+  };
 
   // Helper to format value for export
   const formatValue = (value: any): string => {
@@ -2253,7 +2236,7 @@ const SuppliersList = () => {
                   const recommendation = getRecommendation(colors, supplier);
                   const lastUpdatedBadge = getLastUpdatedBadge(
                     colors,
-                    supplier.last_updated,
+                    (supplier as any).updated_at || (supplier as any).updatedAt || (supplier as any).last_updated,
                   );
 
                   const formatPillar = (val: number | null | undefined) => {
@@ -3443,7 +3426,7 @@ const SuppliersList = () => {
                           {(() => {
                             const badge = getLastUpdatedBadge(
                               colors,
-                              selectedSupplier.last_updated,
+                              (selectedSupplier as any).updated_at || (selectedSupplier as any).updatedAt || (selectedSupplier as any).last_updated,
                             );
                             return (
                               <Tooltip content={badge.tooltip}>
@@ -3843,9 +3826,9 @@ const SuppliersList = () => {
                             Controversies
                           </h3>
 
-                          {mockControversies.length > 0 ? (
+                          {((selectedSupplier as any).controversies?.length > 0) ? (
                             <div className="space-y-3">
-                              {mockControversies.map((controversy, index) => (
+                              {((selectedSupplier as any).controversies as any[]).map((controversy: any, index: number) => (
                                 <div
                                   key={index}
                                   className="p-3 rounded-md border"
@@ -3938,64 +3921,39 @@ const SuppliersList = () => {
                             Score History
                           </h3>
 
-                          <div className="space-y-2">
-                            {mockScoreHistory.map((entry, index) => (
-                              <div
-                                key={index}
-                                className="flex items-center justify-between p-2 rounded-md"
-                                style={{
-                                  backgroundColor:
-                                    index === mockScoreHistory.length - 1
-                                      ? colors.accent + "20"
-                                      : "transparent",
-                                }}
-                              >
-                                <div className="flex items-center">
-                                  <div
-                                    className="mr-3"
-                                    style={{
-                                      color:
-                                        entry.change >= 0
-                                          ? colors.success
-                                          : colors.error,
-                                    }}
-                                  >
-                                    {entry.change >= 0 ? (
-                                      <ArrowTrendingUpIcon className="h-5 w-5" />
-                                    ) : (
-                                      <ArrowTrendingDownIcon className="h-5 w-5" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <div
-                                      className="text-sm font-medium"
-                                      style={{ color: colors.text }}
-                                    >
-                                      {entry.score.toFixed(1)}
-                                    </div>
-                                    <div
-                                      className="text-xs"
-                                      style={{ color: colors.textMuted }}
-                                    >
-                                      {entry.date}
+                          {(() => {
+                            const score = (selectedSupplier as any).finalScore ?? selectedSupplier.composite_score ?? selectedSupplier.ethical_score;
+                            const displayScore = score != null ? (score > 0 && score <= 1 ? score * 100 : score) : null;
+                            const updatedAt = (selectedSupplier as any).updated_at || (selectedSupplier as any).updatedAt;
+                            if (displayScore == null) {
+                              return (
+                                <div className="text-center py-4" style={{ color: colors.textMuted }}>
+                                  <ClockIcon className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                                  <p className="text-sm">No score history available yet.</p>
+                                  <p className="text-xs mt-1">Run an assessment to start tracking.</p>
+                                </div>
+                              );
+                            }
+                            return (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between p-2 rounded-md" style={{ backgroundColor: colors.accent + "20" }}>
+                                  <div className="flex items-center gap-3">
+                                    <ArrowTrendingUpIcon className="h-5 w-5" style={{ color: colors.success }} />
+                                    <div>
+                                      <div className="text-sm font-medium" style={{ color: colors.text }}>{displayScore.toFixed(1)}</div>
+                                      <div className="text-xs" style={{ color: colors.textMuted }}>
+                                        {updatedAt ? new Date(updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "Latest score"}
+                                      </div>
                                     </div>
                                   </div>
+                                  <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: colors.accent + "30", color: colors.accent }}>Current</span>
                                 </div>
-                                <div
-                                  className="text-sm font-mono"
-                                  style={{
-                                    color:
-                                      entry.change >= 0
-                                        ? colors.success
-                                        : colors.error,
-                                  }}
-                                >
-                                  {entry.change >= 0 ? "+" : ""}
-                                  {entry.change.toFixed(1)}
-                                </div>
+                                <p className="text-xs text-center pt-1" style={{ color: colors.textMuted }}>
+                                  Historical tracking available after multiple assessments.
+                                </p>
                               </div>
-                            ))}
-                          </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Suggested Actions */}
@@ -4011,7 +3969,7 @@ const SuppliersList = () => {
                           </h3>
 
                           <div className="space-y-3">
-                            {mockActions.map((action, index) => (
+                            {getSupplierActions(selectedSupplier).map((action, index) => (
                               <div
                                 key={index}
                                 className="p-3 rounded-md border"
@@ -4063,7 +4021,7 @@ const SuppliersList = () => {
 
                     {/* Modal Footer */}
                     <div
-                      className="p-4 border-t flex justify-end items-center gap-3 sticky bottom-0"
+                      className="p-4 border-t flex justify-between items-center gap-3 sticky bottom-0"
                       style={{
                         borderColor: colors.accent + "30",
                         backgroundColor: colors.background,
@@ -4071,7 +4029,7 @@ const SuppliersList = () => {
                     >
                       <button
                         onClick={closeModal}
-                        className="px-4 py-2 rounded"
+                        className="px-4 py-2 rounded text-sm"
                         style={{
                           backgroundColor: colors.panel,
                           color: colors.textMuted,
@@ -4079,6 +4037,15 @@ const SuppliersList = () => {
                       >
                         Close
                       </button>
+                      <Link
+                        to={`/suppliers/${(selectedSupplier as any)._id || (selectedSupplier as any).id}`}
+                        onClick={closeModal}
+                        className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-opacity hover:opacity-85"
+                        style={{ backgroundColor: colors.primary, color: "#0A0A0A" }}
+                      >
+                        <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                        View Full Profile
+                      </Link>
                     </div>
                   </motion.div>
                 </motion.div>

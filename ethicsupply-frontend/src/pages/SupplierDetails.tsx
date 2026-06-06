@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { getSupplier, getSuppliers, Supplier } from "../services/api";
 import { motion } from "framer-motion";
 import CalculationTraceDrawer from "../components/CalculationTraceDrawer";
@@ -367,12 +368,13 @@ const SupplierDetails = () => {
       (supplier as any)?.finalScore ??
       supplier?.composite_score ??
       supplier?.ethical_score ??
-      0;
+      null;
+    if (s === null) return null;
     return s > 0 && s <= 1 ? s * 100 : s;
   }, [supplier]);
 
   const scoreColor = useMemo(
-    () => scoreBandColor(colors, overallScore),
+    () => scoreBandColor(colors, overallScore ?? 0),
     [colors, overallScore],
   );
   const riskColor = useMemo(
@@ -532,13 +534,13 @@ const SupplierDetails = () => {
               className="text-4xl font-bold font-mono leading-none"
               style={{ color: scoreColor }}
             >
-              {overallScore.toFixed(1)}
+              {overallScore != null ? overallScore.toFixed(1) : "N/A"}
             </span>
             <span
               className="text-xs font-mono mt-0.5"
               style={{ color: colors.textMuted }}
             >
-              /100
+              {overallScore != null ? "/100" : ""}
             </span>
           </div>
         </div>
@@ -569,32 +571,34 @@ const SupplierDetails = () => {
                 </div>
                 <span
                   className="text-4xl font-bold font-mono leading-none"
-                  style={{ color: scoreColor }}
+                  style={{ color: overallScore != null ? scoreColor : colors.textMuted }}
                 >
-                  {overallScore.toFixed(1)}
+                  {overallScore != null ? overallScore.toFixed(1) : "N/A"}
                 </span>
                 <span
                   className="text-sm font-mono ml-1"
                   style={{ color: colors.textMuted }}
                 >
-                  /100
+                  {overallScore != null ? "/100" : ""}
                 </span>
               </div>
               <div
                 className="h-14 w-14 rounded-md flex items-center justify-center text-xs font-bold uppercase"
                 style={{
-                  background: scoreColor + "15",
-                  color: scoreColor,
-                  border: `1px solid ${scoreColor}25`,
+                  background: (overallScore != null ? scoreColor : colors.textMuted) + "15",
+                  color: overallScore != null ? scoreColor : colors.textMuted,
+                  border: `1px solid ${(overallScore != null ? scoreColor : colors.textMuted)}25`,
                 }}
               >
-                {overallScore >= 80
-                  ? "Excellent"
-                  : overallScore >= 60
-                    ? "Strong"
-                    : overallScore >= 40
-                      ? "Average"
-                      : "At Risk"}
+                {overallScore == null
+                  ? "N/A"
+                  : overallScore >= 80
+                    ? "Excellent"
+                    : overallScore >= 60
+                      ? "Strong"
+                      : overallScore >= 40
+                        ? "Average"
+                        : "At Risk"}
               </div>
             </div>
             <StatRow
@@ -646,12 +650,13 @@ const SupplierDetails = () => {
               <button
                 onClick={async () => {
                   try {
-                    const { recomputeSupplierScores } =
-                      await import("../services/api");
+                    const { recomputeSupplierScores } = await import("../services/api");
                     await recomputeSupplierScores(supplierId);
                     await fetchSupplier();
-                  } catch {}
-                  navigate(`/suppliers/${supplierId}/assessment`);
+                    navigate(`/suppliers/${supplierId}/assessment`);
+                  } catch (err: any) {
+                    toast.error(err?.message || "Failed to recompute scores. Please try again.");
+                  }
                 }}
                 className="w-full flex items-center justify-center gap-2 text-sm py-2.5 rounded-md font-semibold transition-opacity hover:opacity-85"
                 style={{ background: colors.primary, color: "#0A0A0A" }}
@@ -977,19 +982,17 @@ const SupplierDetails = () => {
           </SectionCard>
 
           {/* Last updated footer */}
-          {(supplier as any).last_updated && (
-            <div
-              className="flex items-center gap-2 text-xs"
-              style={{ color: colors.textMuted }}
-            >
-              <ClockIcon className="h-3.5 w-3.5" />
-              Last updated:{" "}
-              {new Date((supplier as any).last_updated).toLocaleDateString(
-                "en-US",
-                { year: "numeric", month: "short", day: "numeric" },
-              )}
-            </div>
-          )}
+          {(() => {
+            const ts = (supplier as any).updated_at || (supplier as any).updatedAt || (supplier as any).last_updated;
+            if (!ts) return null;
+            return (
+              <div className="flex items-center gap-2 text-xs" style={{ color: colors.textMuted }}>
+                <ClockIcon className="h-3.5 w-3.5" />
+                Last updated:{" "}
+                {new Date(ts).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+              </div>
+            );
+          })()}
         </motion.div>
       </div>
 
