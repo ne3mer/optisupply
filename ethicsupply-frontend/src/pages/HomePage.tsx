@@ -32,47 +32,103 @@ const TICKER_ITEMS = [
 ];
 
 // ─── Intersection observer ─────────────────────────────────────────────────────
-function useInView(ref: React.RefObject<Element>, once = true) {
+function useInView(ref: React.RefObject<Element | null>, once = true) {
   const [visible, setVisible] = useState(false);
+
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    // Fallback: force visible after 2.5s in case IntersectionObserver never fires
-    const fallback = setTimeout(() => setVisible(true), 2500);
-    const obs = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setVisible(true);
-          clearTimeout(fallback);
-          if (once) obs.disconnect();
-        }
-      },
-      { threshold: 0.01, rootMargin: "0px 0px -40px 0px" },
-    );
-    obs.observe(el);
+    let obs: IntersectionObserver | undefined;
+    let fallback: ReturnType<typeof setTimeout> | undefined;
+    let retryRaf = 0;
+    let done = false;
+
+    const markVisible = () => {
+      if (done) return;
+      done = true;
+      setVisible(true);
+      if (fallback) clearTimeout(fallback);
+      obs?.disconnect();
+    };
+
+    const connect = () => {
+      const el = ref.current;
+      if (!el) {
+        retryRaf = requestAnimationFrame(connect);
+        return;
+      }
+
+      // Already on screen when effect runs (e.g. refresh mid-page)
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        markVisible();
+        if (once) return;
+      }
+
+      fallback = setTimeout(markVisible, 2000);
+
+      obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) markVisible();
+        },
+        { threshold: 0, rootMargin: "0px 0px -5% 0px" },
+      );
+      obs.observe(el);
+    };
+
+    connect();
+
     return () => {
-      obs.disconnect();
-      clearTimeout(fallback);
+      cancelAnimationFrame(retryRaf);
+      obs?.disconnect();
+      if (fallback) clearTimeout(fallback);
     };
   }, [ref, once]);
+
   return visible;
 }
 
 // ─── Counter animation ─────────────────────────────────────────────────────────
-function useCounter(target: number, visible: boolean, duration = 1400) {
+function useCounter(
+  target: number,
+  visible: boolean,
+  duration = 1400,
+  decimals = 0,
+) {
   const [val, setVal] = useState(0);
+
   useEffect(() => {
     if (!visible) return;
+
+    let rafId = 0;
     let start: number | null = null;
+    const factor = 10 ** decimals;
+    const finalVal =
+      decimals > 0
+        ? Math.round(target * factor) / factor
+        : Math.round(target);
+
     const step = (ts: number) => {
       if (!start) start = ts;
       const pct = Math.min((ts - start) / duration, 1);
       const eased = 1 - Math.pow(1 - pct, 3);
-      setVal(Math.floor(eased * target));
-      if (pct < 1) requestAnimationFrame(step);
+      const current = eased * target;
+
+      if (pct < 1) {
+        const rounded =
+          decimals > 0
+            ? Math.round(current * factor) / factor
+            : Math.floor(current);
+        setVal(rounded);
+        rafId = requestAnimationFrame(step);
+      } else {
+        setVal(finalVal);
+      }
     };
-    requestAnimationFrame(step);
-  }, [visible, target, duration]);
+
+    setVal(0);
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [visible, target, duration, decimals]);
+
   return val;
 }
 
@@ -401,17 +457,21 @@ const StatNum = ({
   suffix = "",
   prefix = "",
   visible,
+  decimals = 0,
 }: {
   target: number;
   suffix?: string;
   prefix?: string;
   visible: boolean;
+  decimals?: number;
 }) => {
-  const val = useCounter(target, visible);
+  const val = useCounter(target, visible, 1400, decimals);
+  const display =
+    decimals > 0 ? val.toFixed(decimals) : val.toLocaleString("en-US");
   return (
     <>
       {prefix}
-      {val.toLocaleString()}
+      {display}
       {suffix}
     </>
   );
@@ -426,7 +486,7 @@ const HomePage = () => {
   const [ring, setRing] = useState({ x: -100, y: -100 });
   const ringRef = useRef({ x: -100, y: -100 });
   const rafRef = useRef<number>(0);
-  const numbersRef = useRef<HTMLDivElement>(null!);
+  const numbersRef = useRef<HTMLDivElement>(null);
   const numbersVisible = useInView(numbersRef);
   const [emailVal, setEmailVal] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -1588,15 +1648,10 @@ const HomePage = () => {
 
           <div ref={numbersRef} className="lp-numbers-grid">
             {[
-              { target: 1200, suffix: "+", label: "Supplier Profiles" },
-              { prefix: "", target: 99, suffix: ".7%", label: "Platform Uptime" },
-              {
-                prefix: "",
-                target: 40,
-                suffix: "+",
-                label: "ESG Metrics Tracked",
-              },
-              { target: 47, suffix: "", label: "Countries Covered" },
+              { target: 1200, suffix: "+", label: "Supplier Profiles", decimals: 0 },
+              { target: 99.7, suffix: "%", label: "Platform Uptime", decimals: 1 },
+              { target: 40, suffix: "+", label: "ESG Metrics Tracked", decimals: 0 },
+              { target: 47, suffix: "", label: "Countries Covered", decimals: 0 },
             ].map((n, i) => (
               <div
                 key={n.label}
@@ -1623,10 +1678,10 @@ const HomePage = () => {
                   {n.prefix || ""}
                   <StatNum
                     target={n.target}
-                    suffix=""
+                    suffix={n.suffix}
                     visible={numbersVisible}
+                    decimals={n.decimals}
                   />
-                  {n.suffix}
                 </div>
                 <div
                   style={{
