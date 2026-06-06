@@ -14,7 +14,6 @@ import {
   List,
   Map,
   TrendingUp,
-  Activity,
   Info,
   FlaskConical,
   TestTube,
@@ -167,16 +166,13 @@ const Navbar = () => {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <div
-              className="h-8 w-8 rounded-md flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
-              style={{
-                background: "#C8F05A",
-                boxShadow: "0 3px 12px -3px rgba(200,240,90,0.5)",
-              }}
+              className="h-9 w-9 flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
             >
-              <Activity
-                className="h-4 w-4"
-                style={{ color: "#0A0A0A" }}
-                strokeWidth={2.5}
+              <img
+                src="/logo.svg"
+                alt="OptiSupply logo"
+                className="h-9 w-9"
+                style={{ display: "block" }}
               />
             </div>
             <div className="hidden sm:flex flex-col leading-none">

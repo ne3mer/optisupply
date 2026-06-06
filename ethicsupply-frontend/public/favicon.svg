@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Leaf outline -->
+  <path d="M 76 14 Q 14 14 24 86 Q 86 86 76 14 Z"
+        fill="none"
+        stroke="#0D1F3C"
+        stroke-width="6"
+        stroke-linejoin="round"/>
+
+  <!-- Main artery only (no branches for readability at small sizes) -->
+  <line x1="30" y1="76" x2="70" y2="24"
+        stroke="#10B981" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Two key nodes -->
+  <circle cx="70" cy="24" r="7" fill="#10B981"/>
+  <circle cx="30" cy="76" r="5" fill="#0D1F3C"/>
+
+  <!-- Single branch hint -->
+  <line x1="52" y1="49" x2="38" y2="55"
+        stroke="#06B6D4" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="35" cy="57" r="6" fill="#06B6D4"/>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Geometric leaf: tilted eye/lens shape
+       Upper-right tip: (76,14)  Lower-left tip: (24,86)
+       Upper curve bulges toward top-left (14,14)
+       Lower curve bulges toward bottom-right (86,86)
+  -->
+  <path d="M 76 14 Q 14 14 24 86 Q 86 86 76 14 Z"
+        fill="none"
+        stroke="#0D1F3C"
+        stroke-width="5"
+        stroke-linejoin="round"/>
+
+  <!-- Main artery: from base (28,78) to tip (72,22), emerald green, bold -->
+  <line x1="28" y1="78" x2="72" y2="22"
+        stroke="#10B981" stroke-width="4.5" stroke-linecap="round"/>
+
+  <!-- Artery tip node (filled emerald) -->
+  <circle cx="72" cy="22" r="5.5" fill="#10B981"/>
+
+  <!-- Branch 1: off artery at (44,60) → steps left → node
+       Represents first decision/intelligence point -->
+  <polyline points="44,60 36,52 26,52"
+            stroke="#06B6D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="24" cy="52" r="5" fill="white" stroke="#06B6D4" stroke-width="3"/>
+
+  <!-- Branch 2: off artery at (60,42) → steps down-right → node
+       Represents second data/routing branch -->
+  <polyline points="60,42 68,50 68,62"
+            stroke="#06B6D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="68" cy="64" r="5" fill="white" stroke="#06B6D4" stroke-width="3"/>
+</svg>
