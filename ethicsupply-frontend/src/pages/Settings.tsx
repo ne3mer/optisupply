@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 import { useTheme } from "../contexts/ThemeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { useThemeColors } from "../theme/useThemeColors";
@@ -18,13 +19,12 @@ const Settings: React.FC = () => {
   usePageTitle("Settings");
   const { darkMode, toggleDarkMode } = useTheme();
   const colors = useThemeColors();
-  const [apiEndpoint, setApiEndpoint] = useState<string>(
-    localStorage.getItem("apiEndpoint") || "http://localhost:8080"
-  );
   const [settings, setSettings] = useState<ScoringSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [recomputing, setRecomputing] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -33,10 +33,13 @@ const Settings: React.FC = () => {
   const loadSettings = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const data = await getScoringSettings();
       setSettings(data);
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error("Failed to load settings:", error);
+      setLoadError("Could not reach the backend. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -61,7 +64,7 @@ const Settings: React.FC = () => {
       }
       
       // Validate lambda λ > 0
-      const lambda = settings.riskLambda ?? 1.0;
+      const lambda = settings.riskLambda ?? 15.0;
       if (lambda <= 0) {
         return "Lambda λ must be greater than 0";
       }
@@ -83,32 +86,36 @@ const Settings: React.FC = () => {
     
     const validationError = validateSettings();
     if (validationError) {
-      alert(`Validation error: ${validationError}`);
+      toast.error(`Validation error: ${validationError}`);
       return;
     }
     
     try {
       setSaving(true);
-      await updateScoringSettings(settings);
-      alert("Settings saved successfully!");
+      const saved = await updateScoringSettings(settings);
+      // Sync local state with what the server actually persisted
+      if (saved) setSettings(saved);
+      setHasUnsavedChanges(false);
+      toast.success("Settings saved! Run 'Recalculate All Suppliers' to apply to rankings.");
     } catch (error) {
       console.error("Failed to save settings:", error);
-      alert("Failed to save settings. Please try again.");
+      toast.error("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleResetSettings = async () => {
-    if (!confirm("Reset all settings to defaults?")) return;
+    if (!window.confirm("Reset all settings to defaults?")) return;
     try {
       setSaving(true);
       const reset = await resetScoringSettings();
       setSettings(reset);
-      alert("Settings reset to defaults!");
+      setHasUnsavedChanges(false);
+      toast.success("Settings reset to defaults.");
     } catch (error) {
       console.error("Failed to reset settings:", error);
-      alert("Failed to reset settings. Please try again.");
+      toast.error("Failed to reset settings. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -117,20 +124,17 @@ const Settings: React.FC = () => {
   const handleExportCSV = async () => {
     try {
       await exportSuppliersCSV();
+      toast.success("CSV export started.");
     } catch (error) {
       console.error("Failed to export CSV:", error);
-      alert("Failed to export CSV. Please try again.");
+      toast.error("Failed to export CSV. Please try again.");
     }
-  };
-
-  const saveApiEndpoint = () => {
-    localStorage.setItem("apiEndpoint", apiEndpoint);
-    window.location.reload();
   };
 
   const updateSetting = (key: keyof ScoringSettings, value: any) => {
     if (!settings) return;
     setSettings({ ...settings, [key]: value });
+    setHasUnsavedChanges(true);
   };
 
   if (loading) {
@@ -140,6 +144,27 @@ const Settings: React.FC = () => {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: colors.primary }}></div>
             <p className="text-lg">Loading settings...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: colors.background, color: colors.text }}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center max-w-md">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-semibold mb-2">Failed to Load Settings</h2>
+            <p className="text-sm mb-6" style={{ color: colors.textMuted }}>{loadError}</p>
+            <button
+              onClick={loadSettings}
+              className="px-6 py-2.5 rounded-lg font-medium transition-all"
+              style={{ backgroundColor: colors.primary, color: "white" }}
+            >
+              🔄 Retry
+            </button>
           </div>
         </div>
       </div>
@@ -162,28 +187,26 @@ const Settings: React.FC = () => {
         <motion.div 
           initial={{ opacity: 0, x: 20 }} 
           animate={{ opacity: 1, x: 0 }}
-          className="flex gap-2 flex-wrap"
+          className="flex items-center gap-2 flex-wrap"
         >
+          {hasUnsavedChanges && (
+            <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ background: "rgba(251,191,36,0.15)", color: "#FBBF24" }}>
+              ● Unsaved changes
+            </span>
+          )}
           <button
             onClick={handleSaveSettings}
-            disabled={saving}
-            className="px-6 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-            style={{
-              backgroundColor: colors.primary,
-              color: "white",
-              opacity: saving ? 0.6 : 1,
-            }}
+            disabled={saving || !settings}
+            className="px-6 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: colors.primary, color: "white" }}
           >
             {saving ? "💾 Saving..." : "💾 Save All Changes"}
           </button>
           <button
             onClick={handleResetSettings}
-            className="px-6 py-2.5 rounded-lg font-medium border-2 transition-all duration-200 hover:shadow-md"
-            style={{
-              borderColor: colors.accent,
-              color: colors.text,
-              backgroundColor: 'transparent',
-            }}
+            disabled={saving || !settings}
+            className="px-6 py-2.5 rounded-lg font-medium border-2 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ borderColor: colors.accent, color: colors.text, backgroundColor: "transparent" }}
           >
             🔄 Reset to Defaults
           </button>
@@ -233,20 +256,20 @@ const Settings: React.FC = () => {
                   <div>
                     <div className="font-semibold mb-1">📊 Industry Bands</div>
                     <div className="text-xs" style={{ color: colors.textMuted }}>
-                      {(settings.useIndustryBands ?? false) ? "Industry-specific" : "Global"}
+                      {(settings.useIndustryBands ?? true) ? "Industry-specific" : "Global"}
                     </div>
                   </div>
                   <div
                     className="w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors"
-                    onClick={() => updateSetting("useIndustryBands", !(settings.useIndustryBands ?? false))}
+                    onClick={() => updateSetting("useIndustryBands", !(settings.useIndustryBands ?? true))}
                     style={{
-                      backgroundColor: (settings.useIndustryBands ?? false) ? colors.accent : colors.textMuted,
+                      backgroundColor: (settings.useIndustryBands ?? true) ? colors.accent : colors.textMuted,
                     }}
                   >
                     <div
                       className="bg-white w-6 h-6 rounded-full shadow-md transform duration-300 ease-in-out"
                       style={{
-                        transform: (settings.useIndustryBands ?? false) ? "translateX(100%)" : "translateX(0)",
+                        transform: (settings.useIndustryBands ?? true) ? "translateX(100%)" : "translateX(0)",
                       }}
                     />
                   </div>
@@ -419,7 +442,7 @@ const Settings: React.FC = () => {
                             max="1"
                             step="0.01"
                             value={settings.riskWeightGeopolitical ?? 0.33}
-                            onChange={(e) => updateSetting("riskWeightGeopolitical", parseFloat(e.target.value) || 0.33)}
+                            onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("riskWeightGeopolitical", Number.isFinite(v) ? v : 0.33); }}
                             className="w-full p-2 rounded-md border text-sm font-mono text-center"
                             style={{
                               backgroundColor: colors.inputBg,
@@ -438,7 +461,7 @@ const Settings: React.FC = () => {
                             max="1"
                             step="0.01"
                             value={settings.riskWeightClimate ?? 0.33}
-                            onChange={(e) => updateSetting("riskWeightClimate", parseFloat(e.target.value) || 0.33)}
+                            onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("riskWeightClimate", Number.isFinite(v) ? v : 0.33); }}
                             className="w-full p-2 rounded-md border text-sm font-mono text-center"
                             style={{
                               backgroundColor: colors.inputBg,
@@ -457,7 +480,7 @@ const Settings: React.FC = () => {
                             max="1"
                             step="0.01"
                             value={settings.riskWeightLabor ?? 0.34}
-                            onChange={(e) => updateSetting("riskWeightLabor", parseFloat(e.target.value) || 0.34)}
+                            onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("riskWeightLabor", Number.isFinite(v) ? v : 0.34); }}
                             className="w-full p-2 rounded-md border text-sm font-mono text-center"
                             style={{
                               backgroundColor: colors.inputBg,
@@ -517,8 +540,8 @@ const Settings: React.FC = () => {
                           min="0.1"
                           max="50"
                           step="0.1"
-                          value={settings.riskLambda ?? 1.0}
-                          onChange={(e) => updateSetting("riskLambda", parseFloat(e.target.value) || 1.0)}
+                          value={settings.riskLambda ?? 15.0}
+                          onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("riskLambda", Number.isFinite(v) && v > 0 ? v : 15.0); }}
                           className="w-full p-3 rounded-md border text-center font-mono text-lg"
                           style={{
                             backgroundColor: colors.inputBg,
@@ -566,7 +589,7 @@ const Settings: React.FC = () => {
                       max="1"
                       step="0.01"
                       value={settings.emissionIntensityWeight ?? 0.4}
-                      onChange={(e) => updateSetting("emissionIntensityWeight", parseFloat(e.target.value) || 0.4)}
+                      onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("emissionIntensityWeight", Number.isFinite(v) ? v : 0.4); }}
                       className="w-full p-2 rounded-md border text-center font-mono"
                       style={{
                         backgroundColor: colors.inputBg,
@@ -585,7 +608,7 @@ const Settings: React.FC = () => {
                       max="1"
                       step="0.01"
                       value={settings.renewableShareWeight ?? 0.2}
-                      onChange={(e) => updateSetting("renewableShareWeight", parseFloat(e.target.value) || 0.2)}
+                      onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("renewableShareWeight", Number.isFinite(v) ? v : 0.2); }}
                       className="w-full p-2 rounded-md border text-center font-mono"
                       style={{
                         backgroundColor: colors.inputBg,
@@ -604,7 +627,7 @@ const Settings: React.FC = () => {
                       max="1"
                       step="0.01"
                       value={settings.waterIntensityWeight ?? 0.2}
-                      onChange={(e) => updateSetting("waterIntensityWeight", parseFloat(e.target.value) || 0.2)}
+                      onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("waterIntensityWeight", Number.isFinite(v) ? v : 0.2); }}
                       className="w-full p-2 rounded-md border text-center font-mono"
                       style={{
                         backgroundColor: colors.inputBg,
@@ -623,7 +646,7 @@ const Settings: React.FC = () => {
                       max="1"
                       step="0.01"
                       value={settings.wasteIntensityWeight ?? 0.2}
-                      onChange={(e) => updateSetting("wasteIntensityWeight", parseFloat(e.target.value) || 0.2)}
+                      onChange={(e) => { const v = parseFloat(e.target.value); updateSetting("wasteIntensityWeight", Number.isFinite(v) ? v : 0.2); }}
                       className="w-full p-2 rounded-md border text-center font-mono"
                       style={{
                         backgroundColor: colors.inputBg,
@@ -652,13 +675,14 @@ const Settings: React.FC = () => {
                   </p>
                   <button
                     onClick={async () => {
-                      if (!confirm("Recalculate all supplier scores? This may take a few moments.")) return;
+                      if (!window.confirm("Recalculate all supplier scores? This may take a few moments.")) return;
                       try {
                         setRecomputing(true);
                         const result = await recomputeAllSuppliers();
-                        alert(`Success! Recomputed ${result.results.successful} suppliers. ${result.results.failed > 0 ? `${result.results.failed} failed.` : ""}`);
+                        const failed = result.results.failed > 0 ? ` (${result.results.failed} failed)` : "";
+                        toast.success(`Recomputed ${result.results.successful} suppliers${failed}.`);
                       } catch (error: any) {
-                        alert(`Error: ${error.message || "Failed to recompute suppliers"}`);
+                        toast.error(error.message || "Failed to recompute suppliers");
                       } finally {
                         setRecomputing(false);
                       }
@@ -700,43 +724,30 @@ const Settings: React.FC = () => {
 
           {/* API & Export Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* API Configuration */}
+            {/* Connection Status */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
               <Card style={{ backgroundColor: colors.card, borderColor: colors.accent + "30" }}>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <span style={{ color: colors.primary }}>🔌 API Configuration</span>
+                    <span style={{ color: colors.primary }}>🔌 Connection Status</span>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block mb-2 text-sm font-medium" htmlFor="api-endpoint">
-                      Backend Endpoint
-                    </label>
-                    <input
-                      id="api-endpoint"
-                      type="text"
-                      value={apiEndpoint}
-                      onChange={(e) => setApiEndpoint(e.target.value)}
-                      className="w-full p-2.5 rounded-md border focus:ring-2 outline-none font-mono text-sm"
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.accent + "40",
-                        color: colors.text,
-                        focusRingColor: colors.primary,
-                      }}
-                      placeholder="http://localhost:8080"
-                    />
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full animate-pulse" style={{ backgroundColor: settings ? "#22c55e" : "#ef4444" }} />
+                    <span className="text-sm font-medium" style={{ color: settings ? "#22c55e" : "#ef4444" }}>
+                      {settings ? "Backend connected" : "Backend unreachable"}
+                    </span>
                   </div>
+                  <p className="text-xs" style={{ color: colors.textMuted }}>
+                    API endpoint is configured via environment variables (<code>VITE_API_URL</code>). Settings successfully loaded from the database.
+                  </p>
                   <button
-                    onClick={saveApiEndpoint}
-                    className="w-full px-4 py-2.5 rounded-md font-medium transition-colors"
-                    style={{
-                      backgroundColor: colors.accent,
-                      color: colors.text,
-                    }}
+                    onClick={loadSettings}
+                    className="w-full px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                    style={{ backgroundColor: colors.accent + "20", color: colors.accent }}
                   >
-                    💾 Save & Reload
+                    🔄 Re-check Connection
                   </button>
                 </CardContent>
               </Card>
